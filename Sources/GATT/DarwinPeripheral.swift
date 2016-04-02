@@ -6,14 +6,25 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import Foundation
-import CoreBluetooth
-
-#if os(OSX) || os(iOS) || os(WatchOS) || os(tvOS)
+#if os(OSX) || os(iOS) || os(tvOS)
     
-    public final class Peripheral: PeripheralManager {
+    import Foundation
+    import CoreBluetooth
+    
+    public final class Peripheral: NSObject, CBPeripheralManagerDelegate, PeripheralManager {
         
+        // MARK: - Properties
         
+        private let internalManager: CBPeripheralManager
+        
+        // MARK: - Initialization
+        
+        public override init() {
+            
+            super.init()
+            
+            
+        }
     }
 
 #endif

@@ -6,8 +6,11 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-/// GATT Peripheral Manager
+/// GATT Peripheral Manager Protocol
 public protocol PeripheralManager {
+    
+    /// Default initializer
+    init()
     
     
 }
