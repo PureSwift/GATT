@@ -6,11 +6,13 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+import SwiftFoundation
+import Bluetooth
+
 #if os(OSX) || os(iOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth
-    import Bluetooth
     
     /// The platform specific peripheral. 
     public typealias Server = DarwinPeripheral
@@ -78,19 +80,40 @@
             services[service.UUID] = coreService
         }
         
-        public func remove(service: Bluetooth.UUID) {
+        public func remove(service UUID: Bluetooth.UUID) {
             
-            guard let coreService = services[service]
-                else { fatalError("No Service with UUID \(service) exists") }
+            guard let coreService = services[UUID]
+                else { fatalError("No Service with UUID \(UUID) exists") }
             
             internalManager.removeService(coreService)
+            
+            services[UUID] = nil
         }
         
-        public func clear() {
+        public func clearServices() {
             
             internalManager.removeAllServices()
             
             services = [:]
+        }
+        
+        public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
+            
+            var CoreBluetoothCharacteristic: CBMutableCharacteristic!
+            
+            for service in services.values {
+                
+                for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
+                    
+                    guard UUID != Bluetooth.UUID(foundation: characteristic.UUID!)
+                        else { CoreBluetoothCharacteristic = characteristic; break }
+                }
+            }
+            
+            guard CoreBluetoothCharacteristic != nil
+                else { fatalError("No Characterstic with UUID \(UUID)") }
+            
+            internalManager.updateValue(value.toFoundation(), forCharacteristic: CoreBluetoothCharacteristic, onSubscribedCentrals: nil)
         }
         
         // MARK: - CBPeripheralManagerDelegate
