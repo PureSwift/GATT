@@ -111,8 +111,8 @@
 		6EE84D9F1CAF421100A40C4D /* GATT */ = {
 			isa = PBXGroup;
 			children = (
-				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
+				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
 				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
 			);

@@ -14,9 +14,13 @@ public protocol PeripheralManager {
     /// Default initializer
     init()
     
-    func add(service: Service)
+    /// Attempts to add the specified service to the GATT database.
+    func add(service: Service) throws
     
-    func remove(service: Service)
+    /// Clears the local GATT database.
+    func clear()
+    
+    //func remove(service: Service)
 }
 
 // MARK: - Typealiases

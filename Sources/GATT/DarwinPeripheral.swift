@@ -26,13 +26,13 @@
         
         // MARK: - Private Properties
         
-        private let internalManager: CBPeripheralManager
+        private var internalManager: CBPeripheralManager!
         
-        private let queue: dispatch_queue_t
+        private let queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
-        private var addServiceSemaphore: dispatch_semaphore_t?
+        private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
-        private var addServiceError: NSError?
+        private var services = [CBMutableService]()
         
         // MARK: - Initialization
         
@@ -40,38 +40,40 @@
             
             super.init()
             
-            queue = dispatch_queue_create("GATT.Peripheral Internal Queue", nil)
-            
-            internalManager = CBPeripheralManager(delegate: self, queue: queue)
+            self.internalManager = CBPeripheralManager(delegate: self, queue: queue)
         }
         
         // MARK: - Methods
         
         public func add(service: Service) throws {
             
-            assert(addServiceSemaphore == nil, "Already adding another Service")
+            assert(addServiceState == nil, "Already adding another Service")
             
             /// wait
             
             let semaphore = dispatch_semaphore_create(0)
             
-            addServiceSemaphore = semaphore // set semaphore
+            addServiceState = (semaphore, nil) // set semaphore
             
             // add service
             internalManager.addService(service.toCoreBluetooth())
             
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
             
-            let error = addServiceError
+            let error = addServiceState?.error
             
             // clear
-            addServiceError = nil
-            addServiceSemaphore = nil
+            addServiceState = nil
             
             if let error = error {
                 
                 throw error
             }
+        }
+        
+        public func clear() {
+            
+            internalManager.removeAllServices()
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -83,11 +85,16 @@
         
         public func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
             
-            guard let semaphore = addServiceSemaphore else { fatalError("Did not expect \(#function)") }
+            guard let semaphore = addServiceState?.semaphore else { fatalError("Did not expect \(#function)") }
             
-            addServiceError = error
+            addServiceState?.error = error
             
             dispatch_semaphore_signal(semaphore)
+        }
+        
+        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
+            
+            
         }
     }
 
