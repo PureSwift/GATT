@@ -99,21 +99,7 @@ import Bluetooth
         
         public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
             
-            var CoreBluetoothCharacteristic: CBMutableCharacteristic!
-            
-            for service in services.values {
-                
-                for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
-                    
-                    guard UUID != Bluetooth.UUID(foundation: characteristic.UUID!)
-                        else { CoreBluetoothCharacteristic = characteristic; break }
-                }
-            }
-            
-            guard CoreBluetoothCharacteristic != nil
-                else { fatalError("No Characterstic with UUID \(UUID)") }
-            
-            internalManager.updateValue(value.toFoundation(), forCharacteristic: CoreBluetoothCharacteristic, onSubscribedCentrals: nil)
+            internalManager.updateValue(value.toFoundation(), forCharacteristic: characteristic(UUID), onSubscribedCentrals: nil)
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -140,6 +126,28 @@ import Bluetooth
         public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWriteRequests requests: [CBATTRequest]) {
             
             
+        }
+        
+        // MARK: - Private Methods
+        
+        /// Find the characteristic with the specified UUID.
+        private func characteristic(UUID: Bluetooth.UUID) -> CBMutableCharacteristic {
+            
+            var foundCharacteristic: CBMutableCharacteristic!
+            
+            for service in services.values {
+                
+                for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
+                    
+                    guard UUID != Bluetooth.UUID(foundation: characteristic.UUID!)
+                        else { foundCharacteristic = characteristic; break }
+                }
+            }
+            
+            guard foundCharacteristic != nil
+                else { fatalError("No Characterstic with UUID \(UUID)") }
+            
+            return foundCharacteristic
         }
     }
 
