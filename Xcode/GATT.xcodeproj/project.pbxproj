@@ -25,6 +25,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6E7BD6121CAF9C9500F0ABF3 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cartfile; path = ../Cartfile; sourceTree = "<group>"; };
+		6E7BD6131CAF9C9500F0ABF3 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -57,6 +59,8 @@
 		6EE84D7A1CAF419D00A40C4D = {
 			isa = PBXGroup;
 			children = (
+				6E7BD6121CAF9C9500F0ABF3 /* Cartfile */,
+				6E7BD6131CAF9C9500F0ABF3 /* Package.swift */,
 				6EE84D9E1CAF421100A40C4D /* Sources */,
 				6EE84D861CAF419D00A40C4D /* GATT */,
 				6EE84D921CAF419D00A40C4D /* GATTTests */,

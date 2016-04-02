@@ -17,14 +17,26 @@
         
         private let internalManager: CBPeripheralManager
         
+        private let queue: dispatch_queue_t
+        
         // MARK: - Initialization
         
         public override init() {
             
             super.init()
             
+            queue = dispatch_queue_create("GATT.Peripheral Internal Queue", nil)
             
+            internalManager = CBPeripheralManager(delegate: self, queue: queue)
         }
+        
+        // MARK: - Methods
+        
+        
+        
+        // MARK: - CBPeripheralManagerDelegate
+        
+        
     }
 
 #endif
