@@ -18,9 +18,6 @@ public protocol Peer {
     
     /// Unique identifier of the peer.
     var identifier: PeerIdentifier { get }
-    
-    /// The maximum amount of data, in bytes, that the central can receive in a single notification or indication.
-    var maximumTranssmissionUnit: Int { get }
 }
 
 /// Central Peer
@@ -30,6 +27,7 @@ public struct Central: Peer {
     
     public let identifier: PeerIdentifier
     
+    /// The maximum amount of data, in bytes, that the central can receive in a single notification or indication.
     public let maximumTranssmissionUnit: Int
     
     internal init(identifier: PeerIdentifier, maximumTranssmissionUnit: Int) {

@@ -13,16 +13,16 @@ import Bluetooth
     import Foundation
     import CoreBluetooth
     
-    internal protocol CoreBluetoothConvertible {
+    internal protocol CoreBluetoothAttributeConvertible {
         
-        //associatedtype CoreBluetoothImmutableType
-        associatedtype CoreBluetoothMutableType
+        //associatedtype CoreBluetoothCentralType
+        associatedtype CoreBluetoothPeripheralType
         
-        //init(_ CoreBluetooth: CoreBluetoothImmutableType)
-        func toCoreBluetooth() -> CoreBluetoothMutableType
+        //init(_ CoreBluetooth: CoreBluetoothCentralType)
+        func toCoreBluetooth() -> CoreBluetoothPeripheralType
     }
     
-    extension Service: CoreBluetoothConvertible {
+    extension Service: CoreBluetoothAttributeConvertible {
         
         /*
         init(_ CoreBluetooth: CBService) {
@@ -43,7 +43,7 @@ import Bluetooth
         }
     }
     
-    extension Characteristic: CoreBluetoothConvertible {
+    extension Characteristic: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableCharacteristic {
             
@@ -59,7 +59,7 @@ import Bluetooth
         }
     }
     
-    extension Descriptor: CoreBluetoothConvertible {
+    extension Descriptor: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableDescriptor {
             

@@ -11,16 +11,13 @@ import Bluetooth
 /// GATT Peripheral Manager Protocol
 public protocol PeripheralManager {
     
-    /// Default initializer
-    init()
-    
     /// Attempts to add the specified service to the GATT database.
     func add(service: Service) throws
     
     /// Clears the local GATT database.
     func clear()
     
-    //func remove(service: Service)
+    
 }
 
 // MARK: - Typealiases

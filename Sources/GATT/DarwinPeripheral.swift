@@ -11,6 +11,7 @@
     import Foundation
     import CoreBluetooth
     
+    /// The platform specific peripheral. 
     public typealias Peripheral = DarwinPeripheral
     
     public final class DarwinPeripheral: NSObject, CBPeripheralManagerDelegate, PeripheralManager {
