@@ -22,7 +22,7 @@ public protocol Peer {
 
 /// Central Peer
 ///
-/// Represents remote central devices that have connected to an app implementing the peripheral role on a local device.
+/// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
 public struct Central: Peer {
     
     public let identifier: PeerIdentifier
@@ -35,4 +35,14 @@ public struct Central: Peer {
         self.identifier = identifier
         self.maximumTranssmissionUnit = maximumTranssmissionUnit
     }
+}
+
+/// Peripheral Peer
+///
+/// Represents a remote peripheral device that has been discovered.
+public struct Peripheral: Peer {
+    
+    public let identifier: PeerIdentifier
+    
+    
 }

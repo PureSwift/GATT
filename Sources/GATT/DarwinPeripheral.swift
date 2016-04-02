@@ -10,9 +10,10 @@
     
     import Foundation
     import CoreBluetooth
+    import Bluetooth
     
     /// The platform specific peripheral. 
-    public typealias Peripheral = DarwinPeripheral
+    public typealias Server = DarwinPeripheral
     
     public final class DarwinPeripheral: NSObject, CBPeripheralManagerDelegate, PeripheralManager {
         
@@ -25,6 +26,8 @@
             return internalManager.state
         }
         
+        public var read: ()
+        
         // MARK: - Private Properties
         
         private var internalManager: CBPeripheralManager!
@@ -33,7 +36,7 @@
         
         private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
-        private var services = [CBMutableService]()
+        private var services: [Bluetooth.UUID: CBMutableService] = [:]
         
         // MARK: - Initialization
         
@@ -57,7 +60,8 @@
             addServiceState = (semaphore, nil) // set semaphore
             
             // add service
-            internalManager.addService(service.toCoreBluetooth())
+            let coreService = service.toCoreBluetooth()
+            internalManager.addService(coreService)
             
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
             
@@ -70,11 +74,23 @@
                 
                 throw error
             }
+            
+            services[service.UUID] = coreService
+        }
+        
+        public func remove(service: Bluetooth.UUID) {
+            
+            guard let coreService = services[service]
+                else { fatalError("No Service with UUID \(service) exists") }
+            
+            internalManager.removeService(coreService)
         }
         
         public func clear() {
             
             internalManager.removeAllServices()
+            
+            services = [:]
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -94,6 +110,11 @@
         }
         
         public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
+            
+            
+        }
+        
+        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWriteRequests requests: [CBATTRequest]) {
             
             
         }

@@ -8,16 +8,17 @@
 
 import Bluetooth
 
-/// GATT Peripheral Manager Protocol
+/// GATT Peripheral Manager Interface
 public protocol PeripheralManager {
     
     /// Attempts to add the specified service to the GATT database.
     func add(service: Service) throws
     
+    /// Removes the service with the specified UUID.
+    func remove(service: Bluetooth.UUID)
+    
     /// Clears the local GATT database.
     func clear()
-    
-    
 }
 
 // MARK: - Typealiases

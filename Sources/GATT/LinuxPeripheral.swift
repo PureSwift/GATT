@@ -12,7 +12,7 @@ import BluetoothLinux
 
 #if os(Linux)
     /// The platform specific peripheral.
-    public typealias Peripheral = LinuxPeripheral
+    public typealias Server = LinuxPeripheral
 #endif
 
 public final class LinuxPeripheral: PeripheralManager {
@@ -39,6 +39,14 @@ public final class LinuxPeripheral: PeripheralManager {
     public func add(service: Service) throws {
         
         database.services.append(service)
+    }
+    
+    public func remove(service: Bluetooth.UUID) {
+        
+        guard let index = database.services.indexOf({ $0.UUID == service })
+            else { fatalError("No Service with UUID \(service) exists") }
+        
+        database.services.removeAtIndex(index)
     }
     
     public func clear() {
