@@ -14,7 +14,13 @@ public protocol PeripheralManager {
     /// Default initializer
     init()
     
-    func add(service: GATT.Service)
+    func add(service: Service)
     
-    func remove(service: GATT.Service)
+    func remove(service: Service)
 }
+
+// MARK: - Typealiases
+
+public typealias Service = GATT.Service
+public typealias Characteristic = GATT.Characteristic
+public typealias Descriptor = GATT.Descriptor

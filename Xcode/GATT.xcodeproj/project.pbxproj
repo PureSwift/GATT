@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
+		6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84D8F1CAF419D00A40C4D /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
@@ -27,6 +29,8 @@
 /* Begin PBXFileReference section */
 		6E7BD6121CAF9C9500F0ABF3 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cartfile; path = ../Cartfile; sourceTree = "<group>"; };
 		6E7BD6131CAF9C9500F0ABF3 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
+		6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinAttributes.swift; sourceTree = "<group>"; };
+		6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Peer.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -108,7 +112,9 @@
 			isa = PBXGroup;
 			children = (
 				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
+				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
 				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
+				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -229,6 +235,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
+				6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */,
 				6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */,
 				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
 			);
@@ -291,7 +299,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -333,7 +341,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
