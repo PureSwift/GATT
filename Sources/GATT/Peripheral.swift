@@ -6,8 +6,8 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import Bluetooth
 import SwiftFoundation
+import Bluetooth
 
 /// GATT Peripheral Manager Interface
 public protocol PeripheralManager {

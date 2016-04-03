@@ -13,7 +13,9 @@ import GATT
 
 final class PeripheralTests: XCTestCase {
     
-    func testExample() {
+    func testGetServices() {
+        
+        let testService = CentralManager.manager.fetchTestService()
         
         
     }
