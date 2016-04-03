@@ -10,10 +10,43 @@
 		6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
 		6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
 		6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
+		6E7BD62C1CB0FAB700F0ABF3 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
+		6E7BD63D1CB0FBA500F0ABF3 /* Bluetooth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E7BD63E1CB0FBA500F0ABF3 /* BluetoothLinux.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E7BD63F1CB0FBA500F0ABF3 /* JSON.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E7BD6421CB0FBC300F0ABF3 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6411CB0FBC300F0ABF3 /* AppKit.framework */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6E7BD62D1CB0FAB700F0ABF3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
+			remoteInfo = GATT;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6E7BD6321CB0FB3300F0ABF3 /* Copy Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				6E7BD63D1CB0FBA500F0ABF3 /* Bluetooth.framework in Copy Frameworks */,
+				6E7BD63E1CB0FBA500F0ABF3 /* BluetoothLinux.framework in Copy Frameworks */,
+				6E7BD63F1CB0FBA500F0ABF3 /* JSON.framework in Copy Frameworks */,
+				6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */,
+			);
+			name = "Copy Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		6E7BD6121CAF9C9500F0ABF3 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cartfile; path = ../Cartfile; sourceTree = "<group>"; };
@@ -23,6 +56,13 @@
 		6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinuxPeripheral.swift; sourceTree = "<group>"; };
 		6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CentralManager.swift; sourceTree = "<group>"; };
 		6E7BD6201CB0F9B200F0ABF3 /* PeripheralTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeripheralTests.swift; sourceTree = "<group>"; };
+		6E7BD6271CB0FAB700F0ABF3 /* PeripheralUnitTestsClient.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsClient.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E7BD62B1CB0FAB700F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bluetooth.framework; sourceTree = "<group>"; };
+		6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BluetoothLinux.framework; sourceTree = "<group>"; };
+		6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = JSON.framework; sourceTree = "<group>"; };
+		6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftFoundation.framework; sourceTree = "<group>"; };
+		6E7BD6411CB0FBC300F0ABF3 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -31,6 +71,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6E7BD6241CB0FAB700F0ABF3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E7BD6421CB0FBC300F0ABF3 /* AppKit.framework in Frameworks */,
+				6E7BD62C1CB0FAB700F0ABF3 /* GATT.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6EE84D801CAF419D00A40C4D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -50,13 +99,44 @@
 			path = PeripheralUnitTestsClient;
 			sourceTree = "<group>";
 		};
+		6E7BD6281CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */ = {
+			isa = PBXGroup;
+			children = (
+				6E7BD62B1CB0FAB700F0ABF3 /* Info.plist */,
+			);
+			path = PeripheralUnitTestsClient;
+			sourceTree = "<group>";
+		};
+		6E7BD6331CB0FB4600F0ABF3 /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				6E7BD6341CB0FB9A00F0ABF3 /* Mac */,
+			);
+			name = Dependencies;
+			sourceTree = "<group>";
+		};
+		6E7BD6341CB0FB9A00F0ABF3 /* Mac */ = {
+			isa = PBXGroup;
+			children = (
+				6E7BD6411CB0FBC300F0ABF3 /* AppKit.framework */,
+				6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */,
+				6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */,
+				6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */,
+				6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */,
+			);
+			name = Mac;
+			path = ../Carthage/Build/Mac;
+			sourceTree = "<group>";
+		};
 		6EE84D7A1CAF419D00A40C4D = {
 			isa = PBXGroup;
 			children = (
+				6E7BD6331CB0FB4600F0ABF3 /* Dependencies */,
 				6E7BD6121CAF9C9500F0ABF3 /* Cartfile */,
 				6E7BD6131CAF9C9500F0ABF3 /* Package.swift */,
 				6EE84D9E1CAF421100A40C4D /* Sources */,
 				6EE84D861CAF419D00A40C4D /* GATT */,
+				6E7BD6281CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */,
 				6EE84D851CAF419D00A40C4D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +145,7 @@
 			isa = PBXGroup;
 			children = (
 				6EE84D841CAF419D00A40C4D /* GATT.framework */,
+				6E7BD6271CB0FAB700F0ABF3 /* PeripheralUnitTestsClient.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -114,9 +195,28 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		6EE84D831CAF419D00A40C4D /* GATT */ = {
+		6E7BD6261CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6EE84D981CAF419D00A40C4D /* Build configuration list for PBXNativeTarget "GATT" */;
+			buildConfigurationList = 6E7BD62F1CB0FAB700F0ABF3 /* Build configuration list for PBXNativeTarget "PeripheralUnitTestsClient" */;
+			buildPhases = (
+				6E7BD6231CB0FAB700F0ABF3 /* Sources */,
+				6E7BD6241CB0FAB700F0ABF3 /* Frameworks */,
+				6E7BD6251CB0FAB700F0ABF3 /* Resources */,
+				6E7BD6321CB0FB3300F0ABF3 /* Copy Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6E7BD62E1CB0FAB700F0ABF3 /* PBXTargetDependency */,
+			);
+			name = PeripheralUnitTestsClient;
+			productName = PeripheralUnitTestsClient;
+			productReference = 6E7BD6271CB0FAB700F0ABF3 /* PeripheralUnitTestsClient.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6EE84D831CAF419D00A40C4D /* GATT OS X */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EE84D981CAF419D00A40C4D /* Build configuration list for PBXNativeTarget "GATT OS X" */;
 			buildPhases = (
 				6EE84D7F1CAF419D00A40C4D /* Sources */,
 				6EE84D801CAF419D00A40C4D /* Frameworks */,
@@ -127,7 +227,7 @@
 			);
 			dependencies = (
 			);
-			name = GATT;
+			name = "GATT OS X";
 			productName = GATT;
 			productReference = 6EE84D841CAF419D00A40C4D /* GATT.framework */;
 			productType = "com.apple.product-type.framework";
@@ -142,6 +242,9 @@
 				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = PureSwift;
 				TargetAttributes = {
+					6E7BD6261CB0FAB700F0ABF3 = {
+						CreatedOnToolsVersion = 7.3;
+					};
 					6EE84D831CAF419D00A40C4D = {
 						CreatedOnToolsVersion = 7.3;
 					};
@@ -159,12 +262,20 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6EE84D831CAF419D00A40C4D /* GATT */,
+				6EE84D831CAF419D00A40C4D /* GATT OS X */,
+				6E7BD6261CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		6E7BD6251CB0FAB700F0ABF3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6EE84D821CAF419D00A40C4D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -175,6 +286,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6E7BD6231CB0FAB700F0ABF3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6EE84D7F1CAF419D00A40C4D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -189,7 +307,43 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		6E7BD62E1CB0FAB700F0ABF3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE84D831CAF419D00A40C4D /* GATT OS X */;
+			targetProxy = 6E7BD62D1CB0FAB700F0ABF3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		6E7BD6301CB0FAB700F0ABF3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
+				INFOPLIST_FILE = PeripheralUnitTestsClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsClient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6E7BD6311CB0FAB700F0ABF3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
+				INFOPLIST_FILE = PeripheralUnitTestsClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsClient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		6EE84D961CAF419D00A40C4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -293,7 +447,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.GATT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = GATT;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -314,7 +468,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.GATT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = GATT;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -322,6 +476,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6E7BD62F1CB0FAB700F0ABF3 /* Build configuration list for PBXNativeTarget "PeripheralUnitTestsClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E7BD6301CB0FAB700F0ABF3 /* Debug */,
+				6E7BD6311CB0FAB700F0ABF3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		6EE84D7E1CAF419D00A40C4D /* Build configuration list for PBXProject "GATT" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -331,7 +493,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6EE84D981CAF419D00A40C4D /* Build configuration list for PBXNativeTarget "GATT" */ = {
+		6EE84D981CAF419D00A40C4D /* Build configuration list for PBXNativeTarget "GATT OS X" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6EE84D991CAF419D00A40C4D /* Debug */,

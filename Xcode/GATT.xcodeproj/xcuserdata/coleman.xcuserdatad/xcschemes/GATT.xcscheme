@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
-               BuildableName = "GATT.framework"
-               BlueprintName = "GATT"
+               BuildableName = "GATT OS X.framework"
+               BlueprintName = "GATT OS X"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -43,8 +43,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
-            BuildableName = "GATT.framework"
-            BlueprintName = "GATT"
+            BuildableName = "GATT OS X.framework"
+            BlueprintName = "GATT OS X"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -65,8 +65,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
-            BuildableName = "GATT.framework"
-            BlueprintName = "GATT"
+            BuildableName = "GATT OS X.framework"
+            BlueprintName = "GATT OS X"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -83,8 +83,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
-            BuildableName = "GATT.framework"
-            BlueprintName = "GATT"
+            BuildableName = "GATT OS X.framework"
+            BlueprintName = "GATT OS X"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

@@ -7,6 +7,9 @@
 //
 
 import XCTest
+import Foundation
+import CoreBluetooth
+import GATT
 
 final class PeripheralTests: XCTestCase {
     
