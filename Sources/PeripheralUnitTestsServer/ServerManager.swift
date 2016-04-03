@@ -1,5 +1,5 @@
 //
-//  Server.swift
+//  ServerManager.swift
 //  GATT
 //
 //  Created by Alsey Coleman Miller on 4/3/16.

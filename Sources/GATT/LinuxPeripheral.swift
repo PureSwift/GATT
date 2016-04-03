@@ -40,6 +40,16 @@ public final class LinuxPeripheral: PeripheralManager {
     
     // MARK: - Methods
     
+    public func start() throws {
+        
+        
+    }
+    
+    public func stop() {
+        
+        
+    }
+    
     public func add(service: Service) throws -> Int {
         
         return database.add(service)

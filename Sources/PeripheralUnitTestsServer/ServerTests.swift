@@ -23,6 +23,8 @@ final class ServerTests: XCTestCase {
             try! server.add(service)
         }
         
+        try! server.start()
+        
         print("Created server")
         
         let sleepTime: UInt32 = 30

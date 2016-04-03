@@ -40,11 +40,41 @@ import Bluetooth
         
         private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
+        private var startAdvertisingState: (semaphore: dispatch_semaphore_t, error: NSError?)?
+        
         private var services = [CBMutableService]()
         
         private var characteristicValues = [[(characteristic: CBMutableCharacteristic, value: Data)]]()
         
         // MARK: - Methods
+        
+        public func start() throws {
+            
+            assert(startAdvertisingState == nil, "Already started advertising")
+            
+            let semaphore = dispatch_semaphore_create(0)
+            
+            startAdvertisingState = (semaphore, nil) // set semaphore
+            
+            internalManager.startAdvertising(nil)
+            
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+            
+            let error = startAdvertisingState?.error
+            
+            // clear
+            startAdvertisingState = nil
+            
+            if let error = error {
+                
+                throw error
+            }
+        }
+        
+        public func stop() {
+            
+            internalManager.stopAdvertising()
+        }
         
         public func add(service: Service) throws -> Int {
             
@@ -114,6 +144,15 @@ import Bluetooth
         public func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
             
             stateChanged(peripheral.state)
+        }
+        
+        public func peripheralManagerDidStartAdvertising(peripheral: CBPeripheralManager, error: NSError?) {
+            
+            guard let semaphore = startAdvertisingState?.semaphore else { fatalError("Did not expect \(#function)") }
+            
+            startAdvertisingState?.error = error
+            
+            dispatch_semaphore_signal(semaphore)
         }
         
         public func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
