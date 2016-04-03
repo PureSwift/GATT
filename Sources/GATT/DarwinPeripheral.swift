@@ -42,7 +42,7 @@ import Bluetooth
         
         private var services = [CBMutableService]()
         
-        private var characteristicValues = [[(CBMutableCharacteristic, Data)]]()
+        private var characteristicValues = [[(characteristic: CBMutableCharacteristic, value: Data)]]()
         
         // MARK: - Methods
         
@@ -74,7 +74,7 @@ import Bluetooth
             
             services.append(coreService)
             
-            var characteristics = [(CBMutableCharacteristic, Data)]()
+            var characteristics = [(characteristic: CBMutableCharacteristic, value: Data)]()
             
             for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerate()  {
                 
@@ -129,7 +129,7 @@ import Bluetooth
             
             let peer = Central(request.central)
             
-            let value = Data(foundation: request.characteristic.value ?? NSData()).byteValue
+            let value = self[request.characteristic].byteValue
             
             let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
             
@@ -160,7 +160,7 @@ import Bluetooth
                 
                 let peer = Central(request.central)
                 
-                let value = Data(foundation: request.characteristic.value ?? NSData())
+                let value = self[request.characteristic]
                 
                 let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
                 
@@ -213,6 +213,42 @@ import Bluetooth
                 else { fatalError("No Characterstic with UUID \(UUID)") }
             
             return foundCharacteristic
+        }
+        
+        private subscript(characteristic: CBCharacteristic) -> Data {
+            
+            get {
+                
+                for service in characteristicValues {
+                    
+                    for characteristicValue in service {
+                        
+                        if characteristicValue.characteristic === characteristic {
+                            
+                            return characteristicValue.value
+                        }
+                    }
+                }
+                
+                fatalError("No stored characteristic matches \(characteristic)")
+            }
+            
+            set {
+                
+                for (serviceIndex, service) in characteristicValues.enumerate() {
+                    
+                    for (characteristicIndex, characteristicValue) in service.enumerate() {
+                        
+                        if characteristicValue.characteristic === characteristic {
+                            
+                            characteristicValues[serviceIndex][characteristicIndex].value = newValue
+                            return
+                        }
+                    }
+                }
+                
+                fatalError("No stored characteristic matches \(characteristic)")
+            }
         }
     }
 

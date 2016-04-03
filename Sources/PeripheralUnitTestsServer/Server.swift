@@ -17,5 +17,7 @@ final class ServerManager {
     
     let server = Server()
     
+    private(set) var readServices: [Bluetooth.UUID] = []
     
+    private(set) var didWait = false
 }

@@ -40,6 +40,20 @@
 			remoteGlobalIDString = 6E7BD6471CB0FD9500F0ABF3;
 			remoteInfo = GATTTest;
 		};
+		6E4CA8741CB12511008316A9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
+			remoteInfo = "GATT OS X";
+		};
+		6E4CA8761CB12517008316A9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
+			remoteInfo = "GATT OS X";
+		};
 		6E7BD62D1CB0FAB700F0ABF3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
@@ -316,6 +330,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				6E4CA8751CB12511008316A9 /* PBXTargetDependency */,
 				6E4CA8671CB113E8008316A9 /* PBXTargetDependency */,
 			);
 			name = PeripheralUnitTestsServer;
@@ -335,8 +350,8 @@
 			buildRules = (
 			);
 			dependencies = (
-				6E96454F1CB10505002E7C87 /* PBXTargetDependency */,
 				6E7BD62E1CB0FAB700F0ABF3 /* PBXTargetDependency */,
+				6E96454F1CB10505002E7C87 /* PBXTargetDependency */,
 			);
 			name = PeripheralUnitTestsClient;
 			productName = PeripheralUnitTestsClient;
@@ -355,6 +370,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				6E4CA8771CB12517008316A9 /* PBXTargetDependency */,
 			);
 			name = GATTTest;
 			productName = GATTTest;
@@ -501,6 +517,16 @@
 			isa = PBXTargetDependency;
 			target = 6E7BD6471CB0FD9500F0ABF3 /* GATTTest */;
 			targetProxy = 6E4CA8661CB113E8008316A9 /* PBXContainerItemProxy */;
+		};
+		6E4CA8751CB12511008316A9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE84D831CAF419D00A40C4D /* GATT OS X */;
+			targetProxy = 6E4CA8741CB12511008316A9 /* PBXContainerItemProxy */;
+		};
+		6E4CA8771CB12517008316A9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE84D831CAF419D00A40C4D /* GATT OS X */;
+			targetProxy = 6E4CA8761CB12517008316A9 /* PBXContainerItemProxy */;
 		};
 		6E7BD62E1CB0FAB700F0ABF3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
