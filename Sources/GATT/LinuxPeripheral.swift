@@ -53,6 +53,10 @@ public final class LinuxPeripheral: PeripheralManager {
     
     public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
         
+        let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
         
+        assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
+        
+        database.write(value, forAttribute: matchingAttributes[0].handle)
     }
 }
