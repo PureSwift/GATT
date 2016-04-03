@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreBluetooth
+import XCTest
 import SwiftFoundation
 import Bluetooth
 import GATT
@@ -19,7 +20,7 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     
     static let manager = CentralManager()
     
-    let scanDuration: UInt32 = 20
+    let scanDuration: UInt32 = 10
     
     private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
     
@@ -32,6 +33,14 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private var poweredOnSemaphore: dispatch_semaphore_t!
     
     private var foundPeripheral: CBPeripheral?
+    
+    deinit {
+        
+        if let foundPeripheral = foundPeripheral {
+            
+            internalManager.cancelPeripheralConnection(foundPeripheral)
+        }
+    }
     
     // MARK: - Methods
     
@@ -50,7 +59,33 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         
         log("Searching for test service \(TestData.testService.UUID)")
         
-        internalManager.scanForPeripheralsWithServices(nil, options: nil)
+        if let connectedPeripheral = internalManager.retrieveConnectedPeripheralsWithServices([TestData.testService.UUID.toFoundation()]).first {
+            
+            foundPeripheral = connectedPeripheral
+            
+            connectedPeripheral.delegate = self
+            
+            switch connectedPeripheral.state {
+                
+            case .Disconnected:
+                
+                fatalError("Peripheral \(connectedPeripheral) should be connected")
+                
+            case .Connecting:
+                
+                break
+                
+            case .Connected:
+                
+                connectedPeripheral.discoverServices(nil)
+            }
+            
+        } else {
+            
+            log("No connected peripheral with the test service was found, will scan")
+            
+            internalManager.scanForPeripheralsWithServices(nil, options: nil)
+        }
         
         print("Waiting for \(scanDuration) seconds")
         
@@ -100,9 +135,43 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         }
     }
     
+    /*
+    func centralManager(central: CBCentralManager, didRetrieveConnectedPeripherals peripherals: [CBPeripheral]) {
+        
+        log("Did retrieve connected peripherals: \(peripherals)")
+        
+        guard let testPeripheral = peripherals.filter({ ($0.services ?? []).contains({ $0.UUID == TestData.testService.UUID.toFoundation() }) }).first else {
+            
+            log("No connected peripheral with the test service was found, will scan")
+            
+            internalManager.scanForPeripheralsWithServices(nil, options: nil)
+            
+            return
+        }
+        
+        foundPeripheral = testPeripheral
+        
+        testPeripheral.delegate = self
+        
+        switch testPeripheral.state {
+            
+        case .Disconnected:
+            
+            fatalError("Peripheral \(testPeripheral) should be connected in \(#function)")
+            
+        case .Connecting:
+            
+            break
+            
+        case .Connected:
+            
+            testPeripheral.discoverServices(nil)
+        }
+    }*/
+    
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
         
-        log("Did discover peripheral \(peripheral.identifier.UUIDString)")
+        log("Did discover peripheral \(peripheral)")
         
         central.stopScan()
         
@@ -110,7 +179,18 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         
         foundPeripheral = peripheral
         
-        central.connectPeripheral(peripheral, options: nil)
+        switch peripheral.state {
+            
+        case .Disconnected:
+            
+            internalManager.connectPeripheral(peripheral, options: nil)
+            
+        case .Connecting: break
+            
+        case .Connected:
+            
+            peripheral.discoverServices(nil)
+        }
     }
     
     func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
@@ -152,6 +232,8 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             
             return
         }
+        
+        self.testService = peripheral.services!.filter({ $0.UUID == TestData.testService.UUID.toFoundation() }).first!
         
         for service in peripheral.services ?? [] {
             

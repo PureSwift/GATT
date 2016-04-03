@@ -25,7 +25,7 @@ public struct TestData {
             
             let characteristic = Characteristic(UUID: .Bit128(UUID(rawValue: "E77D264C-F96F-11E5-80E0-23E070D5A8C7")!), value: "Test Service".toUTF8Data(), permissions: [.Read], properties: [.Read])
             
-            let service = Service(UUID: .Bit128(UUID(rawValue: "60F14FE2-F972-11E5-B84F-23E070D5A8C7")!), characteristics: [characteristic])
+            let service = Service(UUID: .Bit128(UUID(rawValue: "60F14FE2-F972-11E5-B84F-23E070D5A8C7")!), primary: true, characteristics: [characteristic])
             
             services.append(service)
         }

@@ -43,7 +43,7 @@ final class ServerManager {
         
         print("Created server")
         
-        let sleepTime: UInt32 = 20
+        let sleepTime: UInt32 = 10
         
         print("Sleeping for \(sleepTime) seconds...")
         
