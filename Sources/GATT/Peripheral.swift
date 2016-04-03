@@ -13,13 +13,15 @@ import SwiftFoundation
 public protocol PeripheralManager {
     
     /// Attempts to add the specified service to the GATT database.
-    func add(service: Service) throws
+    ///
+    /// - Returns: Service Index
+    func add(service: Service) throws -> Int
     
     /// Removes the service with the specified UUID.
-    func remove(service UUID: Bluetooth.UUID)
+    func remove(service index: Int)
     
     /// Clears the local GATT database.
-    func clearServices()
+    func clear()
     
     /// Update the value if the characteristic with specified UUID.
     func update(value: Data, forCharacteristic UUID: Bluetooth.UUID)

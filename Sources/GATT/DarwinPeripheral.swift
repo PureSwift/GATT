@@ -28,7 +28,7 @@ import Bluetooth
             return internalManager.state
         }
         
-        public var read: ()
+        //public var read: ()
         
         // MARK: - Private Properties
         
@@ -38,7 +38,7 @@ import Bluetooth
         
         private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
-        private var services: [Bluetooth.UUID: CBMutableService] = [:]
+        private var services = [CBMutableService]()
         
         // MARK: - Initialization
         
@@ -51,7 +51,7 @@ import Bluetooth
         
         // MARK: - Methods
         
-        public func add(service: Service) throws {
+        public func add(service: Service) throws -> Int {
             
             assert(addServiceState == nil, "Already adding another Service")
             
@@ -77,24 +77,23 @@ import Bluetooth
                 throw error
             }
             
-            services[service.UUID] = coreService
+            services.append(coreService)
+            
+            return services.endIndex
         }
         
-        public func remove(service UUID: Bluetooth.UUID) {
+        public func remove(service index: Int) {
             
-            guard let coreService = services[UUID]
-                else { fatalError("No Service with UUID \(UUID) exists") }
+            internalManager.removeService(services[index])
             
-            internalManager.removeService(coreService)
-            
-            services[UUID] = nil
+            services.removeAtIndex(index)
         }
         
-        public func clearServices() {
+        public func clear() {
             
             internalManager.removeAllServices()
             
-            services = [:]
+            services = []
         }
         
         public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
@@ -135,7 +134,7 @@ import Bluetooth
             
             var foundCharacteristic: CBMutableCharacteristic!
             
-            for service in services.values {
+            for service in services {
                 
                 for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
                     

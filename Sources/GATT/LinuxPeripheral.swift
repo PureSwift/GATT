@@ -36,20 +36,17 @@ public final class LinuxPeripheral: PeripheralManager {
     
     // MARK: - Methods
     
-    public func add(service: Service) throws {
+    public func add(service: Service) throws -> Int {
         
-        database.services.append(service)
+        return database.add(service)
     }
     
-    public func remove(service UUID: Bluetooth.UUID) {
+    public func remove(service index: Int) {
         
-        guard let index = database.services.indexOf({ $0.UUID == UUID })
-            else { fatalError("No Service with UUID \(UUID) exists") }
-        
-        database.services.removeAtIndex(index)
+        database.remove(service: index)
     }
     
-    public func clearServices() {
+    public func clear() {
         
         database.clear()
     }
