@@ -14,23 +14,18 @@ import GATTTest
 
 final class ServerTests: XCTestCase {
 
-    func testServer() {
-        
-        let server = Server()
+    func testRead() {
         
         for service in TestData.services {
             
-            try! server.add(service)
+            for characteristic in service.characteristics {
+                
+                guard characteristic.permissions.contains(.Read) else { continue }
+                
+                let didRead = ServerManager.manager.readServices.contains(characteristic.UUID)
+                
+                XCTAssert(didRead, "Characteristic \(characteristic.UUID) not read")
+            }
         }
-        
-        try! server.start()
-        
-        print("Created server")
-        
-        let sleepTime: UInt32 = 30
-        
-        print("Sleeping for \(sleepTime) seconds...")
-        
-        sleep(sleepTime)
     }
 }
