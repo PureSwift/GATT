@@ -42,6 +42,8 @@ import Bluetooth
         
         private var services = [CBMutableService]()
         
+        private var characteristicValues = [[(CBMutableCharacteristic, Data)]]()
+        
         // MARK: - Methods
         
         public func add(service: Service) throws -> Int {
@@ -72,6 +74,17 @@ import Bluetooth
             
             services.append(coreService)
             
+            var characteristics = [(CBMutableCharacteristic, Data)]()
+            
+            for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerate()  {
+                
+                let data = service.characteristics[index].value
+                
+                characteristics.append((characteristic, data))
+            }
+            
+            characteristicValues.append(characteristics)
+            
             return services.endIndex
         }
         
@@ -80,6 +93,7 @@ import Bluetooth
             internalManager.removeService(services[index])
             
             services.removeAtIndex(index)
+            characteristicValues.removeAtIndex(index)
         }
         
         public func clear() {
@@ -87,6 +101,7 @@ import Bluetooth
             internalManager.removeAllServices()
             
             services = []
+            characteristicValues = []
         }
         
         public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {

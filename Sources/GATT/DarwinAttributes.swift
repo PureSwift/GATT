@@ -51,7 +51,11 @@ import Bluetooth
             
             let permissionsMask = CBAttributePermissions(rawValue: Int(permissions.optionsBitmask()))
             
-            let characteristic = CBMutableCharacteristic(type: UUID.toFoundation(), properties: propertiesMask, value: value.toFoundation(), permissions: permissionsMask)
+            // http://stackoverflow.com/questions/29228244/issues-in-creating-writable-characteristic-in-core-bluetooth-framework#29229075
+            // Characteristics with cached values must be read-only
+            // Must set nil as value.
+            
+            let characteristic = CBMutableCharacteristic(type: UUID.toFoundation(), properties: propertiesMask, value: nil, permissions: permissionsMask)
             
             characteristic.descriptors = descriptors.map { $0.toCoreBluetooth() }
             
