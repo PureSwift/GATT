@@ -23,6 +23,10 @@ public final class LinuxPeripheral: PeripheralManager {
     
     public let maximumTransmissionUnit: Int
     
+    public var willRead: ((UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
+    
+    public var willWrite: ((UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
+    
     // MARK: - Private Properties
     
     private var database = GATTDatabase()

@@ -28,7 +28,9 @@ import Bluetooth
             return internalManager.state
         }
         
-        //public var read: ()
+        public var willRead: ((UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
+        
+        public var willWrite: ((UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
         
         // MARK: - Private Properties
         
@@ -119,12 +121,66 @@ import Bluetooth
         
         public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
             
+            let value = Data(foundation: request.characteristic.value ?? NSData()).byteValue
             
+            let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
+            
+            guard request.offset <= value.count
+                else { internalManager.respondToRequest(request, withResult: .InvalidOffset); return }
+            
+            if let error = willRead?(UUID: UUID, value: Data(byteValue: value), offset: request.offset) {
+                
+                internalManager.respondToRequest(request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                return
+            }
+            
+            let requestedValue = request.offset == 0 ? value : Array(value.suffixFrom(request.offset))
+            
+            request.value = Data(byteValue: requestedValue).toFoundation()
+            
+            internalManager.respondToRequest(request, withResult: .Success)
         }
         
         public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWriteRequests requests: [CBATTRequest]) {
             
+            assert(requests.isEmpty == false)
             
+            var newValues = [Data](count: requests.count, repeatedValue: (Data()))
+            
+            // validate write requests
+            for (index, request) in requests.enumerate() {
+                
+                let value = Data(foundation: request.characteristic.value ?? NSData())
+                
+                let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
+                
+                let newBytes = Data(foundation: request.value ?? NSData())
+                
+                var newValue = value
+                
+                newValue.byteValue.replaceRange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
+                
+                if let error = willWrite?(UUID: UUID, value: value, newValue: (newValue, newBytes, request.offset)) {
+                    
+                    internalManager.respondToRequest(requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                    
+                    return
+                }
+                
+                // compute new data
+                
+                newValues[index] = newValue
+            }
+            
+            // write new values
+            for (index, request) in requests.enumerate() {
+                
+                let newValue = newValues[index]
+                
+                (request.characteristic as! CBMutableCharacteristic).value = newValue.toFoundation()
+            }
+            
+            internalManager.respondToRequest(requests[0], withResult: .Success)
         }
         
         // MARK: - Private Methods
