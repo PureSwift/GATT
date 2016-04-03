@@ -91,6 +91,15 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         }
     }
     
+    func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
+        
+        log("Did discover peripheral \(peripheral.identifier.UUIDString), discovering services")
+        
+        peripheral.delegate = self
+        
+        peripheral.discoverServices(nil)
+    }
+    
     func centralManager(central: CBCentralManager, didRetrievePeripherals peripherals: [CBPeripheral]) {
         
         log("Did retrieve peripherals \(peripherals.map({ $0.identifier.UUIDString })), discovering services")
