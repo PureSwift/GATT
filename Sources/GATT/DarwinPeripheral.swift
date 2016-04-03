@@ -28,6 +28,8 @@ import Bluetooth
             return internalManager.state
         }
         
+        public let localName: String
+        
         public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
         
         public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
@@ -46,6 +48,13 @@ import Bluetooth
         
         private var characteristicValues = [[(characteristic: CBMutableCharacteristic, value: Data)]]()
         
+        // MARK: - Initialization
+        
+        public init(localName: String = "GATT Server") {
+            
+            self.localName = localName
+        }
+        
         // MARK: - Methods
         
         public func start() throws {
@@ -56,7 +65,7 @@ import Bluetooth
             
             startAdvertisingState = (semaphore, nil) // set semaphore
             
-            internalManager.startAdvertising(nil)
+            internalManager.startAdvertising([CBAdvertisementDataLocalNameKey: localName])
             
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
             
@@ -226,7 +235,7 @@ import Bluetooth
                 
                 let newValue = newValues[index]
                 
-                (request.characteristic as! CBMutableCharacteristic).value = newValue.toFoundation()
+                self[request.characteristic] = newValue
             }
             
             internalManager.respondToRequest(requests[0], withResult: .Success)
