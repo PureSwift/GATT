@@ -6,11 +6,12 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import struct SwiftFoundation.UUID
-
-#if os(OSX)
+#if os(OSX) || os(iOS)
+    import CoreBluetooth
+    import struct SwiftFoundation.UUID
     public typealias PeerIdentifier = SwiftFoundation.UUID
 #elseif os(Linux)
+    import struct Bluetooth.Address
     public typealias PeerIdentifier = Bluetooth.Address
 #endif
 
@@ -37,12 +38,23 @@ public struct Central: Peer {
     }
 }
 
+#if os(OSX) || os(iOS)
+    
+    extension Central {
+        
+        init(_ central: CBCentral) {
+            
+            self.identifier = SwiftFoundation.UUID(foundation: central.identifier)
+            self.maximumTranssmissionUnit = central.maximumUpdateValueLength
+        }
+    }
+    
+#endif
+
 /// Peripheral Peer
 ///
 /// Represents a remote peripheral device that has been discovered.
 public struct Peripheral: Peer {
     
     public let identifier: PeerIdentifier
-    
-    
 }

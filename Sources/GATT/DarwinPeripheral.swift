@@ -28,28 +28,19 @@ import Bluetooth
             return internalManager.state
         }
         
-        public var willRead: ((UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
+        public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
+        public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
         
         // MARK: - Private Properties
         
-        private var internalManager: CBPeripheralManager!
+        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
-        private let queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
+        private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
         private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
         private var services = [CBMutableService]()
-        
-        // MARK: - Initialization
-        
-        public override init() {
-            
-            super.init()
-            
-            self.internalManager = CBPeripheralManager(delegate: self, queue: queue)
-        }
         
         // MARK: - Methods
         
@@ -121,6 +112,8 @@ import Bluetooth
         
         public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
             
+            let peer = Central(request.central)
+            
             let value = Data(foundation: request.characteristic.value ?? NSData()).byteValue
             
             let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
@@ -128,7 +121,7 @@ import Bluetooth
             guard request.offset <= value.count
                 else { internalManager.respondToRequest(request, withResult: .InvalidOffset); return }
             
-            if let error = willRead?(UUID: UUID, value: Data(byteValue: value), offset: request.offset) {
+            if let error = willRead?(central: peer, UUID: UUID, value: Data(byteValue: value), offset: request.offset) {
                 
                 internalManager.respondToRequest(request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
                 return
@@ -150,6 +143,8 @@ import Bluetooth
             // validate write requests
             for (index, request) in requests.enumerate() {
                 
+                let peer = Central(request.central)
+                
                 let value = Data(foundation: request.characteristic.value ?? NSData())
                 
                 let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
@@ -160,7 +155,7 @@ import Bluetooth
                 
                 newValue.byteValue.replaceRange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
                 
-                if let error = willWrite?(UUID: UUID, value: value, newValue: (newValue, newBytes, request.offset)) {
+                if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: (newValue, newBytes, request.offset)) {
                     
                     internalManager.respondToRequest(requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
                     

@@ -26,9 +26,9 @@ public protocol PeripheralManager {
     /// Update the value if the characteristic with specified UUID.
     func update(value: Data, forCharacteristic UUID: Bluetooth.UUID)
     
-    var willRead: ((UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)? { get }
+    var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)? { get }
     
-    var willWrite: ((UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)? { get }
+    var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)? { get }
 }
 
 // MARK: - Typealiases
