@@ -143,9 +143,13 @@ import Bluetooth
             characteristicValues = []
         }
         
-        public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
+        // MARK: Subscript
+        
+        public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
             
-            internalManager.updateValue(value.toFoundation(), forCharacteristic: characteristic(UUID), onSubscribedCentrals: nil)
+            get { return self[characteristic(UUID)] }
+            
+            set { internalManager.updateValue(newValue.toFoundation(), forCharacteristic: characteristic(UUID), onSubscribedCentrals: nil) }
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -262,6 +266,8 @@ import Bluetooth
             
             return foundCharacteristic
         }
+        
+        // MARK: Subscript
         
         private subscript(characteristic: CBCharacteristic) -> Data {
             

@@ -65,12 +65,19 @@ public final class LinuxPeripheral: PeripheralManager {
         database.clear()
     }
     
-    public func update(value: Data, forCharacteristic UUID: Bluetooth.UUID) {
+    // MARK: Subscript
+    
+    public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
         
-        let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
+        get { return database.attributes.filter({ $0.UUID == UUID}).first!.value }
         
-        assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
-        
-        database.write(value, forAttribute: matchingAttributes[0].handle)
+        set {
+            
+            let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
+            
+            assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
+            
+            database.write(newValue, forAttribute: matchingAttributes[0].handle)
+        }
     }
 }
