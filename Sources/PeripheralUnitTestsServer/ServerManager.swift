@@ -43,11 +43,16 @@ final class ServerManager {
         
         print("Created server")
         
-        let sleepTime: UInt32 = 10
+        let sleepTime: UInt32 = 20
         
         print("Sleeping for \(sleepTime) seconds...")
         
         sleep(sleepTime)
+    }
+    
+    deinit {
+        
+        server.stop()
     }
     
     // MARK: - Private Methods

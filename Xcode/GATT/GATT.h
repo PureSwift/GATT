@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 //! Project version number for GATT.
 FOUNDATION_EXPORT double GATTVersionNumber;

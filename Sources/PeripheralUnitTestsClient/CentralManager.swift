@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreBluetooth
+import SwiftFoundation
 import Bluetooth
 import GATT
 import GATTTest
@@ -18,19 +19,23 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     
     static let manager = CentralManager()
     
-    lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
+    let scanDuration: UInt32 = 20
     
-    lazy var queue = dispatch_queue_create("CentralManager Queue", nil)
+    private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
+    
+    private lazy var queue = dispatch_queue_create("CentralManager Queue", nil)
     
     private var testService: CBService?
     
-    private var testServiceSemaphore: dispatch_semaphore_t!
+    private var didScan = false
     
     private var poweredOnSemaphore: dispatch_semaphore_t!
     
+    private var foundPeripheral: CBPeripheral?
+    
     // MARK: - Methods
     
-    func fetchTestService() -> CBService {
+    func fetchTestService() -> CBService? {
         
         // return cached service
         if let testService = testService {
@@ -38,18 +43,22 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             return testService
         }
         
+        guard didScan == false else { return nil }
+        
         /// wait for on state
         waitForPoweredOn()
         
         log("Searching for test service \(TestData.testService.UUID)")
         
-        internalManager.scanForPeripheralsWithServices([TestData.testService.UUID.toFoundation()], options: nil)
+        internalManager.scanForPeripheralsWithServices(nil, options: nil)
         
-        testServiceSemaphore = dispatch_semaphore_create(0)
+        print("Waiting for \(scanDuration) seconds")
         
-        dispatch_semaphore_wait(testServiceSemaphore, DISPATCH_TIME_FOREVER)
+        sleep(scanDuration)
         
-        return testService!
+        didScan = true
+        
+        return testService
     }
     
     private func waitForPoweredOn() {
@@ -93,41 +102,53 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
         
-        log("Did discover peripheral \(peripheral.identifier.UUIDString), discovering services")
+        log("Did discover peripheral \(peripheral.identifier.UUIDString)")
+        
+        central.stopScan()
         
         peripheral.delegate = self
         
-        peripheral.discoverServices(nil)
-    }
-    
-    func centralManager(central: CBCentralManager, didRetrievePeripherals peripherals: [CBPeripheral]) {
+        foundPeripheral = peripheral
         
-        log("Did retrieve peripherals \(peripherals.map({ $0.identifier.UUIDString })), discovering services")
-        
-        for peripheral in peripherals {
-            
-            peripheral.delegate = self
-            
-            peripheral.discoverServices(nil)
-        }
+        central.connectPeripheral(peripheral, options: nil)
     }
     
     func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
         
         log("Did connect to peripheral \(peripheral.identifier.UUIDString)")
         
+        peripheral.discoverServices(nil)
+    }
+    
+    func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
         
+        fatalError("Could not connect to peripheral \(peripheral) (\(error))")
     }
     
     // MARK: - CBPeripheralDelegate
     
     func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
         
-        log("Peripheral \(peripheral) did discover services")
+        log("Peripheral \(peripheral.identifier.UUIDString) did discover services")
         
         if let error = error {
             
             log("Error discovering services (\(error))")
+            
+            return
+        }
+        
+        let serviceUUIDs = peripheral.services?.map({ Bluetooth.UUID(foundation: $0.UUID) }) ?? []
+        
+        guard serviceUUIDs.contains(TestData.testService.UUID) else {
+            
+            print("Peripheral \(peripheral.identifier.UUIDString) does not contain the test service UUID, will continue scanning")
+            
+            foundPeripheral = nil
+            
+            internalManager.cancelPeripheralConnection(peripheral)
+            
+            internalManager.scanForPeripheralsWithServices(nil, options: nil)
             
             return
         }
@@ -138,5 +159,29 @@ final class CentralManager: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             
             peripheral.discoverCharacteristics(nil, forService: service)
         }
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+        
+        log("Peripheral \(peripheral.identifier.UUIDString) did discover \(service.characteristics?.count ?? 0) characteristics for service \(service.UUID.UUIDString)")
+        
+        if let error = error {
+            
+            log("Error discovering characteristics (\(error))")
+            
+            return
+        }
+        
+        for characteristic in service.characteristics ?? [] {
+            
+            peripheral.readValueForCharacteristic(characteristic)
+        }
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        
+        log("Peripheral \(peripheral.identifier.UUIDString) did update value for characteristic \(characteristic.UUID.UUIDString)")
+        
+        
     }
 }
