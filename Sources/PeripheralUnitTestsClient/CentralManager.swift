@@ -18,7 +18,7 @@ let central = CentralManager()
 
 let testPeripheral: Peripheral = {
     
-    //central.log = { print($0) }
+    central.log = { print("CentralManager: " + $0) }
     
     central.waitForPoweredOn()
     
