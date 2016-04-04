@@ -39,7 +39,11 @@ let testPeripheral: Peripheral = {
                 continue
             }
             
+            print("Did connect to \(peripheral.identifier)")
+            
             let services = try! central.discover(services: peripheral)
+            
+            print("Discovered services: \(services.map({ $0.UUID }))")
             
             if services.contains({ $0.UUID == TestData.testService.UUID }) {
                 
