@@ -16,10 +16,19 @@ import GATTTest
 
 final class ClientTests: XCTestCase {
     
-    func testFetchPeripheral() {
+    func testServices() {
         
-        testPeripheral
+        for testService in TestData.services {
+            
+            XCTAssert(foundServices.contains({ $0.UUID == TestData.testService.UUID }), "Service \(testService.UUID) not found")
+        }
     }
+    
+    func testCharacteristics() {
+        
+        
+    }
+    
     /*
     func testGetServices() {
         

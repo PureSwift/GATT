@@ -90,22 +90,20 @@ import Bluetooth
             }
         }
         
-        public func connect(peripheral: Peripheral, timeout: Int = 10) throws {
+        public func connect(peripheral: Peripheral, timeout: Int = 5) throws {
             
             sync {
                 
                 let corePeripheral = self.peripheral(peripheral)
-                
-                corePeripheral.delegate = self
                 
                 self.connectingToPeripheral = corePeripheral
                 
                 self.internalManager.connectPeripheral(corePeripheral, options: nil)
             }
             
-            var didTimeout = false
+            var success = true
             
-            do { didTimeout = try wait(timeout) }
+            do { success = try wait(timeout) }
             
             catch {
                 
@@ -117,9 +115,9 @@ import Bluetooth
             // no error
             sync { self.connectingToPeripheral = nil }
             
-            if didTimeout { throw Error.Timeout }
+            guard success else { throw Error.Timeout }
             
-            assert(self.peripheral(peripheral).state != .Disconnected)
+            assert(sync { self.peripheral(peripheral).state != .Disconnected })
         }
         
         public func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
@@ -127,6 +125,8 @@ import Bluetooth
             let corePeripheral: CBPeripheral = sync {
                 
                 let corePeripheral = self.peripheral(peripheral)
+                
+                assert(corePeripheral.state == .Connected)
                 
                 corePeripheral.discoverServices(nil)
                 
@@ -198,14 +198,14 @@ import Bluetooth
             
             if let timeout = timeout {
                 
-                dispatchTime = dispatch_time(DISPATCH_TIME_NOW, Int64(timeout))
+                dispatchTime = dispatch_time(DISPATCH_TIME_NOW, Int64(timeout) * Int64(NSEC_PER_SEC))
                 
             } else {
                 
                 dispatchTime = DISPATCH_TIME_FOREVER
             }
             
-            let didTimeout = dispatch_semaphore_wait(semaphore, dispatchTime) == 0
+            let success = dispatch_semaphore_wait(semaphore, dispatchTime) == 0
             
             let error = operationState.error
             
@@ -217,7 +217,7 @@ import Bluetooth
                 throw error
             }
             
-            return didTimeout
+            return success
         }
         
         private func stopWaiting(error: NSError? = nil, _ function: String = #function) {
@@ -290,12 +290,12 @@ import Bluetooth
         
         public func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
             
-            log?("Did connect to peripheral \(peripheral.identifier.UUIDString)")
+            log?("Connecting to peripheral \(peripheral.identifier.UUIDString)")
             
-            if connectingToPeripheral?.identifier == peripheral.identifier {
+            if connectingToPeripheral === peripheral {
                 
-                assert(connectingToPeripheral === peripheral)
-                
+                assert(peripheral.state != .Disconnected)
+                                
                 stopWaiting()
             }
         }
