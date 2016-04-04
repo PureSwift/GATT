@@ -19,7 +19,16 @@ public protocol NativeCentral {
     func scan(duration: Int) -> [Peripheral]
     
     func connect(peripheral: Peripheral, timeout: Int) throws
+    
+    func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)]
+    
+    func discover(characteristics service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]
+    
+    func read(characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws -> Data
 }
 
-/// The default timeout for Central operations.
-internal let DefaultCentralTimeout = 5
+/// Errors for GATT Central Manager
+public enum CentralError: ErrorType {
+    
+    case Timeout
+}

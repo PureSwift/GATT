@@ -24,15 +24,6 @@ import Bluetooth
     
     extension Service: CoreBluetoothAttributeConvertible {
         
-        /*
-        init(_ CoreBluetooth: CBService) {
-            
-            self.UUID = Bluetooth.UUID(foundation: CoreBluetooth.UUID)
-            self.primary = CoreBluetooth.isPrimary
-            self.includedServices = [] // TODO: Implement included services
-            self.characteristics = (CoreBluetooth.characteristics ?? []).map { Characteristic(foundation: $0) }
-        }*/
-        
         func toCoreBluetooth() -> CBMutableService {
             
             let service = CBMutableService(type: UUID.toFoundation(), primary: primary)
@@ -86,6 +77,53 @@ import Bluetooth
             default: fatalError("Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported. Unsupported UUID \(UUID).")
             }
         }
+    }
+    
+    internal protocol CoreBluetoothBitmaskConvertible: RawRepresentable {
+        
+        associatedtype CoreBluetoothBitmaskType: OptionSetType
+        
+        /// Values that are supported in CoreBluetooth
+        static var CoreBluetoothValues: [Self] { get }
+        
+        /// Convert from CoreBluetooth bitmask.
+        static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self]
+    }
+    
+    extension CoreBluetoothBitmaskConvertible where RawValue: IntegerType, CoreBluetoothBitmaskType.RawValue: IntegerType {
+        
+        static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self] {
+            
+            let bitmask = CoreBluetooth.rawValue.toIntMax()
+            
+            var convertedValues = [Self]()
+            
+            for possibleValue in Self.CoreBluetoothValues {
+                
+                let rawValue = possibleValue.rawValue.toIntMax()
+                
+                if rawValue & bitmask == rawValue {
+                    
+                    convertedValues.append(possibleValue)
+                }
+            }
+            
+            return convertedValues
+        }
+    }
+    
+    extension GATT.CharacteristicProperty: CoreBluetoothBitmaskConvertible {
+        
+        typealias CoreBluetoothBitmaskType = CBCharacteristicProperties
+        
+        static let CoreBluetoothValues: [GATT.CharacteristicProperty] = [.Broadcast, .Read, .WriteWithoutResponse, .Write, .Notify, .Indicate, .SignedWrite, .ExtendedProperties]
+    }
+    
+    extension ATT.AttributePermission: CoreBluetoothBitmaskConvertible {
+        
+        typealias CoreBluetoothBitmaskType = CBAttributePermissions
+        
+        static let CoreBluetoothValues = [.Read, .Write] + ATT.AttributePermission.Encrypt
     }
 
 #endif

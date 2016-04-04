@@ -16,8 +16,14 @@ import GATTTest
 
 final class ClientTests: XCTestCase {
     
+    func testFetchPeripheral() {
+        
+        testPeripheral
+    }
+    
     func testGetServices() {
         
+        /*
         guard let service = CentralManager.manager.fetchTestService()
             else { XCTFail("Could not fetch test service. "); return }
         
@@ -50,5 +56,6 @@ final class ClientTests: XCTestCase {
                 }
             }
         }
+        */
     }
 }
