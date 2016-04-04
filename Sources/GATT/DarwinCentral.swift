@@ -73,26 +73,35 @@ import Bluetooth
         
         public func scan(duration: Int = 5) -> [Peripheral] {
             
-            scanPeripherals = []
-            
-            internalManager.scanForPeripheralsWithServices(nil, options: nil)
+            sync {
+                
+                self.scanPeripherals = []
+                
+                self.internalManager.scanForPeripheralsWithServices(nil, options: nil)
+            }
             
             sleep(UInt32(duration))
             
-            internalManager.stopScan()
-            
-            return scanPeripherals.map { Peripheral($0) }
+            return sync {
+                
+                self.internalManager.stopScan()
+                
+                return self.scanPeripherals.map { Peripheral($0) }
+            }
         }
         
         public func connect(peripheral: Peripheral, timeout: Int = 10) throws {
             
-            let corePeripheral = self.peripheral(peripheral)
-            
-            corePeripheral.delegate = self
-            
-            connectingToPeripheral = corePeripheral
-            
-            internalManager.connectPeripheral(corePeripheral, options: nil)
+            sync {
+                
+                let corePeripheral = self.peripheral(peripheral)
+                
+                corePeripheral.delegate = self
+                
+                self.connectingToPeripheral = corePeripheral
+                
+                self.internalManager.connectPeripheral(corePeripheral, options: nil)
+            }
             
             var didTimeout = false
             
@@ -100,28 +109,33 @@ import Bluetooth
             
             catch {
                 
-                connectingToPeripheral = nil
+                sync { self.connectingToPeripheral = nil }
                 
                 throw error
             }
             
             // no error
-            connectingToPeripheral = nil
+            sync { self.connectingToPeripheral = nil }
             
             if didTimeout { throw Error.Timeout }
             
-            assert(corePeripheral.state != .Disconnected)
+            assert(self.peripheral(peripheral).state != .Disconnected)
         }
         
         public func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
             
-            let corePeripheral = self.peripheral(peripheral)
-            
-            corePeripheral.discoverServices(nil)
+            let corePeripheral: CBPeripheral = sync {
+                
+                let corePeripheral = self.peripheral(peripheral)
+                
+                corePeripheral.discoverServices(nil)
+                
+                return corePeripheral
+            }
             
             try wait()
             
-            return (corePeripheral.services ?? []).map { (Bluetooth.UUID(foundation: $0.UUID), $0.isPrimary) }
+            return sync { (corePeripheral.services ?? []).map { (Bluetooth.UUID(foundation: $0.UUID), $0.isPrimary) } }
         }
         
         public func discover(characteristics service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])] {

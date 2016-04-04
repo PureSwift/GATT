@@ -20,11 +20,10 @@ final class ClientTests: XCTestCase {
         
         testPeripheral
     }
-    
+    /*
     func testGetServices() {
         
-        /*
-        guard let service = CentralManager.manager.fetchTestService()
+        guard let service = TestCentralManager.manager.fetchTestService()
             else { XCTFail("Could not fetch test service. "); return }
         
         let foundServices = service.peripheral.services ?? []
@@ -52,10 +51,10 @@ final class ClientTests: XCTestCase {
                     
                     let foundData = Data(foundation: (foundCharacteristic.value ?? NSData()))
                     
-                    XCTAssert(foundData == characteristic.value, "Test characteristic \(characteristic.UUID) data does not match. (\(foundData.toFoundation()) == \(characteristic.value.toFoundation()))")
+                    //XCTAssert(foundData == characteristic.value, "Test characteristic \(characteristic.UUID) data does not match. (\(foundData.toFoundation()) == \(characteristic.value.toFoundation()))")
                 }
             }
         }
-        */
-    }
+ 
+    }*/
 }
