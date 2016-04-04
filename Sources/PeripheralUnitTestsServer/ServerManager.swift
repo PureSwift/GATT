@@ -15,23 +15,25 @@ import GATTTest
 
 let sleepTime: UInt32 = 10
 
-let manager: PeripheralManager = {
+let peripheral: PeripheralManager = {
     
-    let manager = PeripheralManager()
+    let peripheral = PeripheralManager()
     
     for service in TestData.services {
         
-        try! server.add(service)
+        try! peripheral.add(service)
     }
     
-    server.willRead = willRead
-    server.willWrite = willWrite
+    peripheral.willRead = willRead
+    peripheral.willWrite = willWrite
     
-    try! server.start()
+    try! peripheral.start()
     
     print("Sleeping for \(sleepTime) seconds...")
     
     sleep(sleepTime)
+    
+    return peripheral
 }()
 
 private(set) var readServices: [Bluetooth.UUID] = []

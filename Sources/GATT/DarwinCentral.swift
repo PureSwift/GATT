@@ -280,6 +280,8 @@ import Bluetooth
             
             if connectingToPeripheral?.identifier == peripheral.identifier {
                 
+                assert(connectingToPeripheral === peripheral)
+                
                 stopWaiting()
             }
         }
