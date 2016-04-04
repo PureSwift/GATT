@@ -38,7 +38,7 @@ import Bluetooth
         
         private var poweredOnSemaphore: dispatch_semaphore_t!
         
-        private var connectState: (semaphore: dispatch_semaphore_t, error: NSError?)!
+        private var operationState: (semaphore: dispatch_semaphore_t, error: NSError?)!
         
         private var scanPeripherals = [CBPeripheral]()
         
@@ -80,26 +80,22 @@ import Bluetooth
         
         public func connect(peripheral: Peripheral, timeout: Int = DefaultCentralTimeout) throws {
             
-            assert(connectState == nil, "Already started connecting")
-            
-            let semaphore = dispatch_semaphore_create(0)
-            
-            connectState = (semaphore, nil) // set semaphore
-            
             let corePeripheral = self.peripheral(peripheral)
+            
             internalManager.connectPeripheral(corePeripheral, options: nil)
             
-            dispatch_semaphore_wait(semaphore, NSEC_PER_SEC * UInt64(timeout))
+            try wait(NSEC_PER_SEC * UInt64(timeout))
+        }
+        
+        public func discoverServices(peripheral: Peripheral) throws -> [Service] {
             
-            let error = connectState.error
+            let corePeripheral = self.peripheral(peripheral)
             
-            // clear
-            connectState = nil
+            corePeripheral.discoverServices(nil)
             
-            if let error = error {
-                
-                throw error
-            }
+            try wait()
+            
+            
         }
         
         // MARK: - Private Methods
@@ -113,6 +109,38 @@ import Bluetooth
             }
             
             fatalError("\(peripheral) not found")
+        }
+        
+        private func wait(time: UInt64 = DISPATCH_TIME_FOREVER) throws {
+            
+            assert(operationState == nil, "Already waiting for an asyncronous operation to finish")
+            
+            let semaphore = dispatch_semaphore_create(0)
+            
+            // set semaphore
+            operationState = (semaphore, nil)
+            
+            // wait
+            dispatch_semaphore_wait(semaphore, time)
+            
+            let error = operationState.error
+            
+            // clear state
+            operationState = nil
+            
+            if let error = error {
+                
+                throw error
+            }
+        }
+        
+        private func stopWaiting(error: NSError? = nil, _ function: String = #function) {
+            
+            assert(operationState != nil, "Did not expect \(function)")
+            
+            operationState.error = error
+            
+            dispatch_semaphore_signal(operationState.semaphore)
         }
         
         // MARK: - CBCentralManagerDelegate
@@ -140,27 +168,22 @@ import Bluetooth
             
             log?("Did connect to peripheral \(peripheral.identifier.UUIDString)")
             
-            guard connectState != nil else { fatalError("Did not expect \(#function)") }
-            
-            connectState.error = nil
-            
-            dispatch_semaphore_signal(connectState.semaphore)
+            stopWaiting()
         }
         
         public func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
             
             log?("Did fail to connect to peripheral \(peripheral.identifier.UUIDString) (\(error!))")
             
-            guard connectState != nil else { fatalError("Did not expect \(#function)") }
-            
-            connectState.error = error!
-            
-            dispatch_semaphore_signal(connectState.semaphore)
+            stopWaiting(error)
         }
         
         // MARK: - CBPeripheralDelegate
         
-        
+        public func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+            
+            
+        }
     }
 
 #endif
