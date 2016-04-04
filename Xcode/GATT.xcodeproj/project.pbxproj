@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
+		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
 		6E4CA8651CB113E8008316A9 /* GATTTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6481CB0FD9500F0ABF3 /* GATTTest.framework */; };
 		6E4CA86C1CB113FA008316A9 /* Bluetooth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E4CA86D1CB113FA008316A9 /* BluetoothLinux.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -24,7 +26,7 @@
 		6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7BD64B1CB0FD9500F0ABF3 /* GATTTest.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6E7BD6521CB0FE1B00F0ABF3 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */; };
-		6E96454C1CB10330002E7C87 /* PeripheralTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* PeripheralTests.swift */; };
+		6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */; };
 		6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
@@ -101,6 +103,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
+		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
 		6E4CA8601CB113E8008316A9 /* PeripheralUnitTestsServer.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsServer.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E4CA8641CB113E8008316A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E4CA8701CB11486008316A9 /* ServerManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
@@ -111,7 +115,7 @@
 		6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Peer.swift; sourceTree = "<group>"; };
 		6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinuxPeripheral.swift; sourceTree = "<group>"; };
 		6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CentralManager.swift; sourceTree = "<group>"; };
-		6E7BD6201CB0F9B200F0ABF3 /* PeripheralTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeripheralTests.swift; sourceTree = "<group>"; };
+		6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClientTests.swift; sourceTree = "<group>"; };
 		6E7BD6271CB0FAB700F0ABF3 /* PeripheralUnitTestsClient.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsClient.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7BD62B1CB0FAB700F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bluetooth.framework; sourceTree = "<group>"; };
@@ -184,7 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */,
-				6E7BD6201CB0F9B200F0ABF3 /* PeripheralTests.swift */,
+				6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */,
 			);
 			path = PeripheralUnitTestsClient;
 			sourceTree = "<group>";
@@ -289,6 +293,8 @@
 				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
 				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
 				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
+				6E17DC221CB1DC250043C644 /* Central.swift */,
+				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -481,7 +487,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E96454C1CB10330002E7C87 /* PeripheralTests.swift in Sources */,
+				6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */,
 				6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -498,10 +504,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E17DC231CB1DC250043C644 /* Central.swift in Sources */,
 				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
 				6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */,
 				6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */,
 				6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */,
+				6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */,
 				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -58,3 +58,17 @@ public struct Peripheral: Peer {
     
     public let identifier: PeerIdentifier
 }
+
+#if os(OSX) || os(iOS)
+    
+    extension Peripheral {
+        
+        init(_ central: CBPeripheral) {
+            
+            self.identifier = SwiftFoundation.UUID(foundation: central.identifier)
+        }
+    }
+
+#endif
+
+

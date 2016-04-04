@@ -15,9 +15,9 @@ import Bluetooth
     import CoreBluetooth
     
     /// The platform specific peripheral. 
-    public typealias Server = DarwinPeripheral
+    public typealias PeripheralManager = DarwinPeripheral
     
-    public final class DarwinPeripheral: NSObject, CBPeripheralManagerDelegate, PeripheralManager {
+    public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
         // MARK: - Properties
         

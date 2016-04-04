@@ -14,7 +14,7 @@ import Bluetooth
 import GATT
 import GATTTest
 
-final class PeripheralTests: XCTestCase {
+final class ClientTests: XCTestCase {
     
     func testGetServices() {
         

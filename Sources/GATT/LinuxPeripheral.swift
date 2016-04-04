@@ -12,10 +12,10 @@ import BluetoothLinux
 
 #if os(Linux)
     /// The platform specific peripheral.
-    public typealias Server = LinuxPeripheral
+    public typealias PeripheralManager = LinuxPeripheral
 #endif
 
-public final class LinuxPeripheral: PeripheralManager {
+public final class LinuxPeripheral: NativePeripheral {
     
     // MARK: - Properties
     

@@ -9,8 +9,10 @@
 import SwiftFoundation
 import Bluetooth
 
-/// GATT Peripheral Manager Interface
-public protocol PeripheralManager {
+/// GATT Peripheral Manager
+///
+/// Implementation varies by operating system.
+public protocol NativePeripheral {
     
     /// Attempts to add the specified service to the GATT database.
     ///
