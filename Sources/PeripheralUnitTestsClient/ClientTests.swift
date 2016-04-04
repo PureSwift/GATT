@@ -20,13 +20,46 @@ final class ClientTests: XCTestCase {
         
         for testService in TestData.services {
             
-            XCTAssert(foundServices.contains({ $0.UUID == TestData.testService.UUID }), "Service \(testService.UUID) not found")
+            guard let foundService = foundServices.filter({ $0.UUID == TestData.testService.UUID }).first
+                else { XCTFail("Service \(testService.UUID) not found"); continue }
+            
+            /*
+            XCTAssert(foundService.primary == testService.primary,
+                      "Service \(testService.UUID) primary is \(foundService.primary), should be \(testService.primary)")
+            */
         }
     }
     
     func testCharacteristics() {
         
-        
+        for testService in TestData.services {
+            
+            guard let characteristics = foundCharacteristics[testService.UUID]
+                else { XCTFail("No characteristics found for service \(testService.UUID)"); continue }
+            
+            for testCharacteristic in testService.characteristics {
+                
+                guard let foundCharacteristic = characteristics.filter({ $0.UUID == testCharacteristic.UUID }).first
+                    else { XCTFail("Characteristic \(testCharacteristic.UUID) not found"); continue }
+                
+                // validate properties (CoreBluetooth Peripheral may add extended properties)
+                for property in testCharacteristic.properties {
+                    
+                    guard foundCharacteristic.properties.contains(property)
+                        else { XCTFail("Property \(property) not found in \(testCharacteristic.UUID)"); continue }
+                }
+                
+                // permissions are server-side only
+                
+                // read value
+                if testCharacteristic.properties.contains(.Read) {
+                    
+                    let foundData = foundCharacteristicValues[testCharacteristic.UUID]
+                    
+                    XCTAssert(foundData == testCharacteristic.value, "Invalid value for characteristic \(testCharacteristic.UUID)")
+                }
+            }
+        }
     }
     
     /*

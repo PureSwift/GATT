@@ -16,8 +16,6 @@ import GATTTest
 
 let central = CentralManager()
 
-private var testServicesCache: [(UUID: Bluetooth.UUID, primary: Bool)]!
-
 let testPeripheral: Peripheral = {
     
     //central.log = { print("CentralManager: " + $0) }
@@ -57,6 +55,8 @@ let testPeripheral: Peripheral = {
     }
 }()
 
+private var testServicesCache: [(UUID: Bluetooth.UUID, primary: Bool)]!
+
 let foundServices: [(UUID: Bluetooth.UUID, primary: Bool)] = {
    
     // get the peripheral first
@@ -64,4 +64,40 @@ let foundServices: [(UUID: Bluetooth.UUID, primary: Bool)] = {
     
     // return the cached services
     return testServicesCache
+}()
+
+let foundCharacteristics: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]] = {
+    
+    var found: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]] = [:]
+    
+    for service in foundServices {
+        
+        let characteristics = try! central.discover(characteristics: service.UUID, peripheral: testPeripheral)
+        
+        print("Found \(characteristics.count) characteristics for service \(service.UUID)")
+        
+        found[service.UUID] = characteristics
+    }
+    
+    return found
+}()
+
+let foundCharacteristicValues: [Bluetooth.UUID: Data] = {
+    
+    var values: [Bluetooth.UUID: Data] = [:]
+    
+    for (service, characteristics) in foundCharacteristics {
+        
+        /// Read the value of characteristics that are Readable
+        for characteristic in characteristics where characteristic.properties.contains(.Read) {
+            
+            let data = try! central.read(characteristic: characteristic.UUID, service: service, peripheral: testPeripheral)
+            
+            print("Read characteristic \(characteristic.UUID) (\(data.byteValue.count) bytes)")
+            
+            values[characteristic.UUID] = data
+        }
+    }
+    
+    return values
 }()
