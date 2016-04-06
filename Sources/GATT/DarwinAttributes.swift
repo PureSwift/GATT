@@ -61,7 +61,7 @@ import Bluetooth
             let foundationUUID = UUID.toFoundation()
             
             // Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported.
-            switch foundationUUID.UUIDString {
+            switch foundationUUID.uuidString {
                 
             case CBUUIDCharacteristicUserDescriptionString:
                 
@@ -81,7 +81,7 @@ import Bluetooth
     
     internal protocol CoreBluetoothBitmaskConvertible: RawRepresentable {
         
-        associatedtype CoreBluetoothBitmaskType: OptionSetType
+        associatedtype CoreBluetoothBitmaskType: OptionSet
         
         /// Values that are supported in CoreBluetooth
         static var CoreBluetoothValues: [Self] { get }
@@ -90,7 +90,7 @@ import Bluetooth
         static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self]
     }
     
-    extension CoreBluetoothBitmaskConvertible where RawValue: IntegerType, CoreBluetoothBitmaskType.RawValue: IntegerType {
+    extension CoreBluetoothBitmaskConvertible where RawValue: Integer, CoreBluetoothBitmaskType.RawValue: Integer {
         
         static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self] {
             

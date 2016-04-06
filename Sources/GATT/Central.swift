@@ -28,7 +28,7 @@ public protocol NativeCentral {
 }
 
 /// Errors for GATT Central Manager
-public enum CentralError: ErrorType {
+public enum CentralError: ErrorProtocol {
     
     case Timeout
 }

@@ -97,7 +97,8 @@ import Bluetooth
             
             // add service
             let coreService = service.toCoreBluetooth()
-            internalManager.addService(coreService)
+            
+            internalManager.add(coreService)
             
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
             
@@ -115,7 +116,7 @@ import Bluetooth
             
             var characteristics = [(characteristic: CBMutableCharacteristic, value: Data)]()
             
-            for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerate()  {
+            for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
                 
                 let data = service.characteristics[index].value
                 
@@ -129,10 +130,10 @@ import Bluetooth
         
         public func remove(service index: Int) {
             
-            internalManager.removeService(services[index])
+            internalManager.remove(services[index])
             
-            services.removeAtIndex(index)
-            characteristicValues.removeAtIndex(index)
+            services.remove(at: index)
+            characteristicValues.remove(at: index)
         }
         
         public func clear() {
@@ -149,7 +150,7 @@ import Bluetooth
             
             get { return self[characteristic(UUID)] }
             
-            set { internalManager.updateValue(newValue.toFoundation(), forCharacteristic: characteristic(UUID), onSubscribedCentrals: nil) }
+            set { internalManager.updateValue(newValue.toFoundation(), for: characteristic(UUID), onSubscribedCentrals: nil) }
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -168,7 +169,8 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
+        public func peripheralManager(peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+            
             
             guard let semaphore = addServiceState?.semaphore else { fatalError("Did not expect \(#function)") }
             
@@ -177,54 +179,54 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
+        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
             
             let value = self[request.characteristic].byteValue
             
-            let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
+            let UUID = Bluetooth.UUID(foundation: request.characteristic.uuid)
             
             guard request.offset <= value.count
-                else { internalManager.respondToRequest(request, withResult: .InvalidOffset); return }
+                else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
             if let error = willRead?(central: peer, UUID: UUID, value: Data(byteValue: value), offset: request.offset) {
                 
-                internalManager.respondToRequest(request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                internalManager.respond(to: request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
                 return
             }
             
-            let requestedValue = request.offset == 0 ? value : Array(value.suffixFrom(request.offset))
+            let requestedValue = request.offset == 0 ? value : Array(value.suffix(request.offset))
             
             request.value = Data(byteValue: requestedValue).toFoundation()
             
-            internalManager.respondToRequest(request, withResult: .Success)
+            internalManager.respond(to: request, withResult: .success)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWriteRequests requests: [CBATTRequest]) {
+        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
             
             assert(requests.isEmpty == false)
             
-            var newValues = [Data](count: requests.count, repeatedValue: (Data()))
+            var newValues = [Data](repeating: Data(), count: requests.count)
             
             // validate write requests
-            for (index, request) in requests.enumerate() {
+            for (index, request) in requests.enumerated() {
                 
                 let peer = Central(request.central)
                 
                 let value = self[request.characteristic]
                 
-                let UUID = Bluetooth.UUID(foundation: request.characteristic.UUID)
+                let UUID = Bluetooth.UUID(foundation: request.characteristic.uuid)
                 
                 let newBytes = Data(foundation: request.value ?? NSData())
                 
                 var newValue = value
                 
-                newValue.byteValue.replaceRange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
+                newValue.byteValue.replaceSubrange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
                 
                 if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: (newValue, newBytes, request.offset)) {
                     
-                    internalManager.respondToRequest(requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                    internalManager.respond(to: requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
                     
                     return
                 }
@@ -235,14 +237,14 @@ import Bluetooth
             }
             
             // write new values
-            for (index, request) in requests.enumerate() {
+            for (index, request) in requests.enumerated() {
                 
                 let newValue = newValues[index]
                 
                 self[request.characteristic] = newValue
             }
             
-            internalManager.respondToRequest(requests[0], withResult: .Success)
+            internalManager.respond(to: requests[0], withResult: .success)
         }
         
         // MARK: - Private Methods
@@ -256,7 +258,7 @@ import Bluetooth
                 
                 for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
                     
-                    guard UUID != Bluetooth.UUID(foundation: characteristic.UUID!)
+                    guard UUID != Bluetooth.UUID(foundation: characteristic.uuid!)
                         else { foundCharacteristic = characteristic; break }
                 }
             }
@@ -289,9 +291,9 @@ import Bluetooth
             
             set {
                 
-                for (serviceIndex, service) in characteristicValues.enumerate() {
+                for (serviceIndex, service) in characteristicValues.enumerated() {
                     
-                    for (characteristicIndex, characteristicValue) in service.enumerate() {
+                    for (characteristicIndex, characteristicValue) in service.enumerated() {
                         
                         if characteristicValue.characteristic === characteristic {
                             
