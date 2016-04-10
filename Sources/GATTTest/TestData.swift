@@ -12,10 +12,9 @@ import GATT
 
 public struct TestData {
     
-    public static var testService: Service {
-        
-        return TestData.services[0]
-    }
+    public static let testService = TestData.services[0]
+    
+    public static let writeOnlyCharacteristic = TestData.services[2].characteristics[1]
     
     public static let services: [Service] = {
         

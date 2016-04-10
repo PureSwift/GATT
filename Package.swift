@@ -11,5 +11,6 @@ let package = Package(
             dependencies: [.Target(name: "GATT")]),
         Target(
             name: "GATT")
-    ]
+    ],
+    excluded: ["Xcode", "Sources/PeripheralUnitTestsClient"]
 )

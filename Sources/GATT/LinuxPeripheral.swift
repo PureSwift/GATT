@@ -23,6 +23,8 @@ public final class LinuxPeripheral: NativePeripheral {
     
     public let maximumTransmissionUnit: Int
     
+    public let adapter: Adapter
+    
     public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
     
     public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
@@ -31,10 +33,17 @@ public final class LinuxPeripheral: NativePeripheral {
     
     private var database = GATTDatabase()
     
+    private var isServerRunning = false
+    
+    private var serverSocket: L2CAPSocket!
+    
+    private var serverThread: Thread!
+    
     // MARK: - Initialization
     
-    public init(maximumTransmissionUnit: Int = ATT.MTU.LowEnergy.Default) {
+    public init(adapter: Adapter = try! Adapter(), maximumTransmissionUnit: Int = ATT.MTU.LowEnergy.Default) {
         
+        self.adapter = adapter
         self.maximumTransmissionUnit = maximumTransmissionUnit
     }
     
@@ -42,12 +51,51 @@ public final class LinuxPeripheral: NativePeripheral {
     
     public func start() throws {
         
+        isServerRunning = false
         
+        let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
+        
+        let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .LowEnergyPublic, securityLevel: .Low)
+        
+        let serverThread = try Thread(closure: { [weak self] in
+            
+            guard let peripheral = self else { return }
+            
+            do {
+                
+                let newSocket = try serverSocket.waitForConnection()
+                
+                peripheral.log?("New \(newSocket.addressType) connection from \(newSocket.address)")
+                
+                let server = GATTServer(socket: newSocket)
+                
+                server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
+                
+                server.database = peripheral.database
+                
+                // create new thread for new connection
+                
+                let connectionThread = try Thread(closure: {
+                    
+                    
+                })
+            }
+            
+            catch { peripheral.log?("Error: \(error)") }
+        })
+        
+        self.serverSocket = serverSocket
+        self.serverThread = serverThread
+        
+        isServerRunning = true
     }
     
     public func stop() {
         
+        guard isServerRunning else { return }
         
+        self.serverSocket = nil
+        self.serverThread = nil
     }
     
     public func add(service: Service) throws -> Int {

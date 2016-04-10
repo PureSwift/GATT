@@ -241,9 +241,9 @@
 		6EE84D7A1CAF419D00A40C4D = {
 			isa = PBXGroup;
 			children = (
-				6E7BD6331CB0FB4600F0ABF3 /* Dependencies */,
 				6E7BD6121CAF9C9500F0ABF3 /* Cartfile */,
 				6E7BD6131CAF9C9500F0ABF3 /* Package.swift */,
+				6E7BD6331CB0FB4600F0ABF3 /* Dependencies */,
 				6EE84D9E1CAF421100A40C4D /* Sources */,
 				6EE84D861CAF419D00A40C4D /* GATT */,
 				6E7BD6281CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */,
