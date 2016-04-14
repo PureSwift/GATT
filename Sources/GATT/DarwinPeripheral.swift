@@ -155,12 +155,12 @@ import Bluetooth
         
         // MARK: - CBPeripheralManagerDelegate
         
-        public func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
+        public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
             
             stateChanged(peripheral.state)
         }
         
-        public func peripheralManagerDidStartAdvertising(peripheral: CBPeripheralManager, error: NSError?) {
+        public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: NSError?) {
             
             guard let semaphore = startAdvertisingState?.semaphore else { fatalError("Did not expect \(#function)") }
             
@@ -169,7 +169,7 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
             
             
             guard let semaphore = addServiceState?.semaphore else { fatalError("Did not expect \(#function)") }
@@ -179,7 +179,7 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
             
@@ -203,7 +203,7 @@ import Bluetooth
             internalManager.respond(to: request, withResult: .success)
         }
         
-        public func peripheralManager(peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
             
             assert(requests.isEmpty == false)
             
@@ -250,7 +250,7 @@ import Bluetooth
         // MARK: - Private Methods
         
         /// Find the characteristic with the specified UUID.
-        private func characteristic(UUID: Bluetooth.UUID) -> CBMutableCharacteristic {
+        private func characteristic(_ UUID: Bluetooth.UUID) -> CBMutableCharacteristic {
             
             var foundCharacteristic: CBMutableCharacteristic!
             

@@ -31,9 +31,9 @@ public final class LinuxPeripheral: NativePeripheral {
     
     // MARK: - Private Properties
     
-    private var database = GATTDatabase()
+    private var database = Atomic(GATTDatabase())
     
-    private var isServerRunning = false
+    private var isServerRunning = Atomic(false)
     
     private var serverSocket: L2CAPSocket!
     
@@ -51,48 +51,72 @@ public final class LinuxPeripheral: NativePeripheral {
     
     public func start() throws {
         
-        isServerRunning = false
+        guard isServerRunning.value == false else { return }
         
         let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
         
         let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .LowEnergyPublic, securityLevel: .Low)
         
-        let serverThread = try Thread(closure: { [weak self] in
+        isServerRunning.value = true
+        
+        let serverThread = try! Thread({ [weak self] in
             
             guard let peripheral = self else { return }
             
-            do {
+            while peripheral.isServerRunning.value {
                 
-                let newSocket = try serverSocket.waitForConnection()
-                
-                peripheral.log?("New \(newSocket.addressType) connection from \(newSocket.address)")
-                
-                let server = GATTServer(socket: newSocket)
-                
-                server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
-                
-                server.database = peripheral.database
-                
-                // create new thread for new connection
-                
-                let connectionThread = try Thread(closure: {
+                do {
                     
+                    let newSocket = try serverSocket.waitForConnection()
                     
-                })
+                    peripheral.log?("New \(newSocket.addressType) connection from \(newSocket.address)")
+                    
+                    let server = GATTServer(socket: newSocket)
+                    
+                    server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
+                    
+                    server.database = peripheral.database.value
+                    
+                    // create new thread for new connection
+                    
+                    let _ = try! Thread({
+                        
+                        while peripheral.isServerRunning.value {
+                            
+                            do {
+                                
+                                server.database = peripheral.database.value
+                                
+                                var pendingWrite = true
+                                
+                                while pendingWrite {
+                                    
+                                    pendingWrite = try server.write()
+                                }
+                                
+                                try server.read()
+                                
+                                peripheral.database.value = server.database
+                            }
+                            
+                            catch { peripheral.log?("Error: \(error)") }
+                        }
+                    })
+                }
+                    
+                catch { peripheral.log?("Error waiting for new connection: \(error)") }
             }
-            
-            catch { peripheral.log?("Error: \(error)") }
         })
         
         self.serverSocket = serverSocket
         self.serverThread = serverThread
-        
-        isServerRunning = true
     }
     
     public func stop() {
         
-        guard isServerRunning else { return }
+        guard isServerRunning.value else { return }
+        
+        isServerRunning.value = false
         
         self.serverSocket = nil
         self.serverThread = nil
@@ -100,32 +124,32 @@ public final class LinuxPeripheral: NativePeripheral {
     
     public func add(service: Service) throws -> Int {
         
-        return database.add(service)
+        return database.value.add(service)
     }
     
     public func remove(service index: Int) {
         
-        database.remove(service: index)
+        database.value.remove(service: index)
     }
     
     public func clear() {
         
-        database.clear()
+        database.value.clear()
     }
     
     // MARK: Subscript
     
     public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
         
-        get { return database.attributes.filter({ $0.UUID == UUID}).first!.value }
+        get { return database.value.attributes.filter({ $0.UUID == UUID}).first!.value }
         
         set {
             
-            let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
+            let matchingAttributes = database.value.attributes.filter({ $0.UUID == UUID })
             
             assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
             
-            database.write(newValue, forAttribute: matchingAttributes[0].handle)
+            database.value.write(newValue, forAttribute: matchingAttributes[0].handle)
         }
     }
 }

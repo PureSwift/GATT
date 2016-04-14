@@ -13,7 +13,9 @@ import GATT
 import GATTTest
 
 final class ServerTests: XCTestCase {
-
+    
+    static let allTests: [(String, ServerTests -> () throws -> Void)] = [("testRead", testRead)]
+    
     func testRead() {
         
         peripheral

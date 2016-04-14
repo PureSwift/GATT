@@ -18,7 +18,7 @@ public protocol NativeCentral {
     
     func scan(duration: Int) -> [Peripheral]
     
-    func connect(peripheral: Peripheral, timeout: Int) throws
+    func connect(_ peripheral: Peripheral, timeout: Int) throws
     
     func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)]
     

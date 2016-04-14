@@ -90,7 +90,7 @@ import Bluetooth
             }
         }
         
-        public func connect(peripheral: Peripheral, timeout: Int = 5) throws {
+        public func connect(_ peripheral: Peripheral, timeout: Int = 5) throws {
             
             sync {
                 
@@ -148,7 +148,7 @@ import Bluetooth
             
             try wait()
             
-            return (coreService.characteristics ?? []).map { (Bluetooth.UUID(foundation: $0.uuid), Characteristic.Property.from($0.properties)) }
+            return (coreService.characteristics ?? []).map { (Bluetooth.UUID(foundation: $0.uuid), Characteristic.Property.from(CoreBluetooth: $0.properties)) }
         }
         
         public func read(characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws -> Data {
@@ -172,7 +172,7 @@ import Bluetooth
         
         // MARK: - Private Methods
         
-        private func peripheral(peripheral: Peripheral) -> CBPeripheral {
+        private func peripheral(_ peripheral: Peripheral) -> CBPeripheral {
             
             for foundPeripheral in scanPeripherals {
                 
@@ -183,7 +183,7 @@ import Bluetooth
             fatalError("\(peripheral) not found")
         }
         
-        private func wait(timeout: Int? = nil) throws -> Bool {
+        private func wait(_ timeout: Int? = nil) throws -> Bool {
             
             assert(operationState == nil, "Already waiting for an asyncronous operation to finish")
             
@@ -220,7 +220,7 @@ import Bluetooth
             return success
         }
         
-        private func stopWaiting(error: NSError? = nil, _ function: String = #function) {
+        private func stopWaiting(_ error: NSError? = nil, _ function: String = #function) {
             
             assert(operationState != nil, "Did not expect \(function)")
             
@@ -230,7 +230,7 @@ import Bluetooth
         }
         
         /// Perform a task on the internal queue and wait. Can throw error.
-        private func sync<T>(block: () throws -> T) throws -> T {
+        private func sync<T>(_ block: () throws -> T) throws -> T {
             
             var blockValue: T!
             
@@ -252,7 +252,7 @@ import Bluetooth
         }
         
         /// Perform a task on the internal queue and wait.
-        private func sync<T>(block: () -> T) -> T {
+        private func sync<T>(_ block: () -> T) -> T {
             
             var blockValue: T!
             
@@ -263,7 +263,7 @@ import Bluetooth
         
         // MARK: - CBCentralManagerDelegate
         
-        public func centralManagerDidUpdateState(central: CBCentralManager) {
+        public func centralManagerDidUpdateState(_ central: CBCentralManager) {
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
@@ -273,7 +273,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
+        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             
@@ -288,7 +288,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
             
             log?("Connecting to peripheral \(peripheral.identifier.uuidString)")
             
@@ -300,7 +300,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: NSError?) {
+        public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: NSError?) {
             
             log?("Did fail to connect to peripheral \(peripheral.identifier.uuidString) (\(error!))")
             
@@ -312,7 +312,7 @@ import Bluetooth
         
         // MARK: - CBPeripheralDelegate
         
-        public func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+        public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
             
             if let error = error {
                 
@@ -326,7 +326,7 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        public func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: NSError?) {
+        public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: NSError?) {
             
             if let error = error {
                 
@@ -340,7 +340,7 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        public func peripheral(peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: NSError?) {
+        public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: NSError?) {
             
             if let error = error {
                 
@@ -360,7 +360,7 @@ import Bluetooth
     
     private extension CBPeripheral {
         
-        func service(UUID: Bluetooth.UUID) -> CBService {
+        func service(_ UUID: Bluetooth.UUID) -> CBService {
             
             for service in services ?? [] {
                 
@@ -374,7 +374,7 @@ import Bluetooth
     
     private extension CBService {
         
-        func characteristic(UUID: Bluetooth.UUID) -> CBCharacteristic {
+        func characteristic(_ UUID: Bluetooth.UUID) -> CBCharacteristic {
             
             for characteristic in characteristics ?? [] {
                 

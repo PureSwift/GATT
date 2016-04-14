@@ -28,6 +28,7 @@
 		6E7BD6521CB0FE1B00F0ABF3 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */; };
 		6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */; };
 		6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */; };
+		6EAB9AD61CBF9354002635A9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAB9AD51CBF9354002635A9 /* main.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
@@ -126,6 +127,7 @@
 		6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATTTest.h; sourceTree = "<group>"; };
 		6E7BD64C1CB0FD9500F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
+		6EAB9AD51CBF9354002635A9 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 			children = (
 				6E4CA8701CB11486008316A9 /* ServerManager.swift */,
 				6E4CA8721CB114A3008316A9 /* ServerTests.swift */,
+				6EAB9AD51CBF9354002635A9 /* main.swift */,
 			);
 			path = PeripheralUnitTestsServer;
 			sourceTree = "<group>";
@@ -480,6 +483,7 @@
 			files = (
 				6E4CA8711CB11486008316A9 /* ServerManager.swift in Sources */,
 				6E4CA8731CB114A3008316A9 /* ServerTests.swift in Sources */,
+				6EAB9AD61CBF9354002635A9 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

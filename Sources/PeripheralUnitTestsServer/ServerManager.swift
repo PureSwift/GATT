@@ -21,7 +21,7 @@ let peripheral: PeripheralManager = {
     
     for service in TestData.services {
         
-        try! peripheral.add(service)
+        try! peripheral.add(service: service)
     }
     
     peripheral.willRead = willRead
