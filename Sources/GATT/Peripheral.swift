@@ -14,6 +14,8 @@ import Bluetooth
 /// Implementation varies by operating system.
 public protocol NativePeripheral {
     
+    var log: (String -> ())? { get }
+    
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Service Index

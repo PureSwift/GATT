@@ -21,6 +21,8 @@ import Bluetooth
         
         // MARK: - Properties
         
+        public var log: (String -> ())?
+        
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
         public var state: CBPeripheralManagerState {

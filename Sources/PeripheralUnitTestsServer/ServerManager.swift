@@ -19,6 +19,8 @@ let peripheral: PeripheralManager = {
     
     let peripheral = PeripheralManager()
     
+    peripheral.log = { print($0) }
+    
     for service in TestData.services {
         
         try! peripheral.add(service: service)

@@ -59,6 +59,8 @@ public final class LinuxPeripheral: NativePeripheral {
         
         isServerRunning.value = true
         
+        log?("Started GATT Server")
+        
         let serverThread = try! Thread({ [weak self] in
             
             guard let peripheral = self else { return }
@@ -106,6 +108,8 @@ public final class LinuxPeripheral: NativePeripheral {
                     
                 catch { peripheral.log?("Error waiting for new connection: \(error)") }
             }
+            
+            peripheral.log?("Stopped GATT Server")
         })
         
         self.serverSocket = serverSocket
