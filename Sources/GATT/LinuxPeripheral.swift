@@ -77,6 +77,8 @@ public final class LinuxPeripheral: NativePeripheral {
                     
                     server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
                     
+                    server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
+                    
                     server.database = peripheral.database.value
                     
                     // create new thread for new connection
@@ -87,8 +89,6 @@ public final class LinuxPeripheral: NativePeripheral {
                             
                             do {
                                 
-                                server.database = peripheral.database.value
-                                
                                 var pendingWrite = true
                                 
                                 while pendingWrite {
@@ -96,12 +96,16 @@ public final class LinuxPeripheral: NativePeripheral {
                                     pendingWrite = try server.write()
                                 }
                                 
+                                guard peripheral.isServerRunning.value else { return }
+                                
+                                server.database = peripheral.database.value
+                                
                                 try server.read()
                                 
                                 peripheral.database.value = server.database
                             }
                             
-                            catch { peripheral.log?("Error: \(error)") }
+                            catch { peripheral.log?("Error: \(error)"); return }
                         }
                     })
                 }

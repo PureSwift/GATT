@@ -9,9 +9,11 @@
 #if os(OSX) || os(iOS)
     import CoreBluetooth
     import struct SwiftFoundation.UUID
+    import class BluetoothLinux.L2CAPSocket
     public typealias PeerIdentifier = SwiftFoundation.UUID
 #elseif os(Linux)
     import struct Bluetooth.Address
+    import class BluetoothLinux.L2CAPSocket
     public typealias PeerIdentifier = Bluetooth.Address
 #endif
 
@@ -28,24 +30,39 @@ public struct Central: Peer {
     
     public let identifier: PeerIdentifier
     
-    /// The maximum amount of data, in bytes, that the central can receive in a single notification or indication.
-    public let maximumTranssmissionUnit: Int
-    
-    internal init(identifier: PeerIdentifier, maximumTranssmissionUnit: Int) {
+    internal init(identifier: PeerIdentifier) {
         
         self.identifier = identifier
-        self.maximumTranssmissionUnit = maximumTranssmissionUnit
     }
 }
 
+#if os(Linux)
+    
+    extension Central {
+        
+        init(socket: L2CAPSocket) {
+            
+            self.identifier = socket.address
+        }
+    }
+
+#endif
+
 #if os(OSX) || os(iOS)
+    
+    extension Central {
+        
+        init(socket: L2CAPSocket) {
+            
+            fatalError("Linux Only")
+        }
+    }
     
     extension Central {
         
         init(_ central: CBCentral) {
             
             self.identifier = SwiftFoundation.UUID(foundation: central.identifier)
-            self.maximumTranssmissionUnit = central.maximumUpdateValueLength
         }
     }
     
