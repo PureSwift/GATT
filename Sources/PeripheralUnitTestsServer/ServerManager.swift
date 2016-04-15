@@ -21,6 +21,10 @@ let peripheral: PeripheralManager = {
     
     peripheral.log = { print($0) }
     
+    #if os(OSX)
+        peripheral.waitForPoweredOn()
+    #endif
+    
     for service in TestData.services {
         
         try! peripheral.add(service: service)

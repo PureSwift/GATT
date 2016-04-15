@@ -267,6 +267,8 @@ import Bluetooth
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
+            stateChanged(central.state)
+            
             if central.state == .poweredOn && poweredOnSemaphore != nil {
                 
                 dispatch_semaphore_signal(poweredOnSemaphore)

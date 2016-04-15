@@ -42,6 +42,8 @@ import Bluetooth
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
+        private var poweredOnSemaphore: dispatch_semaphore_t!
+        
         private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
         
         private var startAdvertisingState: (semaphore: dispatch_semaphore_t, error: NSError?)?
@@ -58,6 +60,27 @@ import Bluetooth
         }
         
         // MARK: - Methods
+        
+        public func waitForPoweredOn() {
+            
+            // already on
+            guard internalManager.state != .poweredOn else { return }
+            
+            // already waiting
+            guard poweredOnSemaphore == nil else { dispatch_semaphore_wait(poweredOnSemaphore, DISPATCH_TIME_FOREVER); return }
+            
+            log?("Not powered on (State \(internalManager.state.rawValue))")
+            
+            poweredOnSemaphore = dispatch_semaphore_create(0)
+            
+            dispatch_semaphore_wait(poweredOnSemaphore, DISPATCH_TIME_FOREVER)
+            
+            poweredOnSemaphore = nil
+            
+            assert(internalManager.state == .poweredOn)
+            
+            log?("Now powered on")
+        }
         
         public func start() throws {
             
@@ -159,7 +182,14 @@ import Bluetooth
         
         public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
             
+            log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
+            
             stateChanged(peripheral.state)
+            
+            if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
+                
+                dispatch_semaphore_signal(poweredOnSemaphore)
+            }
         }
         
         public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: NSError?) {
@@ -171,8 +201,16 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+        @objc public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
             
+            if let error = error {
+                
+                log?("Could not add service \(service.uuid) (\(error))")
+                
+            } else {
+                
+                log?("Added service \(service.uuid)")
+            }
             
             guard let semaphore = addServiceState?.semaphore else { fatalError("Did not expect \(#function)") }
             
