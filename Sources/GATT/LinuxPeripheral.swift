@@ -79,6 +79,8 @@ public final class LinuxPeripheral: NativePeripheral {
                     
                     server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
                     
+                    server.willWrite = { peripheral.willWrite?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, newValue: $0.newValue) }
+                    
                     server.database = peripheral.database.value
                     
                     // create new thread for new connection
