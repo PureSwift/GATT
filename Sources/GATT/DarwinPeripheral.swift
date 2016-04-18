@@ -201,7 +201,7 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        @objc public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
             
             if let error = error {
                 
