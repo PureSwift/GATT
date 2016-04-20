@@ -14,4 +14,6 @@ FOUNDATION_EXPORT double GATTVersionNumber;
 //! Project version string for GATT.
 FOUNDATION_EXPORT const unsigned char GATTVersionString[];
 
-#import <GATT/CBSwiftCentralManager.h>
+#import <GATT/CBCentralManager+Swift.h>
+#import <GATT/CBPeripheralManager+Swift.h>
+#import <GATT/CBPeripheral+Swift.h>
