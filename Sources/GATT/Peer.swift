@@ -9,11 +9,10 @@
 #if os(OSX) || os(iOS)
     import CoreBluetooth
     import struct SwiftFoundation.UUID
-    import class BluetoothLinux.L2CAPSocket
     public typealias PeerIdentifier = SwiftFoundation.UUID
 #elseif os(Linux)
+    import BluetoothLinux
     import struct Bluetooth.Address
-    import class BluetoothLinux.L2CAPSocket
     public typealias PeerIdentifier = Bluetooth.Address
 #endif
 
@@ -40,15 +39,15 @@ public struct Central: Peer {
     
     extension Central {
         
-        init(socket: L2CAPSocket) {
+        init(socket: BluetoothLinux.L2CAPSocket) {
             
             self.identifier = socket.address
         }
     }
 
-#endif
-
-#if os(OSX) || os(iOS)
+#elseif XcodeLinux
+    
+    import BluetoothLinux
     
     extension Central {
         
@@ -57,6 +56,10 @@ public struct Central: Peer {
             fatalError("Linux Only")
         }
     }
+
+#endif
+
+#if os(OSX) || os(iOS)
     
     extension Central {
         

@@ -9,13 +9,15 @@
 import SwiftFoundation
 import Bluetooth
 
-#if os(OSX) || os(iOS) || os(tvOS)
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth
     
+    #if !XcodeLinux
     /// The platform specific peripheral. 
     public typealias PeripheralManager = DarwinPeripheral
+    #endif
     
     public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
@@ -298,7 +300,13 @@ import Bluetooth
                 
                 for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
                     
-                    guard UUID != Bluetooth.UUID(foundation: characteristic.uuid!)
+                    #if os(OSX)
+                        let foundation = characteristic.uuid!
+                    #elseif os(iOS)
+                        let foundation = characteristic.uuid
+                    #endif
+                    
+                    guard UUID != Bluetooth.UUID(foundation: foundation)
                         else { foundCharacteristic = characteristic; break }
                 }
             }

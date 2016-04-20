@@ -38,9 +38,13 @@ import Bluetooth
         
         func toCoreBluetooth() -> CBMutableCharacteristic {
             
-            let propertiesMask = CBCharacteristicProperties(rawValue: Int(properties.optionsBitmask()))
+            let propertyRawValue = CBCharacteristicProperties.RawValue.self
             
-            let permissionsMask = CBAttributePermissions(rawValue: Int(permissions.optionsBitmask()))
+            let propertiesMask = CBCharacteristicProperties(rawValue: propertyRawValue.init(properties.optionsBitmask()))
+            
+            let permissionRawValue = CBAttributePermissions.RawValue.self
+            
+            let permissionsMask = CBAttributePermissions(rawValue: permissionRawValue.init(permissions.optionsBitmask()))
             
             // http://stackoverflow.com/questions/29228244/issues-in-creating-writable-characteristic-in-core-bluetooth-framework#29229075
             // Characteristics with cached values must be read-only
