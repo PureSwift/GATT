@@ -17,7 +17,7 @@ import Bluetooth
     /// The platform specific peripheral.
     public typealias CentralManager = DarwinCentral
     
-    public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
+    public final class DarwinCentral: NSObject, NativeCentral, CBSwiftCentralManagerDelegate, CBPeripheralDelegate {
         
         public typealias Error = CentralError
         
@@ -29,12 +29,12 @@ import Bluetooth
         
         public var state: CBCentralManagerState {
             
-            return internalManager.state
+            return internalManager.centralManager.state
         }
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
+        private lazy var internalManager: CBSwiftCentralManager = CBSwiftCentralManager(centralManager: CBCentralManager(delegate: nil, queue: self.queue), delegate: self)
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
@@ -53,12 +53,12 @@ import Bluetooth
         public func waitForPoweredOn() {
             
             // already on
-            guard internalManager.state != .poweredOn else { return }
+            guard internalManager.centralManager.state != .poweredOn else { return }
             
             // already waiting
             guard poweredOnSemaphore == nil else { dispatch_semaphore_wait(poweredOnSemaphore, DISPATCH_TIME_FOREVER); return }
             
-            log?("Not powered on (State \(internalManager.state.rawValue))")
+            log?("Not powered on (State \(internalManager.centralManager.state.rawValue))")
             
             poweredOnSemaphore = dispatch_semaphore_create(0)
             
@@ -66,7 +66,7 @@ import Bluetooth
             
             poweredOnSemaphore = nil
             
-            assert(internalManager.state == .poweredOn)
+            assert(internalManager.centralManager.state == .poweredOn)
             
             log?("Now powered on")
         }
@@ -77,14 +77,14 @@ import Bluetooth
                 
                 self.scanPeripherals = []
                 
-                self.internalManager.scanForPeripherals(withServices: nil, options: nil)
+                self.internalManager.centralManager.scanForPeripherals(withServices: nil, options: nil)
             }
             
             sleep(UInt32(duration))
             
             return sync {
                 
-                self.internalManager.stopScan()
+                self.internalManager.centralManager.stopScan()
                 
                 return self.scanPeripherals.map { Peripheral($0) }
             }
@@ -98,7 +98,7 @@ import Bluetooth
                 
                 self.connectingToPeripheral = corePeripheral
                 
-                self.internalManager.connect(corePeripheral, options: nil)
+                self.internalManager.centralManager.connect(corePeripheral, options: nil)
             }
             
             var success = true
@@ -263,19 +263,19 @@ import Bluetooth
         
         // MARK: - CBCentralManagerDelegate
         
-        public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        public func centralManagerDidUpdateState() {
             
-            log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
+            log?("Did update state (\(internalManager.centralManager.state == .poweredOn ? "Powered On" : "\(internalManager.centralManager.state.rawValue)"))")
             
-            stateChanged(central.state)
+            stateChanged(internalManager.centralManager.state)
             
-            if central.state == .poweredOn && poweredOnSemaphore != nil {
+            if internalManager.centralManager.state == .poweredOn && poweredOnSemaphore != nil {
                 
                 dispatch_semaphore_signal(poweredOnSemaphore)
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
+        public func centralManagerDidDiscover(_ peripheral: CBPeripheral) {
             
             log?("Did discover peripheral \(peripheral)")
             
@@ -290,7 +290,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        public func centralManagerDidConnect(_ peripheral: CBPeripheral) {
             
             log?("Connecting to peripheral \(peripheral.identifier.uuidString)")
             
@@ -302,7 +302,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: NSError?) {
+        public func centralManagerDidFailToConnect(peripheral: CBPeripheral, error: NSError?) {
             
             log?("Did fail to connect to peripheral \(peripheral.identifier.uuidString) (\(error!))")
             

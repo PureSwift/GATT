@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
-               BuildableName = "GATT iOS.framework"
+               BuildableName = "GATT.framework"
                BlueprintName = "GATT iOS"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
@@ -46,7 +46,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
-            BuildableName = "GATT iOS.framework"
+            BuildableName = "GATT.framework"
             BlueprintName = "GATT iOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
@@ -64,7 +64,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
-            BuildableName = "GATT iOS.framework"
+            BuildableName = "GATT.framework"
             BlueprintName = "GATT iOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>

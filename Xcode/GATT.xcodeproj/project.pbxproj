@@ -29,6 +29,10 @@
 		6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */; };
 		6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */; };
 		6EAB9AD61CBF9354002635A9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAB9AD51CBF9354002635A9 /* main.swift */; };
+		6ED338771CC7D3FB00DF1461 /* CBSwiftCentralManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 6ED338751CC7D3FB00DF1461 /* CBSwiftCentralManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6ED338781CC7D3FB00DF1461 /* CBSwiftCentralManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 6ED338751CC7D3FB00DF1461 /* CBSwiftCentralManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6ED338791CC7D3FB00DF1461 /* CBSwiftCentralManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6ED338761CC7D3FB00DF1461 /* CBSwiftCentralManager.m */; };
+		6ED3387A1CC7D3FB00DF1461 /* CBSwiftCentralManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6ED338761CC7D3FB00DF1461 /* CBSwiftCentralManager.m */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
@@ -136,6 +140,8 @@
 		6E7BD64C1CB0FD9500F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		6EAB9AD51CBF9354002635A9 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		6ED338751CC7D3FB00DF1461 /* CBSwiftCentralManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CBSwiftCentralManager.h; sourceTree = "<group>"; };
+		6ED338761CC7D3FB00DF1461 /* CBSwiftCentralManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CBSwiftCentralManager.m; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -317,6 +323,8 @@
 				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 				6E17DC221CB1DC250043C644 /* Central.swift */,
 				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
+				6ED338751CC7D3FB00DF1461 /* CBSwiftCentralManager.h */,
+				6ED338761CC7D3FB00DF1461 /* CBSwiftCentralManager.m */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -337,6 +345,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6EE84D881CAF419D00A40C4D /* GATT.h in Headers */,
+				6ED338771CC7D3FB00DF1461 /* CBSwiftCentralManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,6 +354,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6EF45FCA1CC6D355001F7A39 /* GATT.h in Headers */,
+				6ED338781CC7D3FB00DF1461 /* CBSwiftCentralManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -561,6 +571,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6ED338791CC7D3FB00DF1461 /* CBSwiftCentralManager.m in Sources */,
 				6E17DC231CB1DC250043C644 /* Central.swift in Sources */,
 				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
 				6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */,
@@ -575,6 +586,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6ED3387A1CC7D3FB00DF1461 /* CBSwiftCentralManager.m in Sources */,
 				6EF45FC11CC6D355001F7A39 /* Central.swift in Sources */,
 				6EF45FC21CC6D355001F7A39 /* DarwinAttributes.swift in Sources */,
 				6EF45FC31CC6D355001F7A39 /* LinuxPeripheral.swift in Sources */,
