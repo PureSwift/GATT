@@ -40,7 +40,7 @@ import Bluetooth
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(swiftDelegate: self, queue: self.queue)
+        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: unsafeBitCast(self, to: CBPeripheralManagerDelegate.self), queue: self.queue)
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         

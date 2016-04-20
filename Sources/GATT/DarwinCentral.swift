@@ -34,7 +34,7 @@ import Bluetooth
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBCentralManager = CBCentralManager(swiftDelegate: self, queue: self.queue)
+        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: unsafeBitCast(self, to: CBCentralManagerDelegate.self), queue: self.queue)
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
@@ -281,7 +281,7 @@ import Bluetooth
             
             if peripheral.delegate == nil {
                 
-                peripheral.setSwiftDelegate(self)
+                peripheral.delegate = unsafeBitCast(self, to: CBPeripheralDelegate.self)
             }
             
             if scanPeripherals.contains(peripheral) == false {
@@ -385,14 +385,6 @@ import Bluetooth
             }
             
             fatalError("Characteristic \(UUID) not found")
-        }
-    }
-    
-    public extension CBCentralManager {
-        
-        static func SwiftInit(delegate: AnyObject?, queue: dispatch_queue_t) -> CBCentralManager {
-            
-            return self.init(swiftDelegate: delegate, queue: queue)
         }
     }
     

@@ -9,18 +9,6 @@
 /* Begin PBXBuildFile section */
 		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
-		6E2A5D4B1CC7F0D300BA7E15 /* CBCentralManager+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D491CC7F0D300BA7E15 /* CBCentralManager+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D4C1CC7F0D300BA7E15 /* CBCentralManager+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D491CC7F0D300BA7E15 /* CBCentralManager+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D4D1CC7F0D300BA7E15 /* CBCentralManager+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D4A1CC7F0D300BA7E15 /* CBCentralManager+Swift.m */; };
-		6E2A5D4E1CC7F0D300BA7E15 /* CBCentralManager+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D4A1CC7F0D300BA7E15 /* CBCentralManager+Swift.m */; };
-		6E2A5D511CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D4F1CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D521CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D4F1CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D531CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D501CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m */; };
-		6E2A5D541CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D501CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m */; };
-		6E2A5D571CC7F6C400BA7E15 /* CBPeripheral+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D551CC7F6C400BA7E15 /* CBPeripheral+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D581CC7F6C400BA7E15 /* CBPeripheral+Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E2A5D551CC7F6C400BA7E15 /* CBPeripheral+Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E2A5D591CC7F6C400BA7E15 /* CBPeripheral+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D561CC7F6C400BA7E15 /* CBPeripheral+Swift.m */; };
-		6E2A5D5A1CC7F6C400BA7E15 /* CBPeripheral+Swift.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D561CC7F6C400BA7E15 /* CBPeripheral+Swift.m */; };
 		6E4CA8651CB113E8008316A9 /* GATTTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6481CB0FD9500F0ABF3 /* GATTTest.framework */; };
 		6E4CA86C1CB113FA008316A9 /* Bluetooth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E4CA86D1CB113FA008316A9 /* BluetoothLinux.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -126,12 +114,6 @@
 /* Begin PBXFileReference section */
 		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
 		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
-		6E2A5D491CC7F0D300BA7E15 /* CBCentralManager+Swift.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CBCentralManager+Swift.h"; sourceTree = "<group>"; };
-		6E2A5D4A1CC7F0D300BA7E15 /* CBCentralManager+Swift.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "CBCentralManager+Swift.m"; sourceTree = "<group>"; };
-		6E2A5D4F1CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CBPeripheralManager+Swift.h"; sourceTree = "<group>"; };
-		6E2A5D501CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "CBPeripheralManager+Swift.m"; sourceTree = "<group>"; };
-		6E2A5D551CC7F6C400BA7E15 /* CBPeripheral+Swift.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CBPeripheral+Swift.h"; sourceTree = "<group>"; };
-		6E2A5D561CC7F6C400BA7E15 /* CBPeripheral+Swift.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "CBPeripheral+Swift.m"; sourceTree = "<group>"; };
 		6E4CA8601CB113E8008316A9 /* PeripheralUnitTestsServer.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsServer.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E4CA8641CB113E8008316A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E4CA8701CB11486008316A9 /* ServerManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
@@ -333,12 +315,6 @@
 				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 				6E17DC221CB1DC250043C644 /* Central.swift */,
 				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
-				6E2A5D491CC7F0D300BA7E15 /* CBCentralManager+Swift.h */,
-				6E2A5D4A1CC7F0D300BA7E15 /* CBCentralManager+Swift.m */,
-				6E2A5D4F1CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h */,
-				6E2A5D501CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m */,
-				6E2A5D551CC7F6C400BA7E15 /* CBPeripheral+Swift.h */,
-				6E2A5D561CC7F6C400BA7E15 /* CBPeripheral+Swift.m */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -359,9 +335,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6EE84D881CAF419D00A40C4D /* GATT.h in Headers */,
-				6E2A5D4B1CC7F0D300BA7E15 /* CBCentralManager+Swift.h in Headers */,
-				6E2A5D511CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h in Headers */,
-				6E2A5D571CC7F6C400BA7E15 /* CBPeripheral+Swift.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -370,9 +343,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6EF45FCA1CC6D355001F7A39 /* GATT.h in Headers */,
-				6E2A5D4C1CC7F0D300BA7E15 /* CBCentralManager+Swift.h in Headers */,
-				6E2A5D521CC7F56B00BA7E15 /* CBPeripheralManager+Swift.h in Headers */,
-				6E2A5D581CC7F6C400BA7E15 /* CBPeripheral+Swift.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,14 +561,11 @@
 			files = (
 				6E17DC231CB1DC250043C644 /* Central.swift in Sources */,
 				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
-				6E2A5D591CC7F6C400BA7E15 /* CBPeripheral+Swift.m in Sources */,
 				6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */,
 				6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */,
 				6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */,
-				6E2A5D531CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m in Sources */,
 				6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */,
 				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
-				6E2A5D4D1CC7F0D300BA7E15 /* CBCentralManager+Swift.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,14 +575,11 @@
 			files = (
 				6EF45FC11CC6D355001F7A39 /* Central.swift in Sources */,
 				6EF45FC21CC6D355001F7A39 /* DarwinAttributes.swift in Sources */,
-				6E2A5D5A1CC7F6C400BA7E15 /* CBPeripheral+Swift.m in Sources */,
 				6EF45FC31CC6D355001F7A39 /* LinuxPeripheral.swift in Sources */,
 				6EF45FC41CC6D355001F7A39 /* Peer.swift in Sources */,
 				6EF45FC51CC6D355001F7A39 /* DarwinPeripheral.swift in Sources */,
-				6E2A5D541CC7F56B00BA7E15 /* CBPeripheralManager+Swift.m in Sources */,
 				6EF45FC61CC6D355001F7A39 /* DarwinCentral.swift in Sources */,
 				6EF45FC71CC6D355001F7A39 /* Peripheral.swift in Sources */,
-				6E2A5D4E1CC7F0D300BA7E15 /* CBCentralManager+Swift.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
