@@ -388,4 +388,12 @@ import Bluetooth
         }
     }
     
+    public extension CBCentralManager {
+        
+        static func SwiftInit(delegate: AnyObject?, queue: dispatch_queue_t) -> CBCentralManager {
+            
+            return self.init(swiftDelegate: delegate, queue: queue)
+        }
+    }
+    
 #endif
