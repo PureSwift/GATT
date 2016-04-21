@@ -15,5 +15,5 @@ let package = Package(
         Target(
             name: "GATT")
     ],
-    exclude: ["Xcode", "Sources/PeripheralUnitTestsClient"]
+    exclude: ["Xcode", "Sources/PeripheralUnitTestsClient", "Sources/GATT/DarwinCentral.swift"]
 )

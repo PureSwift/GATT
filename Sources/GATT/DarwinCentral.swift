@@ -90,7 +90,7 @@ import Bluetooth
             }
         }
         
-        public func connect(_ peripheral: Peripheral, timeout: Int = 5) throws {
+        public func connect(to peripheral: Peripheral, timeout: Int = 5) throws {
             
             sync {
                 
@@ -120,7 +120,7 @@ import Bluetooth
             assert(sync { self.peripheral(peripheral).state != .disconnected })
         }
         
-        public func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
+        public func discoverServices(for peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
             
             let corePeripheral: CBPeripheral = sync {
                 
@@ -138,7 +138,7 @@ import Bluetooth
             return sync { (corePeripheral.services ?? []).map { (Bluetooth.UUID(foundation: $0.uuid), $0.isPrimary) } }
         }
         
-        public func discover(characteristics service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])] {
+        public func discoverCharacteristics(for service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])] {
             
             let corePeripheral = self.peripheral(peripheral)
             
@@ -168,6 +168,24 @@ import Bluetooth
             isReading = false
             
             return Data(foundation: coreCharacteristic.value ?? NSData())
+        }
+        
+        public func write(data: Data, response: Bool, characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws {
+            
+            let corePeripheral = self.peripheral(peripheral)
+            
+            let coreService = corePeripheral.service(service)
+            
+            let coreCharacteristic = coreService.characteristic(UUID)
+            
+            let writeType: CBCharacteristicWriteType = response ? .withResponse : .withoutResponse
+            
+            corePeripheral.writeValue(data.toFoundation(), for: coreCharacteristic, type: writeType)
+            
+            if response {
+                
+                try wait()
+            }
         }
         
         // MARK: - Private Methods
@@ -263,7 +281,7 @@ import Bluetooth
         
         // MARK: - CBCentralManagerDelegate
         
-        public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        @objc private func centralManagerDidUpdateState(_ central: CBCentralManager) {
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
@@ -275,7 +293,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
+        @objc private func centralManager(_ central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             
@@ -290,7 +308,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
+        @objc private func centralManager(_ central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
             
             log?("Connecting to peripheral \(peripheral.identifier.uuidString)")
             
@@ -302,7 +320,7 @@ import Bluetooth
             }
         }
         
-        public func centralManager(_ central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
+        @objc private func centralManager(_ central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
             
             log?("Did fail to connect to peripheral \(peripheral.identifier.uuidString) (\(error!))")
             
@@ -314,7 +332,7 @@ import Bluetooth
         
         // MARK: - CBPeripheralDelegate
         
-        public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+        @objc private func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
             
             if let error = error {
                 
@@ -328,7 +346,7 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+        @objc private func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
             
             if let error = error {
                 
@@ -342,7 +360,7 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        public func peripheral(_ peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        @objc private func peripheral(_ peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
             
             if let error = error {
                 
@@ -357,6 +375,20 @@ import Bluetooth
                 
                 stopWaiting(error)
             }
+        }
+        
+        @objc private func peripheral(_ peripheral: CBPeripheral, didWriteValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+            
+            if let error = error {
+                
+                log?("Error writing characteristic (\(error))")
+                
+            } else {
+                
+                log?("Peripheral \(peripheral.identifier.uuidString) did write value for characteristic \(characteristic.uuid.uuidString)")
+            }
+            
+            stopWaiting(error)
         }
     }
     

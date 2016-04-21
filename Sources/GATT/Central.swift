@@ -18,17 +18,25 @@ public protocol NativeCentral {
     
     func scan(duration: Int) -> [Peripheral]
     
-    func connect(_ peripheral: Peripheral, timeout: Int) throws
+    func connect(to peripheral: Peripheral, timeout: Int) throws
     
-    func discover(services peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)]
+    func discoverServices(for peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)]
     
-    func discover(characteristics service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]
+    func discoverCharacteristics(for service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]
     
     func read(characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws -> Data
+    
+    func write(data: Data, response: Bool, characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws
 }
 
 /// Errors for GATT Central Manager
 public enum CentralError: ErrorProtocol {
     
     case Timeout
+}
+
+/// How the central should write to the peripheral.
+public enum WriteType {
+    
+    
 }
