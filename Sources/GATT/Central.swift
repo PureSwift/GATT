@@ -34,9 +34,3 @@ public enum CentralError: ErrorProtocol {
     
     case Timeout
 }
-
-/// How the central should write to the peripheral.
-public enum WriteType {
-    
-    
-}

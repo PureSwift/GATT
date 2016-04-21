@@ -134,7 +134,7 @@
         
         public func add(service: Service) throws -> Int {
             
-            return database.value.add(service)
+            return database.value.add(service: service)
         }
         
         public func remove(service index: Int) {

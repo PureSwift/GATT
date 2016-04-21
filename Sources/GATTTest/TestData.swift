@@ -14,7 +14,7 @@ public struct TestData {
     
     public static let testService = TestData.services[0]
     
-    public static let writeOnlyCharacteristic = TestData.services[2].characteristics[1]
+    public static let writeOnly = (newValue: "NewValue1234".toUTF8Data(), characteristic: TestData.services[3].characteristics[1], service: TestData.services[3].UUID)
     
     public static let services: [Service] = {
         

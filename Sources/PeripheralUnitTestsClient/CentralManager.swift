@@ -31,7 +31,7 @@ let testPeripheral: Peripheral = {
         
         for peripheral in foundPeripherals {
             
-            do { try central.connect(peripheral) }
+            do { try central.connect(to: peripheral) }
                 
             catch {
                 
@@ -41,7 +41,7 @@ let testPeripheral: Peripheral = {
             
             print("Did connect to \(peripheral.identifier)")
             
-            let services = try! central.discover(services: peripheral)
+            let services = try! central.discoverServices(for: peripheral)
             
             print("Discovered services: \(services.map({ $0.UUID }))")
             
@@ -72,7 +72,7 @@ let foundCharacteristics: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [
     
     for service in foundServices {
         
-        let characteristics = try! central.discover(characteristics: service.UUID, peripheral: testPeripheral)
+        let characteristics = try! central.discoverCharacteristics(for: service.UUID, peripheral: testPeripheral)
         
         print("Found \(characteristics.count) characteristics for service \(service.UUID)")
         

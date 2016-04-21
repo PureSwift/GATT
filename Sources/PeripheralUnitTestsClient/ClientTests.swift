@@ -67,6 +67,20 @@ final class ClientTests: XCTestCase {
         // make sure values are already read
         foundCharacteristicValues
         
+        do { try central.write(data: TestData.writeOnly.newValue, response: true, characteristic: TestData.writeOnly.characteristic.UUID, service: TestData.writeOnly.service, peripheral: testPeripheral) }
         
+        catch { XCTFail("Could not write value. \(error)"); return }
+    }
+    
+    func testLongWrite() {
+        
+        // make sure values are already read
+        foundCharacteristicValues
+        
+        let newValue = Data(byteValue: [Byte].init(repeating: UInt8.max, count: 512))
+        
+        do { try central.write(data: newValue, response: true, characteristic: TestData.services[1].characteristics[1].UUID, service: TestData.services[1].UUID, peripheral: testPeripheral) }
+            
+        catch { XCTFail("Could not write long value. \(error)"); return }
     }
 }
