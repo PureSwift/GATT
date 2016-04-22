@@ -36,6 +36,8 @@ import Bluetooth
         
         public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)?
         
+        public var didWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ())?
+        
         // MARK: - Private Properties
         
         private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: unsafeBitCast(self, to: CBPeripheralManagerDelegate.self), queue: self.queue)

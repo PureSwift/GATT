@@ -26,11 +26,13 @@
         
         public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)?
         
+        public var didWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ())?
+        
         // MARK: - Private Properties
         
-        private var database = Atomic(GATTDatabase())
+        private var database = GATTDatabase()
         
-        private var isServerRunning = Atomic(false)
+        private var isServerRunning = false
         
         private var serverSocket: L2CAPSocket!
         
@@ -48,13 +50,13 @@
         
         public func start() throws {
             
-            guard isServerRunning.value == false else { return }
+            guard isServerRunning == false else { return }
             
             let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
             
             let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .LowEnergyPublic, securityLevel: .Low)
             
-            isServerRunning.value = true
+            isServerRunning = true
             
             log?("Started GATT Server")
             
@@ -62,7 +64,7 @@
                 
                 guard let peripheral = self else { return }
                 
-                while peripheral.isServerRunning.value {
+                while peripheral.isServerRunning {
                     
                     do {
                         
@@ -74,34 +76,44 @@
                         
                         server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
                         
-                        server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
-                        
-                        server.willWrite = { peripheral.willWrite?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, newValue: $0.newValue) }
-                        
-                        server.database = peripheral.database.value
+                        server.database = peripheral.database
                         
                         // create new thread for new connection
                         
                         let _ = try! Thread({
                             
-                            while peripheral.isServerRunning.value {
+                            while peripheral.isServerRunning {
                                 
                                 do {
                                     
-                                    var pendingWrite = true
+                                    var didWrite: (central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data)?
                                     
-                                    while pendingWrite {
+                                    server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
+                                    
+                                    server.willWrite = { (write) in
                                         
-                                        pendingWrite = try server.write()
+                                        if let error = peripheral.willWrite?(central: Central(socket: newSocket), UUID: write.UUID, value: write.value, newValue: write.newValue) {
+                                            
+                                            return error
+                                        }
+                                        
+                                        didWrite = (central: Central(socket: newSocket), UUID: write.UUID, value: write.value, newValue: write.newValue)
+                                        
+                                        return nil
                                     }
-                                    
-                                    guard peripheral.isServerRunning.value else { return }
-                                    
-                                    server.database = peripheral.database.value
-                                    
+
+                                    server.database = peripheral.database
+
                                     try server.read()
                                     
-                                    peripheral.database.value = server.database
+                                    peripheral.database = server.database
+                                    
+                                    try server.write()
+                                    
+                                    if let didWrite = didWrite {
+                                        
+                                        peripheral.didWrite?(central: didWrite.central, UUID: didWrite.UUID, value: didWrite.value, newValue: didWrite.newValue)
+                                    }
                                 }
                                     
                                 catch { peripheral.log?("Error: \(error)"); return }
@@ -121,9 +133,9 @@
         
         public func stop() {
             
-            guard isServerRunning.value else { return }
+            guard isServerRunning else { return }
             
-            isServerRunning.value = false
+            isServerRunning = false
             
             self.serverSocket = nil
             self.serverThread = nil
@@ -131,32 +143,36 @@
         
         public func add(service: Service) throws -> UInt16 {
             
-            return database.value.add(service: service)
+            return database.add(service: service)
         }
         
         public func remove(service handle: UInt16) {
             
-            database.value.remove(service: handle)
+            database.remove(service: handle)
         }
         
         public func clear() {
             
-            database.value.clear()
+            database.clear()
         }
         
         // MARK: Subscript
         
         public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
             
-            get { return database.value.attributes.filter({ $0.UUID == UUID}).first!.value }
+            get { return database.attributes.filter({ $0.UUID == UUID}).first!.value }
             
             set {
                 
-                let matchingAttributes = database.value.attributes.filter({ $0.UUID == UUID })
+                let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
                 
                 assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
                 
-                database.value.write(newValue, forAttribute: matchingAttributes[0].handle)
+                let attribute = matchingAttributes.first!
+                
+                database.write(newValue, forAttribute: attribute.handle)
+                
+                //assert(self[characteristic: UUID] == newValue, "New Characteristic value \(UUID) could not be written.")
             }
         }
     }
