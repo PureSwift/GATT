@@ -129,14 +129,14 @@
             self.serverThread = nil
         }
         
-        public func add(service: Service) throws -> Int {
+        public func add(service: Service) throws -> UInt16 {
             
             return database.value.add(service: service)
         }
         
-        public func remove(service index: Int) {
+        public func remove(service handle: UInt16) {
             
-            database.value.remove(service: index)
+            database.value.remove(service: handle)
         }
         
         public func clear() {

@@ -14,15 +14,17 @@ import Bluetooth
 /// Implementation varies by operating system.
 public protocol NativePeripheral {
     
+    associatedtype ServiceIdentifier
+    
     var log: (String -> ())? { get }
     
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Service Index
-    func add(service: Service) throws -> Int
+    func add(service: Service) throws -> ServiceIdentifier
     
     /// Removes the service with the specified UUID.
-    func remove(service index: Int)
+    func remove(service: ServiceIdentifier)
     
     /// Clears the local GATT database.
     func clear()
