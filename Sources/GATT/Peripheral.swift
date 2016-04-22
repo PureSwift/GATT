@@ -35,7 +35,7 @@ public protocol NativePeripheral {
     
     var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)? { get }
     
-    var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)? { get }
+    var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)? { get }
     
     /// Write / Read the value of the characteristic with specified UUID.
     subscript(characteristic UUID: Bluetooth.UUID) -> Data { get set }

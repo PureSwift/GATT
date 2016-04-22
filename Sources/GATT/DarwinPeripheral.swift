@@ -36,7 +36,7 @@ import Bluetooth
         
         public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error?)?
+        public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)?
         
         // MARK: - Private Properties
         
@@ -266,7 +266,7 @@ import Bluetooth
                 
                 newValue.byteValue.replaceSubrange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
                 
-                if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: (newValue, newBytes, request.offset)) {
+                if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: newValue) {
                     
                     internalManager.respond(to: requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
                     
