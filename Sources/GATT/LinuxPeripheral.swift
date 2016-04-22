@@ -12,9 +12,6 @@
     import Bluetooth
     import BluetoothLinux
     
-    /// The platform specific peripheral.
-    public typealias PeripheralManager = LinuxPeripheral
-    
     public final class LinuxPeripheral: NativePeripheral {
         
         // MARK: - Properties
@@ -163,5 +160,12 @@
             }
         }
     }
+
+#endif
+
+#if os(Linux)
+
+    /// The platform specific peripheral.
+    public typealias PeripheralManager = LinuxPeripheral
 
 #endif

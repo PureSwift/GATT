@@ -55,7 +55,7 @@ private func willRead(central: Central, UUID: Bluetooth.UUID, value: Data, offse
     return nil
 }
 
-private func willWrite(central: Central, UUID: Bluetooth.UUID, value: Data, newValue: (newValue: Data, newBytes: Data, offset: Int)) -> ATT.Error? {
+private func willWrite(central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error? {
     
     print("Central \(central.identifier) will write characteristic \(UUID)")
     

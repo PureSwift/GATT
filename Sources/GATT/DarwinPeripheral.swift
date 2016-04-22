@@ -14,10 +14,8 @@ import Bluetooth
     import Foundation
     import CoreBluetooth
     
-    #if !XcodeLinux
     /// The platform specific peripheral. 
     public typealias PeripheralManager = DarwinPeripheral
-    #endif
     
     public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
