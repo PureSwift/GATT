@@ -40,7 +40,7 @@ import Bluetooth
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: unsafeBitCast(self, to: CBPeripheralManagerDelegate.self), queue: self.queue)
+        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
@@ -203,7 +203,7 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+        @objc(peripheralManager:didAddService:error:) public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
             
             if let error = error {
                 
@@ -221,7 +221,7 @@ import Bluetooth
             dispatch_semaphore_signal(semaphore)
         }
         
-        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        @objc(peripheralManager:didReceiveReadRequest:) public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
             
@@ -245,7 +245,7 @@ import Bluetooth
             internalManager.respond(to: request, withResult: .success)
         }
         
-        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        @objc(peripheralManager:didReceiveWriteRequests:) public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
             
             assert(requests.isEmpty == false)
             

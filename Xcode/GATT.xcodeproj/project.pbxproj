@@ -33,7 +33,7 @@
 		6E7BD63F1CB0FBA500F0ABF3 /* JSON.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7BD64B1CB0FD9500F0ABF3 /* GATTTest.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E7BD6521CB0FE1B00F0ABF3 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */; };
+		6E7BD6521CB0FE1B00F0ABF3 /* TestProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestProfile.swift */; };
 		6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */; };
 		6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */; };
 		6EAB9AD61CBF9354002635A9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAB9AD51CBF9354002635A9 /* main.swift */; };
@@ -168,7 +168,7 @@
 		6E7BD6481CB0FD9500F0ABF3 /* GATTTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATTTest.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATTTest.h; sourceTree = "<group>"; };
 		6E7BD64C1CB0FD9500F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
+		6E7BD6511CB0FE1B00F0ABF3 /* TestProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestProfile.swift; sourceTree = "<group>"; };
 		6EAB9AD51CBF9354002635A9 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
@@ -308,7 +308,7 @@
 		6E7BD6501CB0FE0C00F0ABF3 /* GATTTest */ = {
 			isa = PBXGroup;
 			children = (
-				6E7BD6511CB0FE1B00F0ABF3 /* TestData.swift */,
+				6E7BD6511CB0FE1B00F0ABF3 /* TestProfile.swift */,
 			);
 			path = GATTTest;
 			sourceTree = "<group>";
@@ -674,7 +674,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E7BD6521CB0FE1B00F0ABF3 /* TestData.swift in Sources */,
+				6E7BD6521CB0FE1B00F0ABF3 /* TestProfile.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1088,6 +1088,7 @@
 				6E2A5D701CC8436800BA7E15 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		6E4CA8681CB113E8008316A9 /* Build configuration list for PBXNativeTarget "PeripheralUnitTestsServer" */ = {
 			isa = XCConfigurationList;

@@ -101,9 +101,9 @@
                                         
                                         return nil
                                     }
-
+                                    
                                     server.database = peripheral.database
-
+                                    
                                     try server.read()
                                     
                                     peripheral.database = server.database

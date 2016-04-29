@@ -16,23 +16,9 @@ import GATTTest
 
 final class ClientTests: XCTestCase {
     
-    func testServices() {
-        
-        for testService in TestData.services {
-            
-            guard let foundService = foundServices.filter({ $0.UUID == TestData.testService.UUID }).first
-                else { XCTFail("Service \(testService.UUID) not found"); continue }
-            
-            /*
-            XCTAssert(foundService.primary == testService.primary,
-                      "Service \(testService.UUID) primary is \(foundService.primary), should be \(testService.primary)")
-            */
-        }
-    }
-    
     func testCharacteristics() {
         
-        for testService in TestData.services {
+        for testService in TestProfile.services {
             
             guard let characteristics = foundCharacteristics[testService.UUID]
                 else { XCTFail("No characteristics found for service \(testService.UUID)"); continue }
@@ -48,39 +34,71 @@ final class ClientTests: XCTestCase {
                     guard foundCharacteristic.properties.contains(property)
                         else { XCTFail("Property \(property) not found in \(testCharacteristic.UUID)"); continue }
                 }
-                
-                // permissions are server-side only
-                
-                // read value
-                if testCharacteristic.properties.contains(.Read) {
-                    
-                    let foundData = foundCharacteristicValues[testCharacteristic.UUID]
-                    
-                    XCTAssert(foundData == testCharacteristic.value, "Invalid value for characteristic \(testCharacteristic.UUID)")
-                }
             }
         }
     }
     
+    func testRead() {
+        
+        let characteristic = TestProfile.Read
+        
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID]
+            where serviceCharacteristics.contains({ $0.UUID == characteristic.UUID })
+            else { XCTFail("Characteristic not found"); return }
+        
+        var value: Data!
+        
+        do { value = try central.read(characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+            
+        catch { XCTFail("Could not read value. \(error)"); return }
+        
+        XCTAssert(value == characteristic.value)
+    }
+    
+    func testReadBlob() {
+        
+        let characteristic = TestProfile.ReadBlob
+        
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID]
+            where serviceCharacteristics.contains({ $0.UUID == characteristic.UUID })
+            else { XCTFail("Characteristic not found"); return }
+        
+        var value: Data!
+        
+        do { value = try central.read(characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+            
+        catch { XCTFail("Could not read value. \(error)"); return }
+        
+        XCTAssert(value == characteristic.value, "\(value) == \(characteristic.value)")
+    }
+    
     func testWrite() {
         
-        // make sure values are already read
-        foundCharacteristicValues
+        let characteristic = TestProfile.Write
         
-        do { try central.write(data: TestData.writeOnly.newValue, response: true, characteristic: TestData.writeOnly.characteristic.UUID, service: TestData.writeOnly.service, peripheral: testPeripheral) }
+        let writeValue = TestProfile.WriteValue
         
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID]
+            where serviceCharacteristics.contains({ $0.UUID == characteristic.UUID })
+            else { XCTFail("Characteristic not found"); return }
+        
+        do { try central.write(data: writeValue, response: true, characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+            
         catch { XCTFail("Could not write value. \(error)"); return }
     }
     
-    func testLongWrite() {
+    func testWriteBlob() {
         
-        // make sure values are already read
-        foundCharacteristicValues
+        let characteristic = TestProfile.WriteBlob
         
-        let newValue = Data(byteValue: [Byte].init(repeating: UInt8.max, count: 512))
+        let writeValue = TestProfile.WriteBlobValue
         
-        do { try central.write(data: newValue, response: true, characteristic: TestData.services[1].characteristics[1].UUID, service: TestData.services[1].UUID, peripheral: testPeripheral) }
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID]
+            where serviceCharacteristics.contains({ $0.UUID == characteristic.UUID })
+            else { XCTFail("Characteristic not found"); return }
+        
+        do { try central.write(data: writeValue, response: true, characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
             
-        catch { XCTFail("Could not write long value. \(error)"); return }
+        catch { XCTFail("Could not write value. \(error)"); return }
     }
 }
