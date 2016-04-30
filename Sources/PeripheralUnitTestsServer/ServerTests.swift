@@ -20,7 +20,7 @@ final class ServerTests: XCTestCase {
         
         peripheral
         
-        for service in TestData.services {
+        for service in TestProfile.services {
             
             for characteristic in service.characteristics {
                 

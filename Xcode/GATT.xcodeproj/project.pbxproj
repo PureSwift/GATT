@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
+		6E1C311C1CD4723C00E8F7EB /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
 		6E2A5D621CC8436800BA7E15 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */; };
 		6E2A5D641CC8436800BA7E15 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D631CC8436800BA7E15 /* ViewController.swift */; };
 		6E2A5D671CC8436800BA7E15 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D651CC8436800BA7E15 /* Main.storyboard */; };
@@ -34,6 +35,7 @@
 		6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7BD64B1CB0FD9500F0ABF3 /* GATTTest.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6E7BD6521CB0FE1B00F0ABF3 /* TestProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestProfile.swift */; };
+		6E809EDA1CD476E100B06F45 /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
 		6E96454C1CB10330002E7C87 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */; };
 		6E96454D1CB10333002E7C87 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD61F1CB0F9B200F0ABF3 /* CentralManager.swift */; };
 		6EAB9AD61CBF9354002635A9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAB9AD51CBF9354002635A9 /* main.swift */; };
@@ -140,6 +142,7 @@
 /* Begin PBXFileReference section */
 		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
 		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
+		6E1C311B1CD4723C00E8F7EB /* Beacon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Beacon.swift; sourceTree = "<group>"; };
 		6E2A5D5F1CC8436800BA7E15 /* TestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6E2A5D631CC8436800BA7E15 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -373,6 +376,7 @@
 				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 				6E17DC221CB1DC250043C644 /* Central.swift */,
 				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
+				6E1C311B1CD4723C00E8F7EB /* Beacon.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -689,6 +693,7 @@
 				6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */,
 				6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */,
 				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
+				6E1C311C1CD4723C00E8F7EB /* Beacon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -703,6 +708,7 @@
 				6EF45FC51CC6D355001F7A39 /* DarwinPeripheral.swift in Sources */,
 				6EF45FC61CC6D355001F7A39 /* DarwinCentral.swift in Sources */,
 				6EF45FC71CC6D355001F7A39 /* Peripheral.swift in Sources */,
+				6E809EDA1CD476E100B06F45 /* Beacon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

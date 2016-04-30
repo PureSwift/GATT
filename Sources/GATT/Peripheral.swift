@@ -16,6 +16,24 @@ public protocol NativePeripheral {
     
     associatedtype ServiceIdentifier
     
+#if os(iOS) || os(Linux) || XcodeLinux
+    
+    /// Start advertising the peripheral and listening for incoming connections.
+    ///
+    /// - Note: Can optionally advertise as iBeacon in iOS and Linux.
+    func start(beacon: Beacon?) throws
+    
+#elseif os(OSX)
+    
+    /// Start advertising the peripheral and listening for incoming connections.
+    func start() throws
+
+#endif
+    
+    /// Stop the peripheral.
+    func stop()
+    
+    /// The closure to call for internal logging.
     var log: (String -> ())? { get }
     
     /// Attempts to add the specified service to the GATT database.
@@ -28,12 +46,6 @@ public protocol NativePeripheral {
     
     /// Clears the local GATT database.
     func clear()
-    
-    /// Start advertising the peripheral and listening for incoming connections.
-    func start() throws
-    
-    /// Stop the peripheral.
-    func stop()
     
     var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)? { get set }
     

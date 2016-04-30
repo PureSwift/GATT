@@ -13,6 +13,7 @@ import Bluetooth
     
     import Foundation
     import CoreBluetooth
+    import CoreLocation
     
     /// The platform specific peripheral. 
     public typealias PeripheralManager = DarwinPeripheral
@@ -84,7 +85,50 @@ import Bluetooth
             log?("Now powered on")
         }
         
+        #if os(OSX)
+        
         public func start() throws {
+            
+            let advertisementData = [CBAdvertisementDataLocalNameKey: localName]
+            
+            try start(advertisementData)
+        }
+        
+        #endif
+
+        #if XcodeLinux
+        
+        public func start(beacon: Beacon? = nil) throws {
+            
+            fatalError("Not supported on OS X")
+        }
+        
+        #endif
+        
+        #if os(iOS)
+        
+        public func start(beacon: Beacon? = nil) throws {
+        
+            var advertisementData = [String: AnyObject]()
+            
+            if let beacon = beacon {
+                
+                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.UUID.toFoundation(), major: beacon.major, minor: beacon.minor, identifier: beacon.UUID.rawValue)
+                
+                let mutableDictionary = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.RSSI))
+                
+                advertisementData = NSDictionary.init(dictionary: mutableDictionary) as! [String: AnyObject]
+            }
+            
+            advertisementData[CBAdvertisementDataLocalNameKey] = localName
+            
+            try start(advertisementData)
+        }
+
+        #endif
+        
+        @inline(__always)
+        private func start(_ advertisementData: [String: AnyObject]) throws {
             
             assert(startAdvertisingState == nil, "Already started advertising")
             
@@ -92,7 +136,7 @@ import Bluetooth
             
             startAdvertisingState = (semaphore, nil) // set semaphore
             
-            internalManager.startAdvertising([CBAdvertisementDataLocalNameKey: localName])
+            internalManager.startAdvertising(advertisementData)
             
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
             

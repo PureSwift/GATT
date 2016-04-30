@@ -25,7 +25,7 @@ let peripheral: PeripheralManager = {
         peripheral.waitForPoweredOn()
     #endif
     
-    for service in TestData.services {
+    for service in TestProfile.services {
         
         try! peripheral.add(service: service)
     }

@@ -48,9 +48,18 @@
         
         // MARK: - Methods
         
-        public func start() throws {
+        public func start(beacon: Beacon? = nil) throws {
             
             guard isServerRunning == false else { return }
+            
+            if let beacon = beacon {
+                
+                try adapter.enableBeacon(UUID: beacon.UUID, major: beacon.major, minor: beacon.minor, RSSI: beacon.RSSI, interval: beacon.interval)
+                
+            } else {
+                
+                try adapter.enableAdvertising()
+            }
             
             let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
             
@@ -116,7 +125,22 @@
                                     }
                                 }
                                     
-                                catch { peripheral.log?("Error: \(error)"); return }
+                                catch {
+                                    
+                                    /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
+                                    if let disconnectError = error as? POSIXError where disconnectError.rawValue == 104 {
+                                        
+                                        peripheral.log?("Central \(newSocket.address) disconnected")
+                                        
+                                        do { try peripheral.adapter.enableAdvertising() }
+                                        
+                                        catch { peripheral.log?("Could not restore advertising. \(error)") }
+                                        
+                                        return
+                                    }
+                                    
+                                    peripheral.log?("Error: \(error)"); return
+                                }
                             }
                         })
                     }
