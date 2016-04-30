@@ -120,6 +120,14 @@ import Bluetooth
             assert(sync { self.peripheral(peripheral).state != .disconnected })
         }
         
+        public func disconnectAll() {
+            
+            for peripheral in scanPeripherals {
+                
+                internalManager.cancelPeripheralConnection(peripheral)
+            }
+        }
+        
         public func discoverServices(for peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
             
             let corePeripheral: CBPeripheral = sync {
