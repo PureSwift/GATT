@@ -33,4 +33,6 @@ public protocol NativeCentral {
 public enum CentralError: ErrorProtocol {
     
     case Timeout
+    
+    case Disconnected
 }

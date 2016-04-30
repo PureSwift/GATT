@@ -17,7 +17,7 @@ import Bluetooth
     /// The platform specific peripheral.
     public typealias CentralManager = DarwinCentral
     
-    public final class DarwinCentral: NSObject, NativeCentral {
+    public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         public typealias Error = CentralError
         
@@ -32,9 +32,11 @@ import Bluetooth
             return internalManager.state
         }
         
+        public var didDisconnect: Peripheral -> () = { _ in }
+        
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: unsafeBitCast(self, to: CBCentralManagerDelegate.self), queue: self.queue)
+        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
         
         private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
         
@@ -130,11 +132,12 @@ import Bluetooth
         
         public func discoverServices(for peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, primary: Bool)] {
             
-            let corePeripheral: CBPeripheral = sync {
+            let corePeripheral: CBPeripheral = try sync {
                 
                 let corePeripheral = self.peripheral(peripheral)
                 
-                assert(corePeripheral.state == .connected)
+                guard corePeripheral.state == .connected
+                    else { throw Error.Disconnected }
                 
                 corePeripheral.discoverServices(nil)
                 
@@ -150,6 +153,9 @@ import Bluetooth
             
             let corePeripheral = self.peripheral(peripheral)
             
+            guard corePeripheral.state == .connected
+                else { throw Error.Disconnected }
+            
             let coreService = corePeripheral.service(service)
             
             corePeripheral.discoverCharacteristics(nil, for: coreService)
@@ -162,6 +168,9 @@ import Bluetooth
         public func read(characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws -> Data {
             
             let corePeripheral = self.peripheral(peripheral)
+            
+            guard corePeripheral.state == .connected
+                else { throw Error.Disconnected }
             
             let coreService = corePeripheral.service(service)
             
@@ -181,6 +190,9 @@ import Bluetooth
         public func write(data: Data, response: Bool, characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws {
             
             let corePeripheral = self.peripheral(peripheral)
+            
+            guard corePeripheral.state == .connected
+                else { throw Error.Disconnected }
             
             let coreService = corePeripheral.service(service)
             
@@ -289,7 +301,7 @@ import Bluetooth
         
         // MARK: - CBCentralManagerDelegate
         
-        @objc private func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        @objc public func centralManagerDidUpdateState(_ central: CBCentralManager) {
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
@@ -301,7 +313,8 @@ import Bluetooth
             }
         }
         
-        @objc private func centralManager(_ central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
+        @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
+        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             
@@ -316,7 +329,8 @@ import Bluetooth
             }
         }
         
-        @objc private func centralManager(_ central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
+        @objc(centralManager:didConnectPeripheral:)
+        public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
             
             log?("Connecting to peripheral \(peripheral.identifier.uuidString)")
             
@@ -328,7 +342,8 @@ import Bluetooth
             }
         }
         
-        @objc private func centralManager(_ central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
+        @objc(centralManager:didFailToConnectPeripheral:error:)
+        public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: NSError?) {
             
             log?("Did fail to connect to peripheral \(peripheral.identifier.uuidString) (\(error!))")
             
@@ -338,9 +353,15 @@ import Bluetooth
             }
         }
         
+        @objc(centralManager:didDisconnectPeripheral:error:)
+        public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: NSError?) {
+            
+            self.didDisconnect(Peripheral(peripheral))
+        }
+        
         // MARK: - CBPeripheralDelegate
         
-        @objc private func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+        @objc public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
             
             if let error = error {
                 
@@ -354,7 +375,8 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        @objc private func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+        @objc(peripheral:didDiscoverCharacteristicsForService:error:)
+        public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: NSError?) {
             
             if let error = error {
                 
@@ -368,7 +390,8 @@ import Bluetooth
             stopWaiting(error)
         }
         
-        @objc private func peripheral(_ peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        @objc(peripheral:didUpdateValueForCharacteristic:error:)
+        public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: NSError?) {
             
             if let error = error {
                 
@@ -385,7 +408,8 @@ import Bluetooth
             }
         }
         
-        @objc private func peripheral(_ peripheral: CBPeripheral, didWriteValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        @objc(peripheral:didWriteValueForCharacteristic:error:)
+        public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: NSError?) {
             
             if let error = error {
                 
