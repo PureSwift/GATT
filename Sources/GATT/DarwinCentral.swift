@@ -225,7 +225,7 @@ import Bluetooth
             
             assert(operationState == nil, "Already waiting for an asyncronous operation to finish")
             
-            let semaphore = dispatch_semaphore_create(0)
+            let semaphore = dispatch_semaphore_create(0)!
             
             // set semaphore
             operationState = (semaphore, nil)

@@ -22,7 +22,7 @@ import Bluetooth
         
         // MARK: - Properties
         
-        public var log: (String -> ())?
+        public var log: ((String) -> ())?
         
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
@@ -132,7 +132,7 @@ import Bluetooth
             
             assert(startAdvertisingState == nil, "Already started advertising")
             
-            let semaphore = dispatch_semaphore_create(0)
+            let semaphore = dispatch_semaphore_create(0)!
             
             startAdvertisingState = (semaphore, nil) // set semaphore
             
@@ -162,7 +162,7 @@ import Bluetooth
             
             /// wait
             
-            let semaphore = dispatch_semaphore_create(0)
+            let semaphore = dispatch_semaphore_create(0)!
             
             addServiceState = (semaphore, nil) // set semaphore
             
