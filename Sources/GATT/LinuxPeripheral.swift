@@ -16,7 +16,7 @@
         
         // MARK: - Properties
         
-        public var log: (String -> ())?
+        public var log: ((String) -> ())?
         
         public let maximumTransmissionUnit: Int
         
@@ -117,7 +117,7 @@
                                     
                                     peripheral.database = server.database
                                     
-                                    try server.write()
+                                    let _ = try server.write()
                                     
                                     if let didWrite = didWrite {
                                         
@@ -128,7 +128,9 @@
                                 catch {
                                     
                                     /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
-                                    if let disconnectError = error as? POSIXError where disconnectError.rawValue == 104 {
+                                    if let disconnectError = error as? POSIXError
+                                    where disconnectError.rawValue == 104
+                                    || disconnectError.rawValue == 110 {
                                         
                                         peripheral.log?("Central \(newSocket.address) disconnected")
                                         
