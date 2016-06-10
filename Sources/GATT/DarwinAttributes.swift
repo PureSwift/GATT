@@ -108,7 +108,7 @@ import Bluetooth
             
             for possibleValue in GATT.CharacteristicProperty.CoreBluetoothValues {
                 
-                let rawValue = Int(possibleValue.rawValue)
+                let rawValue = CoreBluetoothBitmaskType.RawValue(possibleValue.rawValue)
                 
                 if rawValue & bitmask == rawValue {
                     
@@ -134,7 +134,7 @@ import Bluetooth
             
             for possibleValue in ATT.AttributePermission.CoreBluetoothValues {
                 
-                let rawValue = Int(possibleValue.rawValue)
+                let rawValue = CoreBluetoothBitmaskType.RawValue(possibleValue.rawValue)
                 
                 if rawValue & bitmask == rawValue {
                     
