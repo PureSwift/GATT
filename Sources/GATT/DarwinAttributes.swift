@@ -94,17 +94,21 @@ import Bluetooth
         static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self]
     }
     
-    extension CoreBluetoothBitmaskConvertible where RawValue: Integer, CoreBluetoothBitmaskType.RawValue: Integer {
+    extension GATT.CharacteristicProperty: CoreBluetoothBitmaskConvertible {
         
-        static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [Self] {
+        typealias CoreBluetoothBitmaskType = CBCharacteristicProperties
+        
+        static let CoreBluetoothValues: [GATT.CharacteristicProperty] = [.Broadcast, .Read, .WriteWithoutResponse, .Write, .Notify, .Indicate, .SignedWrite, .ExtendedProperties]
+        
+        static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [GATT.CharacteristicProperty] {
             
-            let bitmask = CoreBluetooth.rawValue.toIntMax()
+            let bitmask = CoreBluetooth.rawValue
             
-            var convertedValues = [Self]()
+            var convertedValues: [GATT.CharacteristicProperty] = []
             
-            for possibleValue in Self.CoreBluetoothValues {
+            for possibleValue in GATT.CharacteristicProperty.CoreBluetoothValues {
                 
-                let rawValue = possibleValue.rawValue.toIntMax()
+                let rawValue = Int(possibleValue.rawValue)
                 
                 if rawValue & bitmask == rawValue {
                     
@@ -116,18 +120,30 @@ import Bluetooth
         }
     }
     
-    extension GATT.CharacteristicProperty: CoreBluetoothBitmaskConvertible {
-        
-        typealias CoreBluetoothBitmaskType = CBCharacteristicProperties
-        
-        static let CoreBluetoothValues: [GATT.CharacteristicProperty] = [.Broadcast, .Read, .WriteWithoutResponse, .Write, .Notify, .Indicate, .SignedWrite, .ExtendedProperties]
-    }
-    
     extension ATT.AttributePermission: CoreBluetoothBitmaskConvertible {
         
         typealias CoreBluetoothBitmaskType = CBAttributePermissions
         
         static let CoreBluetoothValues = [.Read, .Write] + ATT.AttributePermission.Encrypt
+        
+        static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [ATT.AttributePermission] {
+            
+            let bitmask = CoreBluetooth.rawValue
+            
+            var convertedValues: [ATT.AttributePermission] = []
+            
+            for possibleValue in ATT.AttributePermission.CoreBluetoothValues {
+                
+                let rawValue = Int(possibleValue.rawValue)
+                
+                if rawValue & bitmask == rawValue {
+                    
+                    convertedValues.append(possibleValue)
+                }
+            }
+            
+            return convertedValues
+        }
     }
 
 #endif
