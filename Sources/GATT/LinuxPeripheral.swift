@@ -58,7 +58,8 @@
                 
             } else {
                 
-                try adapter.enableAdvertising()
+                do { try adapter.enableAdvertising() }
+                catch HCIError.CommandDisallowed { /* ignore */ }
             }
             
             let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
