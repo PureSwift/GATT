@@ -23,7 +23,7 @@ import Bluetooth
         
         // MARK: - Properties
         
-        public var log: (String -> ())?
+        public var log: ((String) -> ())?
         
         public var stateChanged: (CBCentralManagerState) -> () = { _ in }
         
@@ -32,7 +32,7 @@ import Bluetooth
             return internalManager.state
         }
         
-        public var didDisconnect: Peripheral -> () = { _ in }
+        public var didDisconnect: (Peripheral) -> () = { _ in }
         
         // MARK: - Private Properties
         
@@ -122,6 +122,13 @@ import Bluetooth
             assert(sync { self.peripheral(peripheral).state != .disconnected })
         }
         
+        public func disconnect(peripheral: Peripheral) {
+            
+            let corePeripheral = self.peripheral(peripheral)
+            
+            internalManager.cancelPeripheralConnection(corePeripheral)
+        }
+        
         public func disconnectAll() {
             
             for peripheral in scanPeripherals {
@@ -144,7 +151,7 @@ import Bluetooth
                 return corePeripheral
             }
             
-            try wait()
+            let _ = try wait()
             
             return sync { (corePeripheral.services ?? []).map { (Bluetooth.UUID(foundation: $0.uuid), $0.isPrimary) } }
         }
@@ -160,7 +167,7 @@ import Bluetooth
             
             corePeripheral.discoverCharacteristics(nil, for: coreService)
             
-            try wait()
+            let _ = try wait()
             
             return (coreService.characteristics ?? []).map { (Bluetooth.UUID(foundation: $0.uuid), Characteristic.Property.from(CoreBluetooth: $0.properties)) }
         }
@@ -180,7 +187,7 @@ import Bluetooth
             
             isReading = true
             
-            try wait()
+            let _ = try wait()
             
             isReading = false
             
@@ -204,7 +211,7 @@ import Bluetooth
             
             if response {
                 
-                try wait()
+                let _ = try wait()
             }
         }
         
