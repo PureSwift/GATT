@@ -94,9 +94,10 @@ import Bluetooth
         
         public func connect(to peripheral: Peripheral, timeout: Int = 5) throws {
             
-            sync {
+            try sync {
                 
-                let corePeripheral = self.peripheral(peripheral)
+                guard let corePeripheral = self.peripheral(peripheral)
+                    else { throw Error.UnknownPeripheral }
                 
                 self.connectingToPeripheral = corePeripheral
                 
@@ -119,12 +120,13 @@ import Bluetooth
             
             guard success else { throw Error.Timeout }
             
-            assert(sync { self.peripheral(peripheral).state != .disconnected })
+            assert(sync { self.peripheral(peripheral)!.state != .disconnected })
         }
         
         public func disconnect(peripheral: Peripheral) {
             
-            let corePeripheral = self.peripheral(peripheral)
+            guard let corePeripheral = self.peripheral(peripheral)
+                else { return }
             
             internalManager.cancelPeripheralConnection(corePeripheral)
         }
@@ -141,7 +143,8 @@ import Bluetooth
             
             let corePeripheral: CBPeripheral = try sync {
                 
-                let corePeripheral = self.peripheral(peripheral)
+                guard let corePeripheral = self.peripheral(peripheral)
+                    else { throw Error.Disconnected }
                 
                 guard corePeripheral.state == .connected
                     else { throw Error.Disconnected }
@@ -158,7 +161,8 @@ import Bluetooth
         
         public func discoverCharacteristics(for service: Bluetooth.UUID, peripheral: Peripheral) throws -> [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])] {
             
-            let corePeripheral = self.peripheral(peripheral)
+            guard let corePeripheral = self.peripheral(peripheral)
+                else { throw Error.Disconnected }
             
             guard corePeripheral.state == .connected
                 else { throw Error.Disconnected }
@@ -174,7 +178,8 @@ import Bluetooth
         
         public func read(characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws -> Data {
             
-            let corePeripheral = self.peripheral(peripheral)
+            guard let corePeripheral = self.peripheral(peripheral)
+                else { throw Error.Disconnected }
             
             guard corePeripheral.state == .connected
                 else { throw Error.Disconnected }
@@ -196,7 +201,8 @@ import Bluetooth
         
         public func write(data: Data, response: Bool, characteristic UUID: Bluetooth.UUID, service: Bluetooth.UUID, peripheral: Peripheral) throws {
             
-            let corePeripheral = self.peripheral(peripheral)
+            guard let corePeripheral = self.peripheral(peripheral)
+                else { throw Error.Disconnected }
             
             guard corePeripheral.state == .connected
                 else { throw Error.Disconnected }
@@ -217,7 +223,7 @@ import Bluetooth
         
         // MARK: - Private Methods
         
-        private func peripheral(_ peripheral: Peripheral) -> CBPeripheral {
+        private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
             
             for foundPeripheral in scanPeripherals {
                 
@@ -225,7 +231,7 @@ import Bluetooth
                     else { return foundPeripheral }
             }
             
-            fatalError("\(peripheral) not found")
+            return nil
         }
         
         private func wait(_ timeout: Int? = nil) throws -> Bool {

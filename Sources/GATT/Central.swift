@@ -14,7 +14,7 @@ import Bluetooth
 /// Implementation varies by operating system.
 public protocol NativeCentral {
     
-    var log: (String -> ())? { get set }
+    var log: ((String) -> ())? { get set }
     
     func scan(duration: Int) -> [Peripheral]
     
@@ -35,4 +35,7 @@ public enum CentralError: ErrorProtocol {
     case Timeout
     
     case Disconnected
+    
+    /// Peripheral from previous scan.
+    case UnknownPeripheral
 }
