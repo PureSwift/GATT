@@ -65,7 +65,7 @@ public struct Central: Peer {
         
         init(_ central: CBCentral) {
             
-            self.identifier = SwiftFoundation.UUID(foundation: central.identifier)
+            self.identifier = central.identifier
         }
     }
     
@@ -85,7 +85,7 @@ public struct Peripheral: Peer {
         
         init(_ central: CBPeripheral) {
             
-            self.identifier = SwiftFoundation.UUID(foundation: central.identifier)
+            self.identifier = central.identifier
         }
     }
 

@@ -26,7 +26,7 @@ import Bluetooth
         
         func toCoreBluetooth() -> CBMutableService {
             
-            let service = CBMutableService(type: UUID.toFoundation(), primary: primary)
+            let service = CBMutableService(type: UUID.toCoreBluetooth(), primary: primary)
             
             service.characteristics = characteristics.map { $0.toCoreBluetooth() }
             
@@ -50,7 +50,7 @@ import Bluetooth
             // Characteristics with cached values must be read-only
             // Must set nil as value.
             
-            let characteristic = CBMutableCharacteristic(type: UUID.toFoundation(), properties: propertiesMask, value: nil, permissions: permissionsMask)
+            let characteristic = CBMutableCharacteristic(type: UUID.toCoreBluetooth(), properties: propertiesMask, value: nil, permissions: permissionsMask)
             
             characteristic.descriptors = descriptors.map { $0.toCoreBluetooth() }
             
@@ -62,21 +62,19 @@ import Bluetooth
         
         func toCoreBluetooth() -> CBMutableDescriptor {
             
-            let foundationUUID = UUID.toFoundation()
-            
             // Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported.
-            switch foundationUUID.uuidString {
+            switch UUID.rawValue {
                 
             case CBUUIDCharacteristicUserDescriptionString:
                 
                 guard let string = String(UTF8Data: value)
                     else { fatalError("Could not parse string for CBMutableDescriptor from \(self)") }
                 
-                return CBMutableDescriptor(type: foundationUUID, value: string)
+                return CBMutableDescriptor(type: UUID.toCoreBluetooth(), value: string)
                 
             case CBUUIDCharacteristicFormatString:
                 
-                return CBMutableDescriptor(type: foundationUUID, value: value.toFoundation())
+                return CBMutableDescriptor(type: UUID.toCoreBluetooth(), value: value)
                 
             default: fatalError("Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported. Unsupported UUID \(UUID).")
             }

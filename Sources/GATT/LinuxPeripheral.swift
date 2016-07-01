@@ -22,11 +22,11 @@
         
         public let adapter: Adapter
         
-        public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
+        public var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ())?
+        public var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
@@ -36,7 +36,7 @@
         
         private var serverSocket: L2CAPSocket!
         
-        private var serverThread: Thread!
+        private var serverThread: SwiftFoundation.Thread!
         
         // MARK: - Initialization
         
@@ -96,7 +96,7 @@
                                 
                                 do {
                                     
-                                    var didWrite: (central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data)?
+                                    var didWrite: (central: Central, UUID: BluetoothUUID, value: Data, newValue: Data)?
                                     
                                     server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
                                     
@@ -185,7 +185,7 @@
         
         // MARK: Subscript
         
-        public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
+        public subscript(characteristic UUID: BluetoothUUID) -> Data {
             
             get { return database.attributes.filter({ $0.UUID == UUID}).first!.value }
             

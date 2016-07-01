@@ -34,7 +34,7 @@ public protocol NativePeripheral {
     func stop()
     
     /// The closure to call for internal logging.
-    var log: (String -> ())? { get }
+    var log: ((String) -> ())? { get }
     
     /// Attempts to add the specified service to the GATT database.
     ///
@@ -47,14 +47,14 @@ public protocol NativePeripheral {
     /// Clears the local GATT database.
     func clear()
     
-    var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)? { get set }
+    var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)? { get set }
     
-    var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)? { get set }
+    var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)? { get set }
     
-    var didWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ())? { get set }
+    var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified UUID.
-    subscript(characteristic UUID: Bluetooth.UUID) -> Data { get set }
+    subscript(characteristic UUID: BluetoothUUID) -> Data { get set }
 }
 
 // MARK: - Typealiases

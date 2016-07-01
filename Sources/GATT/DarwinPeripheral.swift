@@ -24,6 +24,8 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
+        #if os(OSX)
+        
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
         public var state: CBPeripheralManagerState {
@@ -31,25 +33,36 @@ import Bluetooth
             return internalManager.state
         }
         
+        #else
+        
+        public var stateChanged: (CBManagerState) -> () = { _ in }
+        
+        public var state: CBManagerState {
+            
+            return internalManager.state
+        }
+        
+        #endif
+        
         public let localName: String
         
-        public var willRead: ((central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error?)?
+        public var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ())?
+        public var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
         private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
-        private lazy var queue: dispatch_queue_t = dispatch_queue_create("\(self.dynamicType) Internal Queue", nil)
+        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(self.dynamicType) Internal Queue", attributes: DispatchQueueAttributes.serial)
         
-        private var poweredOnSemaphore: dispatch_semaphore_t!
+        private var poweredOnSemaphore: DispatchSemaphore!
         
-        private var addServiceState: (semaphore: dispatch_semaphore_t, error: NSError?)?
+        private var addServiceState: (semaphore: DispatchSemaphore, error: NSError?)?
         
-        private var startAdvertisingState: (semaphore: dispatch_semaphore_t, error: NSError?)?
+        private var startAdvertisingState: (semaphore: DispatchSemaphore, error: NSError?)?
         
         private var services = [CBMutableService]()
         
@@ -70,13 +83,13 @@ import Bluetooth
             guard internalManager.state != .poweredOn else { return }
             
             // already waiting
-            guard poweredOnSemaphore == nil else { dispatch_semaphore_wait(poweredOnSemaphore, DISPATCH_TIME_FOREVER); return }
+            guard poweredOnSemaphore == nil else { let _ = poweredOnSemaphore.wait(timeout: .distantFuture); return }
             
             log?("Not powered on (State \(internalManager.state.rawValue))")
             
-            poweredOnSemaphore = dispatch_semaphore_create(0)
+            poweredOnSemaphore = DispatchSemaphore(value: 0)
             
-            dispatch_semaphore_wait(poweredOnSemaphore, DISPATCH_TIME_FOREVER)
+            let _ = poweredOnSemaphore.wait(timeout: .distantFuture)
             
             poweredOnSemaphore = nil
             
@@ -113,7 +126,7 @@ import Bluetooth
             
             if let beacon = beacon {
                 
-                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.UUID.toFoundation(), major: beacon.major, minor: beacon.minor, identifier: beacon.UUID.rawValue)
+                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.UUID, major: beacon.major, minor: beacon.minor, identifier: beacon.UUID.rawValue)
                 
                 let mutableDictionary = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.RSSI))
                 
@@ -132,13 +145,13 @@ import Bluetooth
             
             assert(startAdvertisingState == nil, "Already started advertising")
             
-            let semaphore = dispatch_semaphore_create(0)!
+            let semaphore = DispatchSemaphore(value: 0)
             
             startAdvertisingState = (semaphore, nil) // set semaphore
             
             internalManager.startAdvertising(advertisementData)
             
-            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+            let _ = semaphore.wait(timeout: .distantFuture)
             
             let error = startAdvertisingState?.error
             
@@ -162,7 +175,7 @@ import Bluetooth
             
             /// wait
             
-            let semaphore = dispatch_semaphore_create(0)!
+            let semaphore = DispatchSemaphore(value: 0)
             
             addServiceState = (semaphore, nil) // set semaphore
             
@@ -171,7 +184,7 @@ import Bluetooth
             
             internalManager.add(coreService)
             
-            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+            let _ = semaphore.wait(timeout: .distantFuture)
             
             let error = addServiceState?.error
             
@@ -217,11 +230,11 @@ import Bluetooth
         
         // MARK: Subscript
         
-        public subscript(characteristic UUID: Bluetooth.UUID) -> Data {
+        public subscript(characteristic UUID: BluetoothUUID) -> Data {
             
             get { return self[characteristic(UUID)] }
             
-            set { internalManager.updateValue(newValue.toFoundation(), for: characteristic(UUID), onSubscribedCentrals: nil) }
+            set { internalManager.updateValue(newValue, for: characteristic(UUID), onSubscribedCentrals: nil) }
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -234,7 +247,7 @@ import Bluetooth
             
             if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
                 
-                dispatch_semaphore_signal(poweredOnSemaphore)
+                poweredOnSemaphore.signal()
             }
         }
         
@@ -244,7 +257,7 @@ import Bluetooth
             
             startAdvertisingState?.error = error
             
-            dispatch_semaphore_signal(semaphore)
+            semaphore.signal()
         }
         
         @objc(peripheralManager:didAddService:error:) public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
@@ -262,21 +275,21 @@ import Bluetooth
             
             addServiceState?.error = error
             
-            dispatch_semaphore_signal(semaphore)
+            semaphore.signal()
         }
         
         @objc(peripheralManager:didReceiveReadRequest:) public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
             
-            let value = self[request.characteristic].byteValue
+            let value = self[request.characteristic].bytes
             
-            let UUID = Bluetooth.UUID(foundation: request.characteristic.uuid)
+            let UUID = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
             
             guard request.offset <= value.count
                 else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
-            if let error = willRead?(central: peer, UUID: UUID, value: Data(byteValue: value), offset: request.offset) {
+            if let error = willRead?(central: peer, UUID: UUID, value: Data(bytes: value), offset: request.offset) {
                 
                 internalManager.respond(to: request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
                 return
@@ -284,7 +297,7 @@ import Bluetooth
             
             let requestedValue = request.offset == 0 ? value : Array(value.suffix(request.offset))
             
-            request.value = Data(byteValue: requestedValue).toFoundation()
+            request.value = Data(bytes: requestedValue)
             
             internalManager.respond(to: request, withResult: .success)
         }
@@ -302,13 +315,13 @@ import Bluetooth
                 
                 let value = self[request.characteristic]
                 
-                let UUID = Bluetooth.UUID(foundation: request.characteristic.uuid)
+                let UUID = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
                 
-                let newBytes = Data(foundation: request.value ?? NSData())
+                let newBytes = request.value ?? Data()
                 
                 var newValue = value
                 
-                newValue.byteValue.replaceSubrange(request.offset ..< request.offset + newBytes.byteValue.count, with: newBytes.byteValue)
+                newValue.bytes.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes.bytes)
                 
                 if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: newValue) {
                     
@@ -336,7 +349,7 @@ import Bluetooth
         // MARK: - Private Methods
         
         /// Find the characteristic with the specified UUID.
-        private func characteristic(_ UUID: Bluetooth.UUID) -> CBMutableCharacteristic {
+        private func characteristic(_ UUID: BluetoothUUID) -> CBMutableCharacteristic {
             
             var foundCharacteristic: CBMutableCharacteristic!
             
@@ -350,7 +363,7 @@ import Bluetooth
                         let foundation = characteristic.uuid
                     #endif
                     
-                    guard UUID != Bluetooth.UUID(foundation: foundation)
+                    guard UUID != BluetoothUUID(coreBluetooth: foundation)
                         else { foundCharacteristic = characteristic; break }
                 }
             }

@@ -27,7 +27,7 @@ let peripheral: PeripheralManager = {
     
     for service in TestProfile.services {
         
-        try! peripheral.add(service: service)
+        let _ = try! peripheral.add(service: service)
     }
     
     peripheral.willRead = willRead
@@ -42,11 +42,11 @@ let peripheral: PeripheralManager = {
     return peripheral
 }()
 
-private(set) var readServices: [Bluetooth.UUID] = []
+private(set) var readServices: [BluetoothUUID] = []
 
-private(set) var writtenServices: [Bluetooth.UUID] = []
+private(set) var writtenServices: [BluetoothUUID] = []
 
-private func willRead(central: Central, UUID: Bluetooth.UUID, value: Data, offset: Int) -> ATT.Error? {
+private func willRead(central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error? {
     
     print("Central \(central.identifier) will read characteristic \(UUID)")
     
@@ -55,7 +55,7 @@ private func willRead(central: Central, UUID: Bluetooth.UUID, value: Data, offse
     return nil
 }
 
-private func willWrite(central: Central, UUID: Bluetooth.UUID, value: Data, newValue: Data) -> ATT.Error? {
+private func willWrite(central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error? {
     
     print("Central \(central.identifier) will write characteristic \(UUID)")
     

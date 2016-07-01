@@ -55,20 +55,20 @@ let testPeripheral: Peripheral = {
     }
 }()
 
-private var testServicesCache: [(UUID: Bluetooth.UUID, primary: Bool)]!
+private var testServicesCache: [(UUID: BluetoothUUID, primary: Bool)]!
 
-let foundServices: [(UUID: Bluetooth.UUID, primary: Bool)] = {
+let foundServices: [(UUID: BluetoothUUID, primary: Bool)] = {
    
     // get the peripheral first
-    testPeripheral
+    let _ = testPeripheral
     
     // return the cached services
     return testServicesCache
 }()
 
-let foundCharacteristics: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]] = {
+let foundCharacteristics: [BluetoothUUID: [(UUID: BluetoothUUID, properties: [Characteristic.Property])]] = {
     
-    var found: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [Characteristic.Property])]] = [:]
+    var found: [BluetoothUUID: [(UUID: BluetoothUUID, properties: [Characteristic.Property])]] = [:]
     
     for service in foundServices {
         
@@ -82,9 +82,9 @@ let foundCharacteristics: [Bluetooth.UUID: [(UUID: Bluetooth.UUID, properties: [
     return found
 }()
 
-let foundCharacteristicValues: [Bluetooth.UUID: Data] = {
+let foundCharacteristicValues: [BluetoothUUID: Data] = {
     
-    var values: [Bluetooth.UUID: Data] = [:]
+    var values: [BluetoothUUID: Data] = [:]
     
     for (service, characteristics) in foundCharacteristics {
         
@@ -93,7 +93,7 @@ let foundCharacteristicValues: [Bluetooth.UUID: Data] = {
             
             let data = try! central.read(characteristic: characteristic.UUID, service: service, peripheral: testPeripheral)
             
-            print("Read characteristic \(characteristic.UUID) (\(data.byteValue.count) bytes)")
+            print("Read characteristic \(characteristic.UUID) (\(data.bytes.count) bytes)")
             
             values[characteristic.UUID] = data
         }
