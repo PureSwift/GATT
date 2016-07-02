@@ -14,11 +14,11 @@ import GATTTest
 
 final class ServerTests: XCTestCase {
     
-    static let allTests: [(String, ServerTests -> () throws -> Void)] = [("testRead", testRead)]
+    static let allTests: [(String, (ServerTests) -> () throws -> Void)] = [("testRead", testRead)]
     
     func testRead() {
         
-        peripheral
+        let _ = peripheral
         
         for service in TestProfile.services {
             
