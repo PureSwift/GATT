@@ -36,11 +36,11 @@ import Bluetooth
         
         #else
         
-        public var stateChanged: (CBManagerState) -> () = { _ in }
+        public var stateChanged: (CBCentralManagerState) -> () = { _ in }
         
-        public var state: CBManagerState {
+        public var state: CBCentralManagerState {
         
-        return internalManager.state
+            return unsafeBitCast(internalManager.state, to: CBCentralManagerState.self)
         }
         
         #endif
@@ -331,7 +331,7 @@ import Bluetooth
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
-            stateChanged(central.state)
+            stateChanged(unsafeBitCast(central.state, to: CBCentralManagerState.self))
             
             if central.state == .poweredOn && poweredOnSemaphore != nil {
                 

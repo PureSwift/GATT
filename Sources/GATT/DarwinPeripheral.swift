@@ -35,11 +35,11 @@ import Bluetooth
         
         #else
         
-        public var stateChanged: (CBManagerState) -> () = { _ in }
+        public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
-        public var state: CBManagerState {
+        public var state: CBPeripheralManagerState {
             
-            return internalManager.state
+            return unsafeBitCast(internalManager.state, to: CBPeripheralManagerState.self)
         }
         
         #endif
@@ -243,7 +243,7 @@ import Bluetooth
             
             log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
             
-            stateChanged(peripheral.state)
+            stateChanged(unsafeBitCast(peripheral.state, to: CBPeripheralManagerState.self))
             
             if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
                 
