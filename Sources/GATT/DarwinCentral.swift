@@ -262,7 +262,7 @@ import Bluetooth
             
             if let timeout = timeout {
                 
-                dispatchTime = DispatchTime.now() + Double(Int64(timeout) * Int64(NSEC_PER_SEC))
+                dispatchTime = DispatchTime.now() + Double(timeout)
                 
             } else {
                 
