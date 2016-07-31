@@ -56,13 +56,13 @@ import Bluetooth
         
         private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
-        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(self.dynamicType) Internal Queue", attributes: DispatchQueueAttributes.serial)
+        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(self.dynamicType) Internal Queue", attributes: [])
         
         private var poweredOnSemaphore: DispatchSemaphore!
         
-        private var addServiceState: (semaphore: DispatchSemaphore, error: NSError?)?
+        private var addServiceState: (semaphore: DispatchSemaphore, error: Error?)?
         
-        private var startAdvertisingState: (semaphore: DispatchSemaphore, error: NSError?)?
+        private var startAdvertisingState: (semaphore: DispatchSemaphore, error: Error?)?
         
         private var services = [CBMutableService]()
         
@@ -102,7 +102,7 @@ import Bluetooth
         
         public func start() throws {
             
-            let advertisementData = [CBAdvertisementDataLocalNameKey: localName]
+            let advertisementData: [String : AnyObject] = [CBAdvertisementDataLocalNameKey: localName as NSString]
             
             try start(advertisementData)
         }
@@ -239,6 +239,7 @@ import Bluetooth
         
         // MARK: - CBPeripheralManagerDelegate
         
+        @objc(peripheralManagerDidUpdateState:)
         public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
             
             log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
@@ -251,7 +252,8 @@ import Bluetooth
             }
         }
         
-        public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: NSError?) {
+        @objc(peripheralManagerDidStartAdvertising:error:)
+        public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
             
             guard let semaphore = startAdvertisingState?.semaphore else { fatalError("Did not expect \(#function)") }
             
@@ -260,7 +262,8 @@ import Bluetooth
             semaphore.signal()
         }
         
-        @objc(peripheralManager:didAddService:error:) public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?) {
+        @objc(peripheralManager:didAddService:error:)
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
             
             if let error = error {
                 
@@ -278,7 +281,8 @@ import Bluetooth
             semaphore.signal()
         }
         
-        @objc(peripheralManager:didReceiveReadRequest:) public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        @objc(peripheralManager:didReceiveReadRequest:)
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
             
@@ -291,7 +295,7 @@ import Bluetooth
             
             if let error = willRead?(central: peer, UUID: UUID, value: Data(bytes: value), offset: request.offset) {
                 
-                internalManager.respond(to: request, withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                 return
             }
             
@@ -302,7 +306,8 @@ import Bluetooth
             internalManager.respond(to: request, withResult: .success)
         }
         
-        @objc(peripheralManager:didReceiveWriteRequests:) public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        @objc(peripheralManager:didReceiveWriteRequests:)
+        public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
             
             assert(requests.isEmpty == false)
             
@@ -325,7 +330,7 @@ import Bluetooth
                 
                 if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: newValue) {
                     
-                    internalManager.respond(to: requests[0], withResult: CBATTError(rawValue: Int(error.rawValue))!)
+                    internalManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                     
                     return
                 }

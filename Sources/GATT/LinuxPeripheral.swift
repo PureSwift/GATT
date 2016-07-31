@@ -129,9 +129,9 @@
                                 catch {
                                     
                                     /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
-                                    if let disconnectError = error as? POSIXError
-                                    where disconnectError.rawValue == 104
-                                    || disconnectError.rawValue == 110 {
+                                    if let disconnectError = error as? POSIXError,
+                                    disconnectError.code.rawValue == 104
+                                    || disconnectError.code.rawValue == 110 {
                                         
                                         peripheral.log?("Central \(newSocket.address) disconnected")
                                         

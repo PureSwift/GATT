@@ -30,12 +30,12 @@ public protocol NativeCentral {
 }
 
 /// Errors for GATT Central Manager
-public enum CentralError: ErrorProtocol {
+public enum CentralError: Error {
     
-    case Timeout
+    case timeout
     
-    case Disconnected
+    case disconnected
     
     /// Peripheral from previous scan.
-    case UnknownPeripheral
+    case unknownPeripheral
 }
