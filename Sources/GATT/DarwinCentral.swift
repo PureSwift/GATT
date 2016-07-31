@@ -341,7 +341,7 @@ import Bluetooth
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
-        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             
