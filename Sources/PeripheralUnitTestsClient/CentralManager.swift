@@ -45,7 +45,7 @@ let testPeripheral: Peripheral = {
             
             print("Discovered services: \(services.map({ $0.UUID }))")
             
-            if services.contains({ $0.UUID == TestProfile.TestService.UUID }) {
+            if services.contains(where: { $0.UUID == TestProfile.TestService.UUID }) {
                 
                 testServicesCache = services
                 
