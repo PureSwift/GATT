@@ -16,7 +16,7 @@ import Bluetooth
 import GATT
 import GATTTest
 
-let sleepTime: UInt32 = 10
+let sleepTime: UInt32 = 20
 
 let peripheral: PeripheralManager = {
     
