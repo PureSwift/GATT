@@ -96,18 +96,18 @@
                                 
                                 do {
                                     
-                                    var didWrite: (central: Central, UUID: BluetoothUUID, value: Data, newValue: Data)?
+                                    var didWriteValues: (central: Central, UUID: BluetoothUUID, value: Data, newValue: Data)?
                                     
-                                    server.willRead = { peripheral.willRead?(Central(socket: newSocket), $0.UUID, $0.value, $0.offset) }
+                                    server.willRead = { peripheral.willRead?(Central(socket: newSocket), $0.0, $0.1, $0.2) }
                                     
                                     server.willWrite = { (write) in
                                         
-                                        if let error = peripheral.willWrite?(Central(socket: newSocket), write.UUID, write.value, write.newValue) {
+                                        if let error = peripheral.willWrite?(Central(socket: newSocket), write.0, write.1, write.2) {
                                             
                                             return error
                                         }
                                         
-                                        didWrite = (central: Central(socket: newSocket), UUID: write.UUID, value: write.value, newValue: write.newValue)
+                                        didWriteValues = (central: Central(socket: newSocket), UUID: write.0, value: write.1, newValue: write.2)
                                         
                                         return nil
                                     }
@@ -120,9 +120,9 @@
                                     
                                     let _ = try server.write()
                                     
-                                    if let didWrite = didWrite {
+                                    if let writtenValues = didWriteValues {
                                         
-                                        peripheral.didWrite?(central: didWrite.central, UUID: didWrite.UUID, value: didWrite.value, newValue: didWrite.newValue)
+                                        peripheral.didWrite?(writtenValues.central, writtenValues.UUID, writtenValues.value, writtenValues.newValue)
                                     }
                                 }
                                     
