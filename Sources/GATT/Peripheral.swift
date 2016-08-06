@@ -47,11 +47,11 @@ public protocol NativePeripheral {
     /// Clears the local GATT database.
     func clear()
     
-    var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)? { get set }
+    var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)? { get set }
     
-    var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)? { get set }
+    var willWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)? { get set }
     
-    var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())? { get set }
+    var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified UUID.
     subscript(characteristic UUID: BluetoothUUID) -> Data { get set }

@@ -22,11 +22,11 @@
         
         public let adapter: Adapter
         
-        public var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
@@ -98,11 +98,11 @@
                                     
                                     var didWrite: (central: Central, UUID: BluetoothUUID, value: Data, newValue: Data)?
                                     
-                                    server.willRead = { peripheral.willRead?(central: Central(socket: newSocket), UUID: $0.UUID, value: $0.value, offset: $0.offset) }
+                                    server.willRead = { peripheral.willRead?(Central(socket: newSocket), $0.UUID, $0.value, $0.offset) }
                                     
                                     server.willWrite = { (write) in
                                         
-                                        if let error = peripheral.willWrite?(central: Central(socket: newSocket), UUID: write.UUID, value: write.value, newValue: write.newValue) {
+                                        if let error = peripheral.willWrite?(Central(socket: newSocket), write.UUID, write.value, write.newValue) {
                                             
                                             return error
                                         }

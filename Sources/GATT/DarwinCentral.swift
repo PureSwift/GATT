@@ -51,7 +51,7 @@ import Bluetooth
         
         private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
         
-        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(self.dynamicType) Internal Queue", attributes: [])
+        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Internal Queue", attributes: [])
         
         private var poweredOnSemaphore: DispatchSemaphore!
         
@@ -341,7 +341,7 @@ import Bluetooth
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
-        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : AnyObject], rssi RSSI: NSNumber) {
+        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             

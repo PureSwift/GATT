@@ -46,17 +46,17 @@ import Bluetooth
         
         public let localName: String
         
-        public var willRead: ((central: Central, UUID: BluetoothUUID, value: Data, offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((central: Central, UUID: BluetoothUUID, value: Data, newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
         private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
-        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(self.dynamicType) Internal Queue", attributes: [])
+        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Internal Queue", attributes: [])
         
         private var poweredOnSemaphore: DispatchSemaphore!
         
@@ -293,7 +293,7 @@ import Bluetooth
             guard request.offset <= value.count
                 else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
-            if let error = willRead?(central: peer, UUID: UUID, value: Data(bytes: value), offset: request.offset) {
+            if let error = willRead?(peer, UUID, Data(bytes: value), request.offset) {
                 
                 internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                 return
@@ -328,7 +328,7 @@ import Bluetooth
                 
                 newValue.bytes.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes.bytes)
                 
-                if let error = willWrite?(central: peer, UUID: UUID, value: value, newValue: newValue) {
+                if let error = willWrite?(peer, UUID, value, newValue) {
                     
                     internalManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                     
