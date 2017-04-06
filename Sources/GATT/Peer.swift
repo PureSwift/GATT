@@ -8,8 +8,8 @@
 
 #if os(OSX) || os(iOS)
     import CoreBluetooth
-    import struct SwiftFoundation.UUID
-    public typealias PeerIdentifier = SwiftFoundation.UUID
+    import struct Foundation.UUID
+    public typealias PeerIdentifier = Foundation.UUID
 #elseif os(Linux)
     import BluetoothLinux
     import struct Bluetooth.Address

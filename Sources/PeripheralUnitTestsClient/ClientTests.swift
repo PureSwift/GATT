@@ -9,7 +9,7 @@
 import XCTest
 import Foundation
 import CoreBluetooth
-import SwiftFoundation
+import Foundation
 import Bluetooth
 import GATT
 import GATTTest

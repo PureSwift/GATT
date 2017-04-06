@@ -17,12 +17,7 @@
 		6E2A5D6C1CC8436800BA7E15 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D6A1CC8436800BA7E15 /* LaunchScreen.storyboard */; };
 		6E2A5D721CC843A300BA7E15 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; };
 		6E2A5D731CC843A300BA7E15 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E2A5D781CC844BB00BA7E15 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D771CC844BB00BA7E15 /* main.swift */; };
 		6E4CA8651CB113E8008316A9 /* GATTTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6481CB0FD9500F0ABF3 /* GATTTest.framework */; };
-		6E4CA86C1CB113FA008316A9 /* Bluetooth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E4CA86D1CB113FA008316A9 /* BluetoothLinux.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E4CA86E1CB113FA008316A9 /* JSON.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E4CA86F1CB113FA008316A9 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E4CA8711CB11486008316A9 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4CA8701CB11486008316A9 /* ServerManager.swift */; };
 		6E4CA8731CB114A3008316A9 /* ServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4CA8721CB114A3008316A9 /* ServerTests.swift */; };
 		6E7B43CE1D459322007D3C36 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
@@ -30,10 +25,6 @@
 		6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
 		6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
 		6E7BD62C1CB0FAB700F0ABF3 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
-		6E7BD63D1CB0FBA500F0ABF3 /* Bluetooth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E7BD63E1CB0FBA500F0ABF3 /* BluetoothLinux.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E7BD63F1CB0FBA500F0ABF3 /* JSON.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7BD64B1CB0FD9500F0ABF3 /* GATTTest.h in Headers */ = {isa = PBXBuildFile; fileRef = 6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6E7BD6521CB0FE1B00F0ABF3 /* TestProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6511CB0FE1B00F0ABF3 /* TestProfile.swift */; };
 		6E809EDA1CD476E100B06F45 /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
@@ -114,10 +105,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				6E4CA86C1CB113FA008316A9 /* Bluetooth.framework in Copy Frameworks */,
-				6E4CA86D1CB113FA008316A9 /* BluetoothLinux.framework in Copy Frameworks */,
-				6E4CA86E1CB113FA008316A9 /* JSON.framework in Copy Frameworks */,
-				6E4CA86F1CB113FA008316A9 /* SwiftFoundation.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -128,10 +115,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				6E7BD63D1CB0FBA500F0ABF3 /* Bluetooth.framework in Copy Frameworks */,
-				6E7BD63E1CB0FBA500F0ABF3 /* BluetoothLinux.framework in Copy Frameworks */,
-				6E7BD63F1CB0FBA500F0ABF3 /* JSON.framework in Copy Frameworks */,
-				6E7BD6401CB0FBA500F0ABF3 /* SwiftFoundation.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -149,7 +132,6 @@
 		6E2A5D681CC8436800BA7E15 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E2A5D6B1CC8436800BA7E15 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6E2A5D6D1CC8436800BA7E15 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E2A5D771CC844BB00BA7E15 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		6E4CA8601CB113E8008316A9 /* PeripheralUnitTestsServer.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsServer.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E4CA8641CB113E8008316A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E4CA8701CB11486008316A9 /* ServerManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
@@ -163,10 +145,6 @@
 		6E7BD6201CB0F9B200F0ABF3 /* ClientTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClientTests.swift; sourceTree = "<group>"; };
 		6E7BD6271CB0FAB700F0ABF3 /* PeripheralUnitTestsClient.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsClient.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7BD62B1CB0FAB700F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bluetooth.framework; sourceTree = "<group>"; };
-		6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BluetoothLinux.framework; sourceTree = "<group>"; };
-		6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = JSON.framework; sourceTree = "<group>"; };
-		6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftFoundation.framework; sourceTree = "<group>"; };
 		6E7BD6481CB0FD9500F0ABF3 /* GATTTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATTTest.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATTTest.h; sourceTree = "<group>"; };
 		6E7BD64C1CB0FD9500F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -232,7 +210,6 @@
 		6E2A5D601CC8436800BA7E15 /* TestApp */ = {
 			isa = PBXGroup;
 			children = (
-				6E2A5D771CC844BB00BA7E15 /* main.swift */,
 				6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */,
 				6E2A5D631CC8436800BA7E15 /* ViewController.swift */,
 				6E2A5D651CC8436800BA7E15 /* Main.storyboard */,
@@ -278,26 +255,6 @@
 			path = PeripheralUnitTestsClient;
 			sourceTree = "<group>";
 		};
-		6E7BD6331CB0FB4600F0ABF3 /* Dependencies */ = {
-			isa = PBXGroup;
-			children = (
-				6E7BD6341CB0FB9A00F0ABF3 /* Mac */,
-			);
-			name = Dependencies;
-			sourceTree = "<group>";
-		};
-		6E7BD6341CB0FB9A00F0ABF3 /* Mac */ = {
-			isa = PBXGroup;
-			children = (
-				6E7BD6351CB0FB9A00F0ABF3 /* Bluetooth.framework */,
-				6E7BD6371CB0FB9A00F0ABF3 /* BluetoothLinux.framework */,
-				6E7BD6391CB0FB9A00F0ABF3 /* JSON.framework */,
-				6E7BD63B1CB0FB9A00F0ABF3 /* SwiftFoundation.framework */,
-			);
-			name = Mac;
-			path = ../Carthage/Build/Mac;
-			sourceTree = "<group>";
-		};
 		6E7BD6491CB0FD9500F0ABF3 /* GATTTest */ = {
 			isa = PBXGroup;
 			children = (
@@ -320,7 +277,6 @@
 			children = (
 				6E7BD6121CAF9C9500F0ABF3 /* Cartfile */,
 				6E7BD6131CAF9C9500F0ABF3 /* Package.swift */,
-				6E7BD6331CB0FB4600F0ABF3 /* Dependencies */,
 				6EE84D9E1CAF421100A40C4D /* Sources */,
 				6EE84D861CAF419D00A40C4D /* GATT */,
 				6E7BD6281CB0FAB700F0ABF3 /* PeripheralUnitTestsClient */,
@@ -532,7 +488,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0730;
-				LastUpgradeCheck = 0800;
+				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = PureSwift;
 				TargetAttributes = {
 					6E2A5D5E1CC8436800BA7E15 = {
@@ -653,7 +609,6 @@
 			files = (
 				6E2A5D641CC8436800BA7E15 /* ViewController.swift in Sources */,
 				6E2A5D621CC8436800BA7E15 /* AppDelegate.swift in Sources */,
-				6E2A5D781CC844BB00BA7E15 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -921,8 +876,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGNING_REQUIRED = NO;
@@ -946,8 +903,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "";
@@ -974,8 +931,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGNING_REQUIRED = NO;
@@ -993,8 +952,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				OTHER_CFLAGS = "";
 				SDKROOT = macosx;

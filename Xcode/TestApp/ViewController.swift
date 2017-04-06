@@ -9,7 +9,7 @@
 import UIKit
 import GATT
 
-class ViewController: UIViewController {
+final class ViewController: UIViewController {
     
     let central = CentralManager()
 

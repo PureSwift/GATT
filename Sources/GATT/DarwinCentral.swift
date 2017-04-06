@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import SwiftFoundation
+import Foundation
 import Bluetooth
 
 #if os(OSX) || os(iOS) || os(tvOS)
@@ -36,11 +36,11 @@ import Bluetooth
         
         #else
         
-        public var stateChanged: (CBCentralManagerState) -> () = { _ in }
+        public var stateChanged: (CBManagerState) -> () = { _ in }
         
-        public var state: CBCentralManagerState {
+        public var state: CBManagerState {
         
-            return unsafeBitCast(internalManager.state, to: CBCentralManagerState.self)
+            return internalManager.state
         }
         
         #endif
@@ -332,7 +332,7 @@ import Bluetooth
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
-            stateChanged(unsafeBitCast(central.state, to: CBCentralManagerState.self))
+            stateChanged(central.state)
             
             if central.state == .poweredOn && poweredOnSemaphore != nil {
                 

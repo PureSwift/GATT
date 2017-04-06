@@ -6,13 +6,13 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import SwiftFoundation
+import Foundation
 
 /// Describes an iBeacon to be advertised.
 public struct Beacon {
     
     /// The unique ID of the beacons being targeted.
-    public var UUID: SwiftFoundation.UUID
+    public var UUID: Foundation.UUID
     
     /// The value identifying a group of beacons.
     public var major: UInt16
@@ -28,7 +28,7 @@ public struct Beacon {
     public var interval: UInt16 = 200
     #endif
     
-    public init(UUID: SwiftFoundation.UUID, major: UInt16, minor: UInt16, RSSI: Int8) {
+    public init(UUID: Foundation.UUID, major: UInt16, minor: UInt16, RSSI: Int8) {
         
         self.UUID = UUID
         self.major = major

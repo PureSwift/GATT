@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import SwiftFoundation
+import Foundation
 import Bluetooth
 
 #if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
@@ -244,7 +244,7 @@ import Bluetooth
             
             log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
             
-            stateChanged(unsafeBitCast(peripheral.state, to: CBPeripheralManagerState.self))
+            stateChanged(peripheral.state)
             
             if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
                 
@@ -286,22 +286,22 @@ import Bluetooth
             
             let peer = Central(request.central)
             
-            let value = self[request.characteristic].bytes
+            let value = self[request.characteristic]
             
             let UUID = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
             
             guard request.offset <= value.count
                 else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
-            if let error = willRead?(peer, UUID, Data(bytes: value), request.offset) {
+            if let error = willRead?(peer, UUID, value, request.offset) {
                 
                 internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                 return
             }
             
-            let requestedValue = request.offset == 0 ? value : Array(value.suffix(request.offset))
+            let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
             
-            request.value = Data(bytes: requestedValue)
+            request.value = requestedValue
             
             internalManager.respond(to: request, withResult: .success)
         }
@@ -326,7 +326,7 @@ import Bluetooth
                 
                 var newValue = value
                 
-                newValue.bytes.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes.bytes)
+                newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
                 
                 if let error = willWrite?(peer, UUID, value, newValue) {
                     

@@ -11,7 +11,7 @@
 #endif
 
 import XCTest
-import SwiftFoundation
+import Foundation
 import Bluetooth
 import GATT
 import GATTTest

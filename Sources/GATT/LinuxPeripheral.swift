@@ -8,7 +8,8 @@
 
 #if os(Linux) || XcodeLinux
     
-    import SwiftFoundation
+    import class Foundation.Thread
+    import struct Foundation.Data
     import Bluetooth
     import BluetoothLinux
     
@@ -36,7 +37,7 @@
         
         private var serverSocket: L2CAPSocket!
         
-        private var serverThread: SwiftFoundation.Thread!
+        private var serverThread: Thread!
         
         // MARK: - Initialization
         
@@ -70,7 +71,7 @@
             
             log?("Started GATT Server")
             
-            let serverThread = try! Thread({ [weak self] in
+            let serverThread = try! Thread(block: { [weak self] in
                 
                 guard let peripheral = self else { return }
                 
@@ -90,7 +91,7 @@
                         
                         // create new thread for new connection
                         
-                        let _ = try! Thread({
+                        let _ = Thread(block: {
                             
                             while peripheral.isServerRunning {
                                 

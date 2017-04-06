@@ -15,5 +15,9 @@ let package = Package(
     dependencies: [
         .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 2)
     ],
-    exclude: ["Xcode", "Sources/PeripheralUnitTestsClient", "Sources/GATT/DarwinCentral.swift", "Sources/GATT/DarwinPeripheral.swift"]
+    exclude: ["Xcode",
+              "Sources/PeripheralUnitTestsClient",
+              "Sources/GATT/DarwinCentral.swift",
+              "Sources/GATT/DarwinPeripheral.swift"
+    ]
 )
