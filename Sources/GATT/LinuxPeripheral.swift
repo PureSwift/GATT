@@ -71,7 +71,7 @@
             
             log?("Started GATT Server")
             
-            let serverThread = try! Thread(block: { [weak self] in
+            let serverThread = Thread(block: { [weak self] in
                 
                 guard let peripheral = self else { return }
                 
