@@ -8,7 +8,7 @@
 
 import Bluetooth
 
-#if os(OSX) || os(iOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth

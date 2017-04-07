@@ -24,7 +24,7 @@ let peripheral: PeripheralManager = {
     
     peripheral.log = { print($0) }
     
-    #if os(OSX)
+    #if os(macOS)
         peripheral.waitForPoweredOn()
     #endif
     

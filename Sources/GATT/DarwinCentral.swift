@@ -9,7 +9,7 @@
 import Foundation
 import Bluetooth
 
-#if os(OSX) || os(iOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth
@@ -25,25 +25,12 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        #if os(OSX)
-        
-        public var stateChanged: (CBCentralManagerState) -> () = { _ in }
-        
-        public var state: CBCentralManagerState {
-            
-            return internalManager.state
-        }
-        
-        #else
-        
         public var stateChanged: (CBManagerState) -> () = { _ in }
         
         public var state: CBManagerState {
-        
+            
             return internalManager.state
         }
-        
-        #endif
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
         

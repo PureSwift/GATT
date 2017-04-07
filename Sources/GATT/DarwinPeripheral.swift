@@ -9,7 +9,7 @@
 import Foundation
 import Bluetooth
 
-#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth
@@ -24,7 +24,7 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        #if os(OSX)
+        #if os(macOS)
         
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
@@ -98,7 +98,7 @@ import Bluetooth
             log?("Now powered on")
         }
         
-        #if os(OSX)
+        #if os(macOS)
         
         public func start() throws {
             
@@ -362,7 +362,7 @@ import Bluetooth
                 
                 for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
                     
-                    #if os(OSX)
+                    #if os(macOS)
                         let foundation = characteristic.uuid!
                     #elseif os(iOS)
                         let foundation = characteristic.uuid

@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if os(OSX) || os(iOS)
+#if os(macOS) || os(iOS)
     import CoreBluetooth
     import struct Foundation.UUID
     public typealias PeerIdentifier = Foundation.UUID
@@ -59,7 +59,7 @@ public struct Central: Peer {
 
 #endif
 
-#if os(OSX) || os(iOS)
+#if os(macOS) || os(iOS)
     
     extension Central {
         
@@ -79,7 +79,7 @@ public struct Peripheral: Peer {
     public let identifier: PeerIdentifier
 }
 
-#if os(OSX) || os(iOS)
+#if os(macOS) || os(iOS)
     
     extension Peripheral {
         

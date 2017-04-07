@@ -23,7 +23,7 @@ public protocol NativePeripheral {
     /// - Note: Can optionally advertise as iBeacon in iOS and Linux.
     func start(beacon: Beacon?) throws
     
-#elseif os(OSX)
+#elseif os(macOS)
     
     /// Start advertising the peripheral and listening for incoming connections.
     func start() throws
