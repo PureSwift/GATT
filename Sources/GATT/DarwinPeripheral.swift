@@ -24,9 +24,9 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        #if os(macOS)
-        
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
+        
+        #if os(macOS)
         
         public var state: CBPeripheralManagerState {
             
@@ -34,9 +34,7 @@ import Bluetooth
         }
         
         #else
-        
-        public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
-        
+                
         public var state: CBPeripheralManagerState {
             
             return unsafeBitCast(internalManager.state, to: CBPeripheralManagerState.self)

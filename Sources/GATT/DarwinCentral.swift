@@ -25,12 +25,23 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        public var stateChanged: (CBManagerState) -> () = { _ in }
+        public var stateChanged: (CBCentralManagerState) -> () = { _ in }
         
-        public var state: CBManagerState {
+        #if os(macOS)
+        
+        public var state: CBCentralManagerState {
             
             return internalManager.state
         }
+        
+        #else
+        
+        public var state: CBCentralManagerState {
+        
+            return unsafeBitCast(internalManager.state, to: CBCentralManagerState.self)
+        }
+        
+        #endif
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
         
@@ -319,7 +330,12 @@ import Bluetooth
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
+            #if os(macOS)
             stateChanged(central.state)
+            #elseif os(iOS)
+            stateChanged(unsafeBitCast(central.state, to: CBCentralManagerState.self))
+            #endif
+
             
             if central.state == .poweredOn && poweredOnSemaphore != nil {
                 
