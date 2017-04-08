@@ -92,7 +92,7 @@
                         
                         // create new thread for new connection
                         
-                        let _ = Thread(block: {
+                        let newConnectionThread = Thread(block: {
                             
                             while peripheral.isServerRunning {
                                 
@@ -151,6 +151,8 @@
                                 }
                             }
                         })
+                        
+                        newConnectionThread.start()
                     }
                         
                     catch { peripheral.log?("Error waiting for new connection: \(error)") }
@@ -161,6 +163,7 @@
             
             self.serverSocket = serverSocket
             self.serverThread = serverThread
+            self.serverThread.start()
         }
         
         public func stop() {
