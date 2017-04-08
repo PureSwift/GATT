@@ -130,6 +130,9 @@
                                     
                                 catch {
                                     
+                                    // https://github.com/apple/swift-corelibs-foundation/pull/933
+                                    typealias POSIXError = BluetoothLinux.POSIXError
+                                    
                                     /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
                                     if let disconnectError = error as? POSIXError,
                                     disconnectError.code.rawValue == 104
