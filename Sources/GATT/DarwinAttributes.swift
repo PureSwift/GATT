@@ -26,7 +26,7 @@ import Bluetooth
         
         func toCoreBluetooth() -> CBMutableService {
             
-            let service = CBMutableService(type: UUID.toCoreBluetooth(), primary: primary)
+            let service = CBMutableService(type: uuid.toCoreBluetooth(), primary: primary)
             
             service.characteristics = characteristics.map { $0.toCoreBluetooth() }
             
@@ -40,17 +40,17 @@ import Bluetooth
             
             let propertyRawValue = CBCharacteristicProperties.RawValue.self
             
-            let propertiesMask = CBCharacteristicProperties(rawValue: propertyRawValue.init(properties.optionsBitmask()))
+            let propertiesMask = CBCharacteristicProperties(rawValue: propertyRawValue.init(properties.flags))
             
             let permissionRawValue = CBAttributePermissions.RawValue.self
             
-            let permissionsMask = CBAttributePermissions(rawValue: permissionRawValue.init(permissions.optionsBitmask()))
+            let permissionsMask = CBAttributePermissions(rawValue: permissionRawValue.init(permissions.flags))
             
             // http://stackoverflow.com/questions/29228244/issues-in-creating-writable-characteristic-in-core-bluetooth-framework#29229075
             // Characteristics with cached values must be read-only
             // Must set nil as value.
             
-            let characteristic = CBMutableCharacteristic(type: UUID.toCoreBluetooth(), properties: propertiesMask, value: nil, permissions: permissionsMask)
+            let characteristic = CBMutableCharacteristic(type: uuid.toCoreBluetooth(), properties: propertiesMask, value: nil, permissions: permissionsMask)
             
             characteristic.descriptors = descriptors.map { $0.toCoreBluetooth() }
             
@@ -63,20 +63,20 @@ import Bluetooth
         func toCoreBluetooth() -> CBMutableDescriptor {
             
             // Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported.
-            switch UUID.rawValue {
+            switch uuid.rawValue {
                 
             case CBUUIDCharacteristicUserDescriptionString:
                 
                 guard let string = String(UTF8Data: value)
                     else { fatalError("Could not parse string for CBMutableDescriptor from \(self)") }
                 
-                return CBMutableDescriptor(type: UUID.toCoreBluetooth(), value: string)
+                return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: string)
                 
             case CBUUIDCharacteristicFormatString:
                 
-                return CBMutableDescriptor(type: UUID.toCoreBluetooth(), value: value)
+                return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: value)
                 
-            default: fatalError("Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported. Unsupported UUID \(UUID).")
+            default: fatalError("Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported. Unsupported UUID \(uuid).")
             }
         }
     }
@@ -96,7 +96,7 @@ import Bluetooth
         
         typealias CoreBluetoothBitmaskType = CBCharacteristicProperties
         
-        static let CoreBluetoothValues: [GATT.CharacteristicProperty] = [.Broadcast, .Read, .WriteWithoutResponse, .Write, .Notify, .Indicate, .SignedWrite, .ExtendedProperties]
+        static let CoreBluetoothValues: [GATT.CharacteristicProperty] = [.broadcast, .read, .writeWithoutResponse, .write, .notify, .indicate, .signedWrite, .extendedProperties]
         
         static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [GATT.CharacteristicProperty] {
             
@@ -122,7 +122,7 @@ import Bluetooth
         
         typealias CoreBluetoothBitmaskType = CBAttributePermissions
         
-        static let CoreBluetoothValues = [.Read, .Write] + ATT.AttributePermission.Encrypt
+        static let CoreBluetoothValues = [.read, .write] + ATT.AttributePermission.encrypt
         
         static func from(CoreBluetooth: CoreBluetoothBitmaskType) -> [ATT.AttributePermission] {
             

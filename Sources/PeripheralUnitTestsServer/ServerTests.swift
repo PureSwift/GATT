@@ -14,7 +14,10 @@ import GATTTest
 
 final class ServerTests: XCTestCase {
     
-    static let allTests: [(String, (ServerTests) -> () throws -> Void)] = [("testRead", testRead), ("testWrite", testWrite)]
+    static let allTests: [(String, (ServerTests) -> () throws -> ())] = [
+        ("testRead", testRead),
+        ("testWrite", testWrite)
+    ]
     
     func testRead() {
         
@@ -24,11 +27,11 @@ final class ServerTests: XCTestCase {
             
             for characteristic in service.characteristics {
                 
-                guard characteristic.permissions.contains(.Read) else { continue }
+                guard characteristic.permissions.contains(.read) else { continue }
                 
-                let didRead = readServices.contains(characteristic.UUID)
+                let didRead = readServices.contains(characteristic.uuid)
                 
-                XCTAssert(didRead, "Characteristic \(characteristic.UUID) not read")
+                XCTAssert(didRead, "Characteristic \(characteristic.uuid) not read")
             }
         }
     }
@@ -41,11 +44,11 @@ final class ServerTests: XCTestCase {
             
             for characteristic in service.characteristics {
                 
-                guard characteristic.permissions.contains(.Write) else { continue }
+                guard characteristic.permissions.contains(.write) else { continue }
                 
-                let didRead = writtenServices.contains(characteristic.UUID)
+                let didRead = writtenServices.contains(characteristic.uuid)
                 
-                XCTAssert(didRead, "Characteristic \(characteristic.UUID) not read")
+                XCTAssert(didRead, "Characteristic \(characteristic.uuid) not read")
             }
         }
     }

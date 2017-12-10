@@ -150,7 +150,7 @@ import Bluetooth
             }
         }
         
-        public func discoverServices(for peripheral: Peripheral) throws -> [(UUID: BluetoothUUID, primary: Bool)] {
+        public func discoverServices(for peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, primary: Bool)] {
             
             let corePeripheral: CBPeripheral = try sync {
                 
@@ -170,7 +170,7 @@ import Bluetooth
             return sync { (corePeripheral.services ?? []).map { (BluetoothUUID(coreBluetooth: $0.uuid), $0.isPrimary) } }
         }
         
-        public func discoverCharacteristics(for service: BluetoothUUID, peripheral: Peripheral) throws -> [(UUID: BluetoothUUID, properties: [Characteristic.Property])] {
+        public func discoverCharacteristics(for service: BluetoothUUID, peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, properties: [Characteristic.Property])] {
             
             guard let corePeripheral = self.peripheral(peripheral)
                 else { throw CentralError.disconnected }

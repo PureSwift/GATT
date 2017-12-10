@@ -20,19 +20,19 @@ final class ClientTests: XCTestCase {
         
         for testService in TestProfile.services {
             
-            guard let characteristics = foundCharacteristics[testService.UUID]
-                else { XCTFail("No characteristics found for service \(testService.UUID)"); continue }
+            guard let characteristics = foundCharacteristics[testService.uuid]
+                else { XCTFail("No characteristics found for service \(testService.uuid)"); continue }
             
             for testCharacteristic in testService.characteristics {
                 
-                guard let foundCharacteristic = characteristics.filter({ $0.UUID == testCharacteristic.UUID }).first
-                    else { XCTFail("Characteristic \(testCharacteristic.UUID) not found"); continue }
+                guard let foundCharacteristic = characteristics.filter({ $0.uuid == testCharacteristic.uuid }).first
+                    else { XCTFail("Characteristic \(testCharacteristic.uuid) not found"); continue }
                 
                 // validate properties (CoreBluetooth Peripheral may add extended properties)
                 for property in testCharacteristic.properties {
                     
                     guard foundCharacteristic.properties.contains(property)
-                        else { XCTFail("Property \(property) not found in \(testCharacteristic.UUID)"); continue }
+                        else { XCTFail("Property \(property) not found in \(testCharacteristic.uuid)"); continue }
                 }
             }
         }
@@ -42,13 +42,13 @@ final class ClientTests: XCTestCase {
         
         let characteristic = TestProfile.Read
         
-        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID],
-            serviceCharacteristics.contains(where: { $0.UUID == characteristic.UUID })
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
+            serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
             else { XCTFail("Characteristic not found"); return }
         
         var value: Data!
         
-        do { value = try central.read(characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+        do { value = try central.read(characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
         catch { XCTFail("Could not read value. \(error)"); return }
         
@@ -59,13 +59,13 @@ final class ClientTests: XCTestCase {
         
         let characteristic = TestProfile.ReadBlob
         
-        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID],
-            serviceCharacteristics.contains(where: { $0.UUID == characteristic.UUID })
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
+            serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
             else { XCTFail("Characteristic not found"); return }
         
         var value: Data!
         
-        do { value = try central.read(characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+        do { value = try central.read(characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
         catch { XCTFail("Could not read value. \(error)"); return }
         
@@ -78,11 +78,11 @@ final class ClientTests: XCTestCase {
         
         let writeValue = TestProfile.WriteValue
         
-        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID],
-            serviceCharacteristics.contains(where: { $0.UUID == characteristic.UUID })
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
+            serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
             else { XCTFail("Characteristic not found"); return }
         
-        do { try central.write(data: writeValue, response: true, characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+        do { try central.write(data: writeValue, response: true, characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
         catch { XCTFail("Could not write value. \(error)"); return }
     }
@@ -93,11 +93,11 @@ final class ClientTests: XCTestCase {
         
         let writeValue = TestProfile.WriteBlobValue
         
-        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.UUID],
-            serviceCharacteristics.contains(where: { $0.UUID == characteristic.UUID })
+        guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
+            serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
             else { XCTFail("Characteristic not found"); return }
         
-        do { try central.write(data: writeValue, response: true, characteristic: characteristic.UUID, service: TestProfile.TestService.UUID, peripheral: testPeripheral) }
+        do { try central.write(data: writeValue, response: true, characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
         catch { XCTFail("Could not write value. \(error)"); return }
     }

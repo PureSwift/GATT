@@ -43,9 +43,9 @@ let testPeripheral: Peripheral = {
             
             let services = try! central.discoverServices(for: peripheral)
             
-            print("Discovered services: \(services.map({ $0.UUID }))")
+            print("Discovered services: \(services.map({ $0.uuid }))")
             
-            if services.contains(where: { $0.UUID == TestProfile.TestService.UUID }) {
+            if services.contains(where: { $0.uuid == TestProfile.TestService.uuid }) {
                 
                 testServicesCache = services
                 
@@ -55,9 +55,9 @@ let testPeripheral: Peripheral = {
     }
 }()
 
-private var testServicesCache: [(UUID: BluetoothUUID, primary: Bool)]!
+private var testServicesCache: [(uuid: BluetoothUUID, primary: Bool)]!
 
-let foundServices: [(UUID: BluetoothUUID, primary: Bool)] = {
+let foundServices: [(uuid: BluetoothUUID, primary: Bool)] = {
    
     // get the peripheral first
     let _ = testPeripheral
@@ -66,17 +66,17 @@ let foundServices: [(UUID: BluetoothUUID, primary: Bool)] = {
     return testServicesCache
 }()
 
-let foundCharacteristics: [BluetoothUUID: [(UUID: BluetoothUUID, properties: [Characteristic.Property])]] = {
+let foundCharacteristics: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [Characteristic.Property])]] = {
     
-    var found: [BluetoothUUID: [(UUID: BluetoothUUID, properties: [Characteristic.Property])]] = [:]
+    var found: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [Characteristic.Property])]] = [:]
     
     for service in foundServices {
         
-        let characteristics = try! central.discoverCharacteristics(for: service.UUID, peripheral: testPeripheral)
+        let characteristics = try! central.discoverCharacteristics(for: service.uuid, peripheral: testPeripheral)
         
-        print("Found \(characteristics.count) characteristics for service \(service.UUID)")
+        print("Found \(characteristics.count) characteristics for service \(service.uuid)")
         
-        found[service.UUID] = characteristics
+        found[service.uuid] = characteristics
     }
     
     return found
@@ -89,13 +89,13 @@ let foundCharacteristicValues: [BluetoothUUID: Data] = {
     for (service, characteristics) in foundCharacteristics {
         
         /// Read the value of characteristics that are Readable
-        for characteristic in characteristics where characteristic.properties.contains(.Read) {
+        for characteristic in characteristics where characteristic.properties.contains(.read) {
             
-            let data = try! central.read(characteristic: characteristic.UUID, service: service, peripheral: testPeripheral)
+            let data = try! central.read(characteristic: characteristic.uuid, service: service, peripheral: testPeripheral)
             
-            print("Read characteristic \(characteristic.UUID) (\(data.bytes.count) bytes)")
+            print("Read characteristic \(characteristic.uuid) (\(data.count) bytes)")
             
-            values[characteristic.UUID] = data
+            values[characteristic.uuid] = data
         }
     }
     

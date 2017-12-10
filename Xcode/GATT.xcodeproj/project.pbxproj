@@ -765,7 +765,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				INFOPLIST_FILE = PeripheralUnitTestsServer/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsServer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -778,7 +778,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				INFOPLIST_FILE = PeripheralUnitTestsServer/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsServer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -793,7 +793,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				INFOPLIST_FILE = PeripheralUnitTestsClient/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsClient;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -807,7 +807,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				INFOPLIST_FILE = PeripheralUnitTestsClient/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.PeripheralUnitTestsClient;
 				PRODUCT_NAME = "$(TARGET_NAME)";
