@@ -8,3 +8,5 @@ Carthage/
 .build
 
 Packages
+
+GATT.xcodeproj
