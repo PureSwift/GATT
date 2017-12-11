@@ -24,9 +24,8 @@ struct ClientTests {
         ("testWriteBlob", testWriteBlob)
     ]
     
-    private var currentTest: (String, (ClientTests) -> () -> ())?
-    
-    private(set) var didFail = false
+    @_versioned
+    private(set) var currentTest: (String, (ClientTests) -> () -> ())?
     
     mutating func run() {
         

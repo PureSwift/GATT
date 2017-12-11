@@ -18,7 +18,8 @@ struct ServerTests {
         ("testWrite", testWrite)
     ]
     
-    private var currentTest: (String, (ServerTests) -> () -> ())?
+    @_versioned
+    private(set) var currentTest: (String, (ServerTests) -> () -> ())?
     
     mutating func run() {
         
