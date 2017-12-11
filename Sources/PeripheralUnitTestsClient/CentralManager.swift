@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreBluetooth
-import XCTest
 import Foundation
 import Bluetooth
 import GATT

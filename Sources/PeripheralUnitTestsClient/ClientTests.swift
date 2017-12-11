@@ -13,9 +13,9 @@ import Bluetooth
 import GATT
 import GATTTest
 
-final class ClientTests {
+struct ClientTests {
     
-    static let allTests: [(String, (ClientTests) -> () throws -> ())] = [
+    static let allTests: [(String, (ClientTests) -> () -> ())] = [
         ("testCharacteristics", testCharacteristics),
         ("testRead", testRead),
         ("testReadBlob", testReadBlob),
@@ -24,23 +24,59 @@ final class ClientTests {
         ("testWriteBlob", testWriteBlob)
     ]
     
+    private var currentTest: (String, (ClientTests) -> () -> ())?
+    
+    private(set) var didFail = false
+    
+    mutating func run() {
+        
+        for testCase in type(of: self).allTests {
+            
+            self.currentTest = testCase
+            
+            testCase.1(self)()
+        }
+        
+        self.currentTest = nil
+    }
+    
+    @inline(__always)
+    func assert(_ condition: @autoclosure () -> Bool,
+                _ message: @autoclosure () -> String = "",
+                file: StaticString = #file,
+                line: UInt = #line) {
+        
+        if condition() == false {
+            
+            fail(message, file: file, line: line)
+        }
+    }
+    
+    func fail(_ message: @autoclosure () -> String = "",
+              file: StaticString = #file,
+              line: UInt = #line) {
+        
+        print("Test case \(currentTest?.0 ?? "") failed - \(message()) file \(file), line \(line)")
+        exit(EXIT_FAILURE)
+    }
+    
     func testCharacteristics() {
         
         for testService in TestProfile.services {
             
             guard let characteristics = foundCharacteristics[testService.uuid]
-                else { XCTFail("No characteristics found for service \(testService.uuid)"); continue }
+                else { fail("No characteristics found for service \(testService.uuid)"); continue }
             
             for testCharacteristic in testService.characteristics {
                 
                 guard let foundCharacteristic = characteristics.filter({ $0.uuid == testCharacteristic.uuid }).first
-                    else { XCTFail("Characteristic \(testCharacteristic.uuid) not found"); continue }
+                    else { fail("Characteristic \(testCharacteristic.uuid) not found"); continue }
                 
                 // validate properties (CoreBluetooth Peripheral may add extended properties)
                 for property in testCharacteristic.properties {
                     
                     guard foundCharacteristic.properties.contains(property)
-                        else { XCTFail("Property \(property) not found in \(testCharacteristic.uuid)"); continue }
+                        else { fail("Property \(property) not found in \(testCharacteristic.uuid)"); continue }
                 }
             }
         }
@@ -52,15 +88,15 @@ final class ClientTests {
         
         guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
             serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
-            else { XCTFail("Characteristic not found"); return }
+            else { fail("Characteristic not found"); return }
         
         var value: Data!
         
         do { value = try central.read(characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
-        catch { XCTFail("Could not read value. \(error)"); return }
+        catch { fail("Could not read value. \(error)"); return }
         
-        XCTAssert(value == characteristic.value)
+        assert(value == characteristic.value)
     }
     
     func testReadBlob() {
@@ -69,15 +105,15 @@ final class ClientTests {
         
         guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
             serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
-            else { XCTFail("Characteristic not found"); return }
+            else { fail("Characteristic not found"); return }
         
         var value: Data!
         
         do { value = try central.read(characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
-        catch { XCTFail("Could not read value. \(error)"); return }
+        catch { fail("Could not read value. \(error)"); return }
         
-        XCTAssert(value == characteristic.value, "\(value) == \(characteristic.value)")
+        assert(value == characteristic.value, "\(value) == \(characteristic.value)")
     }
     
     func testWrite() {
@@ -88,11 +124,11 @@ final class ClientTests {
         
         guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
             serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
-            else { XCTFail("Characteristic not found"); return }
+            else { fail("Characteristic not found"); return }
         
         do { try central.write(data: writeValue, response: true, characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
-        catch { XCTFail("Could not write value. \(error)"); return }
+        catch { fail("Could not write value. \(error)"); return }
     }
     
     func testWriteBlob() {
@@ -103,10 +139,10 @@ final class ClientTests {
         
         guard let serviceCharacteristics = foundCharacteristics[TestProfile.TestService.uuid],
             serviceCharacteristics.contains(where: { $0.uuid == characteristic.uuid })
-            else { XCTFail("Characteristic not found"); return }
+            else { fail("Characteristic not found"); return }
         
         do { try central.write(data: writeValue, response: true, characteristic: characteristic.uuid, service: TestProfile.TestService.uuid, peripheral: testPeripheral) }
             
-        catch { XCTFail("Could not write value. \(error)"); return }
+        catch { fail("Could not write value. \(error)"); return }
     }
 }
