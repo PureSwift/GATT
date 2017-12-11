@@ -12,7 +12,7 @@ import Foundation
 public struct Beacon {
     
     /// The unique ID of the beacons being targeted.
-    public var UUID: Foundation.UUID
+    public var uuid: Foundation.UUID
     
     /// The value identifying a group of beacons.
     public var major: UInt16
@@ -21,18 +21,18 @@ public struct Beacon {
     public var minor: UInt16
     
     /// The received signal strength indicator (RSSI) value (measured in decibels) for the device.
-    public var RSSI: Int8
+    public var rssi: Int8
     
-    #if os(Linux) || XcodeLinux
+    #if os(Linux) || Xcode
     /// The advertising interval.
     public var interval: UInt16 = 200
     #endif
     
-    public init(UUID: Foundation.UUID, major: UInt16, minor: UInt16, RSSI: Int8) {
+    public init(uuid: Foundation.UUID, major: UInt16, minor: UInt16, rssi: Int8) {
         
-        self.UUID = UUID
+        self.uuid = uuid
         self.major = major
         self.minor = minor
-        self.RSSI = RSSI
+        self.rssi = rssi
     }
 }

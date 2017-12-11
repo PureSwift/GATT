@@ -6,10 +6,9 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if os(Linux) || XcodeLinux
+#if os(Linux) || (Xcode && SWIFT_PACKAGE)
     
-    import class Foundation.Thread
-    import struct Foundation.Data
+    import Foundation
     import Bluetooth
     import BluetoothLinux
     
@@ -56,17 +55,21 @@
             
             if let beacon = beacon {
                 
-                try adapter.enableBeacon(UUID: beacon.UUID, major: beacon.major, minor: beacon.minor, RSSI: beacon.RSSI, interval: beacon.interval)
+                try adapter.enableBeacon(uuid: beacon.uuid,
+                                         major: beacon.major,
+                                         minor: beacon.minor,
+                                         rssi: beacon.rssi,
+                                         interval: beacon.interval)
                 
             } else {
                 
                 do { try adapter.enableAdvertising() }
-                catch HCIError.CommandDisallowed { /* ignore */ }
+                catch HCIError.commandDisallowed { /* ignore */ }
             }
             
             let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
             
-            let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .LowEnergyPublic, securityLevel: .Low)
+            let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .lowEnergyPublic, securityLevel: .Low)
             
             isServerRunning = true
             
@@ -193,15 +196,15 @@
         
         // MARK: Subscript
         
-        public subscript(characteristic UUID: BluetoothUUID) -> Data {
+        public subscript(characteristic uuid: BluetoothUUID) -> Data {
             
-            get { return database.attributes.filter({ $0.UUID == UUID}).first!.value }
+            get { return database.attributes.filter({ $0.uuid == uuid}).first!.value }
             
             set {
                 
-                let matchingAttributes = database.attributes.filter({ $0.UUID == UUID })
+                let matchingAttributes = database.attributes.filter({ $0.uuid == uuid })
                 
-                assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(UUID)")
+                assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(uuid)")
                 
                 let attribute = matchingAttributes.first!
                 
