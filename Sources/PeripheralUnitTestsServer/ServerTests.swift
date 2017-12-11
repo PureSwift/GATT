@@ -6,18 +6,44 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import XCTest
 import Foundation
 import Bluetooth
 import GATT
 import GATTTest
 
-final class ServerTests: XCTestCase {
+struct ServerTests {
     
-    static let allTests: [(String, (ServerTests) -> () throws -> ())] = [
+    static let allTests: [(String, (ServerTests) -> () -> ())] = [
         ("testRead", testRead),
         ("testWrite", testWrite)
     ]
+    
+    private var currentTest: (String, (ServerTests) -> () -> ())?
+    
+    mutating func run() {
+        
+        for testCase in type(of: self).allTests {
+            
+            self.currentTest = testCase
+            
+            testCase.1(self)()
+        }
+        
+        self.currentTest = nil
+    }
+    
+    @inline(__always)
+    func assert(_ condition: @autoclosure () -> Bool,
+                _ message: @autoclosure () -> String = "",
+                file: StaticString = #file,
+                line: UInt = #line) {
+        
+        if condition() == false {
+            
+            print("Test case \(currentTest?.0 ?? "") failed - \(message()) file \(file), line \(line)")
+            exit(EXIT_FAILURE)
+        }
+    }
     
     func testRead() {
         
@@ -31,7 +57,7 @@ final class ServerTests: XCTestCase {
                 
                 let didRead = readServices.contains(characteristic.uuid)
                 
-                XCTAssert(didRead, "Characteristic \(characteristic.uuid) not read")
+                assert(didRead, "Characteristic \(characteristic.uuid) not read")
             }
         }
     }
@@ -48,7 +74,7 @@ final class ServerTests: XCTestCase {
                 
                 let didRead = writtenServices.contains(characteristic.uuid)
                 
-                XCTAssert(didRead, "Characteristic \(characteristic.uuid) not read")
+                assert(didRead, "Characteristic \(characteristic.uuid) not read")
             }
         }
     }

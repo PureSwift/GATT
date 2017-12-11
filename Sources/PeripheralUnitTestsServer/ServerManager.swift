@@ -10,13 +10,12 @@
     import Glibc
 #endif
 
-import XCTest
 import Foundation
 import Bluetooth
 import GATT
 import GATTTest
 
-let sleepTime: UInt32 = 20
+let sleepTime: UInt32 = 60
 
 let peripheral: PeripheralManager = {
     

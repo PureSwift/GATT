@@ -6,14 +6,6 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import XCTest
+var serverTests = ServerTests()
 
-#if os(macOS) || os(iOS) || os(watchOS)
-    func XCTMain(_ testCases: [XCTestCaseEntry]) { fatalError("Not Implemented. Linux only") }
-    
-    func testCase<T: XCTestCase>(_ allTests: [(String, (T) -> () throws -> Void)]) -> XCTestCaseEntry { fatalError("Not Implemented. Linux only") }
-    
-    struct XCTestCaseEntry { }
-#endif
-
-XCTMain([testCase(ServerTests.allTests)])
+serverTests.run()

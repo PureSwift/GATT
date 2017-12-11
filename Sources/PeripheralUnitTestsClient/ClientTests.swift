@@ -6,7 +6,6 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import XCTest
 import Foundation
 import CoreBluetooth
 import Foundation
@@ -14,7 +13,16 @@ import Bluetooth
 import GATT
 import GATTTest
 
-final class ClientTests: XCTestCase {
+final class ClientTests {
+    
+    static let allTests: [(String, (ClientTests) -> () throws -> ())] = [
+        ("testCharacteristics", testCharacteristics),
+        ("testRead", testRead),
+        ("testReadBlob", testReadBlob),
+        ("testRead", testRead),
+        ("testWrite", testWrite),
+        ("testWriteBlob", testWriteBlob)
+    ]
     
     func testCharacteristics() {
         
