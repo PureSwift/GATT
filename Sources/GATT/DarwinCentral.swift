@@ -17,6 +17,7 @@ import Bluetooth
     /// The platform specific peripheral.
     public typealias CentralManager = DarwinCentral
     
+    @objc
     public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         public typealias Error = CentralError
@@ -44,6 +45,8 @@ import Bluetooth
         #endif
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
+        
+        public var notify: (_ characteristic: BluetoothUUID, _ value: Data) -> () = { _ in }
         
         // MARK: - Private Properties
         
@@ -210,7 +213,11 @@ import Bluetooth
             return coreCharacteristic.value ?? Data()
         }
         
-        public func write(data: Data, response: Bool, characteristic UUID: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws {
+        public func write(data: Data,
+                          response: Bool,
+                          characteristic UUID: BluetoothUUID,
+                          service: BluetoothUUID,
+                          peripheral: Peripheral) throws {
             
             guard let corePeripheral = self.peripheral(peripheral)
                 else { throw CentralError.disconnected }
@@ -231,7 +238,27 @@ import Bluetooth
                 let _ = try wait()
             }
         }
- 
+        
+        public func notify(_ enabled: Bool,
+                           for characteristic: BluetoothUUID,
+                           service: BluetoothUUID,
+                           peripheral: Peripheral) throws {
+            
+            guard let corePeripheral = self.peripheral(peripheral)
+                else { throw CentralError.disconnected }
+            
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected }
+            
+            let coreService = corePeripheral.service(service)
+            
+            let coreCharacteristic = coreService.characteristic(characteristic)
+            
+            corePeripheral.setNotifyValue(enabled, for: coreCharacteristic)
+            
+            let _ = try wait()
+        }
+        
         // MARK: - Private Methods
         
         private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
@@ -436,6 +463,14 @@ import Bluetooth
             if isReading {
                 
                 stopWaiting(error)
+                
+            } else {
+                
+                assert(error == nil)
+                
+                let uuid = BluetoothUUID(coreBluetooth: characteristic.uuid)
+                
+                notify(uuid, characteristic.value ?? Data())
             }
         }
  
@@ -452,6 +487,31 @@ import Bluetooth
             }
             
             stopWaiting(error)
+        }
+        
+        @objc
+        public func peripheral(_ peripheral: CBPeripheral,
+                               didUpdateNotificationStateFor characteristic: CBCharacteristic,
+                               error: Swift.Error?) {
+            
+            if let error = error {
+                
+                log?("Error setting notifications for characteristic (\(error))")
+                
+            } else {
+                
+                log?("Peripheral \(peripheral.identifier.uuidString) did update notification state for characteristic \(characteristic.uuid.uuidString)")
+            }
+            
+            stopWaiting(error)
+        }
+        
+        @objc(peripheral:didUpdateValueForDescriptor:error:)
+        public func peripheral(_ peripheral: CBPeripheral,
+                               didUpdateValueFor descriptor: CBDescriptor,
+                               error: Swift.Error?) {
+            
+            
         }
     }
     

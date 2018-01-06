@@ -27,6 +27,8 @@ public protocol NativeCentral: class {
     func read(characteristic UUID: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws -> Data
     
     func write(data: Data, response: Bool, characteristic uuid: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws
+    
+    func notify(_ enabled: Bool, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws
 }
 
 /// Errors for GATT Central Manager
