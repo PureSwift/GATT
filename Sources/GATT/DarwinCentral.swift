@@ -46,8 +46,6 @@ import Bluetooth
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
         
-        public var notify: (_ characteristic: BluetoothUUID, _ value: Data) -> () = { _ in }
-        
         // MARK: - Private Properties
         
         private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
@@ -63,6 +61,8 @@ import Bluetooth
         private var isReading = false
         
         private var connectingToPeripheral: CBPeripheral?
+        
+        private var notifications = [Peripheral: [BluetoothUUID: (Data) -> ()]]()
         
         // MARK: - Methods
         
@@ -241,7 +241,7 @@ import Bluetooth
             }
         }
         
-        public func notify(_ enabled: Bool,
+        public func notify(_ notification: ((Data) -> ())?,
                            for characteristic: BluetoothUUID,
                            service: BluetoothUUID,
                            peripheral: Peripheral) throws {
@@ -256,9 +256,13 @@ import Bluetooth
             
             let coreCharacteristic = coreService.characteristic(characteristic)
             
-            corePeripheral.setNotifyValue(enabled, for: coreCharacteristic)
+            let isEnabled = notification != nil
+            
+            corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
             
             let _ = try wait()
+            
+            notifications[peripheral, default: [:]][characteristic] = notification
         }
         
         // MARK: - Private Methods
@@ -473,7 +477,14 @@ import Bluetooth
                 
                 let uuid = BluetoothUUID(coreBluetooth: characteristic.uuid)
                 
-                notify(uuid, characteristic.value ?? Data())
+                let data = characteristic.value ?? Data()
+                
+                guard let peripheralNotifications = notifications[Peripheral(peripheral)],
+                    let notification = peripheralNotifications[uuid]
+                    else { assertionFailure("Unexpected notification for \(characteristic.uuid)"); return }
+                
+                // notify
+                notification(data)
             }
         }
  

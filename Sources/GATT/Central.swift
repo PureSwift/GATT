@@ -23,13 +23,23 @@ public protocol NativeCentral: class {
     
     func discoverServices(for peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, primary: Bool)]
     
-    func discoverCharacteristics(for service: BluetoothUUID, peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, properties: [Characteristic.Property])]
+    func discoverCharacteristics(for service: BluetoothUUID,
+                                 peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, properties: [Characteristic.Property])]
     
-    func read(characteristic UUID: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws -> Data
+    func read(characteristic uuid: BluetoothUUID,
+              service: BluetoothUUID,
+              peripheral: Peripheral) throws -> Data
     
-    func write(data: Data, response: Bool, characteristic uuid: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws
+    func write(data: Data,
+               response: Bool,
+               characteristic uuid: BluetoothUUID,
+               service: BluetoothUUID,
+               peripheral: Peripheral) throws
     
-    func notify(_ enabled: Bool, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral) throws
+    func notify(_ notification: ((Data) -> ())?,
+                for characteristic: BluetoothUUID,
+                service: BluetoothUUID,
+                peripheral: Peripheral) throws
 }
 
 /// Errors for GATT Central Manager
