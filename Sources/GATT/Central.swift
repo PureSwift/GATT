@@ -51,4 +51,7 @@ public enum CentralError: Error {
     
     /// Peripheral from previous scan.
     case unknownPeripheral
+    
+    /// The specified attribute was not found.
+    case invalidAttribute(BluetoothUUID)
 }

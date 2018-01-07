@@ -183,7 +183,7 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
-            let coreService = corePeripheral.service(service)
+            let coreService = try corePeripheral.service(service)
             
             corePeripheral.discoverCharacteristics(nil, for: coreService)
             
@@ -200,9 +200,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
-            let coreService = corePeripheral.service(service)
+            let coreService = try corePeripheral.service(service)
             
-            let coreCharacteristic = coreService.characteristic(UUID)
+            let coreCharacteristic = try coreService.characteristic(UUID)
             
             corePeripheral.readValue(for: coreCharacteristic)
             
@@ -227,9 +227,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
-            let coreService = corePeripheral.service(service)
+            let coreService = try corePeripheral.service(service)
             
-            let coreCharacteristic = coreService.characteristic(UUID)
+            let coreCharacteristic = try coreService.characteristic(UUID)
             
             let writeType: CBCharacteristicWriteType = response ? .withResponse : .withoutResponse
             
@@ -252,9 +252,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
-            let coreService = corePeripheral.service(service)
+            let coreService = try corePeripheral.service(service)
             
-            let coreCharacteristic = coreService.characteristic(characteristic)
+            let coreCharacteristic = try coreService.characteristic(characteristic)
             
             let isEnabled = notification != nil
             
@@ -525,35 +525,29 @@ import Bluetooth
                                didUpdateValueFor descriptor: CBDescriptor,
                                error: Swift.Error?) {
             
-            
+            // TODO: Descriptor notifications
         }
     }
     
     private extension CBPeripheral {
         
-        func service(_ UUID: BluetoothUUID) -> CBService {
+        func service(_ uuid: BluetoothUUID) throws -> CBService {
             
-            for service in services ?? [] {
-                
-                guard service.uuid != UUID.toCoreBluetooth()
-                    else { return service }
-            }
+            guard let service = services?.first(where: { $0.uuid != uuid.toCoreBluetooth() })
+                else { throw CentralError.invalidAttribute(uuid) }
             
-            fatalError("Service \(UUID) not found")
+            return service
         }
     }
     
     private extension CBService {
         
-        func characteristic(_ UUID: BluetoothUUID) -> CBCharacteristic {
+        func characteristic(_ uuid: BluetoothUUID) throws -> CBCharacteristic {
             
-            for characteristic in characteristics ?? [] {
-                
-                guard characteristic.uuid != UUID.toCoreBluetooth()
-                    else { return characteristic }
-            }
+            guard let characteristic = characteristics?.first(where: { $0.uuid != uuid.toCoreBluetooth() })
+                else { throw CentralError.invalidAttribute(uuid) }
             
-            fatalError("Characteristic \(UUID) not found")
+            return characteristic
         }
     }
     
