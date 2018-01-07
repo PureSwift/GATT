@@ -241,10 +241,10 @@ import Bluetooth
             }
         }
         
-        public func notify(_ notification: ((Data) -> ())?,
-                           for characteristic: BluetoothUUID,
+        public func notify(characteristic: BluetoothUUID,
                            service: BluetoothUUID,
-                           peripheral: Peripheral) throws {
+                           peripheral: Peripheral,
+                           notification: ((Data) -> ())?) throws {
             
             guard let corePeripheral = self.peripheral(peripheral)
                 else { throw CentralError.disconnected }

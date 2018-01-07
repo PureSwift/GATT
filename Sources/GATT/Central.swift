@@ -36,10 +36,10 @@ public protocol NativeCentral: class {
                service: BluetoothUUID,
                peripheral: Peripheral) throws
     
-    func notify(_ notification: ((Data) -> ())?,
-                for characteristic: BluetoothUUID,
+    func notify(characteristic: BluetoothUUID,
                 service: BluetoothUUID,
-                peripheral: Peripheral) throws
+                peripheral: Peripheral,
+                notification: ((Data) -> ())?) throws
 }
 
 /// Errors for GATT Central Manager
