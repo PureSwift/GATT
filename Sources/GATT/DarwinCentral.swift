@@ -58,7 +58,7 @@ import Bluetooth
         
         private var operationState: (semaphore: DispatchSemaphore, error: Swift.Error?)!
         
-        private var scanPeripherals = [CBPeripheral]()
+        private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanResult)]()
         
         private var isReading = false
         
@@ -87,11 +87,11 @@ import Bluetooth
             log?("Now powered on")
         }
         
-        public func scan(duration: Int = 5) -> [Peripheral] {
+        public func scan(duration: Int = 5) -> [ScanResult] {
             
             sync {
                 
-                self.scanPeripherals = []
+                self.scanPeripherals = [:]
                 
                 self.internalManager.scanForPeripherals(withServices: nil, options: nil)
             }
@@ -102,7 +102,9 @@ import Bluetooth
                 
                 self.internalManager.stopScan()
                 
-                return self.scanPeripherals.map { Peripheral($0) }
+                return self.scanPeripherals
+                    .map { $0.value.scanResult }
+                    .sorted(by: { $0.date < $1.date })
             }
         }
  
@@ -147,7 +149,7 @@ import Bluetooth
         
         public func disconnectAll() {
             
-            for peripheral in scanPeripherals {
+            for (peripheral: peripheral, scanResult: _) in scanPeripherals.values {
                 
                 internalManager.cancelPeripheralConnection(peripheral)
             }
@@ -263,13 +265,7 @@ import Bluetooth
         
         private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
             
-            for foundPeripheral in scanPeripherals {
-                
-                guard foundPeripheral.identifier != peripheral.identifier
-                    else { return foundPeripheral }
-            }
-            
-            return nil
+            return scanPeripherals[peripheral]?.peripheral
         }
         
         private func wait(_ timeout: Int? = nil) throws -> Bool {
@@ -371,7 +367,10 @@ import Bluetooth
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
-        public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        public func centralManager(_ central: CBCentralManager,
+                                   didDiscover peripheral: CBPeripheral,
+                                   advertisementData: [String : Any],
+                                   rssi: NSNumber) {
             
             log?("Did discover peripheral \(peripheral)")
             
@@ -380,10 +379,14 @@ import Bluetooth
                 peripheral.delegate = self
             }
             
-            if scanPeripherals.contains(peripheral) == false {
-                
-                scanPeripherals.append(peripheral)
-            }
+            let identifier = Peripheral(peripheral)
+            
+            let scanResult = ScanResult(date: Date(),
+                                        peripheral: identifier,
+                                        rssi: rssi.doubleValue,
+                                        advertisementData: ScanResult.AdvertisementData(advertisementData))
+            
+            scanPeripherals[identifier] = (peripheral, scanResult)
         }
         
         @objc(centralManager:didConnectPeripheral:)

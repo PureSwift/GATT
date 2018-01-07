@@ -16,7 +16,8 @@ public protocol NativeCentral: class {
     
     var log: ((String) -> ())? { get set }
     
-    func scan(duration: Int) -> [Peripheral]
+    /// Scans for peripherals that are advertising services.
+    func scan(duration: Int) -> [ScanResult]
     
     func connect(to peripheral: Peripheral, timeout: Int) throws
     

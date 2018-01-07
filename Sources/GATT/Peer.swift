@@ -16,10 +16,26 @@
     public typealias PeerIdentifier = Bluetooth.Address
 #endif
 
-public protocol Peer {
+public protocol Peer: Hashable {
     
     /// Unique identifier of the peer.
     var identifier: PeerIdentifier { get }
+}
+
+public extension Peer {
+    
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        
+        return lhs.identifier == rhs.identifier
+    }
+}
+
+public extension Peer {
+    
+    public var hashValue: Int {
+        
+        return identifier.hashValue
+    }
 }
 
 /// Central Peer
@@ -83,12 +99,10 @@ public struct Peripheral: Peer {
     
     extension Peripheral {
         
-        init(_ central: CBPeripheral) {
+        init(_ peripheral: CBPeripheral) {
             
-            self.identifier = central.identifier
+            self.identifier = peripheral.identifier
         }
     }
 
 #endif
-
-

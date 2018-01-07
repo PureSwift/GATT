@@ -28,7 +28,10 @@ public struct Beacon {
     public var interval: UInt16 = 200
     #endif
     
-    public init(uuid: Foundation.UUID, major: UInt16, minor: UInt16, rssi: Int8) {
+    public init(uuid: Foundation.UUID,
+                major: UInt16,
+                minor: UInt16,
+                rssi: Int8) {
         
         self.uuid = uuid
         self.major = major
