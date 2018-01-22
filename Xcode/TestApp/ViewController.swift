@@ -50,6 +50,8 @@ final class ViewController: UIViewController {
             
             do {
                 
+                defer { print("Finished scan") }
+                
                 for result in scanResults {
                     
                     let peripheral = result.peripheral

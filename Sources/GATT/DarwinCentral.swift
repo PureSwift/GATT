@@ -54,10 +54,7 @@ import Bluetooth
         
         private var poweredOnSemaphore: DispatchSemaphore!
         
-        private var operationState: OperationState? {
-            
-            didSet { if let operationState = self.operationState { log?("Waiting for operation \(operationState.operation)") } }
-        }
+        private var operationState: OperationState?
         
         private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanResult)]()
         
@@ -120,7 +117,7 @@ import Bluetooth
                 self.internalManager.connect(corePeripheral, options: nil)
             }
             
-            try wait(.connect(peripheral), timeout)
+            try wait(.connect(peripheral), timeout) { }
             
             assert(self.peripheral(peripheral)!.state != .disconnected)
         }
@@ -145,13 +142,15 @@ import Bluetooth
             
             let corePeripheral = try connectedPeriperhal(peripheral)
             
-            corePeripheral.discoverServices(nil)
+            try wait(.discoverServices(peripheral)) {
+                corePeripheral.discoverServices(nil)
+            }
             
-            try wait(.discoverServices(peripheral))
-            
-            return (corePeripheral.services ?? [])
-                .map { Service(uuid: BluetoothUUID(coreBluetooth: $0.uuid),
-                               isPrimary: $0.isPrimary) }
+            return (corePeripheral.services ?? []).map {
+                Service(
+                    uuid: BluetoothUUID(coreBluetooth: $0.uuid),
+                    isPrimary: $0.isPrimary)
+            }
         }
         
         public func discoverCharacteristics(for service: BluetoothUUID,
@@ -160,10 +159,10 @@ import Bluetooth
             let corePeripheral = try connectedPeriperhal(peripheral)
             
             let coreService = try corePeripheral.service(service)
-            
-            corePeripheral.discoverCharacteristics(nil, for: coreService)
-            
-            try wait(.discoverCharacteristics(peripheral, service))
+                        
+            try wait(.discoverCharacteristics(peripheral, service)) {
+                corePeripheral.discoverCharacteristics(nil, for: coreService)
+            }
             
             return (coreService.characteristics ?? [])
                 .map { Characteristic(uuid: BluetoothUUID(coreBluetooth: $0.uuid),
@@ -182,7 +181,7 @@ import Bluetooth
             
             corePeripheral.readValue(for: coreCharacteristic)
             
-            try wait(.readCharacteristic(peripheral, service, characteristic))
+            try wait(.readCharacteristic(peripheral, service, characteristic)) { }
             
             return coreCharacteristic.value ?? Data()
         }
@@ -205,7 +204,7 @@ import Bluetooth
             
             if response {
                 
-                try wait(.readCharacteristic(peripheral, service, characteristic))
+                try wait(.readCharacteristic(peripheral, service, characteristic)) { }
             }
         }
         
@@ -224,7 +223,7 @@ import Bluetooth
             
             corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
             
-            try wait(.updateCharacteristicNotificationState(peripheral, service, characteristic))
+            try wait(.updateCharacteristicNotificationState(peripheral, service, characteristic))  { }
             
             notifications[peripheral, default: [:]][characteristic] = notification
         }
@@ -247,7 +246,7 @@ import Bluetooth
             return corePeripheral
         }
         
-        private func wait(_ operation: Operation, _ timeout: Int? = nil) throws {
+        private func wait(_ operation: Operation, _ timeout: Int? = nil, action: () -> ()) throws {
             
             assert(operationState == nil, "Already waiting for an asyncronous operation to finish")
             
@@ -270,6 +269,10 @@ import Bluetooth
                 
                 dispatchTime = .distantFuture
             }
+            
+            log?("Waiting for operation \(operationState!.operation)")
+            
+            action()
             
             let success = semaphore.wait(timeout: dispatchTime) == .success
             
@@ -442,13 +445,13 @@ import Bluetooth
                 
                 log?("Peripheral \(corePeripheral.identifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
             }
-            
+            /*
             guard let operation = operationState?.operation,
                 case let .discoverCharacteristics(peripheral, service) = operation,
                 peripheral == Peripheral(corePeripheral),
                 service == BluetoothUUID(coreBluetooth: coreService.uuid)
                 else { return }
-            
+            */
             stopWaiting(error)
         }
         
@@ -562,28 +565,13 @@ import Bluetooth
             let semaphore: DispatchSemaphore
             var error: Swift.Error?
         }
-        
-        struct OperationStack {
-            
-            var queue: [Operation]
-            
-            mutating func push(_ operation: Operation) {
-                
-                queue.append(operation)
-            }
-            
-            mutating func pop() {
-                
-                queue.removeFirst()
-            }
-        }
     }
     
     private extension CBPeripheral {
         
         func service(_ uuid: BluetoothUUID) throws -> CBService {
             
-            guard let service = services?.first(where: { $0.uuid != uuid.toCoreBluetooth() })
+            guard let service = services?.first(where: { $0.uuid == uuid.toCoreBluetooth() })
                 else { throw CentralError.invalidAttribute(uuid) }
             
             return service
@@ -594,7 +582,7 @@ import Bluetooth
         
         func characteristic(_ uuid: BluetoothUUID) throws -> CBCharacteristic {
             
-            guard let characteristic = characteristics?.first(where: { $0.uuid != uuid.toCoreBluetooth() })
+            guard let characteristic = characteristics?.first(where: { $0.uuid == uuid.toCoreBluetooth() })
                 else { throw CentralError.invalidAttribute(uuid) }
             
             return characteristic
