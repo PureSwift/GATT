@@ -8,22 +8,25 @@
 
 import Bluetooth
 
-public struct ScanResult {
+public extension CentralManager {
     
-    /// Timestamp for when device was scanned.
-    public let date: Date
-    
-    /// The discovered peripheral.
-    public let peripheral: Peripheral
-    
-    /// The current received signal strength indicator (RSSI) of the peripheral, in decibels.
-    public let rssi: Double
-    
-    /// Advertisement data. 
-    public let advertisementData: AdvertisementData
+    public struct ScanResult {
+        
+        /// Timestamp for when device was scanned.
+        public let date: Date
+        
+        /// The discovered peripheral.
+        public let peripheral: Peripheral
+        
+        /// The current received signal strength indicator (RSSI) of the peripheral, in decibels.
+        public let rssi: Double
+        
+        /// Advertisement data.
+        public let advertisementData: AdvertisementData
+    }
 }
 
-public extension ScanResult {
+public extension CentralManager.ScanResult {
     
     public struct AdvertisementData {
         
@@ -50,7 +53,7 @@ public extension ScanResult {
         /// A Boolean value that indicates whether the advertising event type is connectable.
         public let isConnectable: Bool?
         
-        /// An array of one or more `BluetoothUUID` objects, representing Service UUIDs.
+        /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
         public let solicitedServiceUUIDs: [BluetoothUUID]?
     }
 }
@@ -60,7 +63,7 @@ public extension ScanResult {
 import Foundation
 import CoreBluetooth
 
-internal extension ScanResult.AdvertisementData {
+internal extension CentralManager.ScanResult.AdvertisementData {
     
     init(_ coreBluetooth: [String: Any]) {
         

@@ -17,14 +17,16 @@ public protocol NativeCentral: class {
     var log: ((String) -> ())? { get set }
     
     /// Scans for peripherals that are advertising services.
-    func scan(duration: Int) -> [ScanResult]
+    func scan(filterDuplicates: Bool,
+              shouldContinueScanning: () -> (Bool),
+              foundDevice: @escaping (CentralManager.ScanResult) -> ())
     
     func connect(to peripheral: Peripheral, timeout: Int) throws
     
-    func discoverServices(for peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, primary: Bool)]
+    func discoverServices(for peripheral: Peripheral) throws -> [CentralManager.Service]
     
     func discoverCharacteristics(for service: BluetoothUUID,
-                                 peripheral: Peripheral) throws -> [(uuid: BluetoothUUID, properties: [Characteristic.Property])]
+                                 peripheral: Peripheral) throws -> [CentralManager.Characteristic]
     
     func read(characteristic uuid: BluetoothUUID,
               service: BluetoothUUID,
@@ -42,6 +44,22 @@ public protocol NativeCentral: class {
                 notification: ((Data) -> ())?) throws
 }
 
+public extension NativeCentral {
+    
+    func scan(duration: TimeInterval) -> [CentralManager.ScanResult] {
+        
+        let endDate = Date() + duration
+        
+        var results = [Peripheral: CentralManager.ScanResult]()
+        
+        self.scan(filterDuplicates: true,
+                  shouldContinueScanning: { Date() < endDate },
+                  foundDevice: { results[$0.peripheral] = $0 })
+        
+        return results.values.sorted(by: { $0.date < $1.date })
+    }
+}
+
 /// Errors for GATT Central Manager
 public enum CentralError: Error {
     
@@ -54,4 +72,23 @@ public enum CentralError: Error {
     
     /// The specified attribute was not found.
     case invalidAttribute(BluetoothUUID)
+}
+
+public extension CentralManager {
+    
+    public struct Service {
+        
+        public let uuid: BluetoothUUID
+        
+        public let isPrimary: Bool
+    }
+    
+    public struct Characteristic {
+        
+        public typealias Property = GATT.CharacteristicProperty
+        
+        public let uuid: BluetoothUUID
+        
+        public let properties: BitMaskOptionSet<Property>
+    }
 }

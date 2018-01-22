@@ -15,13 +15,13 @@ final class ViewController: UIViewController {
     
     let central = CentralManager()
     
-    let duration = 5
+    let duration: TimeInterval = 5
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        central.log = { print("CentralManager:", $0) }
+        //central.log = { print("CentralManager:", $0) }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -56,7 +56,8 @@ final class ViewController: UIViewController {
                     
                     print("Peripheral: \(peripheral.identifier)")
                     
-                    try central.connect(to: peripheral)
+                    do { try central.connect(to: peripheral) }
+                    catch { print("Could not connect:", error); continue }
                     
                     let services = try central.discoverServices(for: peripheral)
                     
