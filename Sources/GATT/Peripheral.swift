@@ -39,7 +39,7 @@ public protocol NativePeripheral {
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Service Index
-    func add(service: Service) throws -> ServiceIdentifier
+    func add(service: GATT.Service) throws -> ServiceIdentifier
     
     /// Removes the service with the specified UUID.
     func remove(service: ServiceIdentifier)
@@ -54,11 +54,5 @@ public protocol NativePeripheral {
     var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified UUID.
-    subscript(characteristic UUID: BluetoothUUID) -> Data { get set }
+    subscript(characteristic uuid: BluetoothUUID) -> Data { get set }
 }
-
-// MARK: - Typealiases
-
-public typealias Service = GATT.Service
-public typealias Characteristic = GATT.Characteristic
-public typealias Descriptor = GATT.Descriptor

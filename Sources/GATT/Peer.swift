@@ -22,7 +22,7 @@ public protocol Peer: Hashable {
     var identifier: PeerIdentifier { get }
 }
 
-public extension Peer {
+extension Peer {
     
     public static func == (lhs: Self, rhs: Self) -> Bool {
         
@@ -44,10 +44,13 @@ public extension Peer {
 public struct Central: Peer {
     
     public let identifier: PeerIdentifier
+}
+
+extension Central: CustomStringConvertible {
     
-    internal init(identifier: PeerIdentifier) {
+    public var description: String {
         
-        self.identifier = identifier
+        return identifier.description
     }
 }
 
@@ -93,6 +96,14 @@ public struct Central: Peer {
 public struct Peripheral: Peer {
     
     public let identifier: PeerIdentifier
+}
+
+extension Peripheral: CustomStringConvertible {
+    
+    public var description: String {
+        
+        return identifier.description
+    }
 }
 
 #if os(macOS) || os(iOS)

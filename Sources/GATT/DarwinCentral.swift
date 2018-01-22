@@ -54,7 +54,10 @@ import Bluetooth
         
         private var poweredOnSemaphore: DispatchSemaphore!
         
-        private var operationState: OperationState?
+        private var operationState: OperationState? {
+            
+            didSet { if let operationState = self.operationState { log?("Waiting for operation \(operationState.operation)") } }
+        }
         
         private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanResult)]()
         
@@ -558,6 +561,21 @@ import Bluetooth
             let operation: Operation
             let semaphore: DispatchSemaphore
             var error: Swift.Error?
+        }
+        
+        struct OperationStack {
+            
+            var queue: [Operation]
+            
+            mutating func push(_ operation: Operation) {
+                
+                queue.append(operation)
+            }
+            
+            mutating func pop() {
+                
+                queue.removeFirst()
+            }
         }
     }
     

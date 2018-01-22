@@ -21,7 +21,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        //central.log = { print("CentralManager:", $0) }
+        central.log = { print("CentralManager:", $0) }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -54,7 +54,7 @@ final class ViewController: UIViewController {
                     
                     let peripheral = result.peripheral
                     
-                    print("Peripheral: \(peripheral.identifier)")
+                    print("Peripheral: \(peripheral.identifier) \(result.advertisementData.localName ?? "")")
                     
                     do { try central.connect(to: peripheral) }
                     catch { print("Could not connect:", error); continue }

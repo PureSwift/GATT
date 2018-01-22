@@ -22,7 +22,7 @@ import Bluetooth
         func toCoreBluetooth() -> CoreBluetoothPeripheralType
     }
     
-    extension Service: CoreBluetoothAttributeConvertible {
+    extension GATT.Service: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableService {
             
@@ -34,7 +34,7 @@ import Bluetooth
         }
     }
     
-    extension Characteristic: CoreBluetoothAttributeConvertible {
+    extension GATT.Characteristic: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableCharacteristic {
             
@@ -58,7 +58,7 @@ import Bluetooth
         }
     }
     
-    extension Descriptor: CoreBluetoothAttributeConvertible {
+    extension GATT.Descriptor: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableDescriptor {
             
@@ -68,7 +68,7 @@ import Bluetooth
             case CBUUIDCharacteristicUserDescriptionString:
                 
                 guard let string = String(UTF8Data: value)
-                    else { fatalError("Could not parse string for CBMutableDescriptor from \(self)") }
+                    else { fatalError("Could not parse string for \(CBMutableDescriptor.self) from \(self)") }
                 
                 return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: string)
                 
@@ -76,7 +76,9 @@ import Bluetooth
                 
                 return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: value)
                 
-            default: fatalError("Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported. Unsupported UUID \(uuid).")
+            default:
+                
+                fatalError("Only \(CBUUIDCharacteristicUserDescriptionString) or \(CBUUIDCharacteristicFormatString) is supported. Unsupported UUID \(uuid).")
             }
         }
     }
