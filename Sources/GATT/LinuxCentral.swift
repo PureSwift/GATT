@@ -13,7 +13,7 @@
     import BluetoothLinux
     
     /// The platform specific peripheral.
-    public typealias CentralManager = DarwinCentral
+    public typealias CentralManager = LinuxCentral
     
     @available(OSX 10.12, *)
     public final class LinuxCentral: NativePeripheral {
