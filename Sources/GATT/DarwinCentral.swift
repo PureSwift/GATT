@@ -159,7 +159,7 @@ import Bluetooth
             let corePeripheral = try connectedPeriperhal(peripheral)
             
             let coreService = try corePeripheral.service(service)
-                        
+            
             try wait(.discoverCharacteristics(peripheral, service)) {
                 corePeripheral.discoverCharacteristics(nil, for: coreService)
             }
@@ -445,13 +445,13 @@ import Bluetooth
                 
                 log?("Peripheral \(corePeripheral.identifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
             }
-            /*
+            
             guard let operation = operationState?.operation,
                 case let .discoverCharacteristics(peripheral, service) = operation,
                 peripheral == Peripheral(corePeripheral),
                 service == BluetoothUUID(coreBluetooth: coreService.uuid)
-                else { return }
-            */
+                else { assertionFailure("Unexpected \(#function)"); return }
+            
             stopWaiting(error)
         }
         
