@@ -12,9 +12,6 @@
     import Bluetooth
     import BluetoothLinux
     
-    /// The platform specific peripheral.
-    public typealias CentralManager = LinuxCentral
-    
     @available(OSX 10.12, *)
     public final class LinuxCentral: NativePeripheral {
         
@@ -22,8 +19,8 @@
         
         /// Scans for peripherals that are advertising services.
         public func scan(filterDuplicates: Bool,
-                  shouldContinueScanning: () -> (Bool),
-                  foundDevice: @escaping (CentralManager.ScanResult) -> ()) {
+                         shouldContinueScanning: () -> (Bool),
+                         foundDevice: @escaping (CentralManager.ScanResult) -> ()) {
             
             fatalError()
         }
@@ -69,4 +66,11 @@
         }
     }
 
+#endif
+
+#if os(Linux)
+    
+    /// The platform specific peripheral.
+    public typealias CentralManager = LinuxCentral
+    
 #endif
