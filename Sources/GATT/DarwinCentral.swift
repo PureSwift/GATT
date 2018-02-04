@@ -179,9 +179,10 @@ import Bluetooth
             
             let coreCharacteristic = try coreService.characteristic(characteristic)
             
-            corePeripheral.readValue(for: coreCharacteristic)
-            
-            try wait(.readCharacteristic(peripheral, service, characteristic)) { }
+            try wait(.readCharacteristic(peripheral, service, characteristic)) {
+                
+                corePeripheral.readValue(for: coreCharacteristic)
+            }
             
             return coreCharacteristic.value ?? Data()
         }
@@ -200,11 +201,16 @@ import Bluetooth
             
             let writeType: CBCharacteristicWriteType = response ? .withResponse : .withoutResponse
             
-            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
-            
             if response {
                 
-                try wait(.readCharacteristic(peripheral, service, characteristic)) { }
+                try wait(.writeCharacteristic(peripheral, service, characteristic)) {
+                    
+                    corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+                }
+                
+            } else {
+                
+                corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
             }
         }
         
@@ -221,9 +227,10 @@ import Bluetooth
             
             let isEnabled = notification != nil
             
-            corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
-            
-            try wait(.updateCharacteristicNotificationState(peripheral, service, characteristic))  { }
+            try wait(.updateCharacteristicNotificationState(peripheral, service, characteristic))  {
+                
+                corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
+            }
             
             notifications[peripheral, default: [:]][characteristic] = notification
         }

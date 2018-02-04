@@ -7,6 +7,7 @@
 //
 
 import Bluetooth
+import Foundation
 
 /// Represents a descriptor of a peripheral’s characteristic.
 public enum CharacteristicDescriptorValue {
