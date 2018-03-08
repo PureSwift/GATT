@@ -26,23 +26,12 @@ import Bluetooth
         
         public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
         
-        #if os(macOS)
-        
-        public var state: CBPeripheralManagerState {
-            
-            return internalManager.state
-        }
-        
-        #else
-                
         public var state: CBPeripheralManagerState {
             
             return unsafeBitCast(internalManager.state, to: CBPeripheralManagerState.self)
         }
         
-        #endif
-        
-        public let localName: String
+        public let localName: String?
         
         public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
@@ -68,7 +57,7 @@ import Bluetooth
         
         // MARK: - Initialization
         
-        public init(localName: String = "GATT Server") {
+        public init(localName: String? = nil) {
             
             self.localName = localName
         }
@@ -100,7 +89,12 @@ import Bluetooth
         
         public func start() throws {
             
-            let advertisementData: [String : AnyObject] = [CBAdvertisementDataLocalNameKey: localName as NSString]
+            var advertisementData = [String : AnyObject]()
+            
+            if let localName = self.localName {
+                
+                advertisementData[CBAdvertisementDataLocalNameKey] = localName as NSString
+            }
             
             try start(advertisementData)
         }
@@ -124,14 +118,20 @@ import Bluetooth
             
             if let beacon = beacon {
                 
-                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.UUID, major: beacon.major, minor: beacon.minor, identifier: beacon.UUID.rawValue)
+                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.uuid,
+                                                  major: beacon.major,
+                                                  minor: beacon.minor,
+                                                  identifier: beacon.uuid.rawValue)
                 
-                let mutableDictionary = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.RSSI))
+                let mutableDictionary = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi))
                 
                 advertisementData = NSDictionary.init(dictionary: mutableDictionary) as! [String: AnyObject]
             }
             
-            advertisementData[CBAdvertisementDataLocalNameKey] = localName
+            if let name = localName {
+                
+                advertisementData[CBAdvertisementDataLocalNameKey] = name as NSString
+            }
             
             try start(advertisementData)
         }
@@ -167,7 +167,7 @@ import Bluetooth
             internalManager.stopAdvertising()
         }
         
-        public func add(service: Service) throws -> Int {
+        public func add(service: GATT.Service) throws -> Int {
             
             assert(addServiceState == nil, "Already adding another Service")
             
@@ -242,7 +242,7 @@ import Bluetooth
             
             log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
             
-            stateChanged(peripheral.state)
+            stateChanged(unsafeBitCast(peripheral.state, to: CBPeripheralManagerState.self))
             
             if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
                 
@@ -359,14 +359,8 @@ import Bluetooth
             for service in services {
                 
                 for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
-                    
-                    #if os(macOS)
-                        let foundation = characteristic.uuid!
-                    #elseif os(iOS)
-                        let foundation = characteristic.uuid
-                    #endif
-                    
-                    guard UUID != BluetoothUUID(coreBluetooth: foundation)
+                                        
+                    guard UUID != BluetoothUUID(coreBluetooth: characteristic.uuid)
                         else { foundCharacteristic = characteristic; break }
                 }
             }
