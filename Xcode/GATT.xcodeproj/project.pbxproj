@@ -17,6 +17,9 @@
 		6E2A5D6C1CC8436800BA7E15 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D6A1CC8436800BA7E15 /* LaunchScreen.storyboard */; };
 		6E2A5D721CC843A300BA7E15 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; };
 		6E2A5D731CC843A300BA7E15 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
+		6E49B223205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
+		6E49B224205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
 		6E7B43CE1D459322007D3C36 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
 		6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
@@ -27,9 +30,9 @@
 		6EAABBB320014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
 		6EAABBB420014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
 		6EAABBB520014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
-		6EAABC012001AF4C009B38C0 /* ScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanResult.swift */; };
-		6EAABC022001AF4C009B38C0 /* ScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanResult.swift */; };
-		6EAABC032001AF4C009B38C0 /* ScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanResult.swift */; };
+		6EAABC012001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
+		6EAABC022001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
+		6EAABC032001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
@@ -87,6 +90,7 @@
 		6E2A5D681CC8436800BA7E15 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E2A5D6B1CC8436800BA7E15 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6E2A5D6D1CC8436800BA7E15 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6E49B221205325B3002EA5DC /* AdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvertisementData.swift; sourceTree = "<group>"; };
 		6E4CA8641CB113E8008316A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E7BD6121CAF9C9500F0ABF3 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cartfile; path = ../Cartfile; sourceTree = "<group>"; };
 		6E7BD6131CAF9C9500F0ABF3 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
@@ -97,7 +101,7 @@
 		6E7BD64A1CB0FD9500F0ABF3 /* GATTTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATTTest.h; sourceTree = "<group>"; };
 		6E7BD64C1CB0FD9500F0ABF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6EAABBB220014040009B38C0 /* Descriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Descriptor.swift; sourceTree = "<group>"; };
-		6EAABC002001AF4C009B38C0 /* ScanResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanResult.swift; sourceTree = "<group>"; };
+		6EAABC002001AF4C009B38C0 /* ScanData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanData.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -229,7 +233,8 @@
 				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
 				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6EAABBB220014040009B38C0 /* Descriptor.swift */,
-				6EAABC002001AF4C009B38C0 /* ScanResult.swift */,
+				6EAABC002001AF4C009B38C0 /* ScanData.swift */,
+				6E49B221205325B3002EA5DC /* AdvertisementData.swift */,
 				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
 				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
 				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
@@ -455,8 +460,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */,
-				6EAABC012001AF4C009B38C0 /* ScanResult.swift in Sources */,
+				6EAABC012001AF4C009B38C0 /* ScanData.swift in Sources */,
 				6E17DC231CB1DC250043C644 /* Central.swift in Sources */,
+				6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */,
 				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
 				6EAABBB320014040009B38C0 /* Descriptor.swift in Sources */,
 				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
@@ -475,7 +481,8 @@
 				6EE9102C1FDE5C17007AD3EA /* Central.swift in Sources */,
 				6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */,
 				6EE9102D1FDE5C17007AD3EA /* DarwinAttributes.swift in Sources */,
-				6EAABC032001AF4C009B38C0 /* ScanResult.swift in Sources */,
+				6E49B224205325B3002EA5DC /* AdvertisementData.swift in Sources */,
+				6EAABC032001AF4C009B38C0 /* ScanData.swift in Sources */,
 				6EAABBB520014040009B38C0 /* Descriptor.swift in Sources */,
 				6EE9102E1FDE5C17007AD3EA /* LinuxPeripheral.swift in Sources */,
 				6EE9102F1FDE5C17007AD3EA /* Peer.swift in Sources */,
@@ -493,7 +500,8 @@
 				6EF45FC11CC6D355001F7A39 /* Central.swift in Sources */,
 				6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */,
 				6EF45FC21CC6D355001F7A39 /* DarwinAttributes.swift in Sources */,
-				6EAABC022001AF4C009B38C0 /* ScanResult.swift in Sources */,
+				6E49B223205325B3002EA5DC /* AdvertisementData.swift in Sources */,
+				6EAABC022001AF4C009B38C0 /* ScanData.swift in Sources */,
 				6EAABBB420014040009B38C0 /* Descriptor.swift in Sources */,
 				6EF45FC31CC6D355001F7A39 /* LinuxPeripheral.swift in Sources */,
 				6EF45FC41CC6D355001F7A39 /* Peer.swift in Sources */,

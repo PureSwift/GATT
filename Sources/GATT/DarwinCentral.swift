@@ -45,9 +45,9 @@ import Bluetooth
         
         private var operationState: OperationState?
         
-        private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanResult)]()
+        private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData)]()
         
-        private var foundDevice: ((ScanResult) -> ())?
+        private var foundDevice: ((ScanData) -> ())?
         
         private var notifications = [Peripheral: [BluetoothUUID: (Data) -> ()]]()
         
@@ -76,7 +76,7 @@ import Bluetooth
         
         public func scan(filterDuplicates: Bool = false,
                          shouldContinueScanning: () -> (Bool),
-                         foundDevice: @escaping (ScanResult) -> ()) {
+                         foundDevice: @escaping (ScanData) -> ()) {
             
             let options: [String: Any] = [
                 CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
@@ -359,10 +359,10 @@ import Bluetooth
             
             let identifier = Peripheral(peripheral)
             
-            let scanResult = ScanResult(date: Date(),
+            let scanResult = ScanData(date: Date(),
                                         peripheral: identifier,
                                         rssi: rssi.doubleValue,
-                                        advertisementData: ScanResult.AdvertisementData(advertisementData))
+                                        advertisementData: AdvertisementData(advertisementData))
             
             scanPeripherals[identifier] = (peripheral, scanResult)
             

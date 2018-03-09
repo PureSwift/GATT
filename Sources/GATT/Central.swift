@@ -19,7 +19,7 @@ public protocol NativeCentral: class {
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               shouldContinueScanning: () -> (Bool),
-              foundDevice: @escaping (CentralManager.ScanResult) -> ())
+              foundDevice: @escaping (ScanData) -> ())
     
     func connect(to peripheral: Peripheral, timeout: Int) throws
     
@@ -46,11 +46,11 @@ public protocol NativeCentral: class {
 
 public extension NativeCentral {
     
-    func scan(duration: TimeInterval) -> [CentralManager.ScanResult] {
+    func scan(duration: TimeInterval) -> [ScanData] {
         
         let endDate = Date() + duration
         
-        var results = [Peripheral: CentralManager.ScanResult]()
+        var results = [Peripheral: ScanData]()
         
         self.scan(filterDuplicates: true,
                   shouldContinueScanning: { Date() < endDate },
