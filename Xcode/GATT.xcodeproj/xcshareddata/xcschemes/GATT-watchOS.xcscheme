@@ -16,7 +16,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6EE9102A1FDE5C17007AD3EA"
                BuildableName = "GATT.framework"
-               BlueprintName = "GATT watchOS"
+               BlueprintName = "GATT-watchOS"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -49,7 +49,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EE9102A1FDE5C17007AD3EA"
             BuildableName = "GATT.framework"
-            BlueprintName = "GATT watchOS"
+            BlueprintName = "GATT-watchOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -67,7 +67,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6EE9102A1FDE5C17007AD3EA"
             BuildableName = "GATT.framework"
-            BlueprintName = "GATT watchOS"
+            BlueprintName = "GATT-watchOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

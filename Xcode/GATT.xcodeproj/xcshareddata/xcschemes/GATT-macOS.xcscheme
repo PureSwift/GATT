@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
+               BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
                BuildableName = "GATT.framework"
-               BlueprintName = "GATT iOS"
+               BlueprintName = "GATT-macOS"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,7 +29,26 @@
       language = ""
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6EE84D8D1CAF419D00A40C4D"
+               BuildableName = "GATTTests.xctest"
+               BlueprintName = "GATTTests"
+               ReferencedContainer = "container:GATT.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
+            BuildableName = "GATT.framework"
+            BlueprintName = "GATT-macOS"
+            ReferencedContainer = "container:GATT.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -47,9 +66,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
+            BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
             BuildableName = "GATT.framework"
-            BlueprintName = "GATT iOS"
+            BlueprintName = "GATT-macOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -65,9 +84,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6EF45FBF1CC6D355001F7A39"
+            BlueprintIdentifier = "6EE84D831CAF419D00A40C4D"
             BuildableName = "GATT.framework"
-            BlueprintName = "GATT iOS"
+            BlueprintName = "GATT-macOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
