@@ -12,6 +12,8 @@
 		6E1C311C1CD4723C00E8F7EB /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
 		6E28A99420543CCC0088B6FB /* PeripheralUnitTestsClient in Copy Executable */ = {isa = PBXBuildFile; fileRef = 6E8AB87020543896003FE38D /* PeripheralUnitTestsClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6E28A99620543D020088B6FB /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E28A9BB205447820088B6FB /* PeripheralUnitTestsServer in Copy Executable */ = {isa = PBXBuildFile; fileRef = 6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		6E28A9BD2054479C0088B6FB /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E2A5D621CC8436800BA7E15 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */; };
 		6E2A5D641CC8436800BA7E15 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D631CC8436800BA7E15 /* ViewController.swift */; };
 		6E2A5D671CC8436800BA7E15 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D651CC8436800BA7E15 /* Main.storyboard */; };
@@ -100,6 +102,27 @@
 			remoteGlobalIDString = 6E8AB85B2054379D003FE38D;
 			remoteInfo = GATTTest;
 		};
+		6E28A9B4205447060088B6FB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
+			remoteInfo = "GATT-macOS";
+		};
+		6E28A9B6205447060088B6FB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E8AB85B2054379D003FE38D;
+			remoteInfo = GATTTest;
+		};
+		6E28A9B8205447120088B6FB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E8AB87A205438BE003FE38D;
+			remoteInfo = PeripheralUnitTestsServer;
+		};
 		6E2A5D741CC843A300BA7E15 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
@@ -128,6 +151,28 @@
 			dstSubfolderSpec = 10;
 			files = (
 				6E28A99620543D020088B6FB /* GATT.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E28A9BA205447740088B6FB /* Copy Executable */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				6E28A9BB205447820088B6FB /* PeripheralUnitTestsServer in Copy Executable */,
+			);
+			name = "Copy Executable";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E28A9BC2054478C0088B6FB /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				6E28A9BD2054479C0088B6FB /* GATT.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -169,6 +214,8 @@
 		6E1C311B1CD4723C00E8F7EB /* Beacon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Beacon.swift; sourceTree = "<group>"; };
 		6E28A98920543B800088B6FB /* PeripheralUnitTestsClient.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsClient.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E28A98B20543B800088B6FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6E28A9AE2054466A0088B6FB /* PeripheralUnitTestsServer.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeripheralUnitTestsServer.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E28A9B02054466A0088B6FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E2A5D5F1CC8436800BA7E15 /* TestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6E2A5D631CC8436800BA7E15 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -211,6 +258,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		6E28A98620543B800088B6FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E28A9AB2054466A0088B6FB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -285,6 +339,14 @@
 			path = PeripheralUnitTestsClientBundle;
 			sourceTree = "<group>";
 		};
+		6E28A9AF2054466A0088B6FB /* PeripheralUnitTestsServerBundle */ = {
+			isa = PBXGroup;
+			children = (
+				6E28A9B02054466A0088B6FB /* Info.plist */,
+			);
+			path = PeripheralUnitTestsServerBundle;
+			sourceTree = "<group>";
+		};
 		6E2A5D601CC8436800BA7E15 /* TestApp */ = {
 			isa = PBXGroup;
 			children = (
@@ -342,6 +404,7 @@
 				6E4CA8611CB113E8008316A9 /* PeripheralUnitTestsServer */,
 				6E2A5D601CC8436800BA7E15 /* TestApp */,
 				6E28A98A20543B800088B6FB /* PeripheralUnitTestsClientBundle */,
+				6E28A9AF2054466A0088B6FB /* PeripheralUnitTestsServerBundle */,
 				6EE84D851CAF419D00A40C4D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -358,6 +421,7 @@
 				6E8AB87020543896003FE38D /* PeripheralUnitTestsClient */,
 				6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */,
 				6E28A98920543B800088B6FB /* PeripheralUnitTestsClient.bundle */,
+				6E28A9AE2054466A0088B6FB /* PeripheralUnitTestsServer.bundle */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -466,6 +530,27 @@
 			productReference = 6E28A98920543B800088B6FB /* PeripheralUnitTestsClient.bundle */;
 			productType = "com.apple.product-type.bundle";
 		};
+		6E28A9AD2054466A0088B6FB /* PeripheralUnitTestsServerBundle */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E28A9B12054466A0088B6FB /* Build configuration list for PBXNativeTarget "PeripheralUnitTestsServerBundle" */;
+			buildPhases = (
+				6E28A9AA2054466A0088B6FB /* Sources */,
+				6E28A9AB2054466A0088B6FB /* Frameworks */,
+				6E28A9AC2054466A0088B6FB /* Resources */,
+				6E28A9BA205447740088B6FB /* Copy Executable */,
+				6E28A9BC2054478C0088B6FB /* Embed Frameworks */,
+				6E28A9BE205447A90088B6FB /* Carthage */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6E28A9B9205447120088B6FB /* PBXTargetDependency */,
+			);
+			name = PeripheralUnitTestsServerBundle;
+			productName = PeripheralUnitTestsServerBundle;
+			productReference = 6E28A9AE2054466A0088B6FB /* PeripheralUnitTestsServer.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
 		6E2A5D5E1CC8436800BA7E15 /* TestApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6E2A5D6E1CC8436800BA7E15 /* Build configuration list for PBXNativeTarget "TestApp" */;
@@ -552,6 +637,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				6E28A9B5205447060088B6FB /* PBXTargetDependency */,
+				6E28A9B7205447060088B6FB /* PBXTargetDependency */,
 			);
 			name = PeripheralUnitTestsServer;
 			productName = PeripheralUnitTestsServer;
@@ -626,6 +713,10 @@
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
+					6E28A9AD2054466A0088B6FB = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
 					6E2A5D5E1CC8436800BA7E15 = {
 						CreatedOnToolsVersion = 7.3;
 						DevelopmentTeam = 4W79SG34MW;
@@ -673,6 +764,7 @@
 				6E8AB86F20543896003FE38D /* PeripheralUnitTestsClient */,
 				6E28A98820543B800088B6FB /* PeripheralUnitTestsClientBundle */,
 				6E8AB87A205438BE003FE38D /* PeripheralUnitTestsServer */,
+				6E28A9AD2054466A0088B6FB /* PeripheralUnitTestsServerBundle */,
 				6E2A5D5E1CC8436800BA7E15 /* TestApp */,
 			);
 		};
@@ -680,6 +772,13 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		6E28A98720543B800088B6FB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E28A9AC2054466A0088B6FB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -749,6 +848,21 @@
 			shellPath = /bin/sh;
 			shellScript = "/usr/local/bin/carthage copy-frameworks";
 		};
+		6E28A9BE205447A90088B6FB /* Carthage */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../Carthage/Build/Mac/Bluetooth.framework",
+			);
+			name = Carthage;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks";
+		};
 		6E2A5D711CC8438F00BA7E15 /* Copy Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -768,6 +882,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		6E28A98520543B800088B6FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E28A9AA2054466A0088B6FB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -905,6 +1026,21 @@
 			target = 6E8AB85B2054379D003FE38D /* GATTTest */;
 			targetProxy = 6E28A99820543DCC0088B6FB /* PBXContainerItemProxy */;
 		};
+		6E28A9B5205447060088B6FB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE84D831CAF419D00A40C4D /* GATT-macOS */;
+			targetProxy = 6E28A9B4205447060088B6FB /* PBXContainerItemProxy */;
+		};
+		6E28A9B7205447060088B6FB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E8AB85B2054379D003FE38D /* GATTTest */;
+			targetProxy = 6E28A9B6205447060088B6FB /* PBXContainerItemProxy */;
+		};
+		6E28A9B9205447120088B6FB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E8AB87A205438BE003FE38D /* PeripheralUnitTestsServer */;
+			targetProxy = 6E28A9B8205447120088B6FB /* PBXContainerItemProxy */;
+		};
 		6E2A5D751CC843A300BA7E15 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6EF45FBF1CC6D355001F7A39 /* GATT-iOS */;
@@ -967,6 +1103,50 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.PeripheralUnitTestsClientBundle;
 				PRODUCT_NAME = PeripheralUnitTestsClient;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+		6E28A9B22054466A0088B6FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = PeripheralUnitTestsServerBundle/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/$(PRODUCT_NAME).bundle/Contents/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.PeripheralUnitTestsServerBundle;
+				PRODUCT_NAME = PeripheralUnitTestsServer;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		6E28A9B32054466A0088B6FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = PeripheralUnitTestsServerBundle/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/$(PRODUCT_NAME).bundle/Contents/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.PeripheralUnitTestsServerBundle;
+				PRODUCT_NAME = PeripheralUnitTestsServer;
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = bundle;
 			};
@@ -1153,9 +1333,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				LD_RUNPATH_SEARCH_PATHS = $FRAMEWORK_SEARCH_PATHS;
+				LD_RUNPATH_SEARCH_PATHS = "$FRAMEWORK_SEARCH_PATHS $(inherited) @executable_path/../Frameworks @executable_path/$(PRODUCT_NAME).bundle/Contents/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
 			};
 			name = Debug;
 		};
@@ -1169,8 +1351,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				LD_RUNPATH_SEARCH_PATHS = $FRAMEWORK_SEARCH_PATHS;
+				LD_RUNPATH_SEARCH_PATHS = "$FRAMEWORK_SEARCH_PATHS $(inherited) @executable_path/../Frameworks @executable_path/$(PRODUCT_NAME).bundle/Contents/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 			};
 			name = Release;
@@ -1429,6 +1613,15 @@
 			buildConfigurations = (
 				6E28A98D20543B800088B6FB /* Debug */,
 				6E28A98E20543B800088B6FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6E28A9B12054466A0088B6FB /* Build configuration list for PBXNativeTarget "PeripheralUnitTestsServerBundle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E28A9B22054466A0088B6FB /* Debug */,
+				6E28A9B32054466A0088B6FB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
