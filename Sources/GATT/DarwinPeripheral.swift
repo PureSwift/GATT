@@ -9,15 +9,17 @@
 import Foundation
 import Bluetooth
 
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+#if os(macOS) || os(iOS)
     
     import Foundation
     import CoreBluetooth
     import CoreLocation
     
-    /// The platform specific peripheral. 
+    /// The platform specific peripheral.
+    @available(macOS 10.13, *)
     public typealias PeripheralManager = DarwinPeripheral
     
+    @available(macOS 10.13, *)
     public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
         // MARK: - Properties

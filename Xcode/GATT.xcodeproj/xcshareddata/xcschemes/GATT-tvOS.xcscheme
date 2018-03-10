@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6E49B22520532A94002EA5DC"
-               BuildableName = "GATT-tvOS.framework"
+               BuildableName = "GATT.framework"
                BlueprintName = "GATT-tvOS"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
@@ -48,7 +48,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E49B22520532A94002EA5DC"
-            BuildableName = "GATT-tvOS.framework"
+            BuildableName = "GATT.framework"
             BlueprintName = "GATT-tvOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
@@ -66,7 +66,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6E49B22520532A94002EA5DC"
-            BuildableName = "GATT-tvOS.framework"
+            BuildableName = "GATT.framework"
             BlueprintName = "GATT-tvOS"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>

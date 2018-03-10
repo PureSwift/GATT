@@ -15,9 +15,11 @@ import Bluetooth
     import CoreBluetooth
     
     /// The platform specific peripheral.
+    @available(macOS 10.13, *)
     public typealias CentralManager = DarwinCentral
     
     @objc
+    @available(macOS 10.13, *)
     public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         public typealias Error = CentralError
@@ -538,6 +540,7 @@ import Bluetooth
         }
     }
     
+    @available(macOS 10.13, *)
     private extension DarwinCentral {
         
         enum Operation {

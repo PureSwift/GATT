@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if os(macOS) || os(iOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     import CoreBluetooth
     import struct Foundation.UUID
     public typealias PeerIdentifier = Foundation.UUID
@@ -78,8 +78,9 @@ extension Central: CustomStringConvertible {
 
 #endif
 
-#if os(macOS) || os(iOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     
+    @available(macOS 10.13, *)
     extension Central {
         
         init(_ central: CBCentral) {
@@ -106,8 +107,9 @@ extension Peripheral: CustomStringConvertible {
     }
 }
 
-#if os(macOS) || os(iOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     
+    @available(macOS 10.13, *)
     extension Peripheral {
         
         init(_ peripheral: CBPeripheral) {

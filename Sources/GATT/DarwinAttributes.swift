@@ -8,7 +8,7 @@
 
 import Bluetooth
 
-#if os(macOS) || os(iOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     
     import Foundation
     import CoreBluetooth
@@ -22,6 +22,7 @@ import Bluetooth
         func toCoreBluetooth() -> CoreBluetoothPeripheralType
     }
     
+    #if os(macOS) || os(iOS) // watchOS and tvOS only support Central mode
     extension GATT.Service: CoreBluetoothAttributeConvertible {
         
         func toCoreBluetooth() -> CBMutableService {
@@ -82,6 +83,8 @@ import Bluetooth
             }
         }
     }
+        
+    #endif
     
     internal protocol CoreBluetoothBitmaskConvertible: BitMaskOption {
         
