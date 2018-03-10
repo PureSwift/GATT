@@ -354,21 +354,27 @@ import Bluetooth
         // MARK: - Private Methods
         
         /// Find the characteristic with the specified UUID.
-        private func characteristic(_ UUID: BluetoothUUID) -> CBMutableCharacteristic {
+        private func characteristic(_ uuid: BluetoothUUID) -> CBMutableCharacteristic {
             
             var foundCharacteristic: CBMutableCharacteristic!
             
             for service in services {
                 
-                for characteristic in (service.characteristics ?? []) as! [CBMutableCharacteristic] {
+                for characteristic in (service.characteristics ?? []) as? [CBMutableCharacteristic] ?? [] {
+                    
+                    #if swift(>=3.2)
+                    let characteristicUUID = characteristic.uuid
+                    #elseif swift(>=3.0)
+                    let characteristicUUID = characteristic.uuid!
+                    #endif
                                         
-                    guard UUID != BluetoothUUID(coreBluetooth: characteristic.uuid)
+                    guard uuid != BluetoothUUID(coreBluetooth: characteristicUUID)
                         else { foundCharacteristic = characteristic; break }
                 }
             }
             
             guard foundCharacteristic != nil
-                else { fatalError("No Characterstic with UUID \(UUID)") }
+                else { fatalError("No Characterstic with UUID \(uuid)") }
             
             return foundCharacteristic
         }

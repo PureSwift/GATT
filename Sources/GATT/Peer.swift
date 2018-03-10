@@ -135,8 +135,7 @@ extension Peripheral: CustomStringConvertible {
                     return self.value(forKey: "identifier") as! UUID
                 }
             #elseif swift(>=3.0)
-            @inline(__always)
-            get { return self.identifier }
+                return self.identifier
             #endif
         }
     }
@@ -155,8 +154,7 @@ extension Peripheral: CustomStringConvertible {
                 return self.value(forKey: "identifier") as! UUID
             }
             #elseif swift(>=3.0)
-            @inline(__always)
-            get { return self.identifier }
+                return self.identifier
             #endif
         }
     }

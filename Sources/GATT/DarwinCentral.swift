@@ -223,7 +223,13 @@ import Bluetooth
                 corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
             }
             
+            #if swift(>=3.2)
             notifications[peripheral, default: [:]][characteristic] = notification
+            #elseif swift(>=3.0)
+            var newValue = notifications[peripheral] ?? [:]
+            newValue[characteristic] = notification
+            notifications[peripheral] = newValue
+            #endif
         }
         
         // MARK: - Private Methods
