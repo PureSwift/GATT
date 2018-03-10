@@ -7,22 +7,20 @@
 //
 
 import Foundation
-import CoreBluetooth
-import Foundation
 import Bluetooth
 import GATT
 import GATTTest
 
 /// The GATT Client / Central Mode
-
 let central = CentralManager()
-
 
 let testPeripheral: Peripheral = {
     
     central.log = { print("CentralManager: " + $0) }
     
+    #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
     central.waitForPoweredOn()
+    #endif
     
     // search until found
     while true {

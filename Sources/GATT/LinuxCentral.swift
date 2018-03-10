@@ -17,6 +17,11 @@
         
         public var log: ((String) -> ())?
         
+        public init() {
+            
+            fatalError()
+        }
+        
         /// Scans for peripherals that are advertising services.
         public func scan(filterDuplicates: Bool,
                          shouldContinueScanning: () -> (Bool),
@@ -25,7 +30,7 @@
             fatalError()
         }
         
-        public func connect(to peripheral: Peripheral, timeout: Int) throws {
+        public func connect(to peripheral: Peripheral, timeout: Int = 5) throws {
             
             fatalError()
         }

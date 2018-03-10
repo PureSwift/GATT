@@ -9,6 +9,7 @@
 #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
     import CoreBluetooth
 #endif
+
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     import struct Foundation.UUID
     public typealias PeerIdentifier = Foundation.UUID
