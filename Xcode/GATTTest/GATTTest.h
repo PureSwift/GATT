@@ -2,8 +2,8 @@
 //  GATTTest.h
 //  GATTTest
 //
-//  Created by Alsey Coleman Miller on 4/3/16.
-//  Copyright © 2016 PureSwift. All rights reserved.
+//  Created by Alsey Coleman Miller on 3/10/18.
+//  Copyright © 2018 PureSwift. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

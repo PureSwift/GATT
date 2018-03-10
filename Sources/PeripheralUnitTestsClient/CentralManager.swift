@@ -24,11 +24,13 @@ let testPeripheral: Peripheral = {
     // search until found
     while true {
         
-        let foundPeripherals = central.scan()
+        let foundPeripherals = central.scan(duration: 3)
         
-        print("Scan results: \(foundPeripherals.map({ $0.identifier }))")
+        print("Scan results: \(foundPeripherals.map({ $0.peripheral.identifier }))")
         
-        for peripheral in foundPeripherals {
+        for scanData in foundPeripherals {
+            
+            let peripheral = scanData.peripheral
             
             do { try central.connect(to: peripheral) }
                 
@@ -65,9 +67,9 @@ let foundServices: [(uuid: BluetoothUUID, primary: Bool)] = {
     return testServicesCache
 }()
 
-let foundCharacteristics: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [Characteristic.Property])]] = {
+let foundCharacteristics: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [GATT.Characteristic.Property])]] = {
     
-    var found: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [Characteristic.Property])]] = [:]
+    var found: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [GATT.Characteristic.Property])]] = [:]
     
     for service in foundServices {
         
