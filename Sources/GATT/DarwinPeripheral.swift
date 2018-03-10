@@ -16,9 +16,7 @@ import Bluetooth
     import CoreLocation
     
     /// The platform specific peripheral.
-
     public typealias PeripheralManager = DarwinPeripheral
-    
 
     public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
@@ -89,6 +87,13 @@ import Bluetooth
         
         #if os(macOS)
         
+        public func start(beacon: Beacon?) throws {
+            
+            assert(beacon == nil, "iBeacon functionality not availible on macOS")
+            
+            try start()
+        }
+        
         public func start() throws {
             
             var advertisementData = [String : AnyObject]()
@@ -99,15 +104,6 @@ import Bluetooth
             }
             
             try start(advertisementData)
-        }
-        
-        #endif
-
-        #if XcodeLinux
-        
-        public func start(beacon: Beacon? = nil) throws {
-            
-            fatalError("Not supported on OS X")
         }
         
         #endif

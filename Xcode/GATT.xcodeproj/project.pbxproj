@@ -448,17 +448,17 @@
 			isa = PBXGroup;
 			children = (
 				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
+				6E1C311B1CD4723C00E8F7EB /* Beacon.swift */,
 				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6EAABBB220014040009B38C0 /* Descriptor.swift */,
 				6EAABC002001AF4C009B38C0 /* ScanData.swift */,
 				6E49B221205325B3002EA5DC /* AdvertisementData.swift */,
 				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
 				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
-				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 				6E17DC221CB1DC250043C644 /* Central.swift */,
 				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
+				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 				6EF9426C2016464B00EEB821 /* LinuxCentral.swift */,
-				6E1C311B1CD4723C00E8F7EB /* Beacon.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";

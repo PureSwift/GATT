@@ -34,10 +34,10 @@ playground.xcworkspace
 
 # Swift Package Manager
 #
-# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
-# Packages/
-# Package.pins
+Packages/
+Package.pins
 .build/
+GATT.xcodeproj
 
 # CocoaPods
 #
@@ -49,10 +49,8 @@ playground.xcworkspace
 
 # Carthage
 #
-# Add this line if you want to avoid checking in source code from Carthage dependencies.
-# Carthage/Checkouts
 
-Carthage/Build
+Carthage/*
 
 # fastlane
 #
@@ -65,10 +63,3 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
-
-
-Carthage/
-
-.build
-
-Packages

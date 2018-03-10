@@ -20,7 +20,7 @@
         /// Scans for peripherals that are advertising services.
         public func scan(filterDuplicates: Bool,
                          shouldContinueScanning: () -> (Bool),
-                         foundDevice: @escaping (CentralManager.ScanResult) -> ()) {
+                         foundDevice: @escaping (ScanData) -> ()) {
             
             fatalError()
         }

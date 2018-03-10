@@ -66,7 +66,7 @@ extension Central: CustomStringConvertible {
         }
     }
 
-#elseif XcodeLinux
+#elseif (Xcode && SWIFT_PACKAGE)
     
     import BluetoothLinux
     

@@ -16,19 +16,10 @@ public protocol NativePeripheral {
     
     associatedtype ServiceIdentifier
     
-#if os(iOS) || os(Linux) || XcodeLinux
-    
     /// Start advertising the peripheral and listening for incoming connections.
     ///
     /// - Note: Can optionally advertise as iBeacon in iOS and Linux.
     func start(beacon: Beacon?) throws
-    
-#elseif os(macOS)
-    
-    /// Start advertising the peripheral and listening for incoming connections.
-    func start() throws
-
-#endif
     
     /// Stop the peripheral.
     func stop()

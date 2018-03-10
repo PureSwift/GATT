@@ -63,13 +63,16 @@
                 
             } else {
                 
-                do { try adapter.enableAdvertising() }
+                // just enable advertising
+                do { try adapter.enableLowEnergyAdvertising() }
                 catch HCIError.commandDisallowed { /* ignore */ }
             }
             
             let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
             
-            let serverSocket = try L2CAPSocket(adapterAddress: adapterAddress, channelIdentifier: ATT.CID, addressType: .lowEnergyPublic, securityLevel: .Low)
+            let serverSocket = try L2CAPSocket.lowEnergyServer(adapterAddress: adapterAddress,
+                                                               isRandom: false,
+                                                               securityLevel: .low)
             
             isServerRunning = true
             
@@ -134,7 +137,9 @@
                                 catch {
                                     
                                     // https://github.com/apple/swift-corelibs-foundation/pull/933
+                                    #if os(Linux)
                                     typealias POSIXError = BluetoothLinux.POSIXError
+                                    #endif
                                     
                                     /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
                                     if let disconnectError = error as? POSIXError,
@@ -143,7 +148,7 @@
                                         
                                         peripheral.log?("Central \(newSocket.address) disconnected")
                                         
-                                        do { try peripheral.adapter.enableAdvertising() }
+                                        do { try peripheral.adapter.enableLowEnergyAdvertising() }
                                         
                                         catch { peripheral.log?("Could not restore advertising. \(error)") }
                                         
@@ -179,7 +184,7 @@
             self.serverThread = nil
         }
         
-        public func add(service: Service) throws -> UInt16 {
+        public func add(service: GATT.Service) throws -> UInt16 {
             
             return database.add(service: service)
         }

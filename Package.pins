@@ -5,13 +5,13 @@
       "package": "Bluetooth",
       "reason": null,
       "repositoryURL": "https://github.com/PureSwift/Bluetooth.git",
-      "version": "1.5.3"
+      "version": "1.5.6"
     },
     {
       "package": "BluetoothLinux",
       "reason": null,
       "repositoryURL": "https://github.com/PureSwift/BluetoothLinux.git",
-      "version": "2.6.3"
+      "version": "2.6.4"
     }
   ],
   "version": 1
