@@ -9,7 +9,7 @@
 import Foundation
 import Bluetooth
 
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
     
     import Foundation
     import CoreBluetooth

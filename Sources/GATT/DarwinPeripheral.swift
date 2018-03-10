@@ -362,12 +362,12 @@ import Bluetooth
                 
                 for characteristic in (service.characteristics ?? []) as? [CBMutableCharacteristic] ?? [] {
                     
-                    #if swift(>=3.2)
+                    #if os(iOS) || os(watchOS) || os(tvOS)
                     let characteristicUUID = characteristic.uuid
-                    #elseif swift(>=3.0)
+                    #elseif os(macOS)
                     let characteristicUUID = characteristic.uuid!
                     #endif
-                                        
+                    
                     guard uuid != BluetoothUUID(coreBluetooth: characteristicUUID)
                         else { foundCharacteristic = characteristic; break }
                 }

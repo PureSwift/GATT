@@ -9,10 +9,13 @@
 import Foundation
 import Bluetooth
 
+#if (os(watchOS) && !swift(>=3.2))
+// Not supported in watchOS before Xcode 9
+public protocol NativeCentral: class { }
+#else
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
-
 public protocol NativeCentral: class {
     
     var log: ((String) -> ())? { get set }
@@ -76,7 +79,6 @@ public enum CentralError: Error {
     case invalidAttribute(BluetoothUUID)
 }
 
-
 public extension CentralManager {
     
     public struct Service {
@@ -95,3 +97,5 @@ public extension CentralManager {
         public let properties: BitMaskOptionSet<Property>
     }
 }
+
+#endif
