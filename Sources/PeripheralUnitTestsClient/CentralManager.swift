@@ -13,7 +13,10 @@ import Bluetooth
 import GATT
 import GATTTest
 
+/// The GATT Client / Central Mode
+
 let central = CentralManager()
+
 
 let testPeripheral: Peripheral = {
     
@@ -56,9 +59,11 @@ let testPeripheral: Peripheral = {
     }
 }()
 
-private var testServicesCache: [(uuid: BluetoothUUID, primary: Bool)]!
 
-let foundServices: [(uuid: BluetoothUUID, primary: Bool)] = {
+private var testServicesCache: [CentralManager.Service]!
+
+
+let foundServices: [CentralManager.Service] = {
    
     // get the peripheral first
     let _ = testPeripheral
@@ -67,9 +72,10 @@ let foundServices: [(uuid: BluetoothUUID, primary: Bool)] = {
     return testServicesCache
 }()
 
-let foundCharacteristics: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [GATT.Characteristic.Property])]] = {
+
+let foundCharacteristics: [BluetoothUUID: [CentralManager.Characteristic]] = {
     
-    var found: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [GATT.Characteristic.Property])]] = [:]
+    var found: [BluetoothUUID: [CentralManager.Characteristic]] = [:]
     
     for service in foundServices {
         
@@ -82,6 +88,7 @@ let foundCharacteristics: [BluetoothUUID: [(uuid: BluetoothUUID, properties: [GA
     
     return found
 }()
+
 
 let foundCharacteristicValues: [BluetoothUUID: Data] = {
     

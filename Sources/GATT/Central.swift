@@ -12,7 +12,7 @@ import Bluetooth
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
-@available(macOS 10.13, *)
+
 public protocol NativeCentral: class {
     
     var log: ((String) -> ())? { get set }
@@ -45,7 +45,7 @@ public protocol NativeCentral: class {
                 notification: ((Data) -> ())?) throws
 }
 
-@available(macOS 10.13, *)
+
 public extension NativeCentral {
     
     func scan(duration: TimeInterval) -> [ScanData] {
@@ -76,7 +76,7 @@ public enum CentralError: Error {
     case invalidAttribute(BluetoothUUID)
 }
 
-@available(macOS 10.13, *)
+
 public extension CentralManager {
     
     public struct Service {

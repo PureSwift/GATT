@@ -80,12 +80,12 @@ extension Central: CustomStringConvertible {
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
     
-    @available(macOS 10.13, *)
+
     extension Central {
         
         init(_ central: CBCentral) {
             
-            self.identifier = central.identifier
+            self.identifier = central.gattIdentifier
         }
     }
     
@@ -108,14 +108,56 @@ extension Peripheral: CustomStringConvertible {
 }
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-    
-    @available(macOS 10.13, *)
+
     extension Peripheral {
         
         init(_ peripheral: CBPeripheral) {
             
-            self.identifier = peripheral.identifier
+            self.identifier = peripheral.gattIdentifier
         }
     }
 
+#endif
+
+#if os(macOS)
+    
+    internal extension CBCentral {
+        
+        var gattIdentifier: UUID {
+            
+            #if swift(>=3.2)
+                if #available(macOS 10.13, *) {
+                    
+                    return (self as CBPeer).identifier
+                    
+                } else {
+                    
+                    return self.value(forKey: "identifier") as! UUID
+                }
+            #elseif swift(>=3.0)
+            @inline(__always)
+            get { return self.identifier }
+            #endif
+        }
+    }
+    
+    internal extension CBPeripheral {
+        
+        var gattIdentifier: UUID {
+            
+            #if swift(>=3.2)
+            if #available(macOS 10.13, *) {
+                
+                return (self as CBPeer).identifier
+                
+            } else {
+                
+                return self.value(forKey: "identifier") as! UUID
+            }
+            #elseif swift(>=3.0)
+            @inline(__always)
+            get { return self.identifier }
+            #endif
+        }
+    }
 #endif

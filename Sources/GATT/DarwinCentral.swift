@@ -15,11 +15,11 @@ import Bluetooth
     import CoreBluetooth
     
     /// The platform specific peripheral.
-    @available(macOS 10.13, *)
+
     public typealias CentralManager = DarwinCentral
     
     @objc
-    @available(macOS 10.13, *)
+
     public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         public typealias Error = CentralError
@@ -374,7 +374,7 @@ import Bluetooth
         @objc(centralManager:didConnectPeripheral:)
         public func centralManager(_ central: CBCentralManager, didConnect corePeripheral: CBPeripheral) {
             
-            log?("Connecting to peripheral \(corePeripheral.identifier.uuidString)")
+            log?("Connecting to peripheral \(corePeripheral.gattIdentifier.uuidString)")
             
             guard let operation = operationState?.operation,
                 case let .connect(peripheral) = operation,
@@ -389,7 +389,7 @@ import Bluetooth
         @objc(centralManager:didFailToConnectPeripheral:error:)
         public func centralManager(_ central: CBCentralManager, didFailToConnect corePeripheral: CBPeripheral, error: Swift.Error?) {
             
-            log?("Did fail to connect to peripheral \(corePeripheral.identifier.uuidString) (\(error!))")
+            log?("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
             
             guard let operation = operationState?.operation,
                 case let .connect(peripheral) = operation,
@@ -416,7 +416,7 @@ import Bluetooth
                 
             } else {
                 
-                log?("Peripheral \(corePeripheral.identifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
             }
             
             guard let operation = operationState?.operation,
@@ -436,7 +436,7 @@ import Bluetooth
                 
             } else {
                 
-                log?("Peripheral \(corePeripheral.identifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
             }
             
             guard let operation = operationState?.operation,
@@ -457,7 +457,7 @@ import Bluetooth
                 
             } else {
                 
-                log?("Peripheral \(corePeripheral.identifier.uuidString) did update value for characteristic \(coreCharacteristic.uuid.uuidString)")
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update value for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
             if let operation = operationState?.operation,
@@ -494,7 +494,7 @@ import Bluetooth
                 
             } else {
                 
-                log?("Peripheral \(corePeripheral.identifier.uuidString) did write value for characteristic \(coreCharacteristic.uuid.uuidString)")
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did write value for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
             guard let operation = operationState?.operation,
@@ -518,7 +518,7 @@ import Bluetooth
                 
             } else {
                 
-                log?("Peripheral \(corePeripheral.identifier.uuidString) did update notification state for characteristic \(coreCharacteristic.uuid.uuidString)")
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update notification state for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
             guard let operation = operationState?.operation,
@@ -540,7 +540,7 @@ import Bluetooth
         }
     }
     
-    @available(macOS 10.13, *)
+
     private extension DarwinCentral {
         
         enum Operation {

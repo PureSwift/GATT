@@ -16,10 +16,10 @@ import Bluetooth
     import CoreLocation
     
     /// The platform specific peripheral.
-    @available(macOS 10.13, *)
+
     public typealias PeripheralManager = DarwinPeripheral
     
-    @available(macOS 10.13, *)
+
     public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
         
         // MARK: - Properties

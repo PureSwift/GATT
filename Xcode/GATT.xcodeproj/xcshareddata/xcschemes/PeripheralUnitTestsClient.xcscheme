@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6E8AB86F20543896003FE38D"
-               BuildableName = "PeripheralUnitTestsClient"
-               BlueprintName = "PeripheralUnitTestsClient"
+               BlueprintIdentifier = "6E28A98820543B800088B6FB"
+               BuildableName = "PeripheralUnitTestsClient.bundle"
+               BlueprintName = "PeripheralUnitTestsClientBundle"
                ReferencedContainer = "container:GATT.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -72,16 +72,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6E8AB86F20543896003FE38D"
-            BuildableName = "PeripheralUnitTestsClient"
-            BlueprintName = "PeripheralUnitTestsClient"
+            BlueprintIdentifier = "6E28A98820543B800088B6FB"
+            BuildableName = "PeripheralUnitTestsClient.bundle"
+            BlueprintName = "PeripheralUnitTestsClientBundle"
             ReferencedContainer = "container:GATT.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
