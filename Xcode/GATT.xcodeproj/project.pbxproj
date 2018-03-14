@@ -21,6 +21,10 @@
 		6E2A5D6C1CC8436800BA7E15 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D6A1CC8436800BA7E15 /* LaunchScreen.storyboard */; };
 		6E2A5D721CC843A300BA7E15 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; };
 		6E2A5D731CC843A300BA7E15 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E373030205623A500B5B32A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E37302F205623A500B5B32A /* AppDelegate.swift */; };
+		6E373032205623A500B5B32A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E373031205623A500B5B32A /* ViewController.swift */; };
+		6E373034205623A500B5B32A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E373033205623A500B5B32A /* Assets.xcassets */; };
+		6E373037205623A500B5B32A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E373035205623A500B5B32A /* Main.storyboard */; };
 		6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
 		6E49B223205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
 		6E49B224205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
@@ -52,6 +56,11 @@
 		6E8AB887205438F5003FE38D /* ServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8AB86920543876003FE38D /* ServerTests.swift */; };
 		6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 		6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
+		6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E98B6952059B51000B6F016 /* AppDelegate.swift */; };
+		6E98B6982059B51000B6F016 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E98B6972059B51000B6F016 /* ViewController.swift */; };
+		6E98B69B2059B51000B6F016 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B6992059B51000B6F016 /* Main.storyboard */; };
+		6E98B69D2059B51000B6F016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B69C2059B51000B6F016 /* Assets.xcassets */; };
+		6E98B6A02059B51000B6F016 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */; };
 		6EAABBB320014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
 		6EAABBB420014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
 		6EAABBB520014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
@@ -223,6 +232,13 @@
 		6E2A5D681CC8436800BA7E15 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E2A5D6B1CC8436800BA7E15 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6E2A5D6D1CC8436800BA7E15 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6E37302D205623A500B5B32A /* GATTTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GATTTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E37302F205623A500B5B32A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6E373031205623A500B5B32A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		6E373033205623A500B5B32A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6E373036205623A500B5B32A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6E373038205623A500B5B32A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6E373039205623A600B5B32A /* GATTTool.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GATTTool.entitlements; sourceTree = "<group>"; };
 		6E49B221205325B3002EA5DC /* AdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvertisementData.swift; sourceTree = "<group>"; };
 		6E49B23A20532A94002EA5DC /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E4CA8641CB113E8008316A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -244,6 +260,13 @@
 		6E8AB86B20543876003FE38D /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServerManager.swift; path = ../../Sources/PeripheralUnitTestsServer/ServerManager.swift; sourceTree = "<group>"; };
 		6E8AB87020543896003FE38D /* PeripheralUnitTestsClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PeripheralUnitTestsClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PeripheralUnitTestsServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E98B6932059B51000B6F016 /* BluetoothExplorer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BluetoothExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E98B6952059B51000B6F016 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6E98B6972059B51000B6F016 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		6E98B69A2059B51000B6F016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6E98B69C2059B51000B6F016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6E98B69F2059B51000B6F016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		6E98B6A12059B51000B6F016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6EAABBB220014040009B38C0 /* Descriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Descriptor.swift; sourceTree = "<group>"; };
 		6EAABC002001AF4C009B38C0 /* ScanData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanData.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -279,6 +302,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6E37302A205623A500B5B32A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E49B23320532A94002EA5DC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -301,6 +331,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6E8AB878205438BE003FE38D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E98B6902059B51000B6F016 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -360,6 +397,19 @@
 			path = TestApp;
 			sourceTree = "<group>";
 		};
+		6E37302E205623A500B5B32A /* GATTTool */ = {
+			isa = PBXGroup;
+			children = (
+				6E37302F205623A500B5B32A /* AppDelegate.swift */,
+				6E373031205623A500B5B32A /* ViewController.swift */,
+				6E373033205623A500B5B32A /* Assets.xcassets */,
+				6E373035205623A500B5B32A /* Main.storyboard */,
+				6E373038205623A500B5B32A /* Info.plist */,
+				6E373039205623A600B5B32A /* GATTTool.entitlements */,
+			);
+			path = GATTTool;
+			sourceTree = "<group>";
+		};
 		6E4CA8611CB113E8008316A9 /* PeripheralUnitTestsServer */ = {
 			isa = PBXGroup;
 			children = (
@@ -392,6 +442,19 @@
 			path = GATTTest;
 			sourceTree = "<group>";
 		};
+		6E98B6942059B51000B6F016 /* BluetoothExplorer */ = {
+			isa = PBXGroup;
+			children = (
+				6E98B6952059B51000B6F016 /* AppDelegate.swift */,
+				6E98B6972059B51000B6F016 /* ViewController.swift */,
+				6E98B6992059B51000B6F016 /* Main.storyboard */,
+				6E98B69C2059B51000B6F016 /* Assets.xcassets */,
+				6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */,
+				6E98B6A12059B51000B6F016 /* Info.plist */,
+			);
+			path = BluetoothExplorer;
+			sourceTree = "<group>";
+		};
 		6EE84D7A1CAF419D00A40C4D = {
 			isa = PBXGroup;
 			children = (
@@ -405,6 +468,8 @@
 				6E2A5D601CC8436800BA7E15 /* TestApp */,
 				6E28A98A20543B800088B6FB /* PeripheralUnitTestsClientBundle */,
 				6E28A9AF2054466A0088B6FB /* PeripheralUnitTestsServerBundle */,
+				6E37302E205623A500B5B32A /* GATTTool */,
+				6E98B6942059B51000B6F016 /* BluetoothExplorer */,
 				6EE84D851CAF419D00A40C4D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -422,6 +487,8 @@
 				6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */,
 				6E28A98920543B800088B6FB /* PeripheralUnitTestsClient.bundle */,
 				6E28A9AE2054466A0088B6FB /* PeripheralUnitTestsServer.bundle */,
+				6E37302D205623A500B5B32A /* GATTTool.app */,
+				6E98B6932059B51000B6F016 /* BluetoothExplorer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -571,6 +638,23 @@
 			productReference = 6E2A5D5F1CC8436800BA7E15 /* TestApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		6E37302C205623A500B5B32A /* GATTTool */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E37303C205623A600B5B32A /* Build configuration list for PBXNativeTarget "GATTTool" */;
+			buildPhases = (
+				6E373029205623A500B5B32A /* Sources */,
+				6E37302A205623A500B5B32A /* Frameworks */,
+				6E37302B205623A500B5B32A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GATTTool;
+			productName = GATTTool;
+			productReference = 6E37302D205623A500B5B32A /* GATTTool.app */;
+			productType = "com.apple.product-type.application";
+		};
 		6E49B22520532A94002EA5DC /* GATT-tvOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6E49B23720532A94002EA5DC /* Build configuration list for PBXNativeTarget "GATT-tvOS" */;
@@ -644,6 +728,23 @@
 			productName = PeripheralUnitTestsServer;
 			productReference = 6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */;
 			productType = "com.apple.product-type.tool";
+		};
+		6E98B6922059B51000B6F016 /* BluetoothExplorer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E98B6A42059B51000B6F016 /* Build configuration list for PBXNativeTarget "BluetoothExplorer" */;
+			buildPhases = (
+				6E98B68F2059B51000B6F016 /* Sources */,
+				6E98B6902059B51000B6F016 /* Frameworks */,
+				6E98B6912059B51000B6F016 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BluetoothExplorer;
+			productName = BluetoothExplorer;
+			productReference = 6E98B6932059B51000B6F016 /* BluetoothExplorer.app */;
+			productType = "com.apple.product-type.application";
 		};
 		6EE84D831CAF419D00A40C4D /* GATT-macOS */ = {
 			isa = PBXNativeTarget;
@@ -721,6 +822,10 @@
 						CreatedOnToolsVersion = 7.3;
 						DevelopmentTeam = 4W79SG34MW;
 					};
+					6E37302C205623A500B5B32A = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
 					6E8AB85B2054379D003FE38D = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 0920;
@@ -732,6 +837,11 @@
 					};
 					6E8AB87A205438BE003FE38D = {
 						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+					6E98B6922059B51000B6F016 = {
+						CreatedOnToolsVersion = 9.2;
+						DevelopmentTeam = 4W79SG34MW;
 						ProvisioningStyle = Automatic;
 					};
 					6EE84D831CAF419D00A40C4D = {
@@ -766,6 +876,8 @@
 				6E8AB87A205438BE003FE38D /* PeripheralUnitTestsServer */,
 				6E28A9AD2054466A0088B6FB /* PeripheralUnitTestsServerBundle */,
 				6E2A5D5E1CC8436800BA7E15 /* TestApp */,
+				6E37302C205623A500B5B32A /* GATTTool */,
+				6E98B6922059B51000B6F016 /* BluetoothExplorer */,
 			);
 		};
 /* End PBXProject section */
@@ -795,6 +907,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6E37302B205623A500B5B32A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E373034205623A500B5B32A /* Assets.xcassets in Resources */,
+				6E373037205623A500B5B32A /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E49B23620532A94002EA5DC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -806,6 +927,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E98B6912059B51000B6F016 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E98B6A02059B51000B6F016 /* LaunchScreen.storyboard in Resources */,
+				6E98B69D2059B51000B6F016 /* Assets.xcassets in Resources */,
+				6E98B69B2059B51000B6F016 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -904,6 +1035,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6E373029205623A500B5B32A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E373032205623A500B5B32A /* ViewController.swift in Sources */,
+				6E373030205623A500B5B32A /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E49B22620532A94002EA5DC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -948,6 +1088,15 @@
 				6E8AB885205438F5003FE38D /* main.swift in Sources */,
 				6E8AB886205438F5003FE38D /* ServerManager.swift in Sources */,
 				6E8AB887205438F5003FE38D /* ServerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E98B68F2059B51000B6F016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E98B6982059B51000B6F016 /* ViewController.swift in Sources */,
+				6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1061,6 +1210,30 @@
 			isa = PBXVariantGroup;
 			children = (
 				6E2A5D6B1CC8436800BA7E15 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		6E373035205623A500B5B32A /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6E373036205623A500B5B32A /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		6E98B6992059B51000B6F016 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6E98B69A2059B51000B6F016 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6E98B69F2059B51000B6F016 /* Base */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
@@ -1187,6 +1360,50 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		6E37303A205623A600B5B32A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = GATTTool/GATTTool.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = GATTTool/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.GATTTool;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		6E37303B205623A600B5B32A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = GATTTool/GATTTool.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = GATTTool/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.GATTTool;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
@@ -1354,6 +1571,55 @@
 				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
 				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		6E98B6A22059B51000B6F016 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 4W79SG34MW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = BluetoothExplorer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.BluetoothExplorer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6E98B6A32059B51000B6F016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 4W79SG34MW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = BluetoothExplorer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.BluetoothExplorer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -1633,6 +1899,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		6E37303C205623A600B5B32A /* Build configuration list for PBXNativeTarget "GATTTool" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E37303A205623A600B5B32A /* Debug */,
+				6E37303B205623A600B5B32A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6E49B23720532A94002EA5DC /* Build configuration list for PBXNativeTarget "GATT-tvOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1665,6 +1940,15 @@
 			buildConfigurations = (
 				6E8AB880205438BE003FE38D /* Debug */,
 				6E8AB881205438BE003FE38D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6E98B6A42059B51000B6F016 /* Build configuration list for PBXNativeTarget "BluetoothExplorer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E98B6A22059B51000B6F016 /* Debug */,
+				6E98B6A32059B51000B6F016 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
