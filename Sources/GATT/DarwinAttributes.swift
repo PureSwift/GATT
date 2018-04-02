@@ -68,7 +68,7 @@ import Bluetooth
                 
             case CBUUIDCharacteristicUserDescriptionString:
                 
-                guard let string = String(UTF8Data: value)
+                guard let string = String(data: value, encoding: .utf8)
                     else { fatalError("Could not parse string for \(CBMutableDescriptor.self) from \(self)") }
                 
                 return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: string)
