@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		352C2070207C5EF700C62241 /* PKHUD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 352C206F207C5EF700C62241 /* PKHUD.framework */; };
+		35CE13BE207AA3810098BAB4 /* VirtualPeripheralsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C3207A9E1700A7CB3A /* VirtualPeripheralsViewController.swift */; };
+		35CE13BF207AA3810098BAB4 /* NearbyPeripheralsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */; };
+		35CE13C1207AA3810098BAB4 /* NearbyPeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */; };
+		35CE13C3207AA4140098BAB4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 35CE13C2207AA4130098BAB4 /* Main.storyboard */; };
+		35CE13CA207AACF80098BAB4 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		35D12582207AC1140037EDC0 /* Bluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35CE13C5207AAA4F0098BAB4 /* Bluetooth.framework */; };
+		35D1258B207B01570037EDC0 /* UIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258A207B01570037EDC0 /* UIViewController.swift */; };
+		35D1258E207B0E0A0037EDC0 /* PeripheralServicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */; };
+		35D12590207B22080037EDC0 /* PeripheralServiceCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */; };
 		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
 		6E1C311C1CD4723C00E8F7EB /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
@@ -15,7 +25,6 @@
 		6E28A9BB205447820088B6FB /* PeripheralUnitTestsServer in Copy Executable */ = {isa = PBXBuildFile; fileRef = 6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6E28A9BD2054479C0088B6FB /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E2A5D621CC8436800BA7E15 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */; };
-		6E2A5D641CC8436800BA7E15 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A5D631CC8436800BA7E15 /* ViewController.swift */; };
 		6E2A5D671CC8436800BA7E15 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D651CC8436800BA7E15 /* Main.storyboard */; };
 		6E2A5D691CC8436800BA7E15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D681CC8436800BA7E15 /* Assets.xcassets */; };
 		6E2A5D6C1CC8436800BA7E15 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E2A5D6A1CC8436800BA7E15 /* LaunchScreen.storyboard */; };
@@ -57,8 +66,6 @@
 		6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 		6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 		6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E98B6952059B51000B6F016 /* AppDelegate.swift */; };
-		6E98B6982059B51000B6F016 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E98B6972059B51000B6F016 /* ViewController.swift */; };
-		6E98B69B2059B51000B6F016 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B6992059B51000B6F016 /* Main.storyboard */; };
 		6E98B69D2059B51000B6F016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B69C2059B51000B6F016 /* Assets.xcassets */; };
 		6E98B6A02059B51000B6F016 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */; };
 		6EAABBB320014040009B38C0 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABBB220014040009B38C0 /* Descriptor.swift */; };
@@ -90,6 +97,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		35CE13CB207AACF80098BAB4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EF45FBF1CC6D355001F7A39;
+			remoteInfo = "GATT-iOS";
+		};
 		6E28A98F20543C520088B6FB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
@@ -142,6 +156,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		35CE13CD207AACF80098BAB4 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				35CE13CA207AACF80098BAB4 /* GATT.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E28A99320543CBD0088B6FB /* Copy Executable */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -218,6 +243,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		352C206F207C5EF700C62241 /* PKHUD.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PKHUD.framework; path = ../Carthage/Build/iOS/PKHUD.framework; sourceTree = "<group>"; };
+		359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPeripheralsViewController.swift; sourceTree = "<group>"; };
+		359EB2C3207A9E1700A7CB3A /* VirtualPeripheralsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualPeripheralsViewController.swift; sourceTree = "<group>"; };
+		359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPeripheralCell.swift; sourceTree = "<group>"; };
+		35CE13C2207AA4130098BAB4 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
+		35CE13C5207AAA4F0098BAB4 /* Bluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Bluetooth.framework; path = ../Carthage/Build/iOS/Bluetooth.framework; sourceTree = "<group>"; };
+		35D1258A207B01570037EDC0 /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
+		35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServicesViewController.swift; sourceTree = "<group>"; };
+		35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServiceCell.swift; sourceTree = "<group>"; };
 		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
 		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
 		6E1C311B1CD4723C00E8F7EB /* Beacon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Beacon.swift; sourceTree = "<group>"; };
@@ -227,7 +261,6 @@
 		6E28A9B02054466A0088B6FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6E2A5D5F1CC8436800BA7E15 /* TestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		6E2A5D631CC8436800BA7E15 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		6E2A5D661CC8436800BA7E15 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6E2A5D681CC8436800BA7E15 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E2A5D6B1CC8436800BA7E15 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -262,8 +295,6 @@
 		6E8AB87B205438BE003FE38D /* PeripheralUnitTestsServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PeripheralUnitTestsServer; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E98B6932059B51000B6F016 /* BluetoothExplorer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BluetoothExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E98B6952059B51000B6F016 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		6E98B6972059B51000B6F016 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		6E98B69A2059B51000B6F016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6E98B69C2059B51000B6F016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E98B69F2059B51000B6F016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6E98B6A12059B51000B6F016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -341,6 +372,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35D12582207AC1140037EDC0 /* Bluetooth.framework in Frameworks */,
+				352C2070207C5EF700C62241 /* PKHUD.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,6 +401,77 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		35CE13C4207AAA4E0098BAB4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				352C206F207C5EF700C62241 /* PKHUD.framework */,
+				35CE13C5207AAA4F0098BAB4 /* Bluetooth.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		35D12584207B00920037EDC0 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				35D12585207B00A30037EDC0 /* NearbyDevices */,
+				35D1258C207B0DF50037EDC0 /* PeripheralServices */,
+				35D12586207B00AF0037EDC0 /* VirtualPeripherals */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		35D12585207B00A30037EDC0 /* NearbyDevices */ = {
+			isa = PBXGroup;
+			children = (
+				359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */,
+				359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */,
+			);
+			path = NearbyDevices;
+			sourceTree = "<group>";
+		};
+		35D12586207B00AF0037EDC0 /* VirtualPeripherals */ = {
+			isa = PBXGroup;
+			children = (
+				359EB2C3207A9E1700A7CB3A /* VirtualPeripheralsViewController.swift */,
+			);
+			path = VirtualPeripherals;
+			sourceTree = "<group>";
+		};
+		35D12587207B00C00037EDC0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6E98B69C2059B51000B6F016 /* Assets.xcassets */,
+				6E98B6A12059B51000B6F016 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		35D12588207B00CB0037EDC0 /* Storyboards */ = {
+			isa = PBXGroup;
+			children = (
+				35CE13C2207AA4130098BAB4 /* Main.storyboard */,
+				6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */,
+			);
+			path = Storyboards;
+			sourceTree = "<group>";
+		};
+		35D12589207B011A0037EDC0 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				35D1258A207B01570037EDC0 /* UIViewController.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		35D1258C207B0DF50037EDC0 /* PeripheralServices */ = {
+			isa = PBXGroup;
+			children = (
+				35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */,
+				35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */,
+			);
+			path = PeripheralServices;
+			sourceTree = "<group>";
+		};
 		6E28A98A20543B800088B6FB /* PeripheralUnitTestsClientBundle */ = {
 			isa = PBXGroup;
 			children = (
@@ -388,7 +492,6 @@
 			isa = PBXGroup;
 			children = (
 				6E2A5D611CC8436800BA7E15 /* AppDelegate.swift */,
-				6E2A5D631CC8436800BA7E15 /* ViewController.swift */,
 				6E2A5D651CC8436800BA7E15 /* Main.storyboard */,
 				6E2A5D681CC8436800BA7E15 /* Assets.xcassets */,
 				6E2A5D6A1CC8436800BA7E15 /* LaunchScreen.storyboard */,
@@ -445,12 +548,11 @@
 		6E98B6942059B51000B6F016 /* BluetoothExplorer */ = {
 			isa = PBXGroup;
 			children = (
+				35D12589207B011A0037EDC0 /* Extensions */,
+				35D12588207B00CB0037EDC0 /* Storyboards */,
+				35D12587207B00C00037EDC0 /* Resources */,
+				35D12584207B00920037EDC0 /* Controllers */,
 				6E98B6952059B51000B6F016 /* AppDelegate.swift */,
-				6E98B6972059B51000B6F016 /* ViewController.swift */,
-				6E98B6992059B51000B6F016 /* Main.storyboard */,
-				6E98B69C2059B51000B6F016 /* Assets.xcassets */,
-				6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */,
-				6E98B6A12059B51000B6F016 /* Info.plist */,
 			);
 			path = BluetoothExplorer;
 			sourceTree = "<group>";
@@ -471,6 +573,7 @@
 				6E37302E205623A500B5B32A /* GATTTool */,
 				6E98B6942059B51000B6F016 /* BluetoothExplorer */,
 				6EE84D851CAF419D00A40C4D /* Products */,
+				35CE13C4207AAA4E0098BAB4 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -736,10 +839,13 @@
 				6E98B68F2059B51000B6F016 /* Sources */,
 				6E98B6902059B51000B6F016 /* Frameworks */,
 				6E98B6912059B51000B6F016 /* Resources */,
+				35CE13C7207AAA710098BAB4 /* Copy Frameworks */,
+				35CE13CD207AACF80098BAB4 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				35CE13CC207AACF80098BAB4 /* PBXTargetDependency */,
 			);
 			name = BluetoothExplorer;
 			productName = BluetoothExplorer;
@@ -841,7 +947,7 @@
 					};
 					6E98B6922059B51000B6F016 = {
 						CreatedOnToolsVersion = 9.2;
-						DevelopmentTeam = 4W79SG34MW;
+						DevelopmentTeam = RH4PC25J9C;
 						ProvisioningStyle = Automatic;
 					};
 					6EE84D831CAF419D00A40C4D = {
@@ -849,6 +955,7 @@
 						LastSwiftMigration = 0920;
 					};
 					6EF45FBF1CC6D355001F7A39 = {
+						DevelopmentTeam = RH4PC25J9C;
 						LastSwiftMigration = 0800;
 					};
 				};
@@ -934,9 +1041,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35CE13C3207AA4140098BAB4 /* Main.storyboard in Resources */,
 				6E98B6A02059B51000B6F016 /* LaunchScreen.storyboard in Resources */,
 				6E98B69D2059B51000B6F016 /* Assets.xcassets in Resources */,
-				6E98B69B2059B51000B6F016 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -964,6 +1071,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		35CE13C7207AAA710098BAB4 /* Copy Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../Carthage/Build/iOS/Bluetooth.framework",
+				"$(SRCROOT)/../Carthage/Build/iOS/PKHUD.framework",
+			);
+			name = "Copy Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks ";
+		};
 		6E28A99720543D540088B6FB /* Carthage */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1030,7 +1153,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E2A5D641CC8436800BA7E15 /* ViewController.swift in Sources */,
 				6E2A5D621CC8436800BA7E15 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1095,8 +1217,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E98B6982059B51000B6F016 /* ViewController.swift in Sources */,
+				35D1258E207B0E0A0037EDC0 /* PeripheralServicesViewController.swift in Sources */,
+				35CE13C1207AA3810098BAB4 /* NearbyPeripheralCell.swift in Sources */,
+				35D12590207B22080037EDC0 /* PeripheralServiceCell.swift in Sources */,
+				35CE13BE207AA3810098BAB4 /* VirtualPeripheralsViewController.swift in Sources */,
 				6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */,
+				35CE13BF207AA3810098BAB4 /* NearbyPeripheralsViewController.swift in Sources */,
+				35D1258B207B01570037EDC0 /* UIViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1160,6 +1287,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		35CE13CC207AACF80098BAB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EF45FBF1CC6D355001F7A39 /* GATT-iOS */;
+			targetProxy = 35CE13CB207AACF80098BAB4 /* PBXContainerItemProxy */;
+		};
 		6E28A99020543C520088B6FB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6E8AB86F20543896003FE38D /* PeripheralUnitTestsClient */;
@@ -1218,14 +1350,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				6E373036205623A500B5B32A /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		6E98B6992059B51000B6F016 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				6E98B69A2059B51000B6F016 /* Base */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -1577,6 +1701,7 @@
 		6E98B6A22059B51000B6F016 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1584,9 +1709,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 4W79SG34MW;
+				DEVELOPMENT_TEAM = RH4PC25J9C;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../Carthage/build/iOS";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = BluetoothExplorer/Info.plist;
+				INFOPLIST_FILE = BluetoothExplorer/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.BluetoothExplorer;
@@ -1601,6 +1727,7 @@
 		6E98B6A32059B51000B6F016 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1608,9 +1735,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 4W79SG34MW;
+				DEVELOPMENT_TEAM = RH4PC25J9C;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../Carthage/build/iOS";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = BluetoothExplorer/Info.plist;
+				INFOPLIST_FILE = BluetoothExplorer/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pureswift.BluetoothExplorer;
@@ -1831,9 +1959,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = RH4PC25J9C;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -1852,9 +1981,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = RH4PC25J9C;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
