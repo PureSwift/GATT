@@ -28,7 +28,7 @@ class PeripheralServicesViewController: UITableViewController {
     
     weak var central: CentralManager?
     var scanData: ScanData?
-    var services: [CentralManager.Service] = []
+    var groups: [BluetoothUUID: [CentralManager.Characteristic]] = [:]
     var sections: [Section] = []
     
     // MARK: - Life cycle
@@ -46,9 +46,20 @@ class PeripheralServicesViewController: UITableViewController {
         
         if let data = scanData?.advertisementData.manufacturerData {
             let string = String(data: data, encoding: .utf8)
-            let infoSection = Section(title: "Device Information", items: [Item(title: "Manufacturer", subtitle: string ?? "ptm")])
+            let infoSection = Section(title: "Device Information", items: [Item(title: "Manufacturer", subtitle: string ?? "Empty")])
             sections.append(infoSection)
         }
+        
+        let serviceSections = groups.map { group -> Section in
+            
+            let characteristicItems = group.value.map { characteristic in
+                Item(title: characteristic.uuid.name ?? "", subtitle: "Test")
+            }
+            
+            return Section(title: group.key.name ?? "", items: characteristicItems)
+        }
+        
+        sections.append(contentsOf: serviceSections)
     }
     
     fileprivate func configure(cell: PeripheralServiceCell, item: Item) {
@@ -61,6 +72,10 @@ extension PeripheralServicesViewController {
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return sections.count
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return sections[section].title
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

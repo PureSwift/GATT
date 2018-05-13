@@ -40,13 +40,12 @@ final class NearbyPeripheralsViewController: UITableViewController {
         self.refreshControl = refreshControl
     }
     
-    fileprivate func configure(cell: NearbyPeripheralCell, scanData: ScanData) {
+    private func configure(cell: NearbyPeripheralCell, scanData: ScanData) {
         let peripheralName = scanData.advertisementData.localName
         cell.titleLabel.text = peripheralName != nil ? peripheralName : "Unnamed"
         
         let services = scanData.advertisementData.serviceUUIDs.count
         cell.subtitleLabel.text = services > 0 ? "\(services) services" : "No services"
-        
         cell.accessoryType = .disclosureIndicator
     }
     
@@ -56,12 +55,12 @@ final class NearbyPeripheralsViewController: UITableViewController {
                 fatalError("destination should be convertible to PeripheralServicesViewController")
             }
             
-            guard let parameters = sender as? ([CentralManager.Service], ScanData) else {
-                fatalError("sender should be convertible to Service")
+            guard let parameters = sender as? ([BluetoothUUID: [CentralManager.Characteristic]], ScanData) else {
+                fatalError("sender should be convertible to [BluetoothUUID: CentralManager.Characteristic]")
             }
             
             peripheralServicesController.central = central
-            peripheralServicesController.services = parameters.0
+            peripheralServicesController.groups = parameters.0
             peripheralServicesController.scanData = parameters.1
         }
     }
@@ -72,15 +71,17 @@ final class NearbyPeripheralsViewController: UITableViewController {
         scan()
     }
     
-    fileprivate func scan() {
+    // MARK: - Private
+    
+    private func scan() {
         self.refreshControl?.beginRefreshing()
         
         DispatchQueue.global(qos: .background).async { [unowned self] in
             
-            let central = self.central
-            central.waitForPoweredOn()
+            self.central.disconnectAll()
+            self.central.waitForPoweredOn()
             
-            self.results = central.scan(duration: 5)
+            self.results = self.central.scan(duration: 5)
             
             DispatchQueue.main.async {
                 self.tableView.reloadData()
@@ -89,11 +90,11 @@ final class NearbyPeripheralsViewController: UITableViewController {
         }
     }
     
-    fileprivate func showError(_ error: Error) {
+    private func showError(_ error: Error) {
         DispatchQueue.main.async { self.showAlert(message: error.localizedDescription) }
     }
     
-    fileprivate func connect(data: ScanData) -> Bool {
+    private func connect(data: ScanData) -> Bool {
         do {
             try central.connect(to: data.peripheral)
             return true
@@ -104,7 +105,7 @@ final class NearbyPeripheralsViewController: UITableViewController {
         return false
     }
     
-    fileprivate func discoverServices(data: ScanData) -> [CentralManager.Service]? {
+    private func discoverServices(data: ScanData) -> [CentralManager.Service]? {
         do {
             return try central.discoverServices(for: data.peripheral)
         } catch {
@@ -114,11 +115,11 @@ final class NearbyPeripheralsViewController: UITableViewController {
         return nil
     }
     
-    fileprivate func showLoading() {
+    private func showLoading() {
         DispatchQueue.main.async { HUD.show(.progress) }
     }
     
-    fileprivate func hideLoading() {
+    private func hideLoading() {
         DispatchQueue.main.async { HUD.hide() }
     }
 }
@@ -151,14 +152,28 @@ extension NearbyPeripheralsViewController {
             guard self.connect(data: data) else { self.hideLoading(); return }
             
             guard let services = self.discoverServices(data: data) else { self.hideLoading(); return }
-
-            DispatchQueue.main.async {
-                self.hideLoading()
-                self.performSegue(withIdentifier: "showServices", sender: (services: services, data: data))
+            
+            var groups: [BluetoothUUID: [CentralManager.Characteristic]] = [:]
+            
+            services.forEach { service in
+                print("service", service)
+                do {
+                    let characteristics = try self.central.discoverCharacteristics(for: service.uuid, peripheral: data.peripheral)
+                    groups[service.uuid] = characteristics
+                    
+                    characteristics.forEach({ characteristic in
+                        print("characteristic", characteristic)
+                    })
+                } catch {
+                    print(error)
+                }
             }
             
+            DispatchQueue.main.async {
+                self.hideLoading()
+                self.performSegue(withIdentifier: "showServices", sender: (groups: groups, data: data))
+            }
         }
-        
     }
     
 }
