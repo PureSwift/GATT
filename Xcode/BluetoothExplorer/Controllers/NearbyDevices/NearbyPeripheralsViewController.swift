@@ -40,7 +40,7 @@ final class NearbyPeripheralsViewController: UITableViewController {
         self.refreshControl = refreshControl
     }
     
-    private func configure(cell: NearbyPeripheralCell, scanData: ScanData) {
+    private func configure(cell: DetailCell, scanData: ScanData) {
         let peripheralName = scanData.advertisementData.localName
         cell.titleLabel.text = peripheralName != nil ? peripheralName : "Unnamed"
         
@@ -132,9 +132,9 @@ extension NearbyPeripheralsViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let data = results[indexPath.row]
-        let identifier = String(describing: NearbyPeripheralCell.self)
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath) as? NearbyPeripheralCell else {
-            fatalError("cell should be convertible to NearbyPeripheralCell")
+        let identifier = String(describing: DetailCell.self)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath) as? DetailCell else {
+            fatalError("cell should be convertible to DetailCell")
         }
         
         configure(cell: cell, scanData: data)

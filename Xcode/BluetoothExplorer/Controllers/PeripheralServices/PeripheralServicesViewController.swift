@@ -53,16 +53,16 @@ class PeripheralServicesViewController: UITableViewController {
         let serviceSections = groups.map { group -> Section in
             
             let characteristicItems = group.value.map { characteristic in
-                Item(title: characteristic.uuid.name ?? "", subtitle: "Test")
+                Item(title: characteristic.uuid.rawValue, subtitle: characteristic.formattedProperties)
             }
             
-            return Section(title: group.key.name ?? "", items: characteristicItems)
+            return Section(title: group.key.rawValue, items: characteristicItems)
         }
         
         sections.append(contentsOf: serviceSections)
     }
     
-    fileprivate func configure(cell: PeripheralServiceCell, item: Item) {
+    fileprivate func configure(cell: DetailCell, item: Item) {
         cell.titleLabel.text = item.title
         cell.subtitleLabel.text = item.subtitle
     }
@@ -84,11 +84,10 @@ extension PeripheralServicesViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = sections[indexPath.section].items[indexPath.row]
-        let identifier = String(describing: PeripheralServiceCell.self)
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath) as? PeripheralServiceCell else {
-            fatalError("cell should be convertible to NearbyPeripheralCell")
+        let identifier = String(describing: DetailCell.self)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath) as? DetailCell else {
+            fatalError("cell should be convertible to DetailCell")
         }
-        
         configure(cell: cell, item: item)
         return cell
     }
@@ -98,4 +97,3 @@ extension PeripheralServicesViewController {
     }
     
 }
-

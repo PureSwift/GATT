@@ -1,15 +1,14 @@
 //
-//  NearbyPeripheralCell.swift
-//  TestApp
+//  DetailCell.swift
+//  BluetoothExplorer
 //
 //  Created by Carlos Duclos on 4/8/18.
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
 import UIKit
-import GATT
 
-class NearbyPeripheralCell: UITableViewCell {
+class DetailCell: UITableViewCell {
     
     // MARK: - IBOutlets
     

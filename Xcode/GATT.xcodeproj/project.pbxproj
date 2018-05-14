@@ -8,15 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		352C2070207C5EF700C62241 /* PKHUD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 352C206F207C5EF700C62241 /* PKHUD.framework */; };
+		35A1568F20A947780088BD11 /* Characteristic+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A1568E20A947780088BD11 /* Characteristic+.swift */; };
+		35A1569320A9479B0088BD11 /* CharacteristicProperty+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A1569220A9479B0088BD11 /* CharacteristicProperty+.swift */; };
 		35CE13BE207AA3810098BAB4 /* VirtualPeripheralsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C3207A9E1700A7CB3A /* VirtualPeripheralsViewController.swift */; };
 		35CE13BF207AA3810098BAB4 /* NearbyPeripheralsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */; };
-		35CE13C1207AA3810098BAB4 /* NearbyPeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */; };
 		35CE13C3207AA4140098BAB4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 35CE13C2207AA4130098BAB4 /* Main.storyboard */; };
 		35CE13CA207AACF80098BAB4 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		35D12582207AC1140037EDC0 /* Bluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35CE13C5207AAA4F0098BAB4 /* Bluetooth.framework */; };
-		35D1258B207B01570037EDC0 /* UIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258A207B01570037EDC0 /* UIViewController.swift */; };
+		35D1258B207B01570037EDC0 /* UIViewController+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258A207B01570037EDC0 /* UIViewController+.swift */; };
 		35D1258E207B0E0A0037EDC0 /* PeripheralServicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */; };
-		35D12590207B22080037EDC0 /* PeripheralServiceCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */; };
+		35D12590207B22080037EDC0 /* DetailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D1258F207B22080037EDC0 /* DetailCell.swift */; };
 		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
 		6E1C311C1CD4723C00E8F7EB /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1C311B1CD4723C00E8F7EB /* Beacon.swift */; };
@@ -246,12 +247,13 @@
 		352C206F207C5EF700C62241 /* PKHUD.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PKHUD.framework; path = ../Carthage/Build/iOS/PKHUD.framework; sourceTree = "<group>"; };
 		359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPeripheralsViewController.swift; sourceTree = "<group>"; };
 		359EB2C3207A9E1700A7CB3A /* VirtualPeripheralsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualPeripheralsViewController.swift; sourceTree = "<group>"; };
-		359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPeripheralCell.swift; sourceTree = "<group>"; };
+		35A1568E20A947780088BD11 /* Characteristic+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Characteristic+.swift"; sourceTree = "<group>"; };
+		35A1569220A9479B0088BD11 /* CharacteristicProperty+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CharacteristicProperty+.swift"; sourceTree = "<group>"; };
 		35CE13C2207AA4130098BAB4 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		35CE13C5207AAA4F0098BAB4 /* Bluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Bluetooth.framework; path = ../Carthage/Build/iOS/Bluetooth.framework; sourceTree = "<group>"; };
-		35D1258A207B01570037EDC0 /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
+		35D1258A207B01570037EDC0 /* UIViewController+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+.swift"; sourceTree = "<group>"; };
 		35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServicesViewController.swift; sourceTree = "<group>"; };
-		35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServiceCell.swift; sourceTree = "<group>"; };
+		35D1258F207B22080037EDC0 /* DetailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailCell.swift; sourceTree = "<group>"; };
 		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
 		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
 		6E1C311B1CD4723C00E8F7EB /* Beacon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Beacon.swift; sourceTree = "<group>"; };
@@ -424,7 +426,6 @@
 			isa = PBXGroup;
 			children = (
 				359EB2C1207A97E900A7CB3A /* NearbyPeripheralsViewController.swift */,
-				359EB2C5207A9E5000A7CB3A /* NearbyPeripheralCell.swift */,
 			);
 			path = NearbyDevices;
 			sourceTree = "<group>";
@@ -458,7 +459,9 @@
 		35D12589207B011A0037EDC0 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				35D1258A207B01570037EDC0 /* UIViewController.swift */,
+				35D1258A207B01570037EDC0 /* UIViewController+.swift */,
+				35A1568E20A947780088BD11 /* Characteristic+.swift */,
+				35A1569220A9479B0088BD11 /* CharacteristicProperty+.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -467,7 +470,7 @@
 			isa = PBXGroup;
 			children = (
 				35D1258D207B0E0A0037EDC0 /* PeripheralServicesViewController.swift */,
-				35D1258F207B22080037EDC0 /* PeripheralServiceCell.swift */,
+				35D1258F207B22080037EDC0 /* DetailCell.swift */,
 			);
 			path = PeripheralServices;
 			sourceTree = "<group>";
@@ -1218,12 +1221,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				35D1258E207B0E0A0037EDC0 /* PeripheralServicesViewController.swift in Sources */,
-				35CE13C1207AA3810098BAB4 /* NearbyPeripheralCell.swift in Sources */,
-				35D12590207B22080037EDC0 /* PeripheralServiceCell.swift in Sources */,
+				35A1569320A9479B0088BD11 /* CharacteristicProperty+.swift in Sources */,
+				35D12590207B22080037EDC0 /* DetailCell.swift in Sources */,
 				35CE13BE207AA3810098BAB4 /* VirtualPeripheralsViewController.swift in Sources */,
+				35A1568F20A947780088BD11 /* Characteristic+.swift in Sources */,
 				6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */,
 				35CE13BF207AA3810098BAB4 /* NearbyPeripheralsViewController.swift in Sources */,
-				35D1258B207B01570037EDC0 /* UIViewController.swift in Sources */,
+				35D1258B207B01570037EDC0 /* UIViewController+.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
