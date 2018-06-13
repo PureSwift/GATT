@@ -17,14 +17,12 @@ public protocol NativePeripheral {
     associatedtype ServiceIdentifier
     
     /// Start advertising the peripheral and listening for incoming connections.
-    ///
-    /// - Note: Can optionally advertise as iBeacon in iOS and Linux.
-    func start(beacon: Beacon?) throws
+    func start() throws
     
     /// Stop the peripheral.
     func stop()
     
-    /// The closure to call for internal logging.
+    /// The closure to call for logging.
     var log: ((String) -> ())? { get }
     
     /// Attempts to add the specified service to the GATT database.

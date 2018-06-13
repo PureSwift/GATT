@@ -11,7 +11,6 @@ import Bluetooth
 
 #if os(macOS) || os(iOS)
     
-    import Foundation
     import CoreBluetooth
     import CoreLocation
     
@@ -85,32 +84,9 @@ import Bluetooth
             log?("Now powered on")
         }
         
-        #if os(macOS)
-        
-        public func start(beacon: Beacon?) throws {
-            
-            assert(beacon == nil, "iBeacon functionality not availible on macOS")
-            
-            try start()
-        }
-        
-        public func start() throws {
-            
-            var advertisementData = [String : AnyObject]()
-            
-            if let localName = self.localName {
-                
-                advertisementData[CBAdvertisementDataLocalNameKey] = localName as NSString
-            }
-            
-            try start(advertisementData)
-        }
-        
-        #endif
-        
         #if os(iOS)
         
-        public func start(beacon: Beacon? = nil) throws {
+        public func start(beacon: AppleBeacon? = nil) throws {
         
             var advertisementData = [String: AnyObject]()
             
@@ -136,7 +112,18 @@ import Bluetooth
 
         #endif
         
-        @inline(__always)
+        public func start() throws {
+            
+            var advertisementData = [String : AnyObject]()
+            
+            if let localName = self.localName {
+                
+                advertisementData[CBAdvertisementDataLocalNameKey] = localName as NSString
+            }
+            
+            try start(advertisementData)
+        }
+        
         private func start(_ advertisementData: [String: AnyObject]) throws {
             
             assert(startAdvertisingState == nil, "Already started advertising")
