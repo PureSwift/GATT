@@ -358,8 +358,6 @@ import Bluetooth
                                    advertisementData: [String : Any],
                                    rssi: NSNumber) {
             
-            log?("Did discover peripheral \(peripheral)")
-            
             if peripheral.delegate == nil {
                 
                 peripheral.delegate = self
