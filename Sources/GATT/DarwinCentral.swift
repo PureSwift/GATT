@@ -22,61 +22,43 @@ import Bluetooth
 
     public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
         
-        public typealias Error = CentralError
-        
         // MARK: - Properties
         
         public var log: ((String) -> ())?
         
-        public var stateChanged: (CBCentralManagerState) -> () = { _ in }
+        public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
         
-        public var state: CBCentralManagerState {
+        public var state: DarwinBluetoothState {
             
-            return unsafeBitCast(internalManager.state, to: CBCentralManagerState.self)
+            return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
+        }
+        
+        public var isScanning: Bool {
+            
+            if #available(OSX 10.13, iOS 9.0, *) {
+                return internalManager.isScanning
+            } else {
+                return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
+            }
         }
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.queue)
+        internal lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.managerQueue)
         
-        private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Queue", attributes: [])
+        internal lazy var managerQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue", attributes: [])
         
-        private var poweredOnSemaphore: DispatchSemaphore!
+        internal lazy var accessQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Access Queue", attributes: [])
         
-        private var operationState: OperationState?
-        
-        private var scanPeripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData)]()
-        
-        private var foundDevice: ((ScanData) -> ())?
+        internal private(set) var internalState = InternalState()
         
         private var notifications = [Peripheral: [BluetoothUUID: (Data) -> ()]]()
         
         // MARK: - Methods
         
-        public func waitForPoweredOn() {
-            
-            // already on
-            guard internalManager.state != .poweredOn else { return }
-            
-            // already waiting
-            guard poweredOnSemaphore == nil else { let _ = poweredOnSemaphore.wait(timeout: .distantFuture); return }
-            
-            log?("Not powered on (State \(internalManager.state.rawValue))")
-            
-            poweredOnSemaphore = DispatchSemaphore(value: 0)
-            
-            let _ = poweredOnSemaphore.wait(timeout: .distantFuture)
-            
-            poweredOnSemaphore = nil
-            
-            assert(internalManager.state == .poweredOn)
-            
-            log?("Now powered on")
-        }
-        
-        public func scan(filterDuplicates: Bool = false,
+        public func scan(filterDuplicates: Bool = true,
                          shouldContinueScanning: () -> (Bool),
                          foundDevice: @escaping (ScanData) -> ()) {
             
@@ -84,9 +66,11 @@ import Bluetooth
                 CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
             ]
             
-            self.scanPeripherals = [:]
-            
-            self.foundDevice = foundDevice
+            accessQueue.sync { [unowned self] in
+                
+                self.internalState.scan.peripherals = [:]
+                self.internalState.scan.foundDevice = foundDevice
+            }
             
             self.internalManager.scanForPeripherals(withServices: nil, options: options)
             
@@ -95,37 +79,63 @@ import Bluetooth
             
             self.internalManager.stopScan()
             
-            self.foundDevice = nil
+            accessQueue.sync { [unowned self] in
+                
+                self.internalState.scan.foundDevice = nil
+            }
+        }
+        
+        public func connect(to peripheral: Peripheral, timeout: TimeInterval) throws {
+            
+            try connect(to: peripheral, timeout: timeout)
         }
  
-        public func connect(to peripheral: Peripheral, timeout: Int = 5) throws {
+        /// A dictionary to customize the behavior of the connection. For available options, see [Peripheral Connection Options](apple-reference-documentation://ts1667676).
+        public func connect(to peripheral: Peripheral, timeout: TimeInterval, options: [String: Any]) throws {
             
-            try sync {
+            guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
+                else { throw CentralError.unknownPeripheral }
+            
+            let semaphore = Semaphore(timeout: timeout, operation: .connect(peripheral))
+            
+            // store semaphore
+            accessQueue.sync { [unowned self] in self.internalState.connect.semaphore = semaphore }
+            
+            defer { accessQueue.sync { [unowned self] in self.internalState.connect.semaphore = nil } }
+            
+            // attempt to connect (does not timeout)
+            self.internalManager.connect(corePeripheral, options: options)
+            
+            assert(corePeripheral.state == .connecting, "Peripheral should be connecting")
+            
+            // throw async error
+            do { try semaphore.wait() }
+            
+            catch CentralError.timeout {
                 
-                guard let corePeripheral = self.peripheral(peripheral)
-                    else { throw CentralError.unknownPeripheral }
-                
-                self.internalManager.connect(corePeripheral, options: nil)
+                // cancel connection if we timeout
+                self.internalManager.cancelPeripheralConnection(corePeripheral)
+                throw CentralError.timeout
             }
             
-            try wait(.connect(peripheral), timeout) { }
-            
-            assert(self.peripheral(peripheral)!.state != .disconnected)
+            assert(corePeripheral.state == .connected, "Peripheral should be connected")
         }
         
         public func disconnect(peripheral: Peripheral) {
             
-            guard let corePeripheral = self.peripheral(peripheral)
-                else { return }
+            guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
+                else { assertionFailure("Unknown peripheral \(peripheral)"); return }
             
             internalManager.cancelPeripheralConnection(corePeripheral)
         }
         
         public func disconnectAll() {
             
-            for (peripheral: peripheral, scanResult: _) in scanPeripherals.values {
-                
-                internalManager.cancelPeripheralConnection(peripheral)
+            accessQueue.sync(execute: { [unowned self] in
+             
+                self.internalState.scan.peripherals.values.forEach { [unowned self] in
+                    self.internalManager.cancelPeripheralConnection($0.peripheral)
+                }
             }
         }
         
@@ -236,10 +246,10 @@ import Bluetooth
         
         private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
             
-            return scanPeripherals[peripheral]?.peripheral
+            return self.internalState.scan.peripherals[peripheral]?.peripheral
         }
         
-        private func connectedPeriperhal(_ peripheral: Peripheral) throws -> CBPeripheral {
+        private func connectedPeripheral(_ peripheral: Peripheral) throws -> CBPeripheral {
             
             guard let corePeripheral = self.peripheral(peripheral)
                 else { throw CentralError.unknownPeripheral }
@@ -250,93 +260,6 @@ import Bluetooth
             return corePeripheral
         }
         
-        private func wait(_ operation: Operation, _ timeout: Int? = nil, action: () -> ()) throws {
-            
-            assert(operationState == nil, "Already waiting for an asyncronous operation to finish")
-            
-            let semaphore = DispatchSemaphore(value: 0)
-            
-            // set semaphore
-            operationState = OperationState(operation: operation,
-                                            semaphore: semaphore,
-                                            error: nil)
-            
-            // wait
-            
-            let dispatchTime: DispatchTime
-            
-            if let timeout = timeout {
-                
-                dispatchTime = DispatchTime.now() + Double(timeout)
-                
-            } else {
-                
-                dispatchTime = .distantFuture
-            }
-            
-            log?("Waiting for operation \(operationState!.operation)")
-            
-            action()
-            
-            let success = semaphore.wait(timeout: dispatchTime) == .success
-            
-            let error = operationState?.error
-            
-            // clear state
-            operationState = nil
-            
-            if let error = error {
-                
-                throw error
-            }
-            
-            guard success else { throw CentralError.timeout }
-        }
-        
-        private func stopWaiting(_ error: Swift.Error? = nil, _ function: String = #function) {
-            
-            guard let semaphore = self.operationState?.semaphore
-                else { assertionFailure("Did not expect \(function)"); return }
-            
-            // store signal
-            self.operationState?.error = error
-            
-            // stop blocking
-            semaphore.signal()
-        }
-        
-        /// Perform a task on the internal queue and wait. Can throw error.
-        private func sync<T>(_ block: () throws -> T) throws -> T {
-            
-            var blockValue: T!
-            
-            var caughtError: Swift.Error?
-            
-            queue.sync {
-                
-                do { blockValue = try block() }
-                    
-                catch { caughtError = error }
-            }
-            
-            if let error = caughtError {
-                
-                throw error
-            }
-            
-            return blockValue
-        }
-        
-        /// Perform a task on the internal queue and wait.
-        private func sync<T>(_ block: () -> T) -> T {
-            
-            var blockValue: T!
-            
-            queue.sync { blockValue = block() }
-            
-            return blockValue
-        }
- 
         // MARK: - CBCentralManagerDelegate
         
         @objc(centralManagerDidUpdateState:)
@@ -344,12 +267,7 @@ import Bluetooth
             
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
-            stateChanged(unsafeBitCast(central.state, to: CBCentralManagerState.self))
-            
-            if central.state == .poweredOn && poweredOnSemaphore != nil {
-                
-                poweredOnSemaphore.signal()
-            }
+            stateChanged(unsafeBitCast(central.state, to: DarwinBluetoothState.self))
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
@@ -366,28 +284,28 @@ import Bluetooth
             let identifier = Peripheral(peripheral)
             
             let scanResult = ScanData(date: Date(),
-                                        peripheral: identifier,
-                                        rssi: rssi.doubleValue,
-                                        advertisementData: AdvertisementData(advertisementData))
+                                      peripheral: identifier,
+                                      rssi: rssi.doubleValue,
+                                      advertisementData: AdvertisementData(advertisementData))
             
-            scanPeripherals[identifier] = (peripheral, scanResult)
-            
-            foundDevice?(scanResult)
+            accessQueue.sync { [unowned self] in
+                
+                self.internalState.scan.peripherals[identifier] = (peripheral, scanResult)
+                self.internalState.scan.foundDevice?(scanResult)
+            }
         }
         
         @objc(centralManager:didConnectPeripheral:)
         public func centralManager(_ central: CBCentralManager, didConnect corePeripheral: CBPeripheral) {
             
-            log?("Connecting to peripheral \(corePeripheral.gattIdentifier.uuidString)")
-            
-            guard let operation = operationState?.operation,
-                case let .connect(peripheral) = operation,
-                peripheral == Peripheral(corePeripheral)
-                else { return }
+            log?("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
             
             assert(corePeripheral.state != .disconnected, "Should be connected")
             
-            stopWaiting()
+            accessQueue.sync { [unowned self] in
+                self.internalState.connect.semaphore?.stopWaiting()
+                self.internalState.connect.semaphore = nil
+            }
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
@@ -395,12 +313,10 @@ import Bluetooth
             
             log?("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
             
-            guard let operation = operationState?.operation,
-                case let .connect(peripheral) = operation,
-                peripheral == Peripheral(corePeripheral)
-                else { return }
-            
-            stopWaiting(error)
+            accessQueue.sync { [unowned self] in
+                self.internalState.connect.semaphore?.stopWaiting(error)
+                self.internalState.connect.semaphore = nil
+            }
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
@@ -545,7 +461,28 @@ import Bluetooth
     }
     
 
-    private extension DarwinCentral {
+    internal extension DarwinCentral {
+        
+        struct InternalState {
+            
+            fileprivate init() { }
+            
+            var scan = Scan()
+            
+            struct Scan {
+                
+                var peripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData)]()
+                
+                var foundDevice: ((ScanData) -> ())?
+            }
+            
+            var connect: Connect
+            
+            struct Connect {
+                
+                var semaphore: Semaphore?
+            }
+        }
         
         enum Operation {
             
@@ -556,14 +493,50 @@ import Bluetooth
             case writeCharacteristic(Peripheral, BluetoothUUID, BluetoothUUID)
             case updateCharacteristicNotificationState(Peripheral, BluetoothUUID, BluetoothUUID)
         }
+    }
+
+internal extension DarwinCentral {
+    
+    final class Semaphore {
         
-        struct OperationState {
+        let operation: Operation
+        let semaphore: DispatchSemaphore
+        let timeout: TimeInterval
+        var error: Swift.Error?
+        
+        init(timeout: TimeInterval,
+             operation: Operation) {
             
-            let operation: Operation
-            let semaphore: DispatchSemaphore
-            var error: Swift.Error?
+            self.operation = operation
+            self.timeout = timeout
+            self.semaphore = DispatchSemaphore(value: 0)
+            self.error = nil
+        }
+        
+        func wait() throws {
+            
+            let dispatchTime: DispatchTime = .now() + timeout
+            
+            let success = semaphore.wait(timeout: dispatchTime) == .success
+            
+            if let error = self.error {
+                
+                throw error
+            }
+            
+            guard success else { throw CentralError.timeout }
+        }
+        
+        func stopWaiting(_ error: Swift.Error? = nil) {
+            
+            // store signal
+            self.error = error
+            
+            // stop blocking
+            semaphore.signal()
         }
     }
+}
     
     private extension CBPeripheral {
         

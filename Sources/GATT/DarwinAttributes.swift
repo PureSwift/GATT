@@ -63,6 +63,15 @@ import Bluetooth
         
         func toCoreBluetooth() -> CBDescriptor {
             
+            /*
+             Only the Characteristic User Description and Characteristic Presentation Format descriptors are currently supported. The Characteristic Extended Properties and Client Characteristic Configuration descriptors will be created automatically upon publication of the parent service, depending on the properties of the characteristic itself
+             
+             e.g.
+             ```
+             Assertion failure in -[CBMutableDescriptor initWithType:value:], /SourceCache/CoreBluetooth_Sim/CoreBluetooth-59.3/CBDescriptor.m:25
+             ```
+             */
+            
             guard let descriptor = DarwinDescriptor(uuid: uuid, data: value)
                 else { fatalError("Unsupported \(CBDescriptor.self) \(uuid)") }
             
