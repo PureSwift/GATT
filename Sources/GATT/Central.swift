@@ -57,13 +57,13 @@ public protocol NativeCentral: class {
 
 public extension NativeCentral {
     
-    func scan(duration: TimeInterval) -> [ScanData] {
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) -> [ScanData] {
         
         let endDate = Date() + duration
         
         var results = [Peripheral: ScanData]()
         
-        self.scan(filterDuplicates: true,
+        self.scan(filterDuplicates: filterDuplicates,
                   shouldContinueScanning: { Date() < endDate },
                   foundDevice: { results[$0.peripheral] = $0 })
         

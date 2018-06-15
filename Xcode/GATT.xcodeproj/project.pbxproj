@@ -64,14 +64,17 @@
 		6EF9426D2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
 		6EF9426E2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
 		6EF9426F2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
-		6EFB3E2320D3E59500364CA0 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E2220D3E59500364CA0 /* DeviceManager.swift */; };
 		6EFB3E2520D3E5A600364CA0 /* DeviceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E2420D3E5A600364CA0 /* DeviceStore.swift */; };
-		6EFB3E2720D3E78A00364CA0 /* Observable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E2620D3E78A00364CA0 /* Observable.swift */; };
 		6EFB3E2820D3E89200364CA0 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; };
 		6EFB3E2920D3E89200364CA0 /* GATT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EF45FCF1CC6D355001F7A39 /* GATT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6EFB3E8720D3EC9E00364CA0 /* Bluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EFB3E7920D3EC5100364CA0 /* Bluetooth.framework */; };
 		6EFB3E8820D3EC9E00364CA0 /* Bluetooth.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EFB3E7920D3EC5100364CA0 /* Bluetooth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6EFB3E8D20D3ECF200364CA0 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E8B20D3ECF200364CA0 /* Model.xcdatamodeld */; };
+		6EFB3E9120D3EF6C00364CA0 /* CoreDataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E9020D3EF6C00364CA0 /* CoreDataExtensions.swift */; };
+		6EFB3E9320D3EF9A00364CA0 /* ScanEventManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E9220D3EF9A00364CA0 /* ScanEventManagedObject.swift */; };
+		6EFB3E9520D3EFFB00364CA0 /* PeripheralManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E9420D3EFFB00364CA0 /* PeripheralManagedObject.swift */; };
+		6EFB3E9720D3F0D700364CA0 /* CentralManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E9620D3F0D700364CA0 /* CentralManagedObject.swift */; };
+		6EFB3E9B20D40F2000364CA0 /* PeripheralModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFB3E9A20D40F2000364CA0 /* PeripheralModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -169,11 +172,14 @@
 		6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinDescriptor.swift; sourceTree = "<group>"; };
 		6EF45FCF1CC6D355001F7A39 /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EF9426C2016464B00EEB821 /* LinuxCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxCentral.swift; sourceTree = "<group>"; };
-		6EFB3E2220D3E59500364CA0 /* DeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
 		6EFB3E2420D3E5A600364CA0 /* DeviceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceStore.swift; sourceTree = "<group>"; };
-		6EFB3E2620D3E78A00364CA0 /* Observable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Observable.swift; sourceTree = "<group>"; };
 		6EFB3E6E20D3EC5100364CA0 /* Bluetooth.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Bluetooth.xcodeproj; path = ../../../Carthage/Checkouts/Bluetooth/Xcode/Bluetooth.xcodeproj; sourceTree = "<group>"; };
 		6EFB3E8C20D3ECF200364CA0 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
+		6EFB3E9020D3EF6C00364CA0 /* CoreDataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataExtensions.swift; sourceTree = "<group>"; };
+		6EFB3E9220D3EF9A00364CA0 /* ScanEventManagedObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanEventManagedObject.swift; sourceTree = "<group>"; };
+		6EFB3E9420D3EFFB00364CA0 /* PeripheralManagedObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralManagedObject.swift; sourceTree = "<group>"; };
+		6EFB3E9620D3F0D700364CA0 /* CentralManagedObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentralManagedObject.swift; sourceTree = "<group>"; };
+		6EFB3E9A20D40F2000364CA0 /* PeripheralModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,10 +229,8 @@
 				6EFB3E5520D3E96600364CA0 /* Dependencies */,
 				6E98B6952059B51000B6F016 /* AppDelegate.swift */,
 				6E98B6972059B51000B6F016 /* ViewController.swift */,
-				6EFB3E2220D3E59500364CA0 /* DeviceManager.swift */,
 				6EFB3E8F20D3EE1000364CA0 /* Controller */,
 				6EFB3E8E20D3EE0200364CA0 /* Model */,
-				6EFB3E2620D3E78A00364CA0 /* Observable.swift */,
 				6E98B6992059B51000B6F016 /* Main.storyboard */,
 				6E98B69C2059B51000B6F016 /* Assets.xcassets */,
 				6E98B69E2059B51000B6F016 /* LaunchScreen.storyboard */,
@@ -327,8 +331,13 @@
 		6EFB3E8E20D3EE0200364CA0 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				6EFB3E2420D3E5A600364CA0 /* DeviceStore.swift */,
 				6EFB3E8B20D3ECF200364CA0 /* Model.xcdatamodeld */,
+				6EFB3E9020D3EF6C00364CA0 /* CoreDataExtensions.swift */,
+				6EFB3E2420D3E5A600364CA0 /* DeviceStore.swift */,
+				6EFB3E9620D3F0D700364CA0 /* CentralManagedObject.swift */,
+				6EFB3E9220D3EF9A00364CA0 /* ScanEventManagedObject.swift */,
+				6EFB3E9420D3EFFB00364CA0 /* PeripheralManagedObject.swift */,
+				6EFB3E9A20D40F2000364CA0 /* PeripheralModel.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -626,10 +635,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6EFB3E9520D3EFFB00364CA0 /* PeripheralManagedObject.swift in Sources */,
 				6E98B6982059B51000B6F016 /* ViewController.swift in Sources */,
-				6EFB3E2720D3E78A00364CA0 /* Observable.swift in Sources */,
 				6EFB3E2520D3E5A600364CA0 /* DeviceStore.swift in Sources */,
-				6EFB3E2320D3E59500364CA0 /* DeviceManager.swift in Sources */,
+				6EFB3E9720D3F0D700364CA0 /* CentralManagedObject.swift in Sources */,
+				6EFB3E9120D3EF6C00364CA0 /* CoreDataExtensions.swift in Sources */,
+				6EFB3E9B20D40F2000364CA0 /* PeripheralModel.swift in Sources */,
+				6EFB3E9320D3EF9A00364CA0 /* ScanEventManagedObject.swift in Sources */,
 				6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */,
 				6EFB3E8D20D3ECF200364CA0 /* Model.xcdatamodeld in Sources */,
 			);

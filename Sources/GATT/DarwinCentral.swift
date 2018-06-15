@@ -46,13 +46,31 @@ import Bluetooth
         
         // MARK: - Private Properties
         
-        internal lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.managerQueue)
+        internal private(set) var internalManager: CBCentralManager!
         
         internal lazy var managerQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue", attributes: [])
         
         internal lazy var accessQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Access Queue", attributes: [])
         
         internal private(set) var internalState = InternalState()
+        
+        // MARK: - Initialization
+        
+        /// Initialize with the specified options.
+        ///
+        /// - Parameter options: An optional dictionary containing initialization options for a central manager.
+        /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
+        public init(options: [String: Any]?) {
+            
+            super.init()
+            
+            self.internalManager = CBCentralManager(delegate: self, queue: self.managerQueue, options: options)
+        }
+        
+        public override convenience init() {
+            
+            self.init(options: nil)
+        }
         
         // MARK: - Methods
         
@@ -313,6 +331,14 @@ import Bluetooth
             log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
             
             stateChanged(unsafeBitCast(central.state, to: DarwinBluetoothState.self))
+        }
+        
+        @objc
+        public func centralManager(_ central: CBCentralManager, willRestoreState options: [String : Any]) {
+            
+            log?("Will restore state \(options)")
+            
+            
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
