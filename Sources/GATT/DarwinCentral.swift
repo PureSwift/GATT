@@ -54,8 +54,6 @@ import Bluetooth
         
         internal private(set) var internalState = InternalState()
         
-        private var notifications = [Peripheral: [BluetoothUUID: (Data) -> ()]]()
-        
         // MARK: - Methods
         
         public func scan(filterDuplicates: Bool = true,
@@ -85,13 +83,15 @@ import Bluetooth
             }
         }
         
-        public func connect(to peripheral: Peripheral, timeout: TimeInterval) throws {
+        public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
             
             try connect(to: peripheral, timeout: timeout)
         }
  
         /// A dictionary to customize the behavior of the connection. For available options, see [Peripheral Connection Options](apple-reference-documentation://ts1667676).
-        public func connect(to peripheral: Peripheral, timeout: TimeInterval, options: [String: Any]) throws {
+        public func connect(to peripheral: Peripheral,
+                            timeout: TimeInterval = 30,
+                            options: [String: Any]) throws {
             
             guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
                 else { throw CentralError.unknownPeripheral }
@@ -155,6 +155,7 @@ import Bluetooth
             // start discovery
             corePeripheral.discoverServices(coreServices)
             
+            // wait
             try semaphore.wait()
             
             return (corePeripheral.services ?? []).map {
@@ -165,8 +166,8 @@ import Bluetooth
         
         public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
                                             for service: BluetoothUUID,
-                                            timeout: TimeInterval = 30,
-                                            peripheral: Peripheral) throws -> [Characteristic] {
+                                            peripheral: Peripheral,
+                                            timeout: TimeInterval = 30) throws -> [Characteristic] {
             
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
@@ -183,81 +184,107 @@ import Bluetooth
             
             corePeripheral.discoverCharacteristics(coreCharacteristics, for: coreService)
             
+            // wait
+            try semaphore.wait()
+            
             return (coreService.characteristics ?? [])
                 .map { Characteristic(uuid: BluetoothUUID(coreBluetooth: $0.uuid),
                                       properties: Characteristic.Property.from(coreBluetooth: $0.properties)) }
         }
         
-        public func read(characteristic: BluetoothUUID,
-                         service: BluetoothUUID,
-                         peripheral: Peripheral) throws -> Data {
+        public func readValue(for characteristic: BluetoothUUID,
+                              service: BluetoothUUID,
+                              peripheral: Peripheral,
+                              timeout: TimeInterval = 30) throws -> Data {
             
-            let corePeripheral = try connectedPeriperhal(peripheral)
+            let corePeripheral = try accessQueue.sync { [unowned self] in
+                try self.connectedPeripheral(peripheral)
+            }
             
             let coreService = try corePeripheral.service(service)
             
             let coreCharacteristic = try coreService.characteristic(characteristic)
             
-            try wait(.readCharacteristic(peripheral, service, characteristic)) {
-                
-                corePeripheral.readValue(for: coreCharacteristic)
-            }
+            // store semaphore
+            let semaphore = Semaphore(timeout: timeout, operation: .readCharacteristic(peripheral, service, characteristic))
+            accessQueue.sync { [unowned self] in self.internalState.readCharacteristic.semaphore = semaphore }
+            defer { accessQueue.sync { [unowned self] in self.internalState.readCharacteristic.semaphore = nil } }
+            
+            corePeripheral.readValue(for: coreCharacteristic)
+            
+            // wait
+            try semaphore.wait()
             
             return coreCharacteristic.value ?? Data()
         }
         
-        public func write(data: Data,
-                          response: Bool,
-                          characteristic: BluetoothUUID,
-                          service: BluetoothUUID,
-                          peripheral: Peripheral) throws {
+        public func writeValue(_ data: Data,
+                               for characteristic: BluetoothUUID,
+                               withResponse: Bool = true,
+                               service: BluetoothUUID,
+                               peripheral: Peripheral,
+                               timeout: TimeInterval = 30) throws {
             
-            let corePeripheral = try connectedPeriperhal(peripheral)
+            let corePeripheral = try accessQueue.sync { [unowned self] in
+                try self.connectedPeripheral(peripheral)
+            }
             
             let coreService = try corePeripheral.service(service)
             
             let coreCharacteristic = try coreService.characteristic(characteristic)
             
-            let writeType: CBCharacteristicWriteType = response ? .withResponse : .withoutResponse
+            let writeType: CBCharacteristicWriteType = withResponse ? .withResponse : .withoutResponse
             
-            if response {
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+            
+            // calls `peripheral:didWriteValueForCharacteristic:error:` only
+            // if you specified the write type as `.withResponse`.
+            if writeType == .withResponse {
                 
-                try wait(.writeCharacteristic(peripheral, service, characteristic)) {
-                    
-                    corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
-                }
+                let semaphore = Semaphore(timeout: timeout, operation: .writeCharacteristic(peripheral, service, characteristic))
+                accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = semaphore }
+                defer { accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = nil } }
                 
-            } else {
-                
-                corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+                try semaphore.wait()
             }
         }
         
-        public func notify(characteristic: BluetoothUUID,
+        public func notify(_ notification: ((Data) -> ())?,
+                           for characteristic: BluetoothUUID,
                            service: BluetoothUUID,
                            peripheral: Peripheral,
-                           notification: ((Data) -> ())?) throws {
+                           timeout: TimeInterval = 30) throws {
             
-            let corePeripheral = try connectedPeriperhal(peripheral)
+            let corePeripheral = try accessQueue.sync { [unowned self] in
+                try self.connectedPeripheral(peripheral)
+            }
             
             let coreService = try corePeripheral.service(service)
             
             let coreCharacteristic = try coreService.characteristic(characteristic)
             
+            // store semaphore
+            let semaphore = Semaphore(timeout: timeout, operation: .updateCharacteristicNotificationState(peripheral, service, characteristic))
+            accessQueue.sync { [unowned self] in self.internalState.notify.semaphore = semaphore }
+            defer { accessQueue.sync { [unowned self] in self.internalState.notify.semaphore = nil } }
+            
             let isEnabled = notification != nil
             
-            try wait(.updateCharacteristicNotificationState(peripheral, service, characteristic))  {
-                
-                corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
-            }
+            corePeripheral.setNotifyValue(isEnabled, for: coreCharacteristic)
             
-            #if swift(>=3.2)
-            notifications[peripheral, default: [:]][characteristic] = notification
-            #elseif swift(>=3.0)
-            var newValue = notifications[peripheral] ?? [:]
-            newValue[characteristic] = notification
-            notifications[peripheral] = newValue
-            #endif
+            // server need to confirm descriptor write
+            try semaphore.wait()
+            
+            accessQueue.sync { [unowned self] in
+                
+                #if swift(>=3.2)
+                self.internalState.notify.notifications[peripheral, default: [:]][characteristic] = notification
+                #elseif swift(>=3.0)
+                var newValue = self.internalState.notify.notifications[peripheral] ?? [:]
+                newValue[characteristic] = notification
+                self.internalState.notify.notifications[peripheral] = newValue
+                #endif
+            }
         }
         
         // MARK: - Private Methods
@@ -364,7 +391,9 @@ import Bluetooth
         }
         
         @objc(peripheral:didDiscoverCharacteristicsForService:error:)
-        public func peripheral(_ corePeripheral: CBPeripheral, didDiscoverCharacteristicsFor coreService: CBService, error: Swift.Error?) {
+        public func peripheral(_ corePeripheral: CBPeripheral,
+                               didDiscoverCharacteristicsFor coreService: CBService,
+                               error: Swift.Error?) {
             
             if let error = error {
                 
@@ -393,28 +422,32 @@ import Bluetooth
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update value for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
-            if let operation = operationState?.operation,
-                case let .readCharacteristic(peripheral, service, characteristic) = operation,
-                peripheral == Peripheral(corePeripheral),
-                service == BluetoothUUID(coreBluetooth: coreCharacteristic.service.uuid),
-                characteristic == BluetoothUUID(coreBluetooth: coreCharacteristic.uuid) {
+            // Invoked when you retrieve a specified characteristic’s value,
+            // or when the peripheral device notifies your app that the characteristic’s value has changed.
+            accessQueue.sync { [unowned self] in
                 
-                stopWaiting(error)
-                
-            } else {
-                
-                assert(error == nil)
-                
-                let uuid = BluetoothUUID(coreBluetooth: coreCharacteristic.uuid)
-                
-                let data = coreCharacteristic.value ?? Data()
-                
-                guard let peripheralNotifications = notifications[Peripheral(corePeripheral)],
-                    let notification = peripheralNotifications[uuid]
-                    else { assertionFailure("Unexpected notification for \(coreCharacteristic.uuid)"); return }
-                
-                // notify
-                notification(data)
+                // read operation
+                if let semaphore = self.internalState.readCharacteristic.semaphore {
+                    
+                    semaphore.stopWaiting(error)
+                    self.internalState.readCharacteristic.semaphore = nil
+                    
+                } else {
+                    
+                    // notification
+                    assert(error == nil, "Notifications should never fail")
+                    
+                    let uuid = BluetoothUUID(coreBluetooth: coreCharacteristic.uuid)
+                    
+                    let data = coreCharacteristic.value ?? Data()
+                    
+                    guard let peripheralNotifications = self.internalState.notify.notifications[Peripheral(corePeripheral)],
+                        let notification = peripheralNotifications[uuid]
+                        else { assertionFailure("Unexpected notification for \(coreCharacteristic.uuid)"); return }
+                    
+                    // notify
+                    notification(data)
+                }
             }
         }
  
@@ -430,14 +463,10 @@ import Bluetooth
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did write value for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
-            guard let operation = operationState?.operation,
-                case let .writeCharacteristic(peripheral, service, characteristic) = operation,
-                peripheral == Peripheral(corePeripheral),
-                service == BluetoothUUID(coreBluetooth: coreCharacteristic.service.uuid),
-                characteristic == BluetoothUUID(coreBluetooth: coreCharacteristic.uuid)
-                else { return }
-            
-            stopWaiting(error)
+            accessQueue.sync { [unowned self] in
+                self.internalState.writeCharacteristic.semaphore?.stopWaiting(error)
+                self.internalState.writeCharacteristic.semaphore = nil
+            }
         }
         
         @objc
@@ -454,14 +483,10 @@ import Bluetooth
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update notification state for characteristic \(coreCharacteristic.uuid.uuidString)")
             }
             
-            guard let operation = operationState?.operation,
-                case let .updateCharacteristicNotificationState(peripheral, service, characteristic) = operation,
-                peripheral == Peripheral(corePeripheral),
-                service == BluetoothUUID(coreBluetooth: coreCharacteristic.service.uuid),
-                characteristic == BluetoothUUID(coreBluetooth: coreCharacteristic.uuid)
-                else { return }
-            
-            stopWaiting(error)
+            accessQueue.sync { [unowned self] in
+                self.internalState.notify.semaphore?.stopWaiting(error)
+                self.internalState.notify.semaphore = nil
+            }
         }
         
         @objc(peripheral:didUpdateValueForDescriptor:error:)
@@ -469,7 +494,7 @@ import Bluetooth
                                didUpdateValueFor descriptor: CBDescriptor,
                                error: Swift.Error?) {
             
-            // TODO: Descriptor notifications
+            // TODO: Read Descriptor Value
         }
     }
     
@@ -508,6 +533,29 @@ import Bluetooth
             struct DiscoverCharacteristics {
                 
                 var semaphore: Semaphore?
+            }
+            
+            var readCharacteristic = ReadCharacteristic()
+            
+            struct ReadCharacteristic {
+                
+                var semaphore: Semaphore?
+            }
+            
+            var writeCharacteristic = WriteCharacteristic()
+            
+            struct WriteCharacteristic {
+                
+                var semaphore: Semaphore?
+            }
+            
+            var notify = Notify()
+            
+            struct Notify {
+                
+                var semaphore: Semaphore?
+                
+                var notifications = [Peripheral: [BluetoothUUID: (Data) -> ()]]()
             }
         }
         

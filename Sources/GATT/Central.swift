@@ -25,29 +25,35 @@ public protocol NativeCentral: class {
               shouldContinueScanning: () -> (Bool),
               foundDevice: @escaping (ScanData) -> ())
     
-    func connect(to peripheral: Peripheral, timeout: Int) throws
+    func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
-    func discoverServices(for peripheral: Peripheral) throws -> [CentralManager.Service]
+    func discoverServices(_ services: [BluetoothUUID],
+                          for peripheral: Peripheral,
+                          timeout: TimeInterval) throws -> [CentralManager.Service]
     
-    func discoverCharacteristics(for service: BluetoothUUID,
-                                 peripheral: Peripheral) throws -> [CentralManager.Characteristic]
+    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                for service: BluetoothUUID,
+                                peripheral: Peripheral,
+                                timeout: TimeInterval) throws -> [CentralManager.Characteristic]
     
-    func read(characteristic uuid: BluetoothUUID,
-              service: BluetoothUUID,
-              peripheral: Peripheral) throws -> Data
+    func readValue(for characteristic: BluetoothUUID,
+                   service: BluetoothUUID,
+                   peripheral: Peripheral,
+                   timeout: TimeInterval) throws -> Data
     
-    func write(data: Data,
-               response: Bool,
-               characteristic uuid: BluetoothUUID,
-               service: BluetoothUUID,
-               peripheral: Peripheral) throws
+    func writeValue(_ data: Data,
+                    for characteristic: BluetoothUUID,
+                    withResponse: Bool,
+                    service: BluetoothUUID,
+                    peripheral: Peripheral,
+                    timeout: TimeInterval) throws
     
-    func notify(characteristic: BluetoothUUID,
+    func notify(_ notification: ((Data) -> ())?,
+                for characteristic: BluetoothUUID,
                 service: BluetoothUUID,
                 peripheral: Peripheral,
-                notification: ((Data) -> ())?) throws
+                timeout: TimeInterval) throws
 }
-
 
 public extension NativeCentral {
     
