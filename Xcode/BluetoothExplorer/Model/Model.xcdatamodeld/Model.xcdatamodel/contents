@@ -1,22 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17E202" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1.0.0">
-    <entity name="AdvertisementData" representedClassName="AdvertisementData" syncable="YES" codeGenerationType="class">
+    <entity name="AdvertisementData" representedClassName=".AdvertisementData" syncable="YES">
+        <attribute name="isConnectable" optional="YES" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="localName" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="manufacturerData" optional="YES" attributeType="Binary" syncable="YES"/>
-        <relationship name="scanData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AdvertisementData" inverseName="scanData" inverseEntity="AdvertisementData" syncable="YES"/>
+        <attribute name="txPowerLevel" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="overflowServiceUUIDs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AdvertisementServiceUUID" inverseName="advertisementDataOverflowServiceUUIDs" inverseEntity="AdvertisementServiceUUID" syncable="YES"/>
+        <relationship name="scanData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ScanData" inverseName="advertisementData" inverseEntity="ScanData" syncable="YES"/>
         <relationship name="serviceData" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AdvertismentServiceData" inverseName="advertisementData" inverseEntity="AdvertismentServiceData" syncable="YES"/>
         <relationship name="serviceUUIDs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AdvertisementServiceUUID" inverseName="advertisementDataServiceUUIDs" inverseEntity="AdvertisementServiceUUID" syncable="YES"/>
+        <relationship name="solicitedServiceUUIDs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AdvertisementServiceUUID" inverseName="advertisementDataSolicitedServiceUUIDs" inverseEntity="AdvertisementServiceUUID" syncable="YES"/>
     </entity>
-    <entity name="AdvertisementServiceUUID" representedClassName="AdvertisementServiceUUID" syncable="YES" codeGenerationType="class">
+    <entity name="AdvertisementServiceUUID" representedClassName=".AdvertisementServiceUUID" syncable="YES">
         <attribute name="uuid" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="advertisementDataOverflowServiceUUIDs" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AdvertisementData" inverseName="overflowServiceUUIDs" inverseEntity="AdvertisementData" syncable="YES"/>
         <relationship name="advertisementDataServiceUUIDs" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AdvertisementData" inverseName="serviceUUIDs" inverseEntity="AdvertisementData" syncable="YES"/>
+        <relationship name="advertisementDataSolicitedServiceUUIDs" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AdvertisementData" inverseName="solicitedServiceUUIDs" inverseEntity="AdvertisementData" syncable="YES"/>
     </entity>
-    <entity name="AdvertismentServiceData" representedClassName="AdvertismentServiceData" syncable="YES" codeGenerationType="class">
+    <entity name="AdvertismentServiceData" representedClassName=".AdvertismentServiceData" syncable="YES">
         <attribute name="data" optional="YES" attributeType="Binary" syncable="YES"/>
         <attribute name="service" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="advertisementData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AdvertisementData" inverseName="serviceData" inverseEntity="AdvertisementData" syncable="YES"/>
     </entity>
-    <entity name="Central" representedClassName="Central" syncable="YES">
+    <entity name="Central" representedClassName=".Central" syncable="YES">
         <attribute name="connectionTimeout" attributeType="Double" defaultValueString="30" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="isScanning" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="state" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
@@ -29,15 +35,15 @@
     <entity name="ScanData" representedClassName=".ScanEventManagedObject" syncable="YES">
         <attribute name="date" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="rssi" attributeType="Integer 64" usesScalarValueType="YES" syncable="YES"/>
-        <relationship name="advertisementData" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="AdvertisementData" syncable="YES"/>
+        <relationship name="advertisementData" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="AdvertisementData" inverseName="scanData" inverseEntity="AdvertisementData" syncable="YES"/>
         <relationship name="peripheral" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="scanData" inverseEntity="Peripheral" syncable="YES"/>
     </entity>
     <elements>
         <element name="Central" positionX="-54" positionY="18" width="128" height="90"/>
         <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="90"/>
         <element name="ScanData" positionX="-54" positionY="-9" width="128" height="105"/>
-        <element name="AdvertisementData" positionX="-36" positionY="54" width="128" height="120"/>
+        <element name="AdvertisementData" positionX="-36" positionY="54" width="128" height="180"/>
         <element name="AdvertismentServiceData" positionX="-9" positionY="90" width="128" height="90"/>
-        <element name="AdvertisementServiceUUID" positionX="0" positionY="117" width="128" height="75"/>
+        <element name="AdvertisementServiceUUID" positionX="0" positionY="117" width="128" height="105"/>
     </elements>
 </model>

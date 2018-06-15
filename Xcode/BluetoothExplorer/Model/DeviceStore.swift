@@ -171,7 +171,8 @@ public extension DeviceStore {
             static let store = try! DeviceStore(createPersistentStore: DeviceStore.createPersistentStore,
                                                 deletePersistentStore: DeviceStore.deletePersistentStore,
                                                 centralManager: CentralManager(options: [
-                                                    CBCentralManagerOptionRestoreIdentifierKey: "org.pureswift.GATT.CentralManager"
+                                                    CBCentralManagerOptionRestoreIdentifierKey:
+                                                        Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.CentralManager"
                                                     ]))
         }
         
@@ -191,7 +192,7 @@ public extension DeviceStore {
         
         
         // get app folder
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "GATT"
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT"
         let folderURL = cacheURL.appendingPathComponent(bundleIdentifier, isDirectory: true)
         
         // create folder if doesnt exist
