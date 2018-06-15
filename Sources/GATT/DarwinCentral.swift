@@ -96,11 +96,9 @@ import Bluetooth
             guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
                 else { throw CentralError.unknownPeripheral }
             
-            let semaphore = Semaphore(timeout: timeout, operation: .connect(peripheral))
-            
             // store semaphore
+            let semaphore = Semaphore(timeout: timeout, operation: .connect(peripheral))
             accessQueue.sync { [unowned self] in self.internalState.connect.semaphore = semaphore }
-            
             defer { accessQueue.sync { [unowned self] in self.internalState.connect.semaphore = nil } }
             
             // attempt to connect (does not timeout)
@@ -131,7 +129,7 @@ import Bluetooth
         
         public func disconnectAll() {
             
-            accessQueue.sync(execute: { [unowned self] in
+            accessQueue.sync { [unowned self] in
              
                 self.internalState.scan.peripherals.values.forEach { [unowned self] in
                     self.internalManager.cancelPeripheralConnection($0.peripheral)
@@ -139,31 +137,51 @@ import Bluetooth
             }
         }
         
-        public func discoverServices(for peripheral: Peripheral) throws -> [Service] {
+        public func discoverServices(_ services: [BluetoothUUID] = [],
+                                     for peripheral: Peripheral,
+                                     timeout: TimeInterval = 30) throws -> [Service] {
             
-            let corePeripheral = try connectedPeriperhal(peripheral)
-            
-            try wait(.discoverServices(peripheral)) {
-                corePeripheral.discoverServices(nil)
+            let corePeripheral = try accessQueue.sync { [unowned self] in
+                try self.connectedPeripheral(peripheral)
             }
             
+            // store semaphore
+            let semaphore = Semaphore(timeout: timeout, operation: .discoverServices(peripheral))
+            accessQueue.sync { [unowned self] in self.internalState.discoverServices.semaphore = semaphore }
+            defer { accessQueue.sync { [unowned self] in self.internalState.discoverServices.semaphore = nil } }
+            
+            let coreServices = services.isEmpty ? nil : services.map { $0.toCoreBluetooth() }
+            
+            // start discovery
+            corePeripheral.discoverServices(coreServices)
+            
+            try semaphore.wait()
+            
             return (corePeripheral.services ?? []).map {
-                Service(
-                    uuid: BluetoothUUID(coreBluetooth: $0.uuid),
-                    isPrimary: $0.isPrimary)
+                Service(uuid: BluetoothUUID(coreBluetooth: $0.uuid),
+                        isPrimary: $0.isPrimary)
             }
         }
         
-        public func discoverCharacteristics(for service: BluetoothUUID,
+        public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
+                                            for service: BluetoothUUID,
+                                            timeout: TimeInterval = 30,
                                             peripheral: Peripheral) throws -> [Characteristic] {
             
-            let corePeripheral = try connectedPeriperhal(peripheral)
+            let corePeripheral = try accessQueue.sync { [unowned self] in
+                try self.connectedPeripheral(peripheral)
+            }
             
             let coreService = try corePeripheral.service(service)
             
-            try wait(.discoverCharacteristics(peripheral, service)) {
-                corePeripheral.discoverCharacteristics(nil, for: coreService)
-            }
+            // store semaphore
+            let semaphore = Semaphore(timeout: timeout, operation: .discoverCharacteristics(peripheral, service))
+            accessQueue.sync { [unowned self] in self.internalState.discoverCharacteristics.semaphore = semaphore }
+            defer { accessQueue.sync { [unowned self] in self.internalState.discoverCharacteristics.semaphore = nil } }
+            
+            let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { $0.toCoreBluetooth() }
+            
+            corePeripheral.discoverCharacteristics(coreCharacteristics, for: coreService)
             
             return (coreService.characteristics ?? [])
                 .map { Characteristic(uuid: BluetoothUUID(coreBluetooth: $0.uuid),
@@ -339,12 +357,10 @@ import Bluetooth
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
             }
             
-            guard let operation = operationState?.operation,
-                case let .discoverServices(peripheral) = operation,
-                peripheral == Peripheral(corePeripheral)
-                else { return }
-            
-            stopWaiting(error)
+            accessQueue.sync { [unowned self] in
+                self.internalState.discoverServices.semaphore?.stopWaiting(error)
+                self.internalState.discoverServices.semaphore = nil
+            }
         }
         
         @objc(peripheral:didDiscoverCharacteristicsForService:error:)
@@ -359,13 +375,10 @@ import Bluetooth
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
             }
             
-            guard let operation = operationState?.operation,
-                case let .discoverCharacteristics(peripheral, service) = operation,
-                peripheral == Peripheral(corePeripheral),
-                service == BluetoothUUID(coreBluetooth: coreService.uuid)
-                else { assertionFailure("Unexpected \(#function)"); return }
-            
-            stopWaiting(error)
+            accessQueue.sync { [unowned self] in
+                self.internalState.discoverCharacteristics.semaphore?.stopWaiting(error)
+                self.internalState.discoverCharacteristics.semaphore = nil
+            }
         }
         
         @objc(peripheral:didUpdateValueForCharacteristic:error:)
@@ -476,9 +489,23 @@ import Bluetooth
                 var foundDevice: ((ScanData) -> ())?
             }
             
-            var connect: Connect
+            var connect = Connect()
             
             struct Connect {
+                
+                var semaphore: Semaphore?
+            }
+            
+            var discoverServices = DiscoverServices()
+            
+            struct DiscoverServices {
+                
+                var semaphore: Semaphore?
+            }
+            
+            var discoverCharacteristics = DiscoverCharacteristics()
+            
+            struct DiscoverCharacteristics {
                 
                 var semaphore: Semaphore?
             }
