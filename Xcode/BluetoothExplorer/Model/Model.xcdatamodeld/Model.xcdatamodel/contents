@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17E202" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1.0.0">
+    <entity name="Central" representedClassName="Central" syncable="YES">
+        <attribute name="connectionTimeout" attributeType="Double" defaultValueString="30" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="isScanning" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
+    </entity>
+    <entity name="Peripheral" representedClassName=".DeviceManagedObject" syncable="YES">
+        <attribute name="cached" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="identifier" attributeType="String" minValueString="1" syncable="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=" " syncable="YES"/>
+        <relationship name="scanEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ScanEvent" inverseName="device" inverseEntity="ScanEvent" syncable="YES"/>
+    </entity>
+    <entity name="ScanEvent" representedClassName=".ScanEventManagedObject" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="rssi" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="device" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="scanEvents" inverseEntity="Peripheral" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="105"/>
+        <element name="ScanEvent" positionX="-54" positionY="-9" width="128" height="90"/>
+        <element name="Central" positionX="-54" positionY="18" width="128" height="75"/>
+    </elements>
+</model>
