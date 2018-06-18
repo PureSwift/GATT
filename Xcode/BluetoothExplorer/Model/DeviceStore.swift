@@ -102,7 +102,7 @@ public final class DeviceStore {
                                                                               in: context)
                     
                     // create a new entity
-                    let scanEvent = NSEntityDescription.insertNewObject(forEntityName: ScanEventManagedObject.entity(in: context).name!, into: context) as! ScanEventManagedObject
+                    let scanEvent = NSEntityDescription.insertNewObject(forEntityName: ScanDataManagedObject.entity(in: context).name!, into: context) as! ScanDataManagedObject
                     
                     // set values
                     scanEvent.date = scanData.date

@@ -23,7 +23,7 @@ public final class PeripheralManagedObject: NSManagedObject {
     // MARK: - Properties
     
     @NSManaged
-    public var scanEvents: Set<ScanEventManagedObject>
+    public var scanEvents: Set<ScanDataManagedObject>
 }
 
 // MARK: - Fetch Requests

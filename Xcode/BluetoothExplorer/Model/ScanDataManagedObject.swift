@@ -20,7 +20,7 @@ public final class ScanDataManagedObject: NSManagedObject {
     @NSManaged
     public var rssi: Int64
     
-    // MARK: - Properties
+    // MARK: - Relationships
     
     @NSManaged
     public var peripheral: PeripheralManagedObject
@@ -28,3 +28,7 @@ public final class ScanDataManagedObject: NSManagedObject {
     @NSManaged
     public var advertisementData: PeripheralManagedObject
 }
+
+// MARK: - CoreData Encodable
+
+
