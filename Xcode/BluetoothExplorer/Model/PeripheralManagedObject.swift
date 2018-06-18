@@ -30,6 +30,19 @@ public final class PeripheralManagedObject: NSManagedObject {
     
     @NSManaged
     public var services: Set<ServiceManagedObject>
+    
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        
+        guard let context = self.managedObjectContext
+            else { fatalError("Missing NSManagedObjectContext") }
+        
+        guard let scanDataEntityName = ScanDataManagedObject.entity(in: context).name
+            else { fatalError("No entity name") }
+        
+        self.scanData = NSEntityDescription.insertNewObject(forEntityName: scanDataEntityName, into: context) as! ScanDataManagedObject
+        self.scanData.date = Date()
+    }
 }
 
 // MARK: - Fetch Requests

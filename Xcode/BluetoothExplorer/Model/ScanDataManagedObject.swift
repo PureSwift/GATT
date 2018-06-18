@@ -27,6 +27,13 @@ public final class ScanDataManagedObject: NSManagedObject {
     
     @NSManaged
     public var advertisementData: PeripheralManagedObject
+    
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        
+        self.date = Date()
+        self.rssi = 0
+    }
 }
 
 // MARK: - CoreData Encodable

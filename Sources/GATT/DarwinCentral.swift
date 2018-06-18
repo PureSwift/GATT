@@ -26,6 +26,8 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
+        public let identifier: String?
+        
         public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
         
         public var state: DarwinBluetoothState {
@@ -61,6 +63,8 @@ import Bluetooth
         /// - Parameter options: An optional dictionary containing initialization options for a central manager.
         /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
         public init(options: [String: Any]?) {
+            
+            self.identifier = options?[CBCentralManagerOptionRestoreIdentifierKey] as? String
             
             super.init()
             
