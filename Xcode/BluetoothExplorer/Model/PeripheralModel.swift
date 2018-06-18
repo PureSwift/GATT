@@ -7,10 +7,21 @@
 //
 
 import Foundation
+import GATT
 
 public struct PeripheralModel {
     
+    // MARK: - Attributes
+    
     public let identifier: UUID
     
-    public let name: String?
+    public var isConnected: Bool
+    
+    // MARK: - Relationships
+    
+    public let central: String
+    
+    public var scanData: ScanData
+    
+    public var services: CentralManager.Service
 }

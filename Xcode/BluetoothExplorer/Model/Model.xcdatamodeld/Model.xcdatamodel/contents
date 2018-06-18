@@ -30,6 +30,7 @@
         <relationship name="foundDevices" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Peripheral" inverseName="central" inverseEntity="Peripheral" syncable="YES"/>
     </entity>
     <entity name="Characteristic" representedClassName=".CharacteristicManagedObject" syncable="YES">
+        <attribute name="properties" attributeType="Integer 16" maxValueString="256" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="uuid" attributeType="String" syncable="YES"/>
         <attribute name="value" optional="YES" attributeType="Binary" syncable="YES"/>
         <relationship name="service" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Service" inverseName="characteristics" inverseEntity="Service" syncable="YES"/>
@@ -38,8 +39,8 @@
     <entity name="Peripheral" representedClassName=".DeviceManagedObject" syncable="YES">
         <attribute name="identifier" attributeType="String" minValueString="1" syncable="YES"/>
         <attribute name="isConnected" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
-        <relationship name="central" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Central" inverseName="foundDevices" inverseEntity="Central" syncable="YES"/>
-        <relationship name="scanData" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ScanData" inverseName="peripheral" inverseEntity="ScanData" syncable="YES"/>
+        <relationship name="central" maxCount="1" deletionRule="Nullify" destinationEntity="Central" inverseName="foundDevices" inverseEntity="Central" syncable="YES"/>
+        <relationship name="scanData" maxCount="1" deletionRule="Cascade" destinationEntity="ScanData" inverseName="peripheral" inverseEntity="ScanData" syncable="YES"/>
         <relationship name="services" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Service" inverseName="peripheral" inverseEntity="Service" syncable="YES"/>
     </entity>
     <entity name="ScanData" representedClassName=".ScanEventManagedObject" syncable="YES">
@@ -49,7 +50,8 @@
         <relationship name="peripheral" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="scanData" inverseEntity="Peripheral" syncable="YES"/>
     </entity>
     <entity name="Service" representedClassName=".Service" syncable="YES">
-        <attribute name="uuid" attributeType="String" syncable="YES"/>
+        <attribute name="isPrimary" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="uuid" attributeType="String" minValueString="4" syncable="YES"/>
         <relationship name="characteristics" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Characteristic" inverseName="service" inverseEntity="Characteristic" syncable="YES"/>
         <relationship name="peripheral" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="services" inverseEntity="Peripheral" syncable="YES"/>
     </entity>
@@ -58,10 +60,10 @@
         <element name="AdvertisementServiceUUID" positionX="0" positionY="117" width="128" height="105"/>
         <element name="AdvertismentServiceData" positionX="-9" positionY="90" width="128" height="90"/>
         <element name="Central" positionX="-54" positionY="18" width="128" height="120"/>
+        <element name="Characteristic" positionX="-18" positionY="108" width="128" height="105"/>
+        <element name="GATTServer" positionX="-36" positionY="90" width="128" height="45"/>
         <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="120"/>
         <element name="ScanData" positionX="-54" positionY="-9" width="128" height="105"/>
-        <element name="GATTServer" positionX="-36" positionY="90" width="128" height="45"/>
-        <element name="Service" positionX="-27" positionY="99" width="128" height="90"/>
-        <element name="Characteristic" positionX="-18" positionY="108" width="128" height="90"/>
+        <element name="Service" positionX="-27" positionY="99" width="128" height="105"/>
     </elements>
 </model>

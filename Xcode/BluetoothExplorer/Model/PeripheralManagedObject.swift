@@ -18,12 +18,18 @@ public final class PeripheralManagedObject: NSManagedObject {
     public var identifier: String
     
     @NSManaged
-    public var name: String?
+    public var isConnected: Bool
     
     // MARK: - Properties
     
     @NSManaged
-    public var scanEvents: Set<ScanDataManagedObject>
+    public var central: CentralManagedObject
+    
+    @NSManaged
+    public var scanData: ScanDataManagedObject
+    
+    @NSManaged
+    public var services: Set<ServiceManagedObject>
 }
 
 // MARK: - Fetch Requests
@@ -44,13 +50,16 @@ extension PeripheralManagedObject {
 }
 
 // MARK: - CoreData Decodable
-
+/*
 public extension PeripheralModel {
     
     init(managedObject: PeripheralManagedObject) {
         
         self.identifier = UUID(uuidString: managedObject.identifier)!
-        self.name = managedObject.name
+        self.isConnected = managedObject.isConnected
+        self.central = managedObject.central.identifier
+        self.scanData = ScanData()
+        self.services = services
     }
 }
-
+*/
