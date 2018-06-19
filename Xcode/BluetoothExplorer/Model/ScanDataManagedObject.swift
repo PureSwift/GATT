@@ -26,15 +26,24 @@ public final class ScanDataManagedObject: NSManagedObject {
     public var peripheral: PeripheralManagedObject
     
     @NSManaged
-    public var advertisementData: PeripheralManagedObject
+    public var advertisementData: AdvertisementDataManagedObject
     
     public override func awakeFromInsert() {
         super.awakeFromInsert()
         
+        guard let context = self.managedObjectContext
+            else { fatalError("Missing NSManagedObjectContext") }
+        
+        guard let advertisementDataEntityName = AdvertisementDataManagedObject.entity(in: context).name
+            else { fatalError("No entity name") }
+        
         self.date = Date()
         self.rssi = 0
+        self.advertisementData = NSEntityDescription.insertNewObject(forEntityName: advertisementDataEntityName, into: context) as! AdvertisementDataManagedObject
     }
 }
+
+public 
 
 // MARK: - CoreData Encodable
 

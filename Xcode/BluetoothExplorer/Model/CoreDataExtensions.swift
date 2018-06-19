@@ -12,13 +12,15 @@ import CoreData
 internal extension NSManagedObjectContext {
     
     /// Wraps the block to allow for error throwing.
-    func performErrorBlockAndWait(_ block: @escaping () throws -> ()) throws {
+    func performErrorBlockAndWait<Result>(_ block: @escaping () throws -> Result) throws -> Result {
         
         var blockError: Swift.Error?
         
+        var result: Result!
+        
         self.performAndWait {
             
-            do { try block() }
+            do { result = try block() }
                 
             catch { blockError = error }
             
@@ -30,7 +32,7 @@ internal extension NSManagedObjectContext {
             throw error
         }
         
-        return
+        return result
     }
     
     func find <T: NSManagedObject> (identifier: NSObject, property: String, entityName: String) throws -> T? {
@@ -86,6 +88,11 @@ internal extension NSManagedObject {
         Cache.entities[className] = entity
         
         return entity
+    }
+    
+    convenience init(context: NSManagedObjectContext) {
+        
+        self.init(entity: type(of: self).entity(in: context), insertInto: context)
     }
 }
 

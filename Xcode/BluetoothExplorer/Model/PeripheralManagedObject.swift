@@ -41,6 +41,7 @@ public final class PeripheralManagedObject: NSManagedObject {
             else { fatalError("No entity name") }
         
         self.scanData = NSEntityDescription.insertNewObject(forEntityName: scanDataEntityName, into: context) as! ScanDataManagedObject
+        
         self.scanData.date = Date()
     }
 }

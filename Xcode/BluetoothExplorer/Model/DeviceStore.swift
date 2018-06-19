@@ -38,6 +38,11 @@ public final class DeviceStore {
     /// The managed object context running on a background thread for asyncronous caching.
     private let privateQueueManagedObjectContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
+    private lazy var centralIdentifier: String = {
+        
+        return self.centralManager.identifier ?? "org.pureswift.GATT.CentralManager.default"
+    }()
+    
     // MARK: - Initialization
     
     deinit {
@@ -83,6 +88,35 @@ public final class DeviceStore {
     
     // MARK: Requests
     
+    /// The default Central managed object.
+    public var central: CentralManagedObject {
+        
+        let context = privateQueueManagedObjectContext
+        
+        let centralIdentifier = self.centralIdentifier
+        
+        do {
+            
+            let managedObjectID: NSManagedObjectID = try context.performErrorBlockAndWait {
+                
+                let managedObject = try CentralManagedObject.findOrCreate(centralIdentifier, in: context)
+                
+                if managedObject.objectID.isTemporaryID {
+                    
+                    try context.save()
+                }
+                
+                return managedObject.objectID
+            }
+            
+            assert(managedObjectID.isTemporaryID == false, "Managed object \(managedObjectID) should be persisted")
+            
+            return managedObjectContext.object(with: managedObjectID) as! CentralManagedObject
+        }
+        
+        catch { fatalError("Could not cache \(error)") }
+    }
+    
     /// Scans for nearby devices.
     ///
     /// - Parameter duration: The duration of the scan.
@@ -92,21 +126,28 @@ public final class DeviceStore {
         
         let context = privateQueueManagedObjectContext
         
+        let centralIdentifier = self.centralIdentifier
+        
         centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { (scanData) in
             
             do {
                 
                 try context.performErrorBlockAndWait {
                     
+                    let central = try CentralManagedObject.findOrCreate(centralIdentifier, in: context)
+                    
                     let peripheral = try PeripheralManagedObject.findOrCreate(scanData.peripheral.identifier,
                                                                               in: context)
+                    peripheral.central = central
                     
                     // create a new entity
-                    let scanEvent = NSEntityDescription.insertNewObject(forEntityName: ScanDataManagedObject.entity(in: context).name!, into: context) as! ScanDataManagedObject
+                    
+                    let scanData = ScanDataManagedObject(entity: ScanDataManagedObject.entity(in: context), insertInto: context)
                     
                     // set values
-                    scanEvent.date = scanData.date
-                    scanEvent.peripheral = peripheral
+                    scanData.date = scanData.date
+                    scanData.peripheral = peripheral
+                    scanData.advertisementData
                     
                     // save
                     try context.save()

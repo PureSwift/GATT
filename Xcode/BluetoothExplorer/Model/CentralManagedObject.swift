@@ -31,3 +31,20 @@ public final class CentralManagedObject: NSManagedObject {
     @NSManaged
     public var foundDevices: Set<PeripheralManagedObject>
 }
+
+// MARK: - Fetch Requests
+
+extension CentralManagedObject {
+    
+    static func findOrCreate(_ identifier: String,
+                             in context: NSManagedObjectContext) throws -> CentralManagedObject {
+        
+        let identifier = identifier as NSString
+        
+        let identifierProperty = #keyPath(CentralManagedObject.identifier)
+        
+        let entityName = self.entity(in: context).name!
+        
+        return try context.findOrCreate(identifier: identifier, property: identifierProperty, entityName: entityName)
+    }
+}
