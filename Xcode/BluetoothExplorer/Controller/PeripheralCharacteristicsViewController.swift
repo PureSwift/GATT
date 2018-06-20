@@ -90,9 +90,9 @@ final class PeripheralCharacteristicsViewController: TableViewController {
         return fetchedResultsController
     }
     
-    private subscript (indexPath: IndexPath) -> ServiceManagedObject {
+    private subscript (indexPath: IndexPath) -> CharacteristicManagedObject {
         
-        guard let managedObject = self.fetchedResultsController?.object(at: indexPath) as? ServiceManagedObject
+        guard let managedObject = self.fetchedResultsController?.object(at: indexPath) as? CharacteristicManagedObject
             else { fatalError("Invalid type") }
         
         return managedObject
@@ -102,16 +102,16 @@ final class PeripheralCharacteristicsViewController: TableViewController {
         
         let managedObject = self[indexPath]
         
-        let service = CentralManager.Service(managedObject: managedObject)
+        let attributes = managedObject.attributesView
         
-        if let name = service.uuid.name {
+        if let name = attributes.uuid.name {
             
             cell.textLabel?.text = name
-            cell.detailTextLabel?.text = service.uuid.rawValue
+            cell.detailTextLabel?.text = attributes.uuid.rawValue
             
         } else {
             
-            cell.textLabel?.text = service.uuid.rawValue
+            cell.textLabel?.text = attributes.uuid.rawValue
             cell.detailTextLabel?.text = ""
         }
     }
@@ -120,7 +120,7 @@ final class PeripheralCharacteristicsViewController: TableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ServiceCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "CharacteristicCell", for: indexPath)
         
         configure(cell: cell, at: indexPath)
         

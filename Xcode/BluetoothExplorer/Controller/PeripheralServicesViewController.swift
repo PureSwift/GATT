@@ -96,17 +96,17 @@ final class PeripheralServicesViewController: TableViewController {
     private func configure(cell: UITableViewCell, at indexPath: IndexPath) {
         
         let managedObject = self[indexPath]
+                
+        let attributes = managedObject.attributesView
         
-        let service = CentralManager.Service(managedObject: managedObject)
-        
-        if let name = service.uuid.name {
+        if let name = attributes.uuid.name {
             
             cell.textLabel?.text = name
-            cell.detailTextLabel?.text = service.uuid.rawValue
+            cell.detailTextLabel?.text = attributes.uuid.rawValue
             
         } else {
             
-            cell.textLabel?.text = service.uuid.rawValue
+            cell.textLabel?.text = attributes.uuid.rawValue
             cell.detailTextLabel?.text = ""
         }
     }
