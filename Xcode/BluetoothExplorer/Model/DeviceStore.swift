@@ -197,15 +197,21 @@ public final class DeviceStore {
         }
     }
     
-    public func discoverCharacteristics(for service: ServiceManagedObject) throws {
+    public func discoverCharacteristics(for serviceManagedObject: ServiceManagedObject) throws {
         
-        assert(service.value(forKey: #keyPath(ServiceManagedObject.peripheral)) != nil, "Invalid service")
+        assert(serviceManagedObject.value(forKey: #keyPath(ServiceManagedObject.peripheral)) != nil, "Invalid service")
         
         // perform BLE operation
-        let peripheral = Peripheral(identifier: service.peripheral.attributesView.identifier)
+        let peripheral = Peripheral(identifier: serviceManagedObject.peripheral.attributesView.identifier)
         
-        let foundCharacteristics = try device(for: peripheral) {
-            try centralManager.discoverCharacteristics(for: service.attributesView.uuid, peripheral: peripheral)
+        let foundCharacteristics: [CentralManager.Characteristic] = try device(for: peripheral) {
+            
+            let services = try centralManager.discoverServices(for: peripheral)
+            
+            guard let foundService = services.first(where: { $0.uuid.rawValue == serviceManagedObject.uuid })
+                else { throw CentralError.invalidAttribute(serviceManagedObject.attributesView.uuid) }
+            
+            return try centralManager.discoverCharacteristics(for: foundService.uuid, peripheral: peripheral)
         }
         
         // cache
@@ -214,6 +220,8 @@ public final class DeviceStore {
         do {
             
             try context.performErrorBlockAndWait {
+                
+                let service = context.object(with: serviceManagedObject.objectID) as! ServiceManagedObject
                 
                 // insert new characteristics
                 let newManagedObjects: [CharacteristicManagedObject] = try foundCharacteristics.map {
