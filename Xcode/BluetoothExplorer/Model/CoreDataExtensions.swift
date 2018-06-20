@@ -107,3 +107,29 @@ extension NSManagedObjectModel {
         return self.entities.first { $0.managedObjectClassName == className }
     }
 }
+
+public func NSFetchedResultsController <T: NSManagedObject>
+    (_ managedObjectType: T.Type,
+     delegate: NSFetchedResultsControllerDelegate? = nil,
+     predicate: NSPredicate? = nil,
+     sortDescriptors: [NSSortDescriptor] = [],
+     sectionNameKeyPath: String? = nil,
+     context: NSManagedObjectContext) -> NSFetchedResultsController<NSManagedObject> {
+    
+    let entity = context.persistentStoreCoordinator!.managedObjectModel[managedObjectType]!
+    
+    let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entity.name!)
+    
+    fetchRequest.predicate = predicate
+    
+    fetchRequest.sortDescriptors = sortDescriptors
+    
+    let fetchedResultsController = CoreData.NSFetchedResultsController.init(fetchRequest: fetchRequest,
+                                                                            managedObjectContext: context,
+                                                                            sectionNameKeyPath: sectionNameKeyPath,
+                                                                            cacheName: nil)
+    
+    fetchedResultsController.delegate = delegate
+    
+    return fetchedResultsController
+}
