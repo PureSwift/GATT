@@ -41,6 +41,26 @@ public final class PeripheralManagedObject: NSManagedObject {
     }
 }
 
+// MARK: - Computed Properties
+
+public extension PeripheralManagedObject {
+    
+    public struct AttributesView {
+        
+        public var identifier: UUID
+        
+        public var isConnected: Bool
+    }
+    
+    public var attributesView: AttributesView {
+        
+        guard let identifier = UUID(rawValue: self.identifier)
+            else { fatalError("Invalid stored value \(self.identifier)") }
+        
+        return AttributesView(identifier: identifier, isConnected: self.isConnected)
+    }
+}
+
 // MARK: - Fetch Requests
 
 extension PeripheralManagedObject {

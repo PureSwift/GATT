@@ -155,9 +155,11 @@ public final class DeviceStore {
         })
     }
     
-    public func discoverServices(for peripheral: Peripheral) throws {
+    public func discoverServices(for peripheralManagedObject: PeripheralManagedObject) throws {
         
         // perform BLE operation
+        let peripheral = Peripheral(identifier: peripheralManagedObject.attributesView.identifier)
+        
         let foundServices = try device(for: peripheral) {
             try centralManager.discoverServices(for: peripheral)
         }
@@ -169,8 +171,7 @@ public final class DeviceStore {
             
             try context.performErrorBlockAndWait {
                 
-                guard let peripheralManagedObject = try PeripheralManagedObject.find(peripheral.identifier, in: context)
-                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
+                let peripheral = context.object(with: peripheralManagedObject.objectID) as! PeripheralManagedObject
                 
                 // insert new services
                 let serviceManagedObjects: [ServiceManagedObject] = try foundServices.map {
@@ -196,11 +197,15 @@ public final class DeviceStore {
         }
     }
     
-    public func discoverCharacteristics(for service: BluetoothUUID, peripheral: Peripheral) throws {
+    public func discoverCharacteristics(for service: ServiceManagedObject) throws {
+        
+        assert(service.value(forKey: #keyPath(ServiceManagedObject.peripheral)) != nil, "Invalid service")
         
         // perform BLE operation
+        let peripheral = Peripheral(identifier: service.peripheral.attributesView.identifier)
+        
         let foundCharacteristics = try device(for: peripheral) {
-            try centralManager.discoverCharacteristics(for: service, peripheral: peripheral)
+            try centralManager.discoverCharacteristics(for: service.attributesView.uuid, peripheral: peripheral)
         }
         
         // cache
@@ -209,12 +214,6 @@ public final class DeviceStore {
         do {
             
             try context.performErrorBlockAndWait {
-                
-                guard let peripheralManagedObject = try PeripheralManagedObject.find(peripheral.identifier, in: context)
-                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
-                
-                guard let serviceManagedObject = try ServiceManagedObject.find(service, peripheral: peripheral, in: context)
-                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
                 
                 // insert new characteristics
                 let newManagedObjects: [CharacteristicManagedObject] = try foundCharacteristics.map {

@@ -29,6 +29,26 @@ public final class ServiceManagedObject: NSManagedObject {
     public var characteristics: Set<CharacteristicManagedObject>
 }
 
+// MARK: - Computed Properties
+
+public extension ServiceManagedObject {
+    
+    public struct AttributesView {
+        
+        public var uuid: BluetoothUUID
+        
+        public var isPrimary: Bool
+    }
+    
+    public var attributesView: AttributesView {
+        
+        guard let uuid = BluetoothUUID(rawValue: self.uuid)
+            else { fatalError("Invalid stored value \(self.uuid)") }
+        
+        return AttributesView(uuid: uuid, isPrimary: self.isPrimary)
+    }
+}
+
 // MARK: - CoreData Encodable
 
 public extension ServiceManagedObject {
@@ -58,17 +78,17 @@ extension CentralManager.Service: CoreDataDecodable {
 
 extension ServiceManagedObject {
     
-    static func find(_ identifier: BluetoothUUID,
-                     peripheral: Peripheral,
+    static func find(_ uuid: BluetoothUUID,
+                     peripheral: PeripheralManagedObject,
                      in context: NSManagedObjectContext) throws -> ServiceManagedObject? {
         
         let entityName = self.entity(in: context).name!
         let fetchRequest = NSFetchRequest<ServiceManagedObject>(entityName: entityName)
         fetchRequest.predicate = NSPredicate(format: "%K == %@ && %K == %@",
                                              #keyPath(ServiceManagedObject.uuid),
-                                             identifier.rawValue as NSString,
-                                             #keyPath(ServiceManagedObject.peripheral.identifier),
-                                             peripheral.identifier.uuidString as NSString)
+                                             uuid.rawValue as NSString,
+                                             #keyPath(ServiceManagedObject.peripheral),
+                                             peripheral)
         fetchRequest.fetchLimit = 1
         fetchRequest.includesSubentities = false
         fetchRequest.returnsObjectsAsFaults = false
@@ -76,11 +96,11 @@ extension ServiceManagedObject {
         return try context.fetch(fetchRequest).first
     }
     
-    static func findOrCreate(_ identifier: BluetoothUUID,
-                             peripheral: Peripheral,
+    static func findOrCreate(_ uuid: BluetoothUUID,
+                             peripheral: PeripheralManagedObject,
                              in context: NSManagedObjectContext) throws -> ServiceManagedObject {
         
-        if let existing = try find(identifier, peripheral: peripheral, in: context) {
+        if let existing = try find(uuid, peripheral: peripheral, in: context) {
             
             return existing
             
@@ -90,9 +110,8 @@ extension ServiceManagedObject {
             let newManagedObject = ServiceManagedObject(context: context)
             
             // set identifier
-            newManagedObject.uuid = identifier.rawValue
-            newManagedObject.peripheral = try PeripheralManagedObject.findOrCreate(peripheral.identifier,
-                                                                                   in: context)
+            newManagedObject.uuid = uuid.rawValue
+            newManagedObject.peripheral = peripheral
             
             return newManagedObject
         }

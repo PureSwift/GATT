@@ -56,35 +56,31 @@ final class CharacteristicsViewController: TableViewController {
         guard let managedObject = self.service
             else { fatalError("View controller not configured") }
         
-        let service = CentralManager.Service(managedObject: managedObject)
-        let peripheral = Peripheral(identifier: PeerIdentifier(rawValue: managedObject.peripheral.identifier)!)
-        
         configureView()
         
         let isRefreshing = self.refreshControl?.isRefreshing ?? false
         let showActivity = isRefreshing == false
         
         performActivity(showActivity: showActivity, {
-            try DeviceStore.shared.discoverCharacteristics(for: service.uuid, peripheral: peripheral)
-        }, completion: {
-            (viewController, _) in
+            try DeviceStore.shared.discoverCharacteristics(for: managedObject)
+        }, completion: { (viewController, _) in
             viewController.endRefreshing()
         })
     }
     
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
-        guard let identifier = self.peripheral?.identifier
+        guard let managedObject = self.service
             else { fatalError("View controller not configured") }
         
         // configure fetched results controller
         let predicate = NSPredicate(format: "%K == %@",
-                                    #keyPath(ServiceManagedObject.peripheral.identifier),
-                                    identifier.uuidString as NSString)
+                                    #keyPath(CharacteristicManagedObject.service),
+                                    managedObject)
         
-        let sort = [NSSortDescriptor(key: #keyPath(ServiceManagedObject.uuid), ascending: true)]
+        let sort = [NSSortDescriptor(key: #keyPath(CharacteristicManagedObject.uuid), ascending: true)]
         let context = DeviceStore.shared.managedObjectContext
-        let fetchedResultsController = NSFetchedResultsController(ServiceManagedObject.self,
+        let fetchedResultsController = NSFetchedResultsController(CharacteristicManagedObject.self,
                                                                   delegate: self,
                                                                   predicate: predicate,
                                                                   sortDescriptors: sort,
@@ -151,16 +147,5 @@ extension CharacteristicsViewController: ActivityIndicatorViewController {
             
             self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
         }
-    }
-}
-
-// MARK: - Supporting Types
-
-extension CharacteristicsViewController {
-    
-    enum Identifier {
-        
-        case peripheral(Peripheral, service: BluetoothUUID)
-        case server(String, service: BluetoothUUID)
     }
 }

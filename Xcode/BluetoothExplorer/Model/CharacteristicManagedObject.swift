@@ -31,24 +31,49 @@ public final class CharacteristicManagedObject: NSManagedObject {
     public var service: ServiceManagedObject
 }
 
+// MARK: - Computed Properties
+
+public extension CharacteristicManagedObject {
+    
+    public struct AttributesView {
+        
+        public typealias Property = GATT.CharacteristicProperty
+        
+        public var uuid: BluetoothUUID
+        
+        public var properties: BitMaskOptionSet<Property>
+        
+        public var value: Data?
+    }
+    
+    public var attributesView: AttributesView {
+        
+        guard let uuid = BluetoothUUID(rawValue: self.uuid)
+            else { fatalError("Invalid stored value \(self.uuid)") }
+        
+        let properties = BitMaskOptionSet<AttributesView.Property>(rawValue: UInt8(self.properties))
+        
+        return AttributesView(uuid: uuid,
+                              properties: properties,
+                              value: self.value)
+    }
+}
+
 // MARK: - Fetch Requests
 
 extension CharacteristicManagedObject {
     
     static func find(_ uuid: BluetoothUUID,
-                     service: BluetoothUUID,
-                     peripheral: Peripheral,
+                     service: ServiceManagedObject,
                      in context: NSManagedObjectContext) throws -> CharacteristicManagedObject? {
         
         let entityName = self.entity(in: context).name!
         let fetchRequest = NSFetchRequest<CharacteristicManagedObject>(entityName: entityName)
-        fetchRequest.predicate = NSPredicate(format: "%K == %@ && %K == %@ && %K == %@",
+        fetchRequest.predicate = NSPredicate(format: "%K == %@ && %K == %@",
                                              #keyPath(CharacteristicManagedObject.uuid),
                                              uuid.rawValue as NSString,
-                                             #keyPath(CharacteristicManagedObject.service.uuid),
-                                             service.rawValue as NSString,
-                                             #keyPath(CharacteristicManagedObject.service.peripheral.identifier),
-                                             peripheral.identifier.uuidString as NSString)
+                                             #keyPath(CharacteristicManagedObject.service),
+                                             service)
         fetchRequest.fetchLimit = 1
         fetchRequest.includesSubentities = false
         fetchRequest.returnsObjectsAsFaults = false
@@ -57,11 +82,10 @@ extension CharacteristicManagedObject {
     }
     
     static func findOrCreate(_ uuid: BluetoothUUID,
-                             service: BluetoothUUID,
-                             peripheral: Peripheral,
+                             service: ServiceManagedObject,
                              in context: NSManagedObjectContext) throws -> CharacteristicManagedObject {
         
-        if let existing = try find(uuid, service: service, peripheral: peripheral, in: context) {
+        if let existing = try find(uuid, service: service, in: context) {
             
             return existing
             
@@ -72,9 +96,7 @@ extension CharacteristicManagedObject {
             
             // set identifier
             newManagedObject.uuid = uuid.rawValue
-            newManagedObject.service = try ServiceManagedObject.findOrCreate(service,
-                                                                             peripheral: peripheral,
-                                                                             in: context)
+            newManagedObject.service = service
             
             return newManagedObject
         }
