@@ -45,7 +45,7 @@
     </entity>
     <entity name="ScanData" representedClassName=".ScanDataManagedObject" syncable="YES">
         <attribute name="date" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
-        <attribute name="rssi" attributeType="Integer 64" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="rssi" attributeType="Double" usesScalarValueType="YES" syncable="YES"/>
         <relationship name="advertisementData" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="AdvertisementData" inverseName="scanData" inverseEntity="AdvertisementData" syncable="YES"/>
         <relationship name="peripheral" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="scanData" inverseEntity="Peripheral" syncable="YES"/>
     </entity>

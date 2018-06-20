@@ -14,6 +14,15 @@ import GATT
 
 final class PeripheralsViewController: TableViewController {
     
+    // MARK: - Properties
+    
+    let scanDuration: TimeInterval = 5.0
+    
+    private var scanStart = Date() {
+        
+        didSet { configureView() }
+    }
+    
     // MARK: - Loading
 
     override func viewDidLoad() {
@@ -23,8 +32,38 @@ final class PeripheralsViewController: TableViewController {
         self.tableView.estimatedRowHeight = 96
         self.tableView.rowHeight = UITableViewAutomaticDimension
         
+        // update table view
+        self.configureView()
+        self.reloadData()
+    }
+    
+    // MARK: - Actions
+    
+    @IBAction func reloadData(_ sender: Any? = nil) {
+        
+        // don't scan if already scanning
+        guard DeviceStore.shared.centralManager.isScanning == false,
+            DeviceStore.shared.centralManager.state == .poweredOn
+            else { return }
+        
+        let scanDuration = self.scanDuration
+        
+        // configure table view and update UI
+        scanStart = Date()
+        
+        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
+                        completion: { (viewController, _) in viewController.refreshControl?.endRefreshing() })
+    }
+    
+    // MARK: - Private Methods
+    
+    private func configureView() {
+        
         // configure fetched results controller
-        let predicate = NSPredicate(format: "")
+        let predicate = NSPredicate(format: "%K > %@",
+                                    #keyPath(PeripheralManagedObject.scanData.date),
+                                    self.scanStart as NSDate)
+        
         let sort = [NSSortDescriptor(key: #keyPath(PeripheralManagedObject.identifier), ascending: false)]
         let context = DeviceStore.shared.managedObjectContext
         self.fetchedResultsController = NSFetchedResultsController(PeripheralManagedObject.self,
@@ -35,25 +74,13 @@ final class PeripheralsViewController: TableViewController {
         
         self.fetchedResultsController.fetchRequest.fetchBatchSize = 30
         try! self.fetchedResultsController.performFetch()
-        
-        self.reloadData()
+        self.tableView.reloadData()
     }
-    
-    // MARK: - Actions
-    
-    @IBAction func reloadData() {
-        
-        let timeInterval: TimeInterval = 5.0
-        
-        performActivity({ try DeviceStore.shared.scan(duration: timeInterval) },
-                        completion: { (viewController, _) in viewController.refreshControl?.endRefreshing() })
-    }
-    
-    // MARK: - Private Methods
     
     private subscript (indexPath: IndexPath) -> PeripheralManagedObject {
         
-        let managedObject = self.fetchedResultsController.object(at: indexPath) as! PeripheralManagedObject
+        guard let managedObject = self.fetchedResultsController.object(at: indexPath) as? PeripheralManagedObject
+            else { fatalError("Invalid type") }
         
         return managedObject
     }
