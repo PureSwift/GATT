@@ -15,7 +15,65 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
     
     // MARK: - Properties
     
-    final var fetchedResultsController: NSFetchedResultsController<NSManagedObject>!
+    final private(set) var fetchedResultsController: NSFetchedResultsController<NSManagedObject>?
+    
+    // MARK: - Loading
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // setup table view
+        self.tableView.estimatedRowHeight = UITableViewAutomaticDimension
+        self.tableView.rowHeight = UITableViewAutomaticDimension
+        
+        // update table view
+        self.configureView()
+        self.reloadData()
+    }
+    
+    // MARK: - Methods
+    
+    /// Reset `NSFetchedResultsController`.
+    func reloadData() {
+        
+        fetchedResultsController = nil
+        tableView.reloadData()
+        configureView()
+        fetchedResultsController = newFetchedResultController()
+        
+        do { try fetchedResultsController?.performFetch() }
+        catch { assertionFailure("\(error)") }
+        tableView.reloadData()
+    }
+    
+    /// Update UI.
+    func configureView() {
+        
+        
+    }
+    
+    /// Create a new `NSFetchedResultsController` instance.
+    func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
+        
+        fatalError("\(newFetchedResultController) - Subclasses must override this implementation")
+    }
+    
+    #if os(iOS)
+    @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
+        
+        reloadData()
+        endRefreshing()
+    }
+    #endif
+    
+    final func endRefreshing() {
+        
+        if let refreshControl = self.refreshControl,
+            refreshControl.isRefreshing == true {
+            
+            refreshControl.endRefreshing()
+        }
+    }
     
     // MARK: - UITableViewDataSource
     
@@ -26,12 +84,12 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
     
     final override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return self.fetchedResultsController.sections?[section].numberOfObjects ?? 0
+        return self.fetchedResultsController?.sections?[section].numberOfObjects ?? 0
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         
-        guard let sections = self.fetchedResultsController.sections
+        guard let sections = self.fetchedResultsController?.sections
             else { return nil }
         
         return sections[section].name
@@ -40,7 +98,8 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
     #if os(iOS)
     override func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
         
-        return self.fetchedResultsController.section(forSectionIndexTitle: title, at: index)
+        return self.fetchedResultsController?.section(forSectionIndexTitle: title, at: index)
+            ?? super.tableView(tableView, sectionForSectionIndexTitle: title, at: index)
     }
     #endif
     

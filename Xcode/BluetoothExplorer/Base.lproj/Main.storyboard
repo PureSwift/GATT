@@ -78,7 +78,7 @@
                             </fragment>
                         </attributedString>
                         <connections>
-                            <action selector="reloadData:" destination="uz8-In-14g" eventType="valueChanged" id="EHC-Pz-b0f"/>
+                            <action selector="pullToRefresh:" destination="uz8-In-14g" eventType="valueChanged" id="3FR-te-Dda"/>
                         </connections>
                     </refreshControl>
                 </tableViewController>
