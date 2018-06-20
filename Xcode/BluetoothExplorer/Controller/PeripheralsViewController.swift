@@ -32,7 +32,8 @@ final class PeripheralsViewController: TableViewController {
         
         // scan
         let scanDuration = self.scanDuration
-        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) })
+        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
+                        completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
     // MARK: - Methods

@@ -90,6 +90,7 @@ import Bluetooth
                 
                 self.internalState.scan.peripherals = [:]
                 self.internalState.scan.foundDevice = foundDevice
+                self.log?("Scanning...")
             }
             
             self.internalManager.scanForPeripherals(withServices: nil, options: options)
@@ -102,6 +103,7 @@ import Bluetooth
             accessQueue.sync { [unowned self] in
                 
                 self.internalState.scan.foundDevice = nil
+                self.log?("Did discover \(self.internalState.scan.peripherals.count) peripherals")
             }
         }
         

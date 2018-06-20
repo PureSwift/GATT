@@ -36,14 +36,52 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
     /// Reset `NSFetchedResultsController`.
     func reloadData() {
         
+        tableView.isUserInteractionEnabled = false
+        defer { tableView.isUserInteractionEnabled = true }
+        
+        let oldDataCount = fetchedResultsController?.fetchedObjects?.count ?? 0
+        
+        // remove old FRC
         fetchedResultsController = nil
-        tableView.reloadData()
         configureView()
+        
+        // remove rows of old data
+        if oldDataCount > 0 {
+            
+            tableView.beginUpdates()
+            
+            for row in (0 ..< oldDataCount) {
+                
+                let indexPath = IndexPath(row: row, section: 0)
+                
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+            
+            tableView.deleteSections([0], with: .fade)
+            
+            tableView.endUpdates()
+        }
+        
+        // setup new FRC
         fetchedResultsController = newFetchedResultController()
         
         do { try fetchedResultsController?.performFetch() }
         catch { assertionFailure("\(error)") }
-        tableView.reloadData()
+        
+        // insert new rows
+        let newDataCount = fetchedResultsController?.fetchedObjects?.count ?? 0
+        tableView.beginUpdates()
+        
+        for row in (0 ..< newDataCount) {
+            
+            let indexPath = IndexPath(row: row, section: 0)
+            
+            tableView.insertRows(at: [indexPath], with: .top)
+        }
+        
+        tableView.insertSections([0], with: .top)
+        
+        tableView.endUpdates()
     }
     
     /// Update UI.
@@ -62,7 +100,6 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
     @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
         
         reloadData()
-        endRefreshing()
     }
     #endif
     
