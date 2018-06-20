@@ -400,6 +400,15 @@ import Bluetooth
         @objc(centralManager:didDisconnectPeripheral:error:)
         public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Swift.Error?) {
             
+            if let error = error {
+                
+                log?("Did disconnect peripheral \(peripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
+                
+            } else {
+                
+                log?("Did disconnect peripheral \(peripheral.gattIdentifier.uuidString)")
+            }
+            
             self.didDisconnect(Peripheral(peripheral))
         }
         

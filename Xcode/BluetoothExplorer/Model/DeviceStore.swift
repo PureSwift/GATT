@@ -196,6 +196,55 @@ public final class DeviceStore {
         }
     }
     
+    public func discoverCharacteristics(for service: BluetoothUUID, peripheral: Peripheral) throws {
+        
+        // perform BLE operation
+        let foundCharacteristics = try device(for: peripheral) {
+            try centralManager.discoverCharacteristics(for: service, peripheral: peripheral)
+        }
+        
+        // cache
+        let context = privateQueueManagedObjectContext
+        
+        do {
+            
+            try context.performErrorBlockAndWait {
+                
+                guard let peripheralManagedObject = try PeripheralManagedObject.find(peripheral.identifier, in: context)
+                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
+                
+                guard let serviceManagedObject = try ServiceManagedObject.find(service, peripheral: peripheral, in: context)
+                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
+                
+                // insert new characteristics
+                let newManagedObjects: [CharacteristicManagedObject] = try foundCharacteristics.map {
+                    let managedObject = try CharacteristicManagedObject.findOrCreate($0.uuid,
+                                                                                     service: service,
+                                                                                     peripheral: peripheral,
+                                                                                     in: context)
+                    managedObject.properties = Int16($0.properties.rawValue)
+                    assert(managedObject.service == serviceManagedObject)
+                    assert(managedObject.service.peripheral == peripheralManagedObject)
+                    return managedObject
+                }
+                
+                // remove old characteristics
+                serviceManagedObject.characteristics
+                    .filter { newManagedObjects.contains($0) == false }
+                    .forEach { context.delete($0) }
+                
+                // save
+                try context.save()
+            }
+        }
+            
+        catch {
+            dump(error)
+            assertionFailure("Could not cache")
+            return
+        }
+    }
+    
     // MARK: - Private Methods
     
     /// Connects to the device, fetches the data, and performs the action, and disconnects.
