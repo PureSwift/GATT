@@ -14,6 +14,10 @@ import GATT
 
 final class PeripheralsViewController: TableViewController {
     
+    // MARK: - IB Outlets
+    
+    @IBOutlet private(set) var activityIndicatorBarButtonItem: UIBarButtonItem!
+    
     // MARK: - Properties
     
     let scanDuration: TimeInterval = 5.0

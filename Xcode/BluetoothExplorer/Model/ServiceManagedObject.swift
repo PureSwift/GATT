@@ -40,6 +40,20 @@ public extension ServiceManagedObject {
     }
 }
 
+// MARK: - CoreData Decodable
+
+extension CentralManager.Service: CoreDataDecodable {
+    
+    public init(managedObject: ServiceManagedObject) {
+        
+        guard let uuid = BluetoothUUID(rawValue: managedObject.uuid)
+            else { fatalError("Invalid value \(#keyPath(ServiceManagedObject.uuid)) \(managedObject.uuid)") }
+        
+        self.uuid = uuid
+        self.isPrimary = managedObject.isPrimary
+    }
+}
+
 // MARK: - Fetch Requests
 
 extension ServiceManagedObject {

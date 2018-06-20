@@ -89,9 +89,11 @@ final class ServicesViewController: TableViewController {
     
     private func configure(cell: UITableViewCell, at indexPath: IndexPath) {
         
-        let service = self[indexPath]
+        let managedObject = self[indexPath]
         
-        cell.textLabel?.text = service.uuid
+        let service = CentralManager.Service(managedObject: managedObject)
+        
+        cell.textLabel?.text = service.uuid.description
     }
     
     // MARK: - UITableViewDataSource
@@ -108,4 +110,20 @@ final class ServicesViewController: TableViewController {
 
 // MARK: - ActivityIndicatorViewController
 
-extension ServicesViewController: ActivityIndicatorViewController { }
+extension ServicesViewController: ActivityIndicatorViewController {
+    
+    func showProgressHUD() {
+        
+        self.view.isUserInteractionEnabled = false
+        self.view.endEditing(true)
+        
+        //progressHUD.show(in: self.navigationController?.view ?? self.view)
+    }
+    
+    func dismissProgressHUD(animated: Bool = true) {
+        
+        self.view.isUserInteractionEnabled = true
+        
+        //progressHUD.dismiss(animated: animated)
+    }
+}
