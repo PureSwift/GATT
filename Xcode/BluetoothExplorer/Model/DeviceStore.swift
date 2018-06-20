@@ -158,7 +158,9 @@ public final class DeviceStore {
     public func discoverServices(for peripheral: Peripheral) throws {
         
         // perform BLE operation
-        let foundServices = try centralManager.discoverServices(for: peripheral)
+        let foundServices = try device(for: peripheral) {
+            try centralManager.discoverServices(for: peripheral)
+        }
         
         // cache
         let context = privateQueueManagedObjectContext

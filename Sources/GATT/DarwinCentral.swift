@@ -110,7 +110,7 @@ import Bluetooth
         
         public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
             
-            try connect(to: peripheral, timeout: timeout)
+            try connect(to: peripheral, timeout: timeout, options: [:])
         }
  
         /// A dictionary to customize the behavior of the connection. For available options, see [Peripheral Connection Options](apple-reference-documentation://ts1667676).
