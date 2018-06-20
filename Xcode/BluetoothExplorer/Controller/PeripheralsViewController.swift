@@ -51,7 +51,9 @@ final class PeripheralsViewController: TableViewController {
         
         // scan
         let scanDuration = self.scanDuration
-        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
+        let isRefreshing = self.refreshControl?.isRefreshing ?? false
+        let showActivity = isRefreshing == false
+        performActivity(showActivity: showActivity, { try DeviceStore.shared.scan(duration: scanDuration) },
                         completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
@@ -138,11 +140,11 @@ extension PeripheralsViewController: ActivityIndicatorViewController {
         self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
     }
     
-    func dismissProgressHUD(animated: Bool = true) {
+    func hideActivity(animated: Bool = true) {
         
-        let duration: TimeInterval = animated ? 1.0 : 0.0
+        let duration: TimeInterval = animated ? 0.5 : 0.0
         
-        UIView.animate(withDuration: 1.0) { [weak self] in
+        UIView.animate(withDuration: duration) { [weak self] in
             
             self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
         }

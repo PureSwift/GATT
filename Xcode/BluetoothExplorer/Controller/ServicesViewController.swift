@@ -57,7 +57,9 @@ final class ServicesViewController: TableViewController {
         
         configureView()
         
-        performActivity({ try DeviceStore.shared.discoverServices(for: peripheral) },
+        let isRefreshing = self.refreshControl?.isRefreshing ?? false
+        let showActivity = isRefreshing == false
+        performActivity(showActivity: showActivity, { try DeviceStore.shared.discoverServices(for: peripheral) },
                         completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
@@ -123,11 +125,11 @@ extension ServicesViewController: ActivityIndicatorViewController {
         self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
     }
     
-    func dismissProgressHUD(animated: Bool = true) {
+    func hideActivity(animated: Bool = true) {
         
-        let duration: TimeInterval = animated ? 1.0 : 0.0
+        let duration: TimeInterval = animated ? 0.5 : 0.0
         
-        UIView.animate(withDuration: 1.0) { [weak self] in
+        UIView.animate(withDuration: duration) { [weak self] in
             
             self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
         }

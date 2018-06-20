@@ -24,11 +24,11 @@ protocol ActivityIndicatorViewController: class {
 
 extension ActivityIndicatorViewController {
     
-    func performActivity <T> (showProgressHUD: Bool = true,
+    func performActivity <T> (showActivity: Bool = true,
                               _ asyncOperation: @escaping () throws -> T,
                               completion: ((Self, T) -> ())? = nil) {
         
-        if showProgressHUD { self.showActivity() }
+        if showActivity { self.showActivity() }
         
         async {
             
@@ -41,7 +41,7 @@ extension ActivityIndicatorViewController {
                     guard let controller = self
                         else { return }
                     
-                    if showProgressHUD { controller.hideActivity(animated: true) }
+                    if showActivity { controller.hideActivity(animated: true) }
                     
                     // success
                     completion?(controller, value)
@@ -55,7 +55,7 @@ extension ActivityIndicatorViewController {
                     guard let controller = self as? (UIViewController & ActivityIndicatorViewController)
                         else { return }
                     
-                    if showProgressHUD { controller.hideActivity(animated: false) }
+                    if showActivity { controller.hideActivity(animated: false) }
                     
                     // show error
                     
