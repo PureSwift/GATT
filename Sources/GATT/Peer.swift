@@ -99,6 +99,11 @@ extension Central: CustomStringConvertible {
 public struct Peripheral: Peer {
     
     public let identifier: PeerIdentifier
+    
+    public init(identifier: PeerIdentifier) {
+        
+        self.identifier = identifier
+    }
 }
 
 extension Peripheral: CustomStringConvertible {

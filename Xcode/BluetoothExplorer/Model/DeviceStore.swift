@@ -138,16 +138,9 @@ public final class DeviceStore {
                     
                     let peripheral = try PeripheralManagedObject.findOrCreate(scanData.peripheral.identifier,
                                                                               in: context)
+                    peripheral.isConnected = false
                     peripheral.central = central
-                    
-                    // create a new entity
-                    
-                    let scanData = ScanDataManagedObject(entity: ScanDataManagedObject.entity(in: context), insertInto: context)
-                    
-                    // set values
-                    scanData.date = scanData.date
-                    scanData.peripheral = peripheral
-                    scanData.advertisementData
+                    peripheral.scanData.update(scanData)
                     
                     // save
                     try context.save()

@@ -35,14 +35,9 @@ public final class PeripheralManagedObject: NSManagedObject {
         super.awakeFromInsert()
         
         guard let context = self.managedObjectContext
-            else { fatalError("Missing NSManagedObjectContext") }
+            else { fatalError("Missing \(NSManagedObjectContext.self)") }
         
-        guard let scanDataEntityName = ScanDataManagedObject.entity(in: context).name
-            else { fatalError("No entity name") }
-        
-        self.scanData = NSEntityDescription.insertNewObject(forEntityName: scanDataEntityName, into: context) as! ScanDataManagedObject
-        
-        self.scanData.date = Date()
+        self.scanData = ScanDataManagedObject(context: context)
     }
 }
 
