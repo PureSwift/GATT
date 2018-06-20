@@ -41,6 +41,8 @@ final class PeripheralsViewController: TableViewController {
     
     @IBAction func reloadData(_ sender: Any? = nil) {
         
+        refreshControl?.endRefreshing()
+        
         // don't scan if already scanning
         guard DeviceStore.shared.centralManager.isScanning == false,
             DeviceStore.shared.centralManager.state == .poweredOn
@@ -51,8 +53,8 @@ final class PeripheralsViewController: TableViewController {
         // configure table view and update UI
         scanStart = Date()
         
-        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
-                        completion: { (viewController, _) in viewController.refreshControl?.endRefreshing() })
+        // scan
+        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) })
     }
     
     // MARK: - Private Methods

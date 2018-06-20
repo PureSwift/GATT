@@ -72,13 +72,13 @@
                         <attributedString key="attributedTitle">
                             <fragment content="Scanning...">
                                 <attributes>
-                                    <font key="NSFont" metaFont="smallSystem"/>
-                                    <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
+                                    <font key="NSFont" size="13" name=".SFNSText"/>
+                                    <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
                                 </attributes>
                             </fragment>
                         </attributedString>
                         <connections>
-                            <action selector="reloadData" destination="uz8-In-14g" eventType="valueChanged" id="1mN-gO-qTx"/>
+                            <action selector="reloadData:" destination="uz8-In-14g" eventType="valueChanged" id="EHC-Pz-b0f"/>
                         </connections>
                     </refreshControl>
                 </tableViewController>
