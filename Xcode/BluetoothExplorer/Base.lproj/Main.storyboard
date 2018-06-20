@@ -30,7 +30,7 @@
         <!--Central-->
         <scene sceneID="egf-Ez-LLJ">
             <objects>
-                <tableViewController title="Central" id="uz8-In-14g" sceneMemberID="viewController">
+                <tableViewController title="Central" id="uz8-In-14g" customClass="PeripheralsViewController" customModule="BluetoothExplorer" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="6z2-AT-PMK">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -77,6 +77,9 @@
                                 </attributes>
                             </fragment>
                         </attributedString>
+                        <connections>
+                            <action selector="reloadData" destination="uz8-In-14g" eventType="valueChanged" id="1mN-gO-qTx"/>
+                        </connections>
                     </refreshControl>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Qd8-em-d9K" userLabel="First Responder" sceneMemberID="firstResponder"/>

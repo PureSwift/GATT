@@ -545,6 +545,11 @@
 						CreatedOnToolsVersion = 9.2;
 						DevelopmentTeam = 4W79SG34MW;
 						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
 					};
 					6EE84D831CAF419D00A40C4D = {
 						CreatedOnToolsVersion = 7.3;
