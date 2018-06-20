@@ -99,7 +99,16 @@ final class ServicesViewController: TableViewController {
         
         let service = CentralManager.Service(managedObject: managedObject)
         
-        cell.textLabel?.text = service.uuid.description
+        if let name = service.uuid.name {
+            
+            cell.textLabel?.text = name
+            cell.detailTextLabel?.text = service.uuid.rawValue
+            
+        } else {
+            
+            cell.textLabel?.text = service.uuid.rawValue
+            cell.detailTextLabel?.text = ""
+        }
     }
     
     // MARK: - UITableViewDataSource
