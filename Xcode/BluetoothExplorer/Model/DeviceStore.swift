@@ -181,7 +181,7 @@ public final class DeviceStore {
                 }
                 
                 // remove old services
-                peripheralManagedObject.services
+                peripheral.services
                     .filter { serviceManagedObjects.contains($0) == false }
                     .forEach { context.delete($0) }
                 
@@ -219,16 +219,13 @@ public final class DeviceStore {
                 let newManagedObjects: [CharacteristicManagedObject] = try foundCharacteristics.map {
                     let managedObject = try CharacteristicManagedObject.findOrCreate($0.uuid,
                                                                                      service: service,
-                                                                                     peripheral: peripheral,
                                                                                      in: context)
                     managedObject.properties = Int16($0.properties.rawValue)
-                    assert(managedObject.service == serviceManagedObject)
-                    assert(managedObject.service.peripheral == peripheralManagedObject)
                     return managedObject
                 }
                 
                 // remove old characteristics
-                serviceManagedObject.characteristics
+                service.characteristics
                     .filter { newManagedObjects.contains($0) == false }
                     .forEach { context.delete($0) }
                 

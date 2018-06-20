@@ -121,8 +121,8 @@ final class PeripheralsViewController: TableViewController {
             
         case "showPeripheralDetail":
             
-            let viewController = segue.destination as! ServicesViewController
-            viewController.peripheral = Peripheral(identifier: PeerIdentifier(rawValue: self[tableView.indexPathForSelectedRow!].identifier)!) 
+            let viewController = segue.destination as! PeripheralServicesViewController
+            viewController.peripheral = self[tableView.indexPathForSelectedRow!]
             
         default: assertionFailure("Unknown segue \(segue)")
         }

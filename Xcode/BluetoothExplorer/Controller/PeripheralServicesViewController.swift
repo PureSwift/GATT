@@ -1,5 +1,5 @@
 //
-//  CharacteristicsViewController.swift
+//  PeripheralServicesViewController.swift
 //  BluetoothExplorer
 //
 //  Created by Alsey Coleman Miller on 6/20/18.
@@ -12,7 +12,7 @@ import CoreData
 import Bluetooth
 import GATT
 
-final class CharacteristicsViewController: TableViewController {
+final class PeripheralServicesViewController: TableViewController {
     
     // MARK: - IB Outlets
     
@@ -20,7 +20,7 @@ final class CharacteristicsViewController: TableViewController {
     
     // MARK: - Properties
     
-    public var service: ServiceManagedObject!
+    public var peripheral: PeripheralManagedObject!
     
     // MARK: - Loading
     
@@ -43,17 +43,15 @@ final class CharacteristicsViewController: TableViewController {
         
         guard isViewLoaded else { return }
         
-        guard let managedObject = self.service
-            else { fatalError("View controller not configured") }
+        guard let managedObject = self.peripheral
+            else { assertionFailure(); return }
         
-        let service = CentralManager.Service(managedObject: managedObject)
-        
-        self.title = service.uuid.name ?? service.uuid.rawValue
+        self.title = managedObject.scanData.advertisementData.localName ?? managedObject.identifier
     }
     
     func reloadData() {
         
-        guard let managedObject = self.service
+        guard let peripheral = self.peripheral
             else { fatalError("View controller not configured") }
         
         configureView()
@@ -61,26 +59,23 @@ final class CharacteristicsViewController: TableViewController {
         let isRefreshing = self.refreshControl?.isRefreshing ?? false
         let showActivity = isRefreshing == false
         
-        performActivity(showActivity: showActivity, {
-            try DeviceStore.shared.discoverCharacteristics(for: managedObject)
-        }, completion: { (viewController, _) in
-            viewController.endRefreshing()
-        })
+        performActivity(showActivity: showActivity, { try DeviceStore.shared.discoverServices(for: peripheral) },
+                        completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
-        guard let managedObject = self.service
+        guard let peripheral = self.peripheral
             else { fatalError("View controller not configured") }
         
         // configure fetched results controller
         let predicate = NSPredicate(format: "%K == %@",
-                                    #keyPath(CharacteristicManagedObject.service),
-                                    managedObject)
+                                    #keyPath(ServiceManagedObject.peripheral),
+                                    peripheral)
         
-        let sort = [NSSortDescriptor(key: #keyPath(CharacteristicManagedObject.uuid), ascending: true)]
+        let sort = [NSSortDescriptor(key: #keyPath(ServiceManagedObject.uuid), ascending: true)]
         let context = DeviceStore.shared.managedObjectContext
-        let fetchedResultsController = NSFetchedResultsController(CharacteristicManagedObject.self,
+        let fetchedResultsController = NSFetchedResultsController(ServiceManagedObject.self,
                                                                   delegate: self,
                                                                   predicate: predicate,
                                                                   sortDescriptors: sort,
@@ -126,11 +121,28 @@ final class CharacteristicsViewController: TableViewController {
         
         return cell
     }
+    
+    // MARK: - Segue
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        let identifier = segue.identifier ?? ""
+        
+        switch identifier {
+            
+        case "showPeripheralCharacteristics":
+            
+            let viewController = segue.destination as! PeripheralCharacteristicsViewController
+            viewController.service = self[tableView.indexPathForSelectedRow!]
+            
+        default: assertionFailure("Unknown segue \(segue)")
+        }
+    }
 }
 
 // MARK: - ActivityIndicatorViewController
 
-extension CharacteristicsViewController: ActivityIndicatorViewController {
+extension PeripheralServicesViewController: ActivityIndicatorViewController {
     
     func showActivity() {
         
