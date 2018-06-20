@@ -104,6 +104,23 @@ final class PeripheralsViewController: TableViewController {
         
         return cell
     }
+    
+    // MARK: - Segue
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        let identifier = segue.identifier ?? ""
+        
+        switch identifier {
+            
+        case "showPeripheralDetail":
+            
+            let viewController = segue.destination as! ServicesViewController
+            viewController.peripheral = Peripheral(identifier: PeerIdentifier(rawValue: self[tableView.indexPathForSelectedRow!].identifier)!) 
+            
+        default: assertionFailure("Unknown segue \(segue)")
+        }
+    }
 }
 
 // MARK: - ActivityIndicatorViewController

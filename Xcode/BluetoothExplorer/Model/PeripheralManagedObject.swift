@@ -45,6 +45,18 @@ public final class PeripheralManagedObject: NSManagedObject {
 
 extension PeripheralManagedObject {
     
+    static func find(_ identifier: UUID,
+                     in context: NSManagedObjectContext) throws -> PeripheralManagedObject? {
+        
+        let identifier = identifier.uuidString as NSString
+        
+        let identifierProperty = #keyPath(PeripheralManagedObject.identifier)
+        
+        let entityName = self.entity(in: context).name!
+        
+        return try context.find(identifier: identifier, property: identifierProperty, entityName: entityName)
+    }
+    
     static func findOrCreate(_ identifier: UUID,
                              in context: NSManagedObjectContext) throws -> PeripheralManagedObject {
         

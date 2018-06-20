@@ -155,6 +155,45 @@ public final class DeviceStore {
         })
     }
     
+    public func discoverServices(for peripheral: Peripheral) throws {
+        
+        // perform BLE operation
+        let foundServices = try centralManager.discoverServices(for: peripheral)
+        
+        // cache
+        let context = privateQueueManagedObjectContext
+        
+        do {
+            
+            try context.performErrorBlockAndWait {
+                
+                guard let peripheralManagedObject = try PeripheralManagedObject.find(peripheral.identifier, in: context)
+                    else { assertionFailure("Peripheral \(peripheral) not cached"); return }
+                
+                // insert new services
+                let serviceManagedObjects: [ServiceManagedObject] = try foundServices.map {
+                    let managedObject = try ServiceManagedObject.findOrCreate($0.uuid, peripheral: peripheral, in: context)
+                    managedObject.isPrimary = $0.isPrimary
+                    return managedObject
+                }
+                
+                // remove old services
+                peripheralManagedObject.services
+                    .filter { serviceManagedObjects.contains($0) == false }
+                    .forEach { context.delete($0) }
+                
+                // save
+                try context.save()
+            }
+        }
+            
+        catch {
+            dump(error)
+            assertionFailure("Could not cache")
+            return
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func initializeManagedObjects() {
