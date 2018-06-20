@@ -18,9 +18,38 @@ final class PeripheralsViewController: TableViewController {
     
     let scanDuration: TimeInterval = 5.0
     
-    private var scanStart = Date()
+    private var scanStart = Date() {
+        
+        didSet { performFetch() }
+    }
+    
+    // MARK: - Loading
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        reloadData()
+    }
+    
+    // MARK: - Actions
+    
+    @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
+        
+        reloadData()
+    }
     
     // MARK: - Methods
+    
+    func reloadData() {
+        
+        // configure table view and update UI
+        scanStart = Date()
+        
+        // scan
+        let scanDuration = self.scanDuration
+        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
+                        completion: { (viewController, _) in viewController.endRefreshing() })
+    }
     
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
@@ -39,20 +68,6 @@ final class PeripheralsViewController: TableViewController {
         fetchedResultsController.fetchRequest.fetchBatchSize = 30
         
         return fetchedResultsController
-    }
-    
-    override func reloadData() {
-        
-        // configure table view and update UI
-        scanStart = Date()
-        
-        // create FRC
-        super.reloadData()
-        
-        // scan
-        let scanDuration = self.scanDuration
-        performActivity({ try DeviceStore.shared.scan(duration: scanDuration) },
-                        completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
     private subscript (indexPath: IndexPath) -> PeripheralManagedObject {
@@ -90,5 +105,7 @@ final class PeripheralsViewController: TableViewController {
         return cell
     }
 }
+
+// MARK: - ActivityIndicatorViewController
 
 extension PeripheralsViewController: ActivityIndicatorViewController { }

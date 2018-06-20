@@ -37,7 +37,7 @@
 		6E8C68EB20DA02DA00232169 /* AdaptiveNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C68E820DA02DA00232169 /* AdaptiveNavigation.swift */; };
 		6E8C68ED20DA030A00232169 /* ActivityIndicatorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C68EC20DA030900232169 /* ActivityIndicatorViewController.swift */; };
 		6E8C68F020DA04D500232169 /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C68EF20DA04D400232169 /* Async.swift */; };
-		6E8C68F220DA340C00232169 /* PeripheralDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C68F120DA340C00232169 /* PeripheralDetailViewController.swift */; };
+		6E8C68F220DA340C00232169 /* ServicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C68F120DA340C00232169 /* ServicesViewController.swift */; };
 		6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 		6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
 		6E98B6962059B51000B6F016 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E98B6952059B51000B6F016 /* AppDelegate.swift */; };
@@ -177,7 +177,7 @@
 		6E8C68E820DA02DA00232169 /* AdaptiveNavigation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AdaptiveNavigation.swift; sourceTree = "<group>"; };
 		6E8C68EC20DA030900232169 /* ActivityIndicatorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActivityIndicatorViewController.swift; sourceTree = "<group>"; };
 		6E8C68EF20DA04D400232169 /* Async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
-		6E8C68F120DA340C00232169 /* PeripheralDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralDetailViewController.swift; sourceTree = "<group>"; };
+		6E8C68F120DA340C00232169 /* ServicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesViewController.swift; sourceTree = "<group>"; };
 		6E98B6932059B51000B6F016 /* BluetoothExplorer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BluetoothExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E98B6952059B51000B6F016 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6E98B6972059B51000B6F016 /* PeripheralsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralsViewController.swift; sourceTree = "<group>"; };
@@ -399,7 +399,7 @@
 				6E8C68DF20DA02AA00232169 /* Extensions */,
 				6E13E8E220D9D8290007111B /* TableViewController.swift */,
 				6E98B6972059B51000B6F016 /* PeripheralsViewController.swift */,
-				6E8C68F120DA340C00232169 /* PeripheralDetailViewController.swift */,
+				6E8C68F120DA340C00232169 /* ServicesViewController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -698,7 +698,7 @@
 				6E13E8CC20D9C7270007111B /* AdvertisementDataManagedObject.swift in Sources */,
 				6E8C68E920DA02DA00232169 /* PresentPopover.swift in Sources */,
 				6EFB3E9520D3EFFB00364CA0 /* PeripheralManagedObject.swift in Sources */,
-				6E8C68F220DA340C00232169 /* PeripheralDetailViewController.swift in Sources */,
+				6E8C68F220DA340C00232169 /* ServicesViewController.swift in Sources */,
 				6E98B6982059B51000B6F016 /* PeripheralsViewController.swift in Sources */,
 				6EFD557E20D83B8F003B75A1 /* ServiceManagedObject.swift in Sources */,
 				6EFB3E2520D3E5A600364CA0 /* DeviceStore.swift in Sources */,

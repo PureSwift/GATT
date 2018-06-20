@@ -18,11 +18,34 @@ final class ServicesViewController: TableViewController {
     
     public var peripheral: PeripheralManagedObject!
     
+    // MARK: - Loading
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        reloadData()
+    }
+    
+    // MARK: - Actions
+    
+    @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
+        
+        reloadData()
+    }
+    
     // MARK: - Methods
     
-    override func configureView() {
+    func configureView() {
+        
+        guard isViewLoaded else { return }
         
         self.title = peripheral.scanData.advertisementData.localName ?? peripheral.identifier
+    }
+    
+    func reloadData() {
+        
+        configureView()
+        
     }
     
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
@@ -49,9 +72,6 @@ final class ServicesViewController: TableViewController {
     
     override func reloadData() {
         
-        // configure table view and update UI
-        scanStart = Date()
-        
         // create FRC
         super.reloadData()
         
@@ -61,9 +81,9 @@ final class ServicesViewController: TableViewController {
                         completion: { (viewController, _) in viewController.endRefreshing() })
     }
     
-    private subscript (indexPath: IndexPath) -> PeripheralManagedObject {
+    private subscript (indexPath: IndexPath) -> ServiceManagedObject {
         
-        guard let managedObject = self.fetchedResultsController?.object(at: indexPath) as? PeripheralManagedObject
+        guard let managedObject = self.fetchedResultsController?.object(at: indexPath) as? ServiceManagedObject
             else { fatalError("Invalid type") }
         
         return managedObject
@@ -71,18 +91,9 @@ final class ServicesViewController: TableViewController {
     
     private func configure(cell: UITableViewCell, at indexPath: IndexPath) {
         
-        let peripheral = self[indexPath]
+        let service = self[indexPath]
         
-        if let localName = peripheral.scanData.advertisementData.localName {
-            
-            cell.textLabel?.text = localName
-            cell.detailTextLabel?.text = peripheral.identifier
-            
-        } else {
-            
-            cell.textLabel?.text = peripheral.identifier
-            cell.detailTextLabel?.text = ""
-        }
+        cell.textLabel?.text = service.uuid
     }
     
     // MARK: - UITableViewDataSource
@@ -96,3 +107,7 @@ final class ServicesViewController: TableViewController {
         return cell
     }
 }
+
+// MARK: - ActivityIndicatorViewController
+
+extension ServicesViewController: ActivityIndicatorViewController { }

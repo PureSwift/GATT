@@ -27,14 +27,13 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
         self.tableView.rowHeight = UITableViewAutomaticDimension
         
         // update table view
-        self.configureView()
-        self.reloadData()
+        self.performFetch()
     }
     
     // MARK: - Methods
     
-    /// Reset `NSFetchedResultsController`.
-    func reloadData() {
+    /// Initialize `NSFetchedResultsController`.
+    final func performFetch() {
         
         tableView.isUserInteractionEnabled = false
         defer { tableView.isUserInteractionEnabled = true }
@@ -43,7 +42,6 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
         
         // remove old FRC
         fetchedResultsController = nil
-        configureView()
         
         // remove rows of old data
         if oldDataCount > 0 {
@@ -84,24 +82,11 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
         tableView.endUpdates()
     }
     
-    /// Update UI.
-    func configureView() {
-        
-        
-    }
-    
     /// Create a new `NSFetchedResultsController` instance.
     func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
         fatalError("\(newFetchedResultController) - Subclasses must override this implementation")
     }
-    
-    #if os(iOS)
-    @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
-        
-        reloadData()
-    }
-    #endif
     
     final func endRefreshing() {
         
