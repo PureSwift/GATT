@@ -90,9 +90,9 @@ import Bluetooth
                 
                 self.internalState.scan.peripherals = [:]
                 self.internalState.scan.foundDevice = foundDevice
-                self.log?("Scanning...")
             }
             
+            self.log?("Scanning...")
             self.internalManager.scanForPeripherals(withServices: nil, options: options)
             
             // sleep until scan finishes
@@ -103,8 +103,9 @@ import Bluetooth
             accessQueue.sync { [unowned self] in
                 
                 self.internalState.scan.foundDevice = nil
-                self.log?("Did discover \(self.internalState.scan.peripherals.count) peripherals")
             }
+            
+            self.log?("Did discover \(self.internalState.scan.peripherals.count) peripherals")
         }
         
         public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {

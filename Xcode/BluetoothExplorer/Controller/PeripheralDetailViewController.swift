@@ -1,8 +1,8 @@
 //
-//  ViewController.swift
+//  PeripheralDetailViewController.swift
 //  BluetoothExplorer
 //
-//  Created by Alsey Coleman Miller on 6/19/18.
+//  Created by Alsey Coleman Miller on 6/20/18.
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
@@ -12,26 +12,32 @@ import CoreData
 import Bluetooth
 import GATT
 
-final class PeripheralsViewController: TableViewController {
+final class ServicesViewController: TableViewController {
     
     // MARK: - Properties
     
-    let scanDuration: TimeInterval = 5.0
-    
-    private var scanStart = Date()
+    public var peripheral: PeripheralManagedObject!
     
     // MARK: - Methods
     
+    override func configureView() {
+        
+        self.title = peripheral.scanData.advertisementData.localName ?? peripheral.identifier
+    }
+    
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
-        // configure fetched results controller
-        let predicate = NSPredicate(format: "%K > %@",
-                                    #keyPath(PeripheralManagedObject.scanData.date),
-                                    self.scanStart as NSDate)
+        guard let peripheral = self.peripheral
+            else { fatalError("View controller not configured") }
         
-        let sort = [NSSortDescriptor(key: #keyPath(PeripheralManagedObject.identifier), ascending: false)]
+        // configure fetched results controller
+        let predicate = NSPredicate(format: "%K == %@",
+                                    #keyPath(ServiceManagedObject.peripheral),
+                                    peripheral)
+        
+        let sort = [NSSortDescriptor(key: #keyPath(ServiceManagedObject.uuid), ascending: false)]
         let context = DeviceStore.shared.managedObjectContext
-        let fetchedResultsController = NSFetchedResultsController(PeripheralManagedObject.self,
+        let fetchedResultsController = NSFetchedResultsController(ServiceManagedObject.self,
                                                                   delegate: self,
                                                                   predicate: predicate,
                                                                   sortDescriptors: sort,
@@ -83,12 +89,10 @@ final class PeripheralsViewController: TableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "PeripheralCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ServiceCell", for: indexPath)
         
         configure(cell: cell, at: indexPath)
         
         return cell
     }
 }
-
-extension PeripheralsViewController: ActivityIndicatorViewController { }
