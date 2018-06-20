@@ -129,4 +129,22 @@ final class PeripheralsViewController: TableViewController {
 
 // MARK: - ActivityIndicatorViewController
 
-extension PeripheralsViewController: ActivityIndicatorViewController { }
+extension PeripheralsViewController: ActivityIndicatorViewController {
+    
+    func showActivity() {
+        
+        self.view.endEditing(true)
+        
+        self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
+    }
+    
+    func dismissProgressHUD(animated: Bool = true) {
+        
+        let duration: TimeInterval = animated ? 1.0 : 0.0
+        
+        UIView.animate(withDuration: 1.0) { [weak self] in
+            
+            self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
+        }
+    }
+}

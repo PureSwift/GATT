@@ -8,7 +8,6 @@
 
 import Foundation
 import UIKit
-//import JGProgressHUD
 
 protocol ActivityIndicatorViewController: class {
     
@@ -18,29 +17,9 @@ protocol ActivityIndicatorViewController: class {
     
     var navigationController: UINavigationController? { get }
     
-    //var progressHUD: JGProgressHUD { get }
+    func showActivity()
     
-    func showProgressHUD()
-    
-    func dismissProgressHUD(animated: Bool)
-}
-
-extension ActivityIndicatorViewController {
-    
-    func showProgressHUD() {
-        
-        self.view.isUserInteractionEnabled = false
-        self.view.endEditing(true)
-        
-        //progressHUD.show(in: self.navigationController?.view ?? self.view)
-    }
-    
-    func dismissProgressHUD(animated: Bool = true) {
-        
-        self.view.isUserInteractionEnabled = true
-        
-        //progressHUD.dismiss(animated: animated)
-    }
+    func hideActivity(animated: Bool)
 }
 
 extension ActivityIndicatorViewController {
@@ -49,7 +28,7 @@ extension ActivityIndicatorViewController {
                               _ asyncOperation: @escaping () throws -> T,
                               completion: ((Self, T) -> ())? = nil) {
         
-        if showProgressHUD { self.showProgressHUD() }
+        if showProgressHUD { self.showActivity() }
         
         async {
             
@@ -62,7 +41,7 @@ extension ActivityIndicatorViewController {
                     guard let controller = self
                         else { return }
                     
-                    if showProgressHUD { controller.dismissProgressHUD() }
+                    if showProgressHUD { controller.hideActivity(animated: true) }
                     
                     // success
                     completion?(controller, value)
@@ -76,7 +55,7 @@ extension ActivityIndicatorViewController {
                     guard let controller = self as? (UIViewController & ActivityIndicatorViewController)
                         else { return }
                     
-                    if showProgressHUD { controller.dismissProgressHUD(animated: false) }
+                    if showProgressHUD { controller.hideActivity(animated: false) }
                     
                     // show error
                     

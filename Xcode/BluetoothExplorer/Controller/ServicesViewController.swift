@@ -14,6 +14,10 @@ import GATT
 
 final class ServicesViewController: TableViewController {
     
+    // MARK: - IB Outlets
+    
+    @IBOutlet private(set) var activityIndicatorBarButtonItem: UIBarButtonItem!
+    
     // MARK: - Properties
     
     public var peripheral: Peripheral!
@@ -112,18 +116,20 @@ final class ServicesViewController: TableViewController {
 
 extension ServicesViewController: ActivityIndicatorViewController {
     
-    func showProgressHUD() {
+    func showActivity() {
         
-        self.view.isUserInteractionEnabled = false
         self.view.endEditing(true)
         
-        //progressHUD.show(in: self.navigationController?.view ?? self.view)
+        self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
     }
     
     func dismissProgressHUD(animated: Bool = true) {
         
-        self.view.isUserInteractionEnabled = true
+        let duration: TimeInterval = animated ? 1.0 : 0.0
         
-        //progressHUD.dismiss(animated: animated)
+        UIView.animate(withDuration: 1.0) { [weak self] in
+            
+            self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
+        }
     }
 }
