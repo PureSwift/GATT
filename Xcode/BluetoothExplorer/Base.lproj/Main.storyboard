@@ -236,7 +236,7 @@
             </objects>
             <point key="canvasLocation" x="751" y="-253"/>
         </scene>
-        <!--Peripheral Name-->
+        <!--Service Name-->
         <scene sceneID="Ack-Jb-M34">
             <objects>
                 <tableViewController id="rZd-ru-Fz3" customClass="PeripheralCharacteristicsViewController" customModule="BluetoothExplorer" customModuleProvider="target" sceneMemberID="viewController">
@@ -268,6 +268,9 @@
                                         </label>
                                     </subviews>
                                 </tableViewCellContentView>
+                                <connections>
+                                    <segue destination="S2f-wv-aFX" kind="show" identifier="showPeripheralCharacteristicDetail" id="5Lr-Tm-Faa"/>
+                                </connections>
                             </tableViewCell>
                         </prototypes>
                         <connections>
@@ -275,7 +278,7 @@
                             <outlet property="delegate" destination="rZd-ru-Fz3" id="jNC-pg-px3"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Peripheral Name" id="NMn-d0-N3T">
+                    <navigationItem key="navigationItem" title="Service Name" id="NMn-d0-N3T">
                         <barButtonItem key="rightBarButtonItem" style="plain" id="0mz-RX-0Ld">
                             <view key="customView" contentMode="scaleToFill" id="3Qg-WJ-9II">
                                 <rect key="frame" x="334" y="12" width="25" height="20"/>
@@ -305,6 +308,58 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wcv-u1-GiF" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="3546" y="-253"/>
+        </scene>
+        <!--Characteristic Name-->
+        <scene sceneID="otT-q1-wk5">
+            <objects>
+                <tableViewController id="S2f-wv-aFX" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="sy4-tr-f2C">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <prototypes>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="76" id="nOi-Sf-QN3">
+                                <rect key="frame" x="0.0" y="28" width="375" height="76"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="nOi-Sf-QN3" id="2ku-T9-fbB">
+                                    <rect key="frame" x="0.0" y="0.0" width="375" height="75.5"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="3qi-bw-tHe">
+                                            <rect key="frame" x="139" y="22" width="97" height="30"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <nil key="textColor"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                            <textInputTraits key="textInputTraits"/>
+                                        </textField>
+                                    </subviews>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="S2f-wv-aFX" id="Bh6-b7-IN2"/>
+                            <outlet property="delegate" destination="S2f-wv-aFX" id="sF5-dk-QI8"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" title="Characteristic Name" id="CJN-B3-SRc">
+                        <barButtonItem key="rightBarButtonItem" style="plain" id="c2Z-2G-Bqu">
+                            <view key="customView" contentMode="scaleToFill" id="E4g-CM-yDm">
+                                <rect key="frame" x="334" y="12" width="25" height="20"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" animating="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="qJd-iK-qmY">
+                                        <rect key="frame" x="0.0" y="0.0" width="20" height="20"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </activityIndicatorView>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                        </barButtonItem>
+                    </navigationItem>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Mp6-3Z-scU" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="4416.8000000000002" y="-253.2233883058471"/>
         </scene>
     </scenes>
 </document>

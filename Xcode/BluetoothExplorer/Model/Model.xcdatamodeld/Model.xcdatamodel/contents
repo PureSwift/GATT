@@ -35,7 +35,9 @@
         <attribute name="value" optional="YES" attributeType="Binary" syncable="YES"/>
         <relationship name="service" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Service" inverseName="characteristics" inverseEntity="Service" syncable="YES"/>
     </entity>
-    <entity name="GATTServer" representedClassName=".GATTServerManagedObject" syncable="YES"/>
+    <entity name="GATTServer" representedClassName=".GATTServerManagedObject" syncable="YES">
+        <relationship name="services" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ServerService" inverseName="server" inverseEntity="ServerService" syncable="YES"/>
+    </entity>
     <entity name="Peripheral" representedClassName=".PeripheralManagedObject" syncable="YES">
         <attribute name="identifier" attributeType="String" minValueString="1" syncable="YES"/>
         <attribute name="isConnected" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
@@ -49,6 +51,17 @@
         <relationship name="advertisementData" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="AdvertisementData" inverseName="scanData" inverseEntity="AdvertisementData" syncable="YES"/>
         <relationship name="peripheral" maxCount="1" deletionRule="Nullify" destinationEntity="Peripheral" inverseName="scanData" inverseEntity="Peripheral" syncable="YES"/>
     </entity>
+    <entity name="ServerCharacteristic" representedClassName="ServerCharacteristic" syncable="YES">
+        <attribute name="properties" attributeType="Integer 16" maxValueString="256" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="uuid" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="value" attributeType="Binary" syncable="YES"/>
+        <relationship name="service" maxCount="1" deletionRule="Nullify" destinationEntity="ServerService" inverseName="characteristics" inverseEntity="ServerService" syncable="YES"/>
+    </entity>
+    <entity name="ServerService" representedClassName="ServerService" syncable="YES">
+        <attribute name="uuid" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="characteristics" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ServerCharacteristic" inverseName="service" inverseEntity="ServerCharacteristic" syncable="YES"/>
+        <relationship name="server" maxCount="1" deletionRule="Nullify" destinationEntity="GATTServer" inverseName="services" inverseEntity="GATTServer" syncable="YES"/>
+    </entity>
     <entity name="Service" representedClassName=".ServiceManagedObject" syncable="YES">
         <attribute name="isPrimary" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="uuid" attributeType="String" minValueString="4" syncable="YES"/>
@@ -61,9 +74,11 @@
         <element name="AdvertismentServiceData" positionX="-9" positionY="90" width="128" height="90"/>
         <element name="Central" positionX="-54" positionY="18" width="128" height="120"/>
         <element name="Characteristic" positionX="-18" positionY="108" width="128" height="105"/>
-        <element name="GATTServer" positionX="-36" positionY="90" width="128" height="45"/>
+        <element name="GATTServer" positionX="-36" positionY="90" width="128" height="60"/>
         <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="120"/>
         <element name="ScanData" positionX="-54" positionY="-9" width="128" height="105"/>
         <element name="Service" positionX="-27" positionY="99" width="128" height="105"/>
+        <element name="ServerService" positionX="-36" positionY="90" width="128" height="90"/>
+        <element name="ServerCharacteristic" positionX="-27" positionY="99" width="128" height="105"/>
     </elements>
 </model>
