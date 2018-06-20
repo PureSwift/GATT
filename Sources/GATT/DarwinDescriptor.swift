@@ -64,14 +64,14 @@ extension DarwinDescriptor {
         
         case .characteristicExtendedProperties:
             
-            guard let descriptor = GATTCharacteristicExtendedProperties(byteValue: data)
+            guard let descriptor = GATTCharacteristicExtendedProperties(data: data)
                 else { return nil }
             
             self = .extendedProperties(NSNumber(value: descriptor.properties.rawValue))
             
         case .characteristicUserDescription:
             
-            guard let descriptor = GATTUserDescription(byteValue: data)
+            guard let descriptor = GATTUserDescription(data: data)
                 else { return nil }
             
             self = .userDescription(descriptor.userDescription as NSString)
