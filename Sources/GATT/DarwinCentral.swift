@@ -119,7 +119,7 @@ import Bluetooth
                             options: [String: Any]) throws {
             
             guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
-                else { throw CentralError.unknownPeripheral }
+                else { throw CentralError.unknownPeripheral(peripheral) }
             
             // store semaphore
             let semaphore = Semaphore(timeout: timeout, operation: .connect(peripheral))
@@ -322,10 +322,10 @@ import Bluetooth
         private func connectedPeripheral(_ peripheral: Peripheral) throws -> CBPeripheral {
             
             guard let corePeripheral = self.peripheral(peripheral)
-                else { throw CentralError.unknownPeripheral }
+                else { throw CentralError.unknownPeripheral(peripheral) }
             
             guard corePeripheral.state == .connected
-                else { throw CentralError.disconnected }
+                else { throw CentralError.disconnected(peripheral) }
             
             return corePeripheral
         }

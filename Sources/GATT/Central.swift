@@ -71,20 +71,6 @@ public extension NativeCentral {
     }
 }
 
-/// Errors for GATT Central Manager
-public enum CentralError: Error {
-    
-    case timeout
-    
-    case disconnected
-    
-    /// Peripheral from previous scan.
-    case unknownPeripheral
-    
-    /// The specified attribute was not found.
-    case invalidAttribute(BluetoothUUID)
-}
-
 public extension CentralManager {
     
     public struct Service {
@@ -103,5 +89,84 @@ public extension CentralManager {
         public let properties: BitMaskOptionSet<Property>
     }
 }
+
+/// Errors for GATT Central Manager
+public enum CentralError: Error {
+    
+    /// Operation timeout.
+    case timeout
+    
+    /// Peripheral is disconnected.
+    case disconnected(Peripheral)
+    
+    /// Peripheral from previous scan / unknown.
+    case unknownPeripheral(Peripheral)
+    
+    /// The specified attribute was not found.
+    case invalidAttribute(BluetoothUUID)
+}
+
+// MARK: - CustomNSError
+
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+
+import Foundation
+
+extension CentralError: CustomNSError {
+    
+    public enum UserInfoKey: String {
+        
+        /// Bluetooth UUID value (for characteristic or service).
+        case uuid = "org.pureswift.GATT.CentralError.BluetoothUUID"
+        
+        /// Device Identifier
+        case peripheral = "org.pureswift.GATT.CentralError.Peripheral"
+    }
+    
+    public static var errorDomain: String {
+        return "org.pureswift.GATT.CentralError"
+    }
+    
+    /// The user-info dictionary.
+    public var errorUserInfo: [String : Any] {
+        
+        var userInfo = [String : Any]()
+        userInfo.reserveCapacity(1)
+        
+        switch self {
+            
+        case .timeout:
+            
+            let description = String(format: NSLocalizedString("The operation timed out.", comment: "org.pureswift.GATT.CentralError.timeout"))
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            
+        case let .disconnected(peripheral):
+            
+            let description = String(format: NSLocalizedString("The operation cannot be completed becuase the peripheral is disconnected.", comment: "org.pureswift.GATT.CentralError.disconnected"))
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
+            
+        case let .unknownPeripheral(peripheral):
+            
+            let description = String(format: NSLocalizedString("Unknown peripheral %@.", comment: "org.pureswift.GATT.CentralError.unknownPeripheral"), peripheral.identifier.uuidString)
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
+            
+        case let .invalidAttribute(uuid):
+            
+            let description = String(format: NSLocalizedString("Invalid attribute %@.", comment: "org.pureswift.GATT.CentralError.invalidAttribute"), uuid.description)
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.uuid.rawValue] = uuid
+        }
+        
+        return userInfo
+    }
+}
+
+#endif
 
 #endif

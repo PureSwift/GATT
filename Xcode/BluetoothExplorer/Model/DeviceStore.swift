@@ -197,16 +197,12 @@ public final class DeviceStore {
     // MARK: - Private Methods
     
     /// Connects to the device, fetches the data, and performs the action, and disconnects.
-    private func device <T> (for peripheral: Peripheral,
-                             characteristics: [GATTCharacteristic.Type],
-                             _ action: () throws -> (T)) throws -> T {
+    private func device <T> (for peripheral: Peripheral, _ action: () throws -> (T)) throws -> T {
         
         // connect first
         try centralManager.connect(to: peripheral)
         
         defer { centralManager.disconnect(peripheral: peripheral) }
-        
-        try centralManager.validate(characteristics: characteristics, for: peripheral)
         
         // perform action
         return try action()
@@ -240,42 +236,6 @@ public extension DeviceStore {
             else { fatalError("Could not load CoreData model file") }
         
         return model
-    }
-}
-
-public extension CentralManager {
-    
-    /// Verify a peripheral declares the GATT profile.
-    func validate(characteristics: [(GATTCharacteristic.Type], for peripheral: Peripheral) throws {
-        
-        // group characteristics by service
-        var characteristicsByService = [BluetoothUUID: [BluetoothUUID]]()
-        characteristics.forEach {
-            characteristicsByService[$0.service.uuid] = (characteristicsByService[$0.service.uuid] ?? []) + [$0.uuid]
-        }
-        
-        // validate required characteristics
-        let foundServices = try self
-            .discoverServices(for: peripheral)
-            .map { $0.uuid }
-        
-        for (service, characteristics) in characteristicsByService {
-            
-            // validate service exists
-            guard foundServices.contains(service)
-                else { throw ClimateGATTError.serviceNotFound(service) }
-            
-            // validate characteristic exists
-            let foundCharacteristics = try self
-                .discoverCharacteristics(for: service, peripheral: peripheral)
-                .map { $0.uuid }
-            
-            for characteristic in characteristics {
-                
-                guard foundCharacteristics.contains(characteristic)
-                    else { throw ClimateGATTError.characteristicNotFound(characteristic) }
-            }
-        }
     }
 }
 
