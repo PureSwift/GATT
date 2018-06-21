@@ -437,6 +437,9 @@
                         </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                    <connections>
+                        <outlet property="activityIndicatorBarButtonItem" destination="c2Z-2G-Bqu" id="iE0-sa-xGz"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Mp6-3Z-scU" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>

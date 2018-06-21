@@ -25,7 +25,10 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         didSet { configureView() }
     }
     
-    var value = Data()
+    var value: Data? {
+        
+        didSet { configureHexadecimalTextField() }
+    }
     
     private var dataSource = [Section]()
     
@@ -36,8 +39,13 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        cellCache.hexadecimalCell.textField.delegate = self
         configureView()
-        readValue()
+        
+        if self.characteristic.attributesView.properties.contains(.read) {
+            
+            readValue()
+        }
     }
     
     // MARK: - Methods
@@ -61,7 +69,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         
         // value cell
         var valueSection = Section(title: "Value", items: [cellCache.hexadecimalCell])
-        configureHexadecimalTextField()
+        self.loadValue()
         
         // editor cell
         if supportedCharacteristicViewControllers.contains(characteristic.uuid) {
@@ -114,9 +122,14 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         tableView.reloadData()
     }
     
+    private func loadValue() {
+        
+        self.value = self.characteristic.value
+    }
+    
     private func configureHexadecimalTextField() {
         
-        cellCache.hexadecimalCell.textField.text = characteristic.value?.toHexadecimal() ?? ""
+        cellCache.hexadecimalCell.textField.text = self.value?.toHexadecimal() ?? ""
     }
     
     private func editViewController() -> UIViewController? {
@@ -169,10 +182,11 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
 
     private func readValue() {
         
-        guard self.characteristic.attributesView.properties.contains(.read)
-            else { return }
-        
-        
+        performActivity({
+            try DeviceStore.shared.readValue(for: self.characteristic)
+        }, completion: { (viewController, _) in
+            viewController.loadValue()
+        })
     }
     
     // MARK: - UITableViewDataSource
@@ -236,12 +250,33 @@ extension PeripheralCharacteristicDetailViewController: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         
-        return true
+        textField.resignFirstResponder()
+        return false
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         
         
+    }
+}
+
+extension PeripheralCharacteristicDetailViewController: ActivityIndicatorViewController {
+    
+    func showActivity() {
+        
+        self.view.endEditing(true)
+        
+        self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
+    }
+    
+    func hideActivity(animated: Bool = true) {
+        
+        let duration: TimeInterval = animated ? 0.5 : 0.0
+        
+        UIView.animate(withDuration: duration) { [weak self] in
+            
+            self?.activityIndicatorBarButtonItem.customView?.alpha = 0.0
+        }
     }
 }
 
