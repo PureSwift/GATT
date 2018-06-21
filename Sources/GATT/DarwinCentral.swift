@@ -128,7 +128,7 @@ import Bluetooth
             
             // attempt to connect (does not timeout)
             self.internalManager.connect(corePeripheral, options: options)
-                        
+            
             // throw async error
             do { try semaphore.wait() }
             
@@ -168,6 +168,9 @@ import Bluetooth
                 try self.connectedPeripheral(peripheral)
             }
             
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected(peripheral) }
+            
             // store semaphore
             let semaphore = Semaphore(timeout: timeout, operation: .discoverServices(peripheral))
             accessQueue.sync { [unowned self] in self.internalState.discoverServices.semaphore = semaphore }
@@ -195,6 +198,9 @@ import Bluetooth
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
             }
+            
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected(peripheral) }
             
             let coreService = try corePeripheral.service(service)
             
@@ -224,6 +230,9 @@ import Bluetooth
                 try self.connectedPeripheral(peripheral)
             }
             
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected(peripheral) }
+            
             let coreService = try corePeripheral.service(service)
             
             let coreCharacteristic = try coreService.characteristic(characteristic)
@@ -251,6 +260,9 @@ import Bluetooth
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
             }
+            
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected(peripheral) }
             
             let coreService = try corePeripheral.service(service)
             
@@ -281,6 +293,9 @@ import Bluetooth
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
             }
+            
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected(peripheral) }
             
             let coreService = try corePeripheral.service(service)
             
