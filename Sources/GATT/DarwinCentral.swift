@@ -128,9 +128,7 @@ import Bluetooth
             
             // attempt to connect (does not timeout)
             self.internalManager.connect(corePeripheral, options: options)
-            
-            assert(corePeripheral.state == .connecting, "Peripheral should be connecting")
-            
+                        
             // throw async error
             do { try semaphore.wait() }
             
