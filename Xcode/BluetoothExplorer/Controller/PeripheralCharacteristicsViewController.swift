@@ -140,7 +140,8 @@ final class PeripheralCharacteristicsViewController: TableViewController {
             let viewController = segue.destination as! PeripheralCharacteristicDetailViewController
             viewController.characteristic = self[tableView.indexPathForSelectedRow!]
             
-        default: assertionFailure("Unknown segue \(segue)")
+        default:
+            assertionFailure("Unknown segue \(segue)")
         }
     }
 }

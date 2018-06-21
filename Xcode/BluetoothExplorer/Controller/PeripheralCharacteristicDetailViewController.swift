@@ -50,7 +50,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         
         let characteristic = managedObject.attributesView
         
-        self.title = characteristic.uuid.rawValue
+        self.title = characteristic.uuid.name ?? characteristic.uuid.rawValue
         
         self.dataSource = []
         self.dataSource.reserveCapacity(2)
