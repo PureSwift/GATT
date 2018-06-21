@@ -15,13 +15,13 @@ protocol CharacteristicViewController: class {
     /// The GATT Characteristic type this view controller can edit.
     associatedtype CharacteristicValue: GATTCharacteristic
     
-    /// Initialize and load from characteristic data.
-    static func load(data: Data) -> Self
+    /// Initialize and load from storyboard.
+    static func fromStoryboard() -> Self
     
     var view: UIView! { get }
     
     /// The current value.
-    var value: CharacteristicValue { get }
+    var value: CharacteristicValue { set get }
     
     /// Value changed closure. 
     var valueDidChange: ((CharacteristicValue) -> ())? { get set }

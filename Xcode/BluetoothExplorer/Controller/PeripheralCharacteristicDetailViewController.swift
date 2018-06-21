@@ -25,11 +25,13 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         didSet { configureView() }
     }
     
+    var value = Data()
+    
     private var dataSource = [Section]()
     
     private lazy var cellCache: CellCache = CellCache(tableView: tableView)
     
-    private var _editViewController: UIViewController?
+    private var editViewController: UIViewController?
     
     // MARK: - Loading
     
@@ -37,6 +39,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         super.viewDidLoad()
         
         configureView()
+        readValue()
     }
     
     // MARK: - Methods
@@ -52,6 +55,9 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         
         self.title = characteristic.uuid.name ?? characteristic.uuid.rawValue
         
+        let canWrite = characteristic.properties.contains(.write)
+                    || characteristic.properties.contains(.writeWithoutResponse)
+        
         self.dataSource = []
         self.dataSource.reserveCapacity(2)
         
@@ -60,12 +66,23 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         configureHexadecimalTextField()
         
         // editor cell
-        self._editViewController = nil // reset cache
+        self.initializeEditViewController()
         if let name = characteristic.uuid.name, editViewController != nil {
             
             let editCell = cellCache.editCell
             
-            editCell.textLabel?.text = "Edit " + name
+            let editText: String
+            
+            if canWrite {
+                
+                editText = "Edit " + name
+                
+            } else {
+                
+                editText = name + " Viewer"
+            }
+            
+            editCell.textLabel?.text = editText
             
             valueSection.items.append(editCell)
         }
@@ -103,31 +120,58 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         cellCache.hexadecimalCell.textField.text = characteristic.value?.toHexadecimal() ?? ""
     }
     
-    private var editViewController: UIViewController? {
+    private func initializeEditViewController() {
         
-        if _editViewController == nil {
+        let characteristic = self.characteristic.attributesView
+        
+        let data = characteristic.value ?? Data()
+        
+        let canWrite = characteristic.properties.contains(.write)
+            || characteristic.properties.contains(.writeWithoutResponse)
+        
+        func load <T: CharacteristicViewController> (_ type: T.Type) -> UIViewController {
             
-            let characteristic = self.characteristic.attributesView
+            let viewController = T.fromStoryboard()
             
-            let data = characteristic.value ?? Data()
-            
-            let viewController: UIViewController?
-            
-            switch characteristic.uuid {
+            if let value = T.CharacteristicValue(data: data) {
                 
-            case BatteryLevelCharacteristicViewController.uuid:
-                
-                viewController = BatteryLevelCharacteristicViewController.load(data: data)
-                
-            default:
-                
-                viewController = nil
+                viewController.value = value
             }
             
-            _editViewController = viewController
+            if canWrite {
+                
+                viewController.valueDidChange = { [weak self] in self?.value = $0.data }
+            }
         }
         
-        return _editViewController
+        let viewController: UIViewController?
+        
+        switch characteristic.uuid {
+            
+        case BatteryLevelCharacteristicViewController.uuid:
+            viewController = load(BatteryLevelCharacteristicViewController.self)
+            
+        default:
+            viewController = nil
+        }
+        
+        editViewController = viewController
+    }
+    
+    private func edit() {
+        
+        if let editViewController = self.editViewController {
+            
+            show(editViewController, sender: self)
+        }
+    }
+
+    private func readValue() {
+        
+        guard self.characteristic.attributesView.properties.contains(.read)
+            else { return }
+        
+        
     }
     
     // MARK: - UITableViewDataSource
@@ -173,11 +217,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             break
             
         case .edit:
-            
-            if let editViewController = self.editViewController {
-                
-                show(editViewController, sender: self)
-            }
+            edit()
             
         case .read:
             break
