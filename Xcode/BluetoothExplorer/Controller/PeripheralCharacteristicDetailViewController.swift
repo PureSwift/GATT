@@ -78,7 +78,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
                 
             } else {
                 
-                editText = name + " Viewer"
+                editText = "View " + name
             }
             
             editCell.textLabel?.text = editText
