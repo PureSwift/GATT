@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="9ns-IV-lIP">
+    <device id="retina4_0" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14088"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Battery Level-->
+        <scene sceneID="7a5-5w-4K9">
+            <objects>
+                <viewController title="Battery Level" id="9ns-IV-lIP" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="n7h-sa-e0P">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="Amd-2v-CuB">
+                                <rect key="frame" x="20.5" y="259" width="279" height="50.5"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="100%" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fKX-Ri-qGE">
+                                        <rect key="frame" x="0.0" y="0.0" width="279" height="20.5"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="50" minValue="0.0" maxValue="100" translatesAutoresizingMaskIntoConstraints="NO" id="l9L-Dg-YFC">
+                                        <rect key="frame" x="-2" y="20.5" width="283" height="31"/>
+                                    </slider>
+                                </subviews>
+                            </stackView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="Amd-2v-CuB" firstAttribute="leading" secondItem="rwS-gT-OK9" secondAttribute="leading" constant="20" id="1Uz-5i-ZRe"/>
+                            <constraint firstItem="Amd-2v-CuB" firstAttribute="centerY" secondItem="n7h-sa-e0P" secondAttribute="centerY" id="Bqy-co-Ur7"/>
+                            <constraint firstItem="rwS-gT-OK9" firstAttribute="trailing" secondItem="Amd-2v-CuB" secondAttribute="trailing" constant="20" id="Seo-zt-knV"/>
+                            <constraint firstItem="Amd-2v-CuB" firstAttribute="centerX" secondItem="n7h-sa-e0P" secondAttribute="centerX" id="sUn-a4-Ch1"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="rwS-gT-OK9"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Battery Level" id="69O-5d-C6q">
+                        <barButtonItem key="rightBarButtonItem" style="done" systemItem="done" id="8Tt-2m-yjQ"/>
+                    </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="JGW-oP-AdI" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="91.875" y="62.323943661971832"/>
+        </scene>
+    </scenes>
+</document>

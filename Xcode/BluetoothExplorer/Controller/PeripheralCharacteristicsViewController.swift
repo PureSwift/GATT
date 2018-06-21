@@ -126,6 +126,23 @@ final class PeripheralCharacteristicsViewController: TableViewController {
         
         return cell
     }
+    
+    // MARK: - Segue
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        let identifier = segue.identifier ?? ""
+        
+        switch identifier {
+            
+        case "showPeripheralCharacteristic":
+            
+            let viewController = segue.destination as! PeripheralCharacteristicDetailViewController
+            viewController.characteristic = self[tableView.indexPathForSelectedRow!]
+            
+        default: assertionFailure("Unknown segue \(segue)")
+        }
+    }
 }
 
 // MARK: - ActivityIndicatorViewController
