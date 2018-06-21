@@ -20,13 +20,16 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     
     // MARK: - Properties
     
-    var characteristic: CharacteristicManagedObject!
+    var characteristic: CharacteristicManagedObject! {
+        
+        didSet { configureView() }
+    }
     
-    private var cells = [[UITableViewCell]]()
+    private var dataSource = [Section]()
     
-    private lazy var hexadecimalCell: HexadecimalValueTableViewCell = self.dequeueReusableCell(.hexadecimal)
+    private lazy var cellCache: CellCache = CellCache(tableView: tableView)
     
-    private lazy var editCell: UITableViewCell = self.dequeueReusableCell(.edit)
+    private var _editViewController: UIViewController?
     
     // MARK: - Loading
     
@@ -34,18 +37,6 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         super.viewDidLoad()
         
         configureView()
-    }
-    
-    // MARK: - Actions
-    
-    @IBAction func readValue(_ sender: Any? = nil) {
-        
-        
-    }
-    
-    @IBAction func writeValue(_ sender: Any? = nil) {
-        
-        
     }
     
     // MARK: - Methods
@@ -59,65 +50,119 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         
         let characteristic = managedObject.attributesView
         
-        self.title = characteristic.uuid.name ?? characteristic.uuid.rawValue
+        self.title = characteristic.uuid.rawValue
         
-        self.cells = [[hexadecimalCell]]
+        self.dataSource = []
+        self.dataSource.reserveCapacity(2)
         
-        if editViewController() != nil {
+        // value cell
+        var valueSection = Section(title: "Value", items: [cellCache.hexadecimalCell])
+        configureHexadecimalTextField()
+        
+        // editor cell
+        self._editViewController = nil // reset cache
+        if let name = characteristic.uuid.name, editViewController != nil {
             
+            let editCell = cellCache.editCell
             
-        }
-    }
-    
-    private func dequeueReusableCell <T: UITableViewCell> (_ cell: Cell) -> T {
-        
-        return tableView.dequeueReusableCell(withIdentifier: cell.rawValue) as! T
-    }
-    
-    private func editViewController() -> UIViewController? {
-        
-        let characteristic = self.characteristic.attributesView
-        
-        let data = characteristic.value ?? Data()
-        
-        let viewController: UIViewController?
-        
-        switch characteristic.uuid {
+            editCell.textLabel?.text = "Edit " + name
             
-        case BatteryLevelCharacteristicViewController.uuid:
-            
-            viewController = BatteryLevelCharacteristicViewController.load(data: data)
-            
-        default:
-            
-            viewController = nil
+            valueSection.items.append(editCell)
         }
         
-        return viewController
+        self.dataSource.append(valueSection)
+        
+        // properties
+        var propertiesSection = Section(title: "Properties", items: [])
+        
+        if characteristic.properties.contains(.read) {
+            
+            propertiesSection.items.append(cellCache.readValueCell)
+        }
+        
+        if characteristic.properties.contains(.write) {
+            
+            propertiesSection.items.append(cellCache.writeValueCell)
+        }
+        
+        if characteristic.properties.contains(.writeWithoutResponse) {
+            
+            propertiesSection.items.append(cellCache.writeWithoutResponseCell)
+        }
+        
+        if propertiesSection.items.isEmpty == false {
+            
+            self.dataSource.append(propertiesSection)
+        }
+        
+        tableView.reloadData()
+    }
+    
+    private func configureHexadecimalTextField() {
+        
+        cellCache.hexadecimalCell.textField.text = characteristic.value?.toHexadecimal() ?? ""
+    }
+    
+    private var editViewController: UIViewController? {
+        
+        if _editViewController == nil {
+            
+            let characteristic = self.characteristic.attributesView
+            
+            let data = characteristic.value ?? Data()
+            
+            let viewController: UIViewController?
+            
+            switch characteristic.uuid {
+                
+            case BatteryLevelCharacteristicViewController.uuid:
+                
+                viewController = BatteryLevelCharacteristicViewController.load(data: data)
+                
+            default:
+                
+                viewController = nil
+            }
+            
+            _editViewController = viewController
+        }
+        
+        return _editViewController
     }
     
     // MARK: - UITableViewDataSource
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         
-        return cells.count
+        return dataSource.count
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return cells[section].count
+        return dataSource[section].items.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        return cells[indexPath.section][indexPath.row]
+        let cell = dataSource[indexPath.section].items[indexPath.row]
+        
+        return cell
     }
     
     // MARK: - UITableViewDelegate
     
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
+        let section = self.dataSource[section]
+        
+        return section.title
+    }
+    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        let cell = cells[indexPath.section][indexPath.row]
+        let section = self.dataSource[indexPath.section]
+        
+        let cell = section.items[indexPath.row]
         
         guard let cellIdentifier = Cell(rawValue: cell.reuseIdentifier ?? "")
             else { assertionFailure("Invalid cell"); return }
@@ -129,11 +174,28 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             
         case .edit:
             
-            if let editViewController = self.editViewController() {
+            if let editViewController = self.editViewController {
                 
                 show(editViewController, sender: self)
             }
+            
+        case .read:
+            break
+            
+        case .write:
+            break
+            
+        case .writeWithoutResponse:
+            break
         }
+    }
+}
+
+extension PeripheralCharacteristicDetailViewController: UITextFieldDelegate {
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        
+        
     }
 }
 
@@ -146,6 +208,44 @@ private extension PeripheralCharacteristicDetailViewController {
         case hexadecimal = "HexadecimalValueTableViewCell"
         
         case edit = "EditCell"
+        
+        case read = "ReadValueCell"
+        
+        case write = "WriteValueCell"
+        
+        case writeWithoutResponse = "WriteWithoutResponseCell"
+    }
+    
+    struct Section {
+        
+        let title: String?
+        
+        var items: [UITableViewCell]
+    }
+    
+    final class CellCache {
+        
+        init(tableView: UITableView) {
+            
+            self.tableView = tableView
+        }
+        
+        private(set) weak var tableView: UITableView!
+        
+        private func dequeueReusableCell <T: UITableViewCell> (_ cell: Cell) -> T {
+            
+            return tableView.dequeueReusableCell(withIdentifier: cell.rawValue) as! T
+        }
+        
+        lazy var hexadecimalCell: HexadecimalValueTableViewCell = self.dequeueReusableCell(.hexadecimal)
+        
+        lazy var editCell: UITableViewCell = self.dequeueReusableCell(.edit)
+        
+        lazy var readValueCell: UITableViewCell = self.dequeueReusableCell(.read)
+        
+        lazy var writeValueCell: UITableViewCell = self.dequeueReusableCell(.write)
+        
+        lazy var writeWithoutResponseCell: UITableViewCell = self.dequeueReusableCell(.writeWithoutResponse)
     }
 }
 
