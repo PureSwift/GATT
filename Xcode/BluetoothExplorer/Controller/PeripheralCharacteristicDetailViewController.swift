@@ -31,8 +31,6 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     
     private lazy var cellCache: CellCache = CellCache(tableView: tableView)
     
-    private var editViewController: UIViewController?
-    
     // MARK: - Loading
     
     override func viewDidLoad() {
@@ -66,8 +64,9 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         configureHexadecimalTextField()
         
         // editor cell
-        self.initializeEditViewController()
-        if let name = characteristic.uuid.name, editViewController != nil {
+        if supportedCharacteristicViewControllers.contains(characteristic.uuid) {
+            
+            let name = characteristic.uuid.name ?? characteristic.uuid.rawValue
             
             let editCell = cellCache.editCell
             
@@ -120,7 +119,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         cellCache.hexadecimalCell.textField.text = characteristic.value?.toHexadecimal() ?? ""
     }
     
-    private func initializeEditViewController() {
+    private func editViewController() -> UIViewController? {
         
         let characteristic = self.characteristic.attributesView
         
@@ -129,7 +128,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         let canWrite = characteristic.properties.contains(.write)
             || characteristic.properties.contains(.writeWithoutResponse)
         
-        func load <T: CharacteristicViewController> (_ type: T.Type) -> UIViewController {
+        func load <T: CharacteristicViewController & UIViewController> (_ type: T.Type) -> T {
             
             let viewController = T.fromStoryboard()
             
@@ -142,6 +141,8 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
                 
                 viewController.valueDidChange = { [weak self] in self?.value = $0.data }
             }
+            
+            return viewController
         }
         
         let viewController: UIViewController?
@@ -155,15 +156,15 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             viewController = nil
         }
         
-        editViewController = viewController
+        return viewController
     }
     
     private func edit() {
         
-        if let editViewController = self.editViewController {
-            
-            show(editViewController, sender: self)
-        }
+        guard let viewController = editViewController()
+            else { assertionFailure("Could not initialize editor view controller"); return }
+        
+        show(viewController, sender: self)
     }
 
     private func readValue() {
@@ -232,6 +233,11 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
 }
 
 extension PeripheralCharacteristicDetailViewController: UITextFieldDelegate {
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        
+        return true
+    }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         

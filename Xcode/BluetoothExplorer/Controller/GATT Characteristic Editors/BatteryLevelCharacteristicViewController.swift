@@ -58,6 +58,7 @@ final class BatteryLevelCharacteristicViewController: UIViewController {
     
     func updateSlider() {
         
+        slider.isEnabled = valueDidChange != nil
         slider.value = Float(value.level.rawValue)
     }
     
@@ -71,17 +72,11 @@ final class BatteryLevelCharacteristicViewController: UIViewController {
 
 extension BatteryLevelCharacteristicViewController: CharacteristicViewController {
     
-    static func load(data: Data) -> BatteryLevelCharacteristicViewController {
+    static func fromStoryboard() -> BatteryLevelCharacteristicViewController {
         
         let storyboard = UIStoryboard(name: "BatteryLevelCharacteristic", bundle: .main)
         
         let viewController = storyboard.instantiateInitialViewController() as! BatteryLevelCharacteristicViewController
-        
-        if let newValue = CharacteristicValue(data: data) {
-            
-            viewController.value = newValue
-            viewController.configureView()
-        }
         
         return viewController
     }
