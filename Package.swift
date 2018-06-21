@@ -22,7 +22,7 @@ let package = Package(
             name: "GATT")
     ],
     dependencies: [
-        .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 2)
+        .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 3)
     ],
     exclude: ["Xcode", "Carthage"]
 )
