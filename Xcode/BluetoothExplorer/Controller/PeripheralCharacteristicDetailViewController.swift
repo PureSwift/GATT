@@ -39,9 +39,11 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        hideActivity(animated: false)
         cellCache.hexadecimalCell.textField.delegate = self
         configureView()
         
+        // automatically read value if supported
         if self.characteristic.attributesView.properties.contains(.read) {
             
             readValue()
@@ -219,6 +221,8 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        
         let section = self.dataSource[indexPath.section]
         
         let cell = section.items[indexPath.row]
@@ -229,13 +233,13 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         switch cellIdentifier {
             
         case .hexadecimal:
-            break
+            assertionFailure("Cell should never be selected.")
             
         case .edit:
             edit()
             
         case .read:
-            break
+            readValue()
             
         case .write:
             break
