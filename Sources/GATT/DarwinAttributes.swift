@@ -61,26 +61,21 @@ import Bluetooth
     
     extension GATT.Descriptor: CoreBluetoothAttributeConvertible {
         
-        func toCoreBluetooth() -> CBMutableDescriptor {
+        func toCoreBluetooth() -> CBDescriptor {
             
-            // Only CBUUIDCharacteristicUserDescriptionString or CBUUIDCharacteristicFormatString is supported.
-            switch uuid.rawValue {
-                
-            case CBUUIDCharacteristicUserDescriptionString:
-                
-                guard let string = String(data: value, encoding: .utf8)
-                    else { fatalError("Could not parse string for \(CBMutableDescriptor.self) from \(self)") }
-                
-                return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: string)
-                
-            case CBUUIDCharacteristicFormatString:
-                
-                return CBMutableDescriptor(type: uuid.toCoreBluetooth(), value: value)
-                
-            default:
-                
-                fatalError("Only \(CBUUIDCharacteristicUserDescriptionString) or \(CBUUIDCharacteristicFormatString) is supported. Unsupported UUID \(uuid).")
-            }
+            /*
+             Only the Characteristic User Description and Characteristic Presentation Format descriptors are currently supported. The Characteristic Extended Properties and Client Characteristic Configuration descriptors will be created automatically upon publication of the parent service, depending on the properties of the characteristic itself
+             
+             e.g.
+             ```
+             Assertion failure in -[CBMutableDescriptor initWithType:value:], /SourceCache/CoreBluetooth_Sim/CoreBluetooth-59.3/CBDescriptor.m:25
+             ```
+             */
+            
+            guard let descriptor = DarwinDescriptor(uuid: uuid, data: value)
+                else { fatalError("Unsupported \(CBDescriptor.self) \(uuid)") }
+            
+            return CBMutableDescriptor(descriptor)
         }
     }
         

@@ -23,60 +23,52 @@ public protocol NativeCentral: class {
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               shouldContinueScanning: () -> (Bool),
-              foundDevice: @escaping (ScanData) -> ())
+              foundDevice: @escaping (ScanData) -> ()) throws
     
-    func connect(to peripheral: Peripheral, timeout: Int) throws
+    func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
-    func discoverServices(for peripheral: Peripheral) throws -> [CentralManager.Service]
+    func discoverServices(_ services: [BluetoothUUID],
+                          for peripheral: Peripheral,
+                          timeout: TimeInterval) throws -> [CentralManager.Service]
     
-    func discoverCharacteristics(for service: BluetoothUUID,
-                                 peripheral: Peripheral) throws -> [CentralManager.Characteristic]
+    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                for service: BluetoothUUID,
+                                peripheral: Peripheral,
+                                timeout: TimeInterval) throws -> [CentralManager.Characteristic]
     
-    func read(characteristic uuid: BluetoothUUID,
-              service: BluetoothUUID,
-              peripheral: Peripheral) throws -> Data
+    func readValue(for characteristic: BluetoothUUID,
+                   service: BluetoothUUID,
+                   peripheral: Peripheral,
+                   timeout: TimeInterval) throws -> Data
     
-    func write(data: Data,
-               response: Bool,
-               characteristic uuid: BluetoothUUID,
-               service: BluetoothUUID,
-               peripheral: Peripheral) throws
+    func writeValue(_ data: Data,
+                    for characteristic: BluetoothUUID,
+                    withResponse: Bool,
+                    service: BluetoothUUID,
+                    peripheral: Peripheral,
+                    timeout: TimeInterval) throws
     
-    func notify(characteristic: BluetoothUUID,
+    func notify(_ notification: ((Data) -> ())?,
+                for characteristic: BluetoothUUID,
                 service: BluetoothUUID,
                 peripheral: Peripheral,
-                notification: ((Data) -> ())?) throws
+                timeout: TimeInterval) throws
 }
-
 
 public extension NativeCentral {
     
-    func scan(duration: TimeInterval) -> [ScanData] {
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData] {
         
         let endDate = Date() + duration
         
         var results = [Peripheral: ScanData]()
         
-        self.scan(filterDuplicates: true,
+        try scan(filterDuplicates: filterDuplicates,
                   shouldContinueScanning: { Date() < endDate },
                   foundDevice: { results[$0.peripheral] = $0 })
         
         return results.values.sorted(by: { $0.date < $1.date })
     }
-}
-
-/// Errors for GATT Central Manager
-public enum CentralError: Error {
-    
-    case timeout
-    
-    case disconnected
-    
-    /// Peripheral from previous scan.
-    case unknownPeripheral
-    
-    /// The specified attribute was not found.
-    case invalidAttribute(BluetoothUUID)
 }
 
 public extension CentralManager {
@@ -97,5 +89,101 @@ public extension CentralManager {
         public let properties: BitMaskOptionSet<Property>
     }
 }
+
+/// Errors for GATT Central Manager
+public enum CentralError: Error {
+    
+    /// Operation timeout.
+    case timeout
+    
+    /// Peripheral is disconnected.
+    case disconnected(Peripheral)
+    
+    /// Peripheral from previous scan / unknown.
+    case unknownPeripheral(Peripheral)
+    
+    /// The specified attribute was not found.
+    case invalidAttribute(BluetoothUUID)
+    
+    #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+    
+    /// Bluetooth controller is not enabled.
+    case invalidState(DarwinBluetoothState)
+    
+    #endif
+}
+
+// MARK: - CustomNSError
+
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+
+import Foundation
+
+extension CentralError: CustomNSError {
+    
+    public enum UserInfoKey: String {
+        
+        /// Bluetooth UUID value (for characteristic or service).
+        case uuid = "org.pureswift.GATT.CentralError.BluetoothUUID"
+        
+        /// Device Identifier
+        case peripheral = "org.pureswift.GATT.CentralError.Peripheral"
+        
+        /// State
+        case state = "org.pureswift.GATT.CentralError.BluetoothState"
+    }
+    
+    public static var errorDomain: String {
+        return "org.pureswift.GATT.CentralError"
+    }
+    
+    /// The user-info dictionary.
+    public var errorUserInfo: [String : Any] {
+        
+        var userInfo = [String : Any]()
+        userInfo.reserveCapacity(1)
+        
+        switch self {
+            
+        case .timeout:
+            
+            let description = String(format: NSLocalizedString("The operation timed out.", comment: "org.pureswift.GATT.CentralError.timeout"))
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            
+        case let .disconnected(peripheral):
+            
+            let description = String(format: NSLocalizedString("The operation cannot be completed becuase the peripheral is disconnected.", comment: "org.pureswift.GATT.CentralError.disconnected"))
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
+            
+        case let .unknownPeripheral(peripheral):
+            
+            let description = String(format: NSLocalizedString("Unknown peripheral %@.", comment: "org.pureswift.GATT.CentralError.unknownPeripheral"), peripheral.identifier.uuidString)
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
+            
+        case let .invalidAttribute(uuid):
+            
+            let description = String(format: NSLocalizedString("Invalid attribute %@.", comment: "org.pureswift.GATT.CentralError.invalidAttribute"), uuid.description)
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.uuid.rawValue] = uuid
+            
+        case let .invalidState(state):
+            
+            let description = String(format: NSLocalizedString("Invalid state %@.", comment: "org.pureswift.GATT.CentralError.invalidState"), "\(state)")
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.state.rawValue] = state
+        }
+        
+        return userInfo
+    }
+}
+
+#endif
 
 #endif
