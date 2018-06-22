@@ -27,6 +27,12 @@ final class PeripheralsViewController: TableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
         reloadData()
     }
     
@@ -34,7 +40,7 @@ final class PeripheralsViewController: TableViewController {
     
     @IBAction func pullToRefresh(_ sender: UIRefreshControl) {
         
-        reloadData()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: { [weak self] in self?.reloadData() })
     }
     
     // MARK: - Methods
@@ -133,21 +139,15 @@ extension PeripheralsViewController: ActivityIndicatorViewController {
     
     func showActivity() {
         
-        self.view.endEditing(true)
-        
         let isRefreshing = self.refreshControl?.isRefreshing ?? false
         
         if isRefreshing == false {
             
             self.activityIndicatorBarButtonItem.customView?.alpha = 1.0
         }
-        
-        self.refreshControl?.isEnabled = false
     }
     
     func hideActivity(animated: Bool = true) {
-        
-        self.refreshControl?.isEnabled = true
         
         let isRefreshing = self.refreshControl?.isRefreshing ?? false
         
