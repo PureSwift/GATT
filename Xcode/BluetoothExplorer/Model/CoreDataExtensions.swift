@@ -46,6 +46,15 @@ internal extension NSManagedObjectContext {
         return try self.fetch(fetchRequest).first
     }
     
+    func all <T: NSManagedObject> (_ managedObjectType: T.Type) throws -> [T] {
+        
+        let fetchRequest = T.fetchRequest()
+        fetchRequest.includesSubentities = false
+        fetchRequest.returnsObjectsAsFaults = true
+        
+        return try self.fetch(fetchRequest) as! [T]
+    }
+    
     func findOrCreate <T: NSManagedObject> (identifier: NSObject, property: String, entityName: String) throws -> T {
         
         if let existing: T = try self.find(identifier: identifier, property: property, entityName: entityName) {
@@ -88,11 +97,6 @@ internal extension NSManagedObject {
         Cache.entities[className] = entity
         
         return entity
-    }
-    
-    convenience init(context: NSManagedObjectContext) {
-        
-        self.init(entity: type(of: self).entity(in: context), insertInto: context)
     }
 }
 

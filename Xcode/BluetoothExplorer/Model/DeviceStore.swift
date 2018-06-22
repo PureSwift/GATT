@@ -84,6 +84,9 @@ public final class DeviceStore {
                                                selector: #selector(DeviceStore.mergeChangesFromContextDidSaveNotification(_:)),
                                                name: NSNotification.Name.NSManagedObjectContextDidSave,
                                                object: self.privateQueueManagedObjectContext)
+        
+        // update cache
+        resetPeripherals()
     }
     
     // MARK: Requests
@@ -128,29 +131,20 @@ public final class DeviceStore {
         
         let centralIdentifier = self.centralIdentifier
         
-        try centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { (scanData) in
+        resetPeripherals()
+        
+        try centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { [weak self] (scanData) in
             
-            do {
+            self?.updateCache { (context) in
                 
-                try context.performErrorBlockAndWait {
-                    
-                    let central = try CentralManagedObject.findOrCreate(centralIdentifier, in: context)
-                    
-                    let peripheral = try PeripheralManagedObject.findOrCreate(scanData.peripheral.identifier,
-                                                                              in: context)
-                    peripheral.isConnected = false
-                    peripheral.central = central
-                    peripheral.scanData.update(scanData)
-                    
-                    // save
-                    try context.save()
-                }
-            }
+                let central = try CentralManagedObject.findOrCreate(centralIdentifier, in: context)
                 
-            catch {
-                dump(error)
-                assertionFailure("Could not cache")
-                return
+                let peripheral = try PeripheralManagedObject.findOrCreate(scanData.peripheral.identifier,
+                                                                          in: context)
+                peripheral.isAvailible = true
+                peripheral.isConnected = false
+                peripheral.central = central
+                peripheral.scanData.update(scanData)
             }
         })
     }
@@ -352,6 +346,42 @@ public final class DeviceStore {
     }
     
     // MARK: - Private Methods
+    
+    private func resetPeripherals() {
+        
+        updateCache {
+            
+            // mark all peripherals as unavailible
+            try $0.all(PeripheralManagedObject.self).forEach {
+                $0.isAvailible = false
+                $0.isConnected = false
+            }
+        }
+    }
+    
+    private func updateCache <T> (_ update: @escaping (NSManagedObjectContext) throws -> T) -> T {
+        
+        let context = self.privateQueueManagedObjectContext
+        
+        do {
+            
+            return try context.performErrorBlockAndWait {
+                
+                // fetch, insert, delete or update managed objects
+                let result = try update(context)
+                
+                // save context
+                try context.save()
+                
+                return result
+            }
+        }
+        
+        catch {
+            dump(error)
+            fatalError("Could not save CoreData context \(context) \(error)")
+        }
+    }
     
     /// Connects to the device, fetches the data, and performs the action, and disconnects.
     private func device <T> (for peripheral: Peripheral, _ action: () throws -> (T)) throws -> T {

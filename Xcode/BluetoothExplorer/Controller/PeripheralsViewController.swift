@@ -22,11 +22,6 @@ final class PeripheralsViewController: TableViewController {
     
     let scanDuration: TimeInterval = 5.0
     
-    private var scanStart = Date() {
-        
-        didSet { performFetch() }
-    }
-    
     // MARK: - Loading
     
     override func viewDidLoad() {
@@ -46,29 +41,35 @@ final class PeripheralsViewController: TableViewController {
     
     func reloadData() {
         
-        // configure table view and update UI
-        scanStart = Date()
-        
         // scan
         let scanDuration = self.scanDuration
+        
         performActivity({ try DeviceStore.shared.scan(duration: scanDuration) })
     }
     
     override func newFetchedResultController() -> NSFetchedResultsController<NSManagedObject> {
         
         // configure fetched results controller
-        let predicate = NSPredicate(format: "%K > %@",
-                                    #keyPath(PeripheralManagedObject.scanData.date),
-                                    self.scanStart as NSDate)
+        let predicate = NSPredicate(format: "%K == %@",
+                                    #keyPath(PeripheralManagedObject.isAvailible),
+                                    true as NSNumber)
         
-        let sort = [NSSortDescriptor(key: #keyPath(PeripheralManagedObject.identifier), ascending: false)]
+        let sort = [
+            NSSortDescriptor(key: #keyPath(PeripheralManagedObject.scanData.advertisementData.localName),
+                             ascending: true),
+            NSSortDescriptor(key: #keyPath(PeripheralManagedObject.identifier),
+                             ascending: true)
+        ]
+        
         let context = DeviceStore.shared.managedObjectContext
+        
         let fetchedResultsController = NSFetchedResultsController(PeripheralManagedObject.self,
                                                                   delegate: self,
                                                                   predicate: predicate,
                                                                   sortDescriptors: sort,
                                                                   context: context)
-        fetchedResultsController.fetchRequest.fetchBatchSize = 30
+        
+        fetchedResultsController.fetchRequest.fetchBatchSize = 20
         
         return fetchedResultsController
     }

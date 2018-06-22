@@ -20,6 +20,9 @@ public final class PeripheralManagedObject: NSManagedObject {
     @NSManaged
     public var isConnected: Bool
     
+    @NSManaged
+    public var isAvailible: Bool
+    
     // MARK: - Properties
     
     @NSManaged

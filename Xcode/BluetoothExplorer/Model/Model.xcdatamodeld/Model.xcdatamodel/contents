@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17F77" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1.0.0">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17F77" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1.0.0">
     <entity name="AdvertisementData" representedClassName=".AdvertisementDataManagedObject" syncable="YES">
         <attribute name="isConnectable" optional="YES" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="localName" optional="YES" attributeType="String" syncable="YES"/>
@@ -40,6 +40,7 @@
     </entity>
     <entity name="Peripheral" representedClassName=".PeripheralManagedObject" syncable="YES">
         <attribute name="identifier" attributeType="String" minValueString="1" syncable="YES"/>
+        <attribute name="isAvailible" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="isConnected" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <relationship name="central" maxCount="1" deletionRule="Nullify" destinationEntity="Central" inverseName="foundDevices" inverseEntity="Central" syncable="YES"/>
         <relationship name="scanData" maxCount="1" deletionRule="Cascade" destinationEntity="ScanData" inverseName="peripheral" inverseEntity="ScanData" syncable="YES"/>
@@ -75,10 +76,10 @@
         <element name="Central" positionX="-54" positionY="18" width="128" height="120"/>
         <element name="Characteristic" positionX="-18" positionY="108" width="128" height="105"/>
         <element name="GATTServer" positionX="-36" positionY="90" width="128" height="60"/>
-        <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="120"/>
+        <element name="Peripheral" positionX="-63" positionY="-18" width="128" height="135"/>
         <element name="ScanData" positionX="-54" positionY="-9" width="128" height="105"/>
-        <element name="Service" positionX="-27" positionY="99" width="128" height="105"/>
-        <element name="ServerService" positionX="-36" positionY="90" width="128" height="90"/>
         <element name="ServerCharacteristic" positionX="-27" positionY="99" width="128" height="105"/>
+        <element name="ServerService" positionX="-36" positionY="90" width="128" height="90"/>
+        <element name="Service" positionX="-27" positionY="99" width="128" height="105"/>
     </elements>
 </model>
