@@ -23,7 +23,7 @@ public protocol NativeCentral: class {
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               shouldContinueScanning: () -> (Bool),
-              foundDevice: @escaping (ScanData) -> ())
+              foundDevice: @escaping (ScanData) -> ()) throws
     
     func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
@@ -57,13 +57,13 @@ public protocol NativeCentral: class {
 
 public extension NativeCentral {
     
-    func scan(duration: TimeInterval, filterDuplicates: Bool = true) -> [ScanData] {
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData] {
         
         let endDate = Date() + duration
         
         var results = [Peripheral: ScanData]()
         
-        self.scan(filterDuplicates: filterDuplicates,
+        try scan(filterDuplicates: filterDuplicates,
                   shouldContinueScanning: { Date() < endDate },
                   foundDevice: { results[$0.peripheral] = $0 })
         
@@ -104,6 +104,13 @@ public enum CentralError: Error {
     
     /// The specified attribute was not found.
     case invalidAttribute(BluetoothUUID)
+    
+    #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+    
+    /// Bluetooth controller is not enabled.
+    case invalidState(DarwinBluetoothState)
+    
+    #endif
 }
 
 // MARK: - CustomNSError
@@ -121,6 +128,9 @@ extension CentralError: CustomNSError {
         
         /// Device Identifier
         case peripheral = "org.pureswift.GATT.CentralError.Peripheral"
+        
+        /// State
+        case state = "org.pureswift.GATT.CentralError.BluetoothState"
     }
     
     public static var errorDomain: String {
@@ -161,6 +171,13 @@ extension CentralError: CustomNSError {
             
             userInfo[NSLocalizedDescriptionKey] = description
             userInfo[UserInfoKey.uuid.rawValue] = uuid
+            
+        case let .invalidState(state):
+            
+            let description = String(format: NSLocalizedString("Invalid state %@.", comment: "org.pureswift.GATT.CentralError.invalidState"), "\(state)")
+            
+            userInfo[NSLocalizedDescriptionKey] = description
+            userInfo[UserInfoKey.state.rawValue] = state
         }
         
         return userInfo

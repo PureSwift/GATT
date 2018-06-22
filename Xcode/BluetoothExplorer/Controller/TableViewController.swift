@@ -38,27 +38,8 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
         tableView.isUserInteractionEnabled = false
         defer { tableView.isUserInteractionEnabled = true }
         
-        let oldDataCount = fetchedResultsController?.fetchedObjects?.count ?? 0
-        
         // remove old FRC
         fetchedResultsController = nil
-        
-        // remove rows of old data
-        if oldDataCount > 0 {
-            
-            tableView.beginUpdates()
-            
-            for row in (0 ..< oldDataCount) {
-                
-                let indexPath = IndexPath(row: row, section: 0)
-                
-                tableView.deleteRows(at: [indexPath], with: .fade)
-            }
-            
-            tableView.deleteSections([0], with: .fade)
-            
-            tableView.endUpdates()
-        }
         
         // setup new FRC
         fetchedResultsController = newFetchedResultController()
@@ -66,20 +47,8 @@ class TableViewController: UITableViewController, NSFetchedResultsControllerDele
         do { try fetchedResultsController?.performFetch() }
         catch { assertionFailure("\(error)") }
         
-        // insert new rows
-        let newDataCount = fetchedResultsController?.fetchedObjects?.count ?? 0
-        tableView.beginUpdates()
-        
-        for row in (0 ..< newDataCount) {
-            
-            let indexPath = IndexPath(row: row, section: 0)
-            
-            tableView.insertRows(at: [indexPath], with: .top)
-        }
-        
-        tableView.insertSections([0], with: .top)
-        
-        tableView.endUpdates()
+        // reload table view
+        tableView.reloadData()
     }
     
     /// Create a new `NSFetchedResultsController` instance.

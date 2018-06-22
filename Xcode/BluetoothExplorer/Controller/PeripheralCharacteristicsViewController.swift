@@ -63,8 +63,6 @@ final class PeripheralCharacteristicsViewController: TableViewController {
         
         performActivity(showActivity: showActivity, {
             try DeviceStore.shared.discoverCharacteristics(for: managedObject)
-        }, completion: { (viewController, _) in
-            viewController.endRefreshing()
         })
     }
     

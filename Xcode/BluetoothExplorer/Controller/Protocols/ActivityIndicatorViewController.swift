@@ -61,7 +61,14 @@ extension ActivityIndicatorViewController {
                     
                     print("⚠️ Error: \(error)")
                     
-                    controller.showErrorAlert(error.localizedDescription)
+                    if controller.view.window != nil {
+                        
+                        controller.showErrorAlert(error.localizedDescription)
+                        
+                    } else {
+                        
+                        AppDelegate.shared.window?.rootViewController?.showErrorAlert(error.localizedDescription)
+                    }
                 }
             }
         }

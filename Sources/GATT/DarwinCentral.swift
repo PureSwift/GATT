@@ -80,7 +80,10 @@ import Bluetooth
         
         public func scan(filterDuplicates: Bool = true,
                          shouldContinueScanning: () -> (Bool),
-                         foundDevice: @escaping (ScanData) -> ()) {
+                         foundDevice: @escaping (ScanData) -> ()) throws {
+            
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
             
             let options: [String: Any] = [
                 CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
@@ -117,6 +120,9 @@ import Bluetooth
         public func connect(to peripheral: Peripheral,
                             timeout: TimeInterval = 30,
                             options: [String: Any]) throws {
+            
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
             
             guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
                 else { throw CentralError.unknownPeripheral(peripheral) }
@@ -164,6 +170,9 @@ import Bluetooth
                                      for peripheral: Peripheral,
                                      timeout: TimeInterval = 30) throws -> [Service] {
             
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
+            
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
             }
@@ -194,6 +203,9 @@ import Bluetooth
                                             for service: BluetoothUUID,
                                             peripheral: Peripheral,
                                             timeout: TimeInterval = 30) throws -> [Characteristic] {
+            
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
             
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
@@ -226,6 +238,9 @@ import Bluetooth
                               peripheral: Peripheral,
                               timeout: TimeInterval = 30) throws -> Data {
             
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
+            
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
             }
@@ -256,6 +271,9 @@ import Bluetooth
                                service: BluetoothUUID,
                                peripheral: Peripheral,
                                timeout: TimeInterval = 30) throws {
+            
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
             
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
@@ -289,6 +307,9 @@ import Bluetooth
                            service: BluetoothUUID,
                            peripheral: Peripheral,
                            timeout: TimeInterval = 30) throws {
+            
+            guard state == .poweredOn
+                else { throw CentralError.invalidState(self.state) }
             
             let corePeripheral = try accessQueue.sync { [unowned self] in
                 try self.connectedPeripheral(peripheral)
@@ -348,17 +369,17 @@ import Bluetooth
         @objc(centralManagerDidUpdateState:)
         public func centralManagerDidUpdateState(_ central: CBCentralManager) {
             
-            log?("Did update state (\(central.state == .poweredOn ? "Powered On" : "\(central.state.rawValue)"))")
+            let state = unsafeBitCast(central.state, to: DarwinBluetoothState.self)
             
-            stateChanged(unsafeBitCast(central.state, to: DarwinBluetoothState.self))
+            log?("Did update state \(state)")
+            
+            stateChanged(state)
         }
         
         @objc
         public func centralManager(_ central: CBCentralManager, willRestoreState options: [String : Any]) {
             
             log?("Will restore state \(options)")
-            
-            
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)

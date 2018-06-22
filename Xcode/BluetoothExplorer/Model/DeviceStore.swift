@@ -128,7 +128,7 @@ public final class DeviceStore {
         
         let centralIdentifier = self.centralIdentifier
         
-        centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { (scanData) in
+        try centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { (scanData) in
             
             do {
                 
