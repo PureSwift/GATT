@@ -62,21 +62,21 @@ extension DarwinDescriptor {
         
         switch uuid {
         
-        case .characteristicExtendedProperties:
+        case BluetoothUUID.characteristicExtendedProperties:
             
             guard let descriptor = GATTCharacteristicExtendedProperties(data: data)
                 else { return nil }
             
             self = .extendedProperties(NSNumber(value: descriptor.properties.rawValue))
             
-        case .characteristicUserDescription:
+        case BluetoothUUID.characteristicUserDescription:
             
             guard let descriptor = GATTUserDescription(data: data)
                 else { return nil }
             
             self = .userDescription(descriptor.userDescription as NSString)
             
-        case .characteristicFormat:
+        case BluetoothUUID.characteristicFormat:
             
             self = .format(data as NSData)
             

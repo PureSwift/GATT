@@ -13,7 +13,7 @@
     import BluetoothLinux
     
     @available(OSX 10.12, *)
-    public final class LinuxCentral: NativeCentral {
+public final class LinuxCentral: NativeCentral {
         
         public var log: ((String) -> ())?
         
@@ -22,50 +22,37 @@
             fatalError()
         }
         
-        /// Scans for peripherals that are advertising services.
-        public func scan(filterDuplicates: Bool,
-                         shouldContinueScanning: () -> (Bool),
-                         foundDevice: @escaping (ScanData) -> ()) {
+        public func scan(filterDuplicates: Bool, shouldContinueScanning: () -> (Bool), foundDevice: @escaping (ScanData) -> ()) throws {
             
             fatalError()
         }
         
-        public func connect(to peripheral: Peripheral, timeout: Int = 5) throws {
+        public func connect(to peripheral: Peripheral, timeout: TimeInterval) throws {
+            
+        }
+        
+        public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval) throws -> [CentralManager.Service] {
             
             fatalError()
         }
         
-        public func discoverServices(for peripheral: Peripheral) throws -> [CentralManager.Service] {
+        public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> [CentralManager.Characteristic] {
+            
             
             fatalError()
         }
         
-        public func discoverCharacteristics(for service: BluetoothUUID,
-                                            peripheral: Peripheral) throws -> [CentralManager.Characteristic] {
+        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> Data {
             
             fatalError()
         }
         
-        public func read(characteristic uuid: BluetoothUUID,
-                  service: BluetoothUUID,
-                  peripheral: Peripheral) throws -> Data {
+        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws {
             
             fatalError()
         }
         
-        public func write(data: Data,
-                   response: Bool,
-                   characteristic uuid: BluetoothUUID,
-                   service: BluetoothUUID,
-                   peripheral: Peripheral) throws {
-            
-            fatalError()
-        }
-        
-        public func notify(characteristic: BluetoothUUID,
-                    service: BluetoothUUID,
-                    peripheral: Peripheral,
-                    notification: ((Data) -> ())?) throws {
+        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws {
             
             fatalError()
         }

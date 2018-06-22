@@ -19,9 +19,9 @@
         
         public var log: ((String) -> ())?
         
-        public let maximumTransmissionUnit: Int
+        public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
         
-        public let adapter: Adapter
+        public let controller: HostController
         
         public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
@@ -41,36 +41,24 @@
         
         // MARK: - Initialization
         
-        public init(adapter: Adapter = try! Adapter(), maximumTransmissionUnit: Int = ATT.MTU.LowEnergy.Default) {
+        public init(controller: HostController,
+                    maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
             
-            self.adapter = adapter
+            self.controller = controller
             self.maximumTransmissionUnit = maximumTransmissionUnit
         }
         
         // MARK: - Methods
         
-        public func start(beacon: Beacon? = nil) throws {
+        public func start() throws {
             
             guard isServerRunning == false else { return }
             
-            if let beacon = beacon {
-                
-                try adapter.enableBeacon(uuid: beacon.uuid,
-                                         major: beacon.major,
-                                         minor: beacon.minor,
-                                         rssi: beacon.rssi,
-                                         interval: beacon.interval)
-                
-            } else {
-                
-                // just enable advertising
-                do { try adapter.enableLowEnergyAdvertising() }
-                catch HCIError.commandDisallowed { /* ignore */ }
-            }
+            // just enable advertising
+            do { try controller.enableLowEnergyAdvertising() }
+            catch HCIError.commandDisallowed { /* ignore */ }
             
-            let adapterAddress = try Address(deviceIdentifier: adapter.identifier)
-            
-            let serverSocket = try L2CAPSocket.lowEnergyServer(adapterAddress: adapterAddress,
+            let serverSocket = try L2CAPSocket.lowEnergyServer(controllerAddress: controller.address,
                                                                isRandom: false,
                                                                securityLevel: .low)
             
@@ -104,7 +92,7 @@
                                 
                                 do {
                                     
-                                    var didWriteValues: (central: Central, UUID: BluetoothUUID, value: Data, newValue: Data)?
+                                    var didWriteValues: (central: Central, uuid: BluetoothUUID, value: Data, newValue: Data)?
                                     
                                     server.willRead = { peripheral.willRead?(Central(socket: newSocket), $0.0, $0.1, $0.2) }
                                     
@@ -148,7 +136,7 @@
                                         
                                         peripheral.log?("Central \(newSocket.address) disconnected")
                                         
-                                        do { try peripheral.adapter.enableLowEnergyAdvertising() }
+                                        do { try peripheral.controller.enableLowEnergyAdvertising() }
                                         
                                         catch { peripheral.log?("Could not restore advertising. \(error)") }
                                         
@@ -196,18 +184,18 @@
         
         public func clear() {
             
-            database.clear()
+            database.removeAll()
         }
         
         // MARK: Subscript
         
         public subscript(characteristic uuid: BluetoothUUID) -> Data {
             
-            get { return database.attributes.filter({ $0.uuid == uuid}).first!.value }
+            get { return database.filter({ $0.uuid == uuid}).first!.value }
             
             set {
                 
-                let matchingAttributes = database.attributes.filter({ $0.uuid == uuid })
+                let matchingAttributes = database.filter({ $0.uuid == uuid })
                 
                 assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(uuid)")
                 

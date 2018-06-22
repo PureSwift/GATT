@@ -37,11 +37,15 @@ import Bluetooth
         
         public var isScanning: Bool {
             
+            #if swift(>=3.2)
             if #available(OSX 10.13, iOS 9.0, *) {
                 return internalManager.isScanning
             } else {
                 return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
             }
+            #else
+            return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
+            #endif
         }
         
         public var didDisconnect: (Peripheral) -> () = { _ in }
@@ -64,7 +68,15 @@ import Bluetooth
         /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
         public init(options: [String: Any]?) {
             
-            self.identifier = options?[CBCentralManagerOptionRestoreIdentifierKey] as? String
+            #if swift(>=3.2)
+            if #available(OSX 10.13, iOS 9.0, *) {
+                self.identifier = options?[CBCentralManagerOptionRestoreIdentifierKey] as? String
+            } else {
+               self.identifier = nil
+            }
+            #else
+            self.identifier = nil
+            #endif
             
             super.init()
             

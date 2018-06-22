@@ -140,8 +140,7 @@ extension CentralError: CustomNSError {
     /// The user-info dictionary.
     public var errorUserInfo: [String : Any] {
         
-        var userInfo = [String : Any]()
-        userInfo.reserveCapacity(1)
+        var userInfo = [String: Any](minimumCapacity: 2)
         
         switch self {
             
