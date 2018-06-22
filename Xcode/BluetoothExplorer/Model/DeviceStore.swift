@@ -299,6 +299,58 @@ public final class DeviceStore {
         }
     }
     
+    public func writeValue(_ data: Data, withResponse: Bool = true, for characteristicManagedObject: CharacteristicManagedObject) throws {
+        
+        let serviceManagedObject = characteristicManagedObject.service
+        
+        assert(serviceManagedObject.value(forKey: #keyPath(ServiceManagedObject.peripheral)) != nil, "Invalid service")
+        
+        // perform BLE operation
+        let peripheral = Peripheral(identifier: characteristicManagedObject.service.peripheral.attributesView.identifier)
+        
+        try device(for: peripheral) {
+            
+            let services = try centralManager.discoverServices(for: peripheral)
+            
+            guard let foundService = services.first(where: { $0.uuid.rawValue == serviceManagedObject.uuid })
+                else { throw CentralError.invalidAttribute(serviceManagedObject.attributesView.uuid) }
+            
+            let characteristics = try centralManager.discoverCharacteristics(for: foundService.uuid,
+                                                                             peripheral: peripheral)
+            
+            guard let foundCharacteristic = characteristics.first(where: { $0.uuid.rawValue == characteristicManagedObject.uuid })
+                else { throw CentralError.invalidAttribute(characteristicManagedObject.attributesView.uuid) }
+            
+            try centralManager.writeValue(data,
+                                          for: foundCharacteristic.uuid,
+                                          withResponse: withResponse,
+                                          service: foundService.uuid,
+                                          peripheral: peripheral)
+        }
+        
+        // cache
+        let context = privateQueueManagedObjectContext
+        
+        do {
+            
+            try context.performErrorBlockAndWait {
+                
+                let characteristic = context.object(with: characteristicManagedObject.objectID) as! CharacteristicManagedObject
+                
+                characteristic.value = data
+                
+                // save
+                try context.save()
+            }
+        }
+            
+        catch {
+            dump(error)
+            assertionFailure("Could not cache")
+            return
+        }
+    }
+    
     // MARK: - Private Methods
     
     /// Connects to the device, fetches the data, and performs the action, and disconnects.

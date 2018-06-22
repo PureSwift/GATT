@@ -137,9 +137,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
     private func editViewController() -> UIViewController? {
         
         let characteristic = self.characteristic.attributesView
-        
-        let data = characteristic.value ?? Data()
-        
+                
         let canWrite = characteristic.properties.contains(.write)
             || characteristic.properties.contains(.writeWithoutResponse)
         
@@ -147,7 +145,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             
             let viewController = T.fromStoryboard()
             
-            if let value = T.CharacteristicValue(data: data) {
+            if let data = self.value, let value = T.CharacteristicValue(data: data) {
                 
                 viewController.value = value
             }
@@ -188,6 +186,15 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             try DeviceStore.shared.readValue(for: self.characteristic)
         }, completion: { (viewController, _) in
             viewController.loadValue()
+        })
+    }
+    
+    private func writeValue(withResponse: Bool = true) {
+        
+        let data = self.value ?? Data()
+        
+        performActivity({
+            try DeviceStore.shared.writeValue(data, withResponse: withResponse, for: self.characteristic)
         })
     }
     
@@ -233,7 +240,7 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
         switch cellIdentifier {
             
         case .hexadecimal:
-            assertionFailure("Cell should never be selected.")
+            break
             
         case .edit:
             edit()
