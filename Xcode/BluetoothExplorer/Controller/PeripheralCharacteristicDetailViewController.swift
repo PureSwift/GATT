@@ -249,10 +249,10 @@ final class PeripheralCharacteristicDetailViewController: UITableViewController 
             readValue()
             
         case .write:
-            break
+            writeValue()
             
         case .writeWithoutResponse:
-            break
+            writeValue(withResponse: false)
         }
     }
 }
