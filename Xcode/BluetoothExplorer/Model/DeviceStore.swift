@@ -127,26 +127,49 @@ public final class DeviceStore {
         
         let end = Date() + duration
         
-        let context = privateQueueManagedObjectContext
-        
         let centralIdentifier = self.centralIdentifier
         
-        resetPeripherals()
-        
-        try centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { [weak self] (scanData) in
+        var oldPeripherals: [NSManagedObjectID] = updateCache {
             
-            self?.updateCache { (context) in
+            let fetchRequest = PeripheralManagedObject.fetchRequest()
+            
+            fetchRequest.predicate = NSPredicate(format: "%K == %@",
+                                                 #keyPath(PeripheralManagedObject.isAvailible),
+                                                 true as NSNumber)
+            
+            fetchRequest.includesSubentities = false
+            fetchRequest.returnsObjectsAsFaults = true
+            fetchRequest.resultType = .managedObjectIDResultType
+            
+            return try $0.fetch(fetchRequest) as! [NSManagedObjectID]
+        }
+        
+        try centralManager.scan(filterDuplicates: filterDuplicates, shouldContinueScanning: { Date() < end }, foundDevice: { [unowned self] (scanData) in
+            
+            self.updateCache {
                 
-                let central = try CentralManagedObject.findOrCreate(centralIdentifier, in: context)
+                let central = try CentralManagedObject.findOrCreate(centralIdentifier, in: $0)
                 
                 let peripheral = try PeripheralManagedObject.findOrCreate(scanData.peripheral.identifier,
-                                                                          in: context)
+                                                                          in: $0)
                 peripheral.isAvailible = true
                 peripheral.isConnected = false
                 peripheral.central = central
                 peripheral.scanData.update(scanData)
+                
+                // remove from old peripherals
+                if let index = oldPeripherals.index(of: peripheral.objectID) {
+                    
+                    oldPeripherals.remove(at: index)
+                }
             }
         })
+        
+        // update old peripherals
+        updateCache { (context) in
+            
+            oldPeripherals.forEach { context.delete(context.object(with: $0)) }
+        }
     }
     
     public func discoverServices(for peripheralManagedObject: PeripheralManagedObject) throws {
