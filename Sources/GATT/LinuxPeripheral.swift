@@ -23,11 +23,11 @@
         
         public let controller: HostController
         
-        public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
@@ -118,10 +118,10 @@
                                     
                                     if let writtenValues = didWriteValues {
                                         
-                                        peripheral.didWrite?(writtenValues.central, writtenValues.UUID, writtenValues.value, writtenValues.newValue)
+                                        peripheral.didWrite?(writtenValues.central, writtenValues.uuid, writtenValues.value, writtenValues.newValue)
                                     }
                                 }
-                                    
+                                
                                 catch {
                                     
                                     // https://github.com/apple/swift-corelibs-foundation/pull/933
