@@ -139,6 +139,8 @@ extension PeripheralsViewController: ActivityIndicatorViewController {
     
     func showActivity() {
         
+        self.tableView.scrollRectToVisible(.zero, animated: true)
+        
         let isRefreshing = self.refreshControl?.isRefreshing ?? false
         
         if isRefreshing == false {

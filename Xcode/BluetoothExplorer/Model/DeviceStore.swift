@@ -293,26 +293,11 @@ public final class DeviceStore {
                                                 peripheral: peripheral)
         }
         
-        // cache
-        let context = privateQueueManagedObjectContext
-        
-        do {
+        updateCache {
             
-            try context.performErrorBlockAndWait {
-                
-                let characteristic = context.object(with: characteristicManagedObject.objectID) as! CharacteristicManagedObject
-                
-                characteristic.value = value
-                
-                // save
-                try context.save()
-            }
-        }
+            let characteristic = $0.object(with: characteristicManagedObject.objectID) as! CharacteristicManagedObject
             
-        catch {
-            dump(error)
-            assertionFailure("Could not cache")
-            return
+            characteristic.value = value
         }
     }
     
@@ -345,26 +330,11 @@ public final class DeviceStore {
                                           peripheral: peripheral)
         }
         
-        // cache
-        let context = privateQueueManagedObjectContext
-        
-        do {
+        updateCache {
             
-            try context.performErrorBlockAndWait {
-                
-                let characteristic = context.object(with: characteristicManagedObject.objectID) as! CharacteristicManagedObject
-                
-                characteristic.value = data
-                
-                // save
-                try context.save()
-            }
-        }
+            let characteristic = $0.object(with: characteristicManagedObject.objectID) as! CharacteristicManagedObject
             
-        catch {
-            dump(error)
-            assertionFailure("Could not cache")
-            return
+            characteristic.value = data
         }
     }
     
@@ -412,7 +382,16 @@ public final class DeviceStore {
         // connect first
         try centralManager.connect(to: peripheral)
         
-        defer { centralManager.disconnect(peripheral: peripheral) }
+        let managedObject: PeripheralManagedObject = updateCache {
+            let managedObject = try PeripheralManagedObject.findOrCreate(peripheral.identifier, in: $0)
+            managedObject.isConnected = true
+            return managedObject
+        }
+        
+        defer {
+            centralManager.disconnect(peripheral: peripheral)
+            updateCache { _ in managedObject.isConnected = false }
+        }
         
         // perform action
         return try action()
