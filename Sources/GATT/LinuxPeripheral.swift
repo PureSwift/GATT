@@ -54,7 +54,7 @@
             
             guard isServerRunning == false else { return }
             
-            // just enable advertising
+            // enable advertising
             do { try controller.enableLowEnergyAdvertising() }
             catch HCIError.commandDisallowed { /* ignore */ }
             
@@ -76,6 +76,8 @@
                         
                         let newSocket = try serverSocket.waitForConnection()
                         
+                        guard peripheral.isServerRunning else { return }
+                        
                         peripheral.log?("New \(newSocket.addressType) connection from \(newSocket.address)")
                         
                         let server = GATTServer(socket: newSocket)
@@ -94,16 +96,18 @@
                                     
                                     var didWriteValues: (central: Central, uuid: BluetoothUUID, value: Data, newValue: Data)?
                                     
-                                    server.willRead = { peripheral.willRead?(Central(socket: newSocket), $0.0, $0.1, $0.2) }
+                                    server.willRead = { (uuid, handle, value, offset)  in
+                                        peripheral.willRead?(Central(socket: newSocket), uuid, value, offset)
+                                    }
                                     
-                                    server.willWrite = { (write) in
+                                    server.willWrite = { (uuid, handle, value, newValue) in
                                         
-                                        if let error = peripheral.willWrite?(Central(socket: newSocket), write.0, write.1, write.2) {
+                                        if let error = peripheral.willWrite?(Central(socket: newSocket), uuid, value, newValue) {
                                             
                                             return error
                                         }
                                         
-                                        didWriteValues = (central: Central(socket: newSocket), UUID: write.0, value: write.1, newValue: write.2)
+                                        didWriteValues = (central: Central(socket: newSocket), uuid: uuid, value: value, newValue: newValue)
                                         
                                         return nil
                                     }
@@ -124,26 +128,13 @@
                                 
                                 catch {
                                     
-                                    // https://github.com/apple/swift-corelibs-foundation/pull/933
-                                    #if os(Linux)
-                                    typealias POSIXError = BluetoothLinux.POSIXError
-                                    #endif
+                                    do { try peripheral.controller.enableLowEnergyAdvertising() }
+                                    catch HCIError.commandDisallowed { /* ignore */ }
+                                    catch { fatalError("Could not enable advertising.") }
                                     
-                                    /// Turn on LE advertising after disconnect (Linux turns if off for some reason)
-                                    if let disconnectError = error as? POSIXError,
-                                    disconnectError.code.rawValue == 104
-                                    || disconnectError.code.rawValue == 110 {
-                                        
-                                        peripheral.log?("Central \(newSocket.address) disconnected")
-                                        
-                                        do { try peripheral.controller.enableLowEnergyAdvertising() }
-                                        
-                                        catch { peripheral.log?("Could not restore advertising. \(error)") }
-                                        
-                                        return
-                                    }
+                                    peripheral.log?("Central \(newSocket.address) disconnected")
                                     
-                                    peripheral.log?("Error: \(error)"); return
+                                    return
                                 }
                             }
                         })

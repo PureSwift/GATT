@@ -23,28 +23,26 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        public var stateChanged: (CBPeripheralManagerState) -> () = { _ in }
+        public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
         
-        public var state: CBPeripheralManagerState {
+        public var state: DarwinBluetoothState {
             
-            return unsafeBitCast(internalManager.state, to: CBPeripheralManagerState.self)
+            return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
         public let localName: String?
         
-        public var willRead: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ UUID: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
         private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
         
         private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Internal Queue", attributes: [])
-        
-        private var poweredOnSemaphore: DispatchSemaphore!
         
         private var addServiceState: (semaphore: DispatchSemaphore, error: Error?)?
         
@@ -62,27 +60,6 @@ import Bluetooth
         }
         
         // MARK: - Methods
-        
-        public func waitForPoweredOn() {
-            
-            // already on
-            guard internalManager.state != .poweredOn else { return }
-            
-            // already waiting
-            guard poweredOnSemaphore == nil else { let _ = poweredOnSemaphore.wait(timeout: .distantFuture); return }
-            
-            log?("Not powered on (State \(internalManager.state.rawValue))")
-            
-            poweredOnSemaphore = DispatchSemaphore(value: 0)
-            
-            let _ = poweredOnSemaphore.wait(timeout: .distantFuture)
-            
-            poweredOnSemaphore = nil
-            
-            assert(internalManager.state == .poweredOn)
-            
-            log?("Now powered on")
-        }
         
         #if os(iOS)
         
@@ -225,14 +202,11 @@ import Bluetooth
         @objc(peripheralManagerDidUpdateState:)
         public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
             
-            log?("Did update state (\(peripheral.state == .poweredOn ? "Powered On" : "\(peripheral.state.rawValue)"))")
+            let state = unsafeBitCast(peripheral.state, to: DarwinBluetoothState.self)
             
-            stateChanged(unsafeBitCast(peripheral.state, to: CBPeripheralManagerState.self))
+            log?("Did update state \(state)")
             
-            if peripheral.state == .poweredOn && poweredOnSemaphore != nil {
-                
-                poweredOnSemaphore.signal()
-            }
+            stateChanged(state)
         }
         
         @objc(peripheralManagerDidStartAdvertising:error:)
