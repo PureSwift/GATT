@@ -160,18 +160,18 @@
 		6EE84D9F1CAF421100A40C4D /* GATT */ = {
 			isa = PBXGroup;
 			children = (
-				6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */,
-				6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */,
-				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
+				6E17DC221CB1DC250043C644 /* Central.swift */,
+				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6E49B221205325B3002EA5DC /* AdvertisementData.swift */,
 				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
-				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
 				6EAABC002001AF4C009B38C0 /* ScanData.swift */,
-				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
-				6E17DC221CB1DC250043C644 /* Central.swift */,
 				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
-				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
+				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
+				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
+				6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */,
+				6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */,
 				6EF9426C2016464B00EEB821 /* LinuxCentral.swift */,
+				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";

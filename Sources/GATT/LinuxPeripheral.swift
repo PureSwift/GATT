@@ -13,7 +13,7 @@
     import BluetoothLinux
     
     @available(OSX 10.12, *)
-    public final class LinuxPeripheral: NativePeripheral {
+    public final class LinuxPeripheral: PeripheralProtocol {
         
         // MARK: - Properties
         

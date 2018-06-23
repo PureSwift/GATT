@@ -17,9 +17,11 @@ import Bluetooth
     /// The platform specific peripheral.
     public typealias PeripheralManager = DarwinPeripheral
 
-    public final class DarwinPeripheral: NSObject, NativePeripheral, CBPeripheralManagerDelegate {
+    public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralManagerDelegate {
         
         // MARK: - Properties
+        
+        public let options: Options
         
         public var log: ((String) -> ())?
         
@@ -30,8 +32,6 @@ import Bluetooth
             return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
-        public let localName: String?
-        
         public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
         public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
@@ -40,7 +40,7 @@ import Bluetooth
         
         // MARK: - Private Properties
         
-        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue)
+        private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue, options: self.options.optionsDictionary)
         
         private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Internal Queue", attributes: [])
         
@@ -54,9 +54,9 @@ import Bluetooth
         
         // MARK: - Initialization
         
-        public init(localName: String? = nil) {
+        public init(options: Options = Options()) {
             
-            self.localName = localName
+            self.options = options
         }
         
         // MARK: - Methods
@@ -374,5 +374,93 @@ import Bluetooth
             }
         }
     }
+
+// MARK: - Supporting Types
+
+public extension DarwinPeripheral {
+    
+    public struct Options {
+        
+        public let showPowerAlert: Bool
+        
+        public let restoreIdentifier: String?
+        
+        public init(showPowerAlert: Bool = false,
+                    restoreIdentifier: String? = nil) {
+            
+            self.showPowerAlert = showPowerAlert
+            self.restoreIdentifier = restoreIdentifier
+        }
+        
+        internal var optionsDictionary: [String: Any] {
+            
+            var options = [String: Any](minimumCapacity: 2)
+            
+            if showPowerAlert {
+                
+                options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
+            }
+            
+            if let identifier = self.restoreIdentifier {
+                
+                options[CBPeripheralManagerOptionRestoreIdentifierKey] = identifier
+            }
+            
+            return options
+        }
+    }
+    
+    public struct AdvertisingOptions {
+        
+        public let localName: String?
+        
+        #if os(iOS)
+        public let beacon: AppleBeacon?
+        #endif
+        
+        #if os(iOS)
+        public init(localName: String? = nil,
+                    beacon: AppleBeacon? = nil) {
+            
+            self.localName = localName
+            self.beacon = beacon
+        }
+        #else
+        public init(localName: String? = nil) {
+            
+            self.localName = localName
+        }
+        #endif
+        
+        internal var optionsDictionary: [String: Any] {
+            
+            var options = [String: Any](minimumCapacity: 2)
+            
+            if let localName = self.localName {
+                
+                options[CBAdvertisementDataLocalNameKey] = localName
+            }
+            
+            #if os(iOS)
+            if let beacon = self.beacon {
+                
+                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.uuid,
+                                                  major: beacon.major,
+                                                  minor: beacon.minor,
+                                                  identifier: beacon.uuid.rawValue)
+                
+                let peripheralData = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi))
+                
+                // copy key values
+                peripheralData.forEach { (key, value) in
+                    options[key as! String] = value
+                }
+            }
+            #endif
+            
+            return options
+        }
+    }
+}
 
 #endif

@@ -12,7 +12,7 @@ import Bluetooth
 /// GATT Peripheral Manager
 ///
 /// Implementation varies by operating system.
-public protocol NativePeripheral {
+public protocol PeripheralProtocol: class {
     
     associatedtype ServiceIdentifier
     

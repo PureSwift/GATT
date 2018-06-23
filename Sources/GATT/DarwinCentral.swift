@@ -20,7 +20,7 @@ import Bluetooth
     
     @objc
 
-    public final class DarwinCentral: NSObject, NativeCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
+    public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         // MARK: - Properties
         

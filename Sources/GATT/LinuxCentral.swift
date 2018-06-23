@@ -13,7 +13,7 @@
     import BluetoothLinux
     
     @available(OSX 10.12, *)
-public final class LinuxCentral: NativeCentral {
+public final class LinuxCentral: CentralProtocol {
         
         public var log: ((String) -> ())?
         

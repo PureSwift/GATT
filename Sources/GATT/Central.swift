@@ -11,12 +11,12 @@ import Bluetooth
 
 #if (os(watchOS) && !swift(>=3.2))
 // Not supported in watchOS before Xcode 9
-public protocol NativeCentral: class { }
+public protocol CentralProtocol: class { }
 #else
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
-public protocol NativeCentral: class {
+public protocol CentralProtocol: class {
     
     var log: ((String) -> ())? { get set }
     
@@ -55,7 +55,7 @@ public protocol NativeCentral: class {
                 timeout: TimeInterval) throws
 }
 
-public extension NativeCentral {
+public extension CentralProtocol {
     
     func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData] {
         
