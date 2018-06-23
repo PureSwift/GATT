@@ -61,47 +61,14 @@ import Bluetooth
         
         // MARK: - Methods
         
-        #if os(iOS)
-        
-        public func start(beacon: AppleBeacon? = nil) throws {
-        
-            var advertisementData = [String: AnyObject]()
-            
-            if let beacon = beacon {
-                
-                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.uuid,
-                                                  major: beacon.major,
-                                                  minor: beacon.minor,
-                                                  identifier: beacon.uuid.rawValue)
-                
-                let mutableDictionary = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi))
-                
-                advertisementData = NSDictionary.init(dictionary: mutableDictionary) as! [String: AnyObject]
-            }
-            
-            if let name = localName {
-                
-                advertisementData[CBAdvertisementDataLocalNameKey] = name as NSString
-            }
-            
-            try start(advertisementData)
-        }
-
-        #endif
-        
         public func start() throws {
             
-            var advertisementData = [String : AnyObject]()
+            let options = AdvertisingOptions()
             
-            if let localName = self.localName {
-                
-                advertisementData[CBAdvertisementDataLocalNameKey] = localName as NSString
-            }
-            
-            try start(advertisementData)
+            try start(options: options)
         }
         
-        private func start(_ advertisementData: [String: AnyObject]) throws {
+        public func start(options: AdvertisingOptions) throws {
             
             assert(startAdvertisingState == nil, "Already started advertising")
             
@@ -109,7 +76,7 @@ import Bluetooth
             
             startAdvertisingState = (semaphore, nil) // set semaphore
             
-            internalManager.startAdvertising(advertisementData)
+            internalManager.startAdvertising(options.optionsDictionary)
             
             let _ = semaphore.wait(timeout: .distantFuture)
             
@@ -412,7 +379,11 @@ public extension DarwinPeripheral {
     
     public struct AdvertisingOptions {
         
+        /// The local name of the peripheral.
         public let localName: String?
+        
+        /// An array of service UUIDs.
+        public let serviceUUIDs: [BluetoothUUID]
         
         #if os(iOS)
         public let beacon: AppleBeacon?
@@ -420,15 +391,19 @@ public extension DarwinPeripheral {
         
         #if os(iOS)
         public init(localName: String? = nil,
+                    serviceUUIDs: [BluetoothUUID] = [],
                     beacon: AppleBeacon? = nil) {
             
             self.localName = localName
             self.beacon = beacon
+            self.serviceUUIDs = serviceUUIDs
         }
         #else
-        public init(localName: String? = nil) {
+        public init(localName: String? = nil,
+                    serviceUUIDs: [BluetoothUUID] = []) {
             
             self.localName = localName
+            self.serviceUUIDs = serviceUUIDs
         }
         #endif
         
@@ -439,6 +414,11 @@ public extension DarwinPeripheral {
             if let localName = self.localName {
                 
                 options[CBAdvertisementDataLocalNameKey] = localName
+            }
+            
+            if serviceUUIDs.isEmpty == false {
+                
+                options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { $0.toCoreBluetooth() }
             }
             
             #if os(iOS)
