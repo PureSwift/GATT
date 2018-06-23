@@ -157,11 +157,11 @@ import Bluetooth
         
         // MARK: Subscript
         
-        public subscript(characteristic UUID: BluetoothUUID) -> Data {
+        public subscript(characteristic uuid: BluetoothUUID) -> Data {
             
-            get { return self[characteristic(UUID)] }
+            get { return self[characteristic(uuid)] }
             
-            set { internalManager.updateValue(newValue, for: characteristic(UUID), onSubscribedCentrals: nil) }
+            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
         }
         
         // MARK: - CBPeripheralManagerDelegate
