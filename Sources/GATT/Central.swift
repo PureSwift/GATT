@@ -10,9 +10,12 @@ import Foundation
 import Bluetooth
 
 #if (os(watchOS) && !swift(>=3.2))
-// Not supported in watchOS before Xcode 9
+
+/// Not supported in watchOS before Xcode 9
 public protocol CentralProtocol: class { }
+
 #else
+
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.

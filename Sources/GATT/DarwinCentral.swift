@@ -226,7 +226,7 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected(peripheral) }
             
-            let coreService = try corePeripheral.service(service)
+            let coreService = try corePeripheral.service(for: service)
             
             // store semaphore
             let semaphore = Semaphore(timeout: timeout, operation: .discoverCharacteristics(peripheral, service))
@@ -260,9 +260,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected(peripheral) }
             
-            let coreService = try corePeripheral.service(service)
+            let coreService = try corePeripheral.service(for: service)
             
-            let coreCharacteristic = try coreService.characteristic(characteristic)
+            let coreCharacteristic = try coreService.characteristic(for: characteristic)
             
             // store semaphore
             let semaphore = Semaphore(timeout: timeout, operation: .readCharacteristic(peripheral, service, characteristic))
@@ -294,9 +294,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected(peripheral) }
             
-            let coreService = try corePeripheral.service(service)
+            let coreService = try corePeripheral.service(for: service)
             
-            let coreCharacteristic = try coreService.characteristic(characteristic)
+            let coreCharacteristic = try coreService.characteristic(for: characteristic)
             
             let writeType: CBCharacteristicWriteType = withResponse ? .withResponse : .withoutResponse
             
@@ -330,9 +330,9 @@ import Bluetooth
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected(peripheral) }
             
-            let coreService = try corePeripheral.service(service)
+            let coreService = try corePeripheral.service(for: service)
             
-            let coreCharacteristic = try coreService.characteristic(characteristic)
+            let coreCharacteristic = try coreService.characteristic(for: characteristic)
             
             // store semaphore
             let semaphore = Semaphore(timeout: timeout, operation: .updateCharacteristicNotificationState(peripheral, service, characteristic))
@@ -703,7 +703,7 @@ internal extension DarwinCentral {
     
     private extension CBPeripheral {
         
-        func service(_ uuid: BluetoothUUID) throws -> CBService {
+        func service(for uuid: BluetoothUUID) throws -> CBService {
             
             guard let service = services?.first(where: { $0.uuid == uuid.toCoreBluetooth() })
                 else { throw CentralError.invalidAttribute(uuid) }
@@ -714,7 +714,7 @@ internal extension DarwinCentral {
     
     private extension CBService {
         
-        func characteristic(_ uuid: BluetoothUUID) throws -> CBCharacteristic {
+        func characteristic(for uuid: BluetoothUUID) throws -> CBCharacteristic {
             
             guard let characteristic = characteristics?.first(where: { $0.uuid == uuid.toCoreBluetooth() })
                 else { throw CentralError.invalidAttribute(uuid) }

@@ -32,11 +32,11 @@ import Bluetooth
             return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
-        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
@@ -48,9 +48,7 @@ import Bluetooth
         
         private var startAdvertisingState: (semaphore: DispatchSemaphore, error: Error?)?
         
-        private var services = [CBMutableService]()
-        
-        private var characteristicValues = [[(characteristic: CBMutableCharacteristic, value: Data)]]()
+        private var database = Database()
         
         // MARK: - Initialization
         
@@ -96,7 +94,7 @@ import Bluetooth
             internalManager.stopAdvertising()
         }
         
-        public func add(service: GATT.Service) throws -> Int {
+        public func add(service: GATT.Service) throws -> UInt16 {
             
             assert(addServiceState == nil, "Already adding another Service")
             
@@ -109,6 +107,7 @@ import Bluetooth
             // add service
             let coreService = service.toCoreBluetooth()
             
+            // CB add
             internalManager.add(coreService)
             
             let _ = semaphore.wait(timeout: .distantFuture)
@@ -123,36 +122,27 @@ import Bluetooth
                 throw error
             }
             
-            services.append(coreService)
-            
-            var characteristics = [(characteristic: CBMutableCharacteristic, value: Data)]()
-            
-            for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
-                
-                let data = service.characteristics[index].value
-                
-                characteristics.append((characteristic, data))
-            }
-            
-            characteristicValues.append(characteristics)
-            
-            return services.endIndex
+            // DB cache add
+            return database.add(service: service)
         }
         
-        public func remove(service index: Int) {
+        public func remove(service handle: UInt16) {
             
-            internalManager.remove(services[index])
+            // remove from daemon
+            let coreService = database.service(for: handle)
+            internalManager.remove(coreService)
             
-            services.remove(at: index)
-            characteristicValues.remove(at: index)
+            // remove from cache
+            database.remove(service: handle)
         }
         
         public func clear() {
             
+             // remove from daemon
             internalManager.removeAllServices()
             
-            services = []
-            characteristicValues = []
+            // clear cache
+            database.clear()
         }
         
         // MARK: Subscript
@@ -212,12 +202,14 @@ import Bluetooth
             
             let value = self[request.characteristic]
             
-            let UUID = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
+            let handle = request.characteristic.hashValue
+            
+            let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
             
             guard request.offset <= value.count
                 else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
-            if let error = willRead?(peer, UUID, value, request.offset) {
+            if let error = willRead?(peer, uuid, handle, value, request.offset) {
                 
                 internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                 return
@@ -244,7 +236,9 @@ import Bluetooth
                 
                 let value = self[request.characteristic]
                 
-                let UUID = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
+                let handle = request.characteristic.hashValue
+                
+                let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
                 
                 let newBytes = request.value ?? Data()
                 
@@ -252,7 +246,7 @@ import Bluetooth
                 
                 newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
                 
-                if let error = willWrite?(peer, UUID, value, newValue) {
+                if let error = willWrite?(peer, uuid, handle, value, newValue) {
                     
                     internalManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                     
@@ -275,41 +269,13 @@ import Bluetooth
             internalManager.respond(to: requests[0], withResult: .success)
         }
         
-        // MARK: - Private Methods
-        
-        /// Find the characteristic with the specified UUID.
-        private func characteristic(_ uuid: BluetoothUUID) -> CBMutableCharacteristic {
-            
-            var foundCharacteristic: CBMutableCharacteristic!
-            
-            for service in services {
-                
-                for characteristic in (service.characteristics ?? []) as? [CBMutableCharacteristic] ?? [] {
-                    
-                    #if os(iOS) || os(watchOS) || os(tvOS) || (os(macOS) && swift(>=3.2))
-                    let characteristicUUID = characteristic.uuid
-                    #elseif os(macOS) && swift(>=3.0)
-                    let characteristicUUID = characteristic.uuid!
-                    #endif
-                    
-                    guard uuid != BluetoothUUID(coreBluetooth: characteristicUUID)
-                        else { foundCharacteristic = characteristic; break }
-                }
-            }
-            
-            guard foundCharacteristic != nil
-                else { fatalError("No Characterstic with UUID \(uuid)") }
-            
-            return foundCharacteristic
-        }
-        
         // MARK: Subscript
         
         private subscript(characteristic: CBCharacteristic) -> Data {
             
             get {
                 
-                for service in characteristicValues {
+                for (service, characteristicValues) in database {
                     
                     for characteristicValue in service {
                         
@@ -439,6 +405,125 @@ public extension DarwinPeripheral {
             #endif
             
             return options
+        }
+    }
+}
+
+private extension DarwinPeripheral {
+    
+    final class Database {
+        
+        private struct Service {
+            
+            var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
+            
+            let handle: UInt16
+            
+            let attribute: CBMutableService
+            
+            let characteristics: [Characteristic]
+        }
+        
+        private struct Characteristic {
+            
+            var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
+            
+            let handle: UInt16
+            
+            let attribute: CBMutableCharacteristic
+            
+            var value: Data
+        }
+        
+        @_versioned
+        private var services = [UInt16: Service]()
+        
+        @_versioned
+        private var characteristics = [UInt16: Characteristic]()
+        
+        /// Do not access directly, use `newHandle()`
+        @_versioned
+        iprivate var lastHandle: UInt16 = 0x0000
+        
+        private func newHandle() -> UInt16 {
+            
+            // starts at 0x0001
+            lastHandle += 1
+            
+            return lastHandle
+        }
+        
+        func add(service: GATT.Service) -> UInt16 {
+            
+            let coreService = service.toCoreBluetooth()
+            
+            let serviceHandle = newHandle()
+            
+            var characteristics = [Characteristic]()
+            characteristics.reserveCapacity(coreService.characteristics?.count ?? 0)
+            
+            for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
+                
+                let data = service.characteristics[index].value
+                
+                let characteristicHandle = newHandle()
+                
+                characteristics.append(Characteristic(handle: characteristicHandle, attribute: characteristic, value: data))
+            }
+            
+            self.services.append(Service(handle: serviceHandle, attribute: coreService, characteristics: characteristics))
+            
+            return serviceHandle
+        }
+        
+        func remove(service handle: UInt16) {
+            
+            guard let index = services.index(where: { $0.handle == handle })
+                else { assertionFailure("Invalid handle \(handle)"); return }
+            
+            services.remove(at: index)
+        }
+        
+        func clear() {
+            
+            attributes.removeAll()
+        }
+        
+        /// Find the service with the specified handle
+        func service(for handle: UInt16) -> CBMutableService {
+            
+            guard let service = attributes[handle]
+                else { fatalError("No service for handle \(handle)") }
+            
+            return service.attribute
+        }
+        
+        /// Find the characteristic with the specified handle
+        func characteristic(for handle: UInt16) -> CBMutableCharacteristic {
+            
+            for service in attributes.values {
+                
+                guard let characteristic = service.characteristics[handle]
+                    else { continue }
+                
+                return characteristic.attribute
+            }
+            
+            fatalError("No Characterstic for handle \(handle)")
+        }
+        
+        subscript(characteristic uuid: BluetoothUUID) -> Data {
+            
+            get { return self[characteristic(uuid)] }
+            
+            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
+        }
+        
+        subscript(characteristic uuid: BluetoothUUID) -> Data {
+            
+            get { return self[characteristic(uuid)] }
+            
+            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
         }
     }
 }
