@@ -129,7 +129,7 @@ import Bluetooth
         public func remove(service handle: UInt16) {
             
             // remove from daemon
-            let coreService = database.service(for: handle).attribute
+            let coreService = database.service(for: handle)
             internalManager.remove(coreService)
             
             // remove from cache
@@ -254,7 +254,6 @@ import Bluetooth
                 }
                 
                 // compute new data
-                
                 newValues[index] = newValue
             }
             
@@ -389,9 +388,9 @@ private extension DarwinPeripheral {
             var value: Data
         }
         
-        private var services = [CBService: Service]()
+        private var services = [CBMutableService: Service]()
         
-        private var characteristics = [CBCharacteristic: Characteristic]()
+        private var characteristics = [CBMutableCharacteristic: Characteristic]()
         
         /// Do not access directly, use `newHandle()`
         private var lastHandle: UInt16 = 0x0000
@@ -413,6 +412,8 @@ private extension DarwinPeripheral {
             
             let serviceHandle = newHandle()
             
+            services[coreService] = Service(handle: serviceHandle)
+            
             for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
                 
                 let data = service.characteristics[index].value
@@ -424,18 +425,16 @@ private extension DarwinPeripheral {
                                                                  value: data)
             }
             
-            services[coreService] = Service(handle: serviceHandle)
-            
             return serviceHandle
         }
         
         func remove(service handle: UInt16) {
             
-            guard let serviceIndex = services.index(where: { $0.value.handle == handle })
-                else { assertionFailure("Invalid handle \(handle)"); return }
+            let coreService = service(for: handle)
             
             // remove service
-            services[handle] = nil
+            services[coreService] = nil
+            (coreService.characteristics as? [CBMutableCharacteristic])?.forEach { characteristics[$0] = nil }
             
             // remove characteristics
             while let index = characteristics.index(where: { $0.value.serviceHandle == handle }) {
@@ -451,21 +450,12 @@ private extension DarwinPeripheral {
         }
         
         /// Find the service with the specified handle
-        func service(for handle: UInt16) -> Service {
+        func service(for handle: UInt16) -> CBMutableService {
             
-            guard let service = services[handle]
-                else { fatalError("No service for handle \(handle)") }
+            guard let coreService = services.first(where: { $0.value.handle == handle })?.key
+                else { fatalError("Invalid handle \(handle)") }
             
-            return service
-        }
-        
-        /// Find the characteristic with the specified handle
-        func characteristic(for handle: UInt16) -> Characteristic {
-            
-            guard let characteristic = characteristics[handle]
-                else { fatalError("No characterstic for handle \(handle)") }
-            
-            return characteristic
+            return coreService
         }
         
         subscript(characteristic handle: UInt16) -> Data {
@@ -484,7 +474,7 @@ private extension DarwinPeripheral {
             }
         }
         
-        private subscript(characteristic: CBCharacteristic) -> Data {
+        subscript(characteristic: CBCharacteristic) -> Data {
             
             get {
                 
