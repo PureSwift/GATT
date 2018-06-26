@@ -466,19 +466,22 @@ private extension DarwinPeripheral {
             
             get {
                 
-                guard let value = characteristics[handle]?.value
+                guard let value = characteristics.values.first(where: { $0.handle == handle })?.value
                     else { fatalError("Invalid handle \(handle)") }
                 
                 return value
             }
             
             set {
-                assert(characteristics[handle] != nil, "Invalid handle")
-                characteristics[handle]?.value = newValue
+                
+                guard let key = characteristics.first(where: { $0.value.handle == handle })?.key
+                    else { fatalError("Invalid handle \(handle)") }
+                
+                characteristics[key]?.value = newValue
             }
         }
         
-        subscript(characteristic: CBCharacteristic) -> Characteristic {
+        private(set) subscript(characteristic characteristic: CBCharacteristic) -> Characteristic {
             
             get {
                 
@@ -498,6 +501,22 @@ private extension DarwinPeripheral {
                 
                 characteristics[key] = newValue
             }
+        }
+        
+        subscript(data characteristic: CBCharacteristic) -> Data {
+            
+            get {
+                
+                guard let key = characteristic as? CBMutableCharacteristic
+                    else { fatalError("Invalid key") }
+                
+                guard let cache = characteristics[key]
+                    else { fatalError("No stored characteristic matches \(characteristic)") }
+                
+                return cache.value
+            }
+            
+            set { self[characteristic: characteristic].value = newValue }
         }
     }
 }
