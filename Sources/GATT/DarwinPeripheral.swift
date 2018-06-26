@@ -377,31 +377,29 @@ private extension DarwinPeripheral {
         
         struct Service {
             
-            var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
-            
-            let attribute: CBMutableService
+            let handle: UInt16
         }
         
         struct Characteristic {
             
-            var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
-            
-            let attribute: CBMutableCharacteristic
+            let handle: UInt16
             
             let serviceHandle: UInt16
             
             var value: Data
         }
         
-        private var services = [UInt16: Service]()
+        private var services = [CBService: Service]()
         
-        private var characteristics = [UInt16: Characteristic]()
+        private var characteristics = [CBCharacteristic: Characteristic]()
         
         /// Do not access directly, use `newHandle()`
         private var lastHandle: UInt16 = 0x0000
         
         /// Simulate a GATT database.
         private func newHandle() -> UInt16 {
+            
+            assert(lastHandle != .max)
             
             // starts at 0x0001
             lastHandle += 1
@@ -421,17 +419,20 @@ private extension DarwinPeripheral {
                 
                 let characteristicHandle = newHandle()
                 
-                characteristics[characteristicHandle] = Characteristic(attribute: characteristic,
-                                                                       serviceHandle: serviceHandle,
-                                                                       value: data)
+                characteristics[characteristic] = Characteristic(handle: characteristicHandle,
+                                                                 serviceHandle: serviceHandle,
+                                                                 value: data)
             }
             
-            services[serviceHandle] = Service(attribute: coreService)
+            services[coreService] = Service(handle: serviceHandle)
             
             return serviceHandle
         }
         
         func remove(service handle: UInt16) {
+            
+            guard let serviceIndex = services.index(where: { $0.value.handle == handle })
+                else { assertionFailure("Invalid handle \(handle)"); return }
             
             // remove service
             services[handle] = nil
