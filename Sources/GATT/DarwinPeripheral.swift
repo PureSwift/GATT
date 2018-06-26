@@ -129,29 +129,29 @@ import Bluetooth
         public func remove(service handle: UInt16) {
             
             // remove from daemon
-            let coreService = database.service(for: handle)
+            let coreService = database.service(for: handle).attribute
             internalManager.remove(coreService)
             
             // remove from cache
             database.remove(service: handle)
         }
         
-        public func clear() {
+        public func removeAllServices() {
             
              // remove from daemon
             internalManager.removeAllServices()
             
             // clear cache
-            database.clear()
+            database.removeAll()
         }
         
         // MARK: Subscript
         
-        public subscript(characteristic uuid: BluetoothUUID) -> Data {
+        public subscript(characteristic handle: UInt16) -> Data {
             
-            get { return self[characteristic(uuid)] }
+            get { return database[characteristic: handle] }
             
-            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
+            set { database[characteristic: handle] = newValue }
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -268,44 +268,6 @@ import Bluetooth
             
             internalManager.respond(to: requests[0], withResult: .success)
         }
-        
-        // MARK: Subscript
-        
-        private subscript(characteristic: CBCharacteristic) -> Data {
-            
-            get {
-                
-                for (service, characteristicValues) in database {
-                    
-                    for characteristicValue in service {
-                        
-                        if characteristicValue.characteristic === characteristic {
-                            
-                            return characteristicValue.value
-                        }
-                    }
-                }
-                
-                fatalError("No stored characteristic matches \(characteristic)")
-            }
-            
-            set {
-                
-                for (serviceIndex, service) in characteristicValues.enumerated() {
-                    
-                    for (characteristicIndex, characteristicValue) in service.enumerated() {
-                        
-                        if characteristicValue.characteristic === characteristic {
-                            
-                            characteristicValues[serviceIndex][characteristicIndex].value = newValue
-                            return
-                        }
-                    }
-                }
-                
-                fatalError("No stored characteristic matches \(characteristic)")
-            }
-        }
     }
 
 // MARK: - Supporting Types
@@ -413,38 +375,32 @@ private extension DarwinPeripheral {
     
     final class Database {
         
-        private struct Service {
+        struct Service {
             
             var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
-            
-            let handle: UInt16
             
             let attribute: CBMutableService
-            
-            let characteristics: [Characteristic]
         }
         
-        private struct Characteristic {
+        struct Characteristic {
             
             var uuid: BluetoothUUID { return BluetoothUUID(coreBluetooth: attribute.uuid) }
             
-            let handle: UInt16
-            
             let attribute: CBMutableCharacteristic
+            
+            let serviceHandle: UInt16
             
             var value: Data
         }
         
-        @_versioned
         private var services = [UInt16: Service]()
         
-        @_versioned
         private var characteristics = [UInt16: Characteristic]()
         
         /// Do not access directly, use `newHandle()`
-        @_versioned
-        iprivate var lastHandle: UInt16 = 0x0000
+        private var lastHandle: UInt16 = 0x0000
         
+        /// Simulate a GATT database.
         private func newHandle() -> UInt16 {
             
             // starts at 0x0001
@@ -459,71 +415,108 @@ private extension DarwinPeripheral {
             
             let serviceHandle = newHandle()
             
-            var characteristics = [Characteristic]()
-            characteristics.reserveCapacity(coreService.characteristics?.count ?? 0)
-            
             for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
                 
                 let data = service.characteristics[index].value
                 
                 let characteristicHandle = newHandle()
                 
-                characteristics.append(Characteristic(handle: characteristicHandle, attribute: characteristic, value: data))
+                characteristics[characteristicHandle] = Characteristic(attribute: characteristic,
+                                                                       serviceHandle: serviceHandle,
+                                                                       value: data)
             }
             
-            self.services.append(Service(handle: serviceHandle, attribute: coreService, characteristics: characteristics))
+            services[serviceHandle] = Service(attribute: coreService)
             
             return serviceHandle
         }
         
         func remove(service handle: UInt16) {
             
-            guard let index = services.index(where: { $0.handle == handle })
-                else { assertionFailure("Invalid handle \(handle)"); return }
+            // remove service
+            services[handle] = nil
             
-            services.remove(at: index)
+            // remove characteristics
+            while let index = characteristics.index(where: { $0.value.serviceHandle == handle }) {
+                
+                characteristics.remove(at: index)
+            }
         }
         
-        func clear() {
+        func removeAll() {
             
-            attributes.removeAll()
+            services.removeAll()
+            characteristics.removeAll()
         }
         
         /// Find the service with the specified handle
-        func service(for handle: UInt16) -> CBMutableService {
+        func service(for handle: UInt16) -> Service {
             
-            guard let service = attributes[handle]
+            guard let service = services[handle]
                 else { fatalError("No service for handle \(handle)") }
             
-            return service.attribute
+            return service
         }
         
         /// Find the characteristic with the specified handle
-        func characteristic(for handle: UInt16) -> CBMutableCharacteristic {
+        func characteristic(for handle: UInt16) -> Characteristic {
             
-            for service in attributes.values {
+            guard let characteristic = characteristics[handle]
+                else { fatalError("No characterstic for handle \(handle)") }
+            
+            return characteristic
+        }
+        
+        subscript(characteristic handle: UInt16) -> Data {
+            
+            get {
                 
-                guard let characteristic = service.characteristics[handle]
-                    else { continue }
+                guard let value = characteristics[handle]?.value
+                    else { fatalError("Invalid handle \(handle)") }
                 
-                return characteristic.attribute
+                return value
             }
             
-            fatalError("No Characterstic for handle \(handle)")
+            set {
+                assert(characteristics[handle] != nil, "Invalid handle")
+                characteristics[handle]?.value = newValue
+            }
         }
         
-        subscript(characteristic uuid: BluetoothUUID) -> Data {
+        private subscript(characteristic: CBCharacteristic) -> Data {
             
-            get { return self[characteristic(uuid)] }
+            get {
+                
+                for (service, characteristicValues) in database {
+                    
+                    for characteristicValue in service {
+                        
+                        if characteristicValue.characteristic === characteristic {
+                            
+                            return characteristicValue.value
+                        }
+                    }
+                }
+                
+                fatalError("No stored characteristic matches \(characteristic)")
+            }
             
-            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
-        }
-        
-        subscript(characteristic uuid: BluetoothUUID) -> Data {
-            
-            get { return self[characteristic(uuid)] }
-            
-            set { internalManager.updateValue(newValue, for: characteristic(uuid), onSubscribedCentrals: nil) }
+            set {
+                
+                for (serviceIndex, service) in characteristicValues.enumerated() {
+                    
+                    for (characteristicIndex, characteristicValue) in service.enumerated() {
+                        
+                        if characteristicValue.characteristic === characteristic {
+                            
+                            characteristicValues[serviceIndex][characteristicIndex].value = newValue
+                            return
+                        }
+                    }
+                }
+                
+                fatalError("No stored characteristic matches \(characteristic)")
+            }
         }
     }
 }
