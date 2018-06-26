@@ -200,9 +200,11 @@ import Bluetooth
             
             let peer = Central(request.central)
             
-            let value = self[request.characteristic]
+            let characteristic = database[request.characteristic]
             
-            let handle = request.characteristic.hashValue
+            let value = characteristic.value
+            
+            let handle = characteristic.handle
             
             let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
             
@@ -234,9 +236,11 @@ import Bluetooth
                 
                 let peer = Central(request.central)
                 
-                let value = self[request.characteristic]
+                let characteristic = database[request.characteristic]
                 
-                let handle = request.characteristic.hashValue
+                let value = characteristic.value
+                
+                let handle = characteristic.handle
                 
                 let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
                 
@@ -262,7 +266,7 @@ import Bluetooth
                 
                 let newValue = newValues[index]
                 
-                self[request.characteristic] = newValue
+                database[request.characteristic].value = newValue
             }
             
             internalManager.respond(to: requests[0], withResult: .success)
@@ -474,39 +478,25 @@ private extension DarwinPeripheral {
             }
         }
         
-        subscript(characteristic: CBCharacteristic) -> Data {
+        subscript(characteristic: CBCharacteristic) -> Characteristic {
             
             get {
                 
-                for (service, characteristicValues) in database {
-                    
-                    for characteristicValue in service {
-                        
-                        if characteristicValue.characteristic === characteristic {
-                            
-                            return characteristicValue.value
-                        }
-                    }
-                }
+                guard let key = characteristic as? CBMutableCharacteristic
+                    else { fatalError("Invalid key") }
                 
-                fatalError("No stored characteristic matches \(characteristic)")
+                guard let value = characteristics[key]
+                    else { fatalError("No stored characteristic matches \(characteristic)") }
+                
+                return value
             }
             
             set {
                 
-                for (serviceIndex, service) in characteristicValues.enumerated() {
-                    
-                    for (characteristicIndex, characteristicValue) in service.enumerated() {
-                        
-                        if characteristicValue.characteristic === characteristic {
-                            
-                            characteristicValues[serviceIndex][characteristicIndex].value = newValue
-                            return
-                        }
-                    }
-                }
+                guard let key = characteristic as? CBMutableCharacteristic
+                    else { fatalError("Invalid key") }
                 
-                fatalError("No stored characteristic matches \(characteristic)")
+                characteristics[key] = newValue
             }
         }
     }

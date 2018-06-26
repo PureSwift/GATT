@@ -32,7 +32,7 @@ public protocol PeripheralProtocol: class {
     func remove(service: UInt16)
     
     /// Clears the local GATT database.
-    func clear()
+    func removeAllServices()
     
     var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)? { get set }
     
