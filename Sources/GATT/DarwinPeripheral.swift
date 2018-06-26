@@ -200,7 +200,7 @@ import Bluetooth
             
             let peer = Central(request.central)
             
-            let characteristic = database[request.characteristic]
+            let characteristic = database[characteristic: request.characteristic]
             
             let value = characteristic.value
             
@@ -236,7 +236,7 @@ import Bluetooth
                 
                 let peer = Central(request.central)
                 
-                let characteristic = database[request.characteristic]
+                let characteristic = database[characteristic: request.characteristic]
                 
                 let value = characteristic.value
                 
@@ -266,7 +266,7 @@ import Bluetooth
                 
                 let newValue = newValues[index]
                 
-                database[request.characteristic].value = newValue
+                database[data: request.characteristic] = newValue
             }
             
             internalManager.respond(to: requests[0], withResult: .success)
