@@ -23,11 +23,11 @@
         
         public let controller: HostController
         
-        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ())?
         
         // MARK: - Private Properties
         
@@ -94,20 +94,20 @@
                                 
                                 do {
                                     
-                                    var didWriteValues: (central: Central, uuid: BluetoothUUID, value: Data, newValue: Data)?
+                                    var didWriteValues: (central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data)?
                                     
                                     server.willRead = { (uuid, handle, value, offset)  in
-                                        peripheral.willRead?(Central(socket: newSocket), uuid, value, offset)
+                                        peripheral.willRead?(Central(socket: newSocket), uuid, handle, value, offset)
                                     }
                                     
                                     server.willWrite = { (uuid, handle, value, newValue) in
                                         
-                                        if let error = peripheral.willWrite?(Central(socket: newSocket), uuid, value, newValue) {
+                                        if let error = peripheral.willWrite?(Central(socket: newSocket), uuid, handle, value, newValue) {
                                             
                                             return error
                                         }
                                         
-                                        didWriteValues = (central: Central(socket: newSocket), uuid: uuid, value: value, newValue: newValue)
+                                        didWriteValues = (central: Central(socket: newSocket), uuid: uuid, handle: handle, value: value, newValue: newValue)
                                         
                                         return nil
                                     }
@@ -122,7 +122,7 @@
                                     
                                     if let writtenValues = didWriteValues {
                                         
-                                        peripheral.didWrite?(writtenValues.central, writtenValues.uuid, writtenValues.value, writtenValues.newValue)
+                                        peripheral.didWrite?(writtenValues.central, writtenValues.uuid, writtenValues.handle, writtenValues.value, writtenValues.newValue)
                                     }
                                 }
                                 
@@ -173,29 +173,18 @@
             database.remove(service: handle)
         }
         
-        public func clear() {
+        public func removeAllServices() {
             
             database.removeAll()
         }
         
         // MARK: Subscript
         
-        public subscript(characteristic uuid: BluetoothUUID) -> Data {
+        public subscript(characteristic handle: UInt16) -> Data {
             
-            get { return database.filter({ $0.uuid == uuid}).first!.value }
+            get { return database[handle: handle].value }
             
-            set {
-                
-                let matchingAttributes = database.filter({ $0.uuid == uuid })
-                
-                assert(matchingAttributes.count == 1, "\(matchingAttributes.count) Attributes with UUID \(uuid)")
-                
-                let attribute = matchingAttributes.first!
-                
-                database.write(newValue, forAttribute: attribute.handle)
-                
-                //assert(self[characteristic: UUID] == newValue, "New Characteristic value \(UUID) could not be written.")
-            }
+            set { database.write(newValue, forAttribute: handle) }
         }
     }
 
