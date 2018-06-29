@@ -299,10 +299,12 @@ public extension DarwinPeripheral {
                 options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
             }
             
+            #if swift(>=3.2) // Only with Xcode 9 SDK
             if let identifier = self.restoreIdentifier {
                 
                 options[CBPeripheralManagerOptionRestoreIdentifierKey] = identifier
             }
+            #endif
             
             return options
         }
