@@ -286,6 +286,9 @@ import Bluetooth
                 
                 // compute new data
                 newValues[index] = newValue
+                
+                // did write callback
+                didWrite?(writeRequest)
             }
             
             // write new values

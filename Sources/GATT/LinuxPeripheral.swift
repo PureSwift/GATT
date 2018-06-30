@@ -56,6 +56,8 @@
             
             guard isServerRunning == false else { return }
             
+            let options = self.options
+            
             // enable advertising
             do { try controller.enableLowEnergyAdvertising() }
             catch HCIError.commandDisallowed { /* ignore */ }
@@ -82,7 +84,9 @@
                         
                         peripheral.log?("New \(newSocket.addressType) connection from \(newSocket.address)")
                         
-                        let server = GATTServer(socket: newSocket)
+                        let server = GATTServer(socket: newSocket,
+                                                maximumTransmissionUnit: options.maximumTransmissionUnit,
+                                                maximumPreparedWrites: options.maximumPreparedWrites)
                         
                         server.log = { peripheral.log?("[\(newSocket.address)]: " + $0) }
                         
