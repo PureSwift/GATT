@@ -303,9 +303,15 @@
 				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = PureSwift;
 				TargetAttributes = {
+					6E49B22520532A94002EA5DC = {
+						LastSwiftMigration = 0940;
+					};
 					6EE84D831CAF419D00A40C4D = {
 						CreatedOnToolsVersion = 7.3;
 						LastSwiftMigration = 0920;
+					};
+					6EE9102A1FDE5C17007AD3EA = {
+						LastSwiftMigration = 0940;
 					};
 					6EF45FBF1CC6D355001F7A39 = {
 						LastSwiftMigration = 0930;
