@@ -145,6 +145,12 @@ import Bluetooth
             database.removeAll()
         }
         
+        /// Return the handles of the characteristics matching the specified UUID.
+        public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
+         
+            return database.characteristics(for: uuid)
+        }
+        
         // MARK: Subscript
         
         public subscript(characteristic handle: UInt16) -> Data {
@@ -464,6 +470,16 @@ private extension DarwinPeripheral {
             return coreService
         }
         
+        /// Return the handles of the characteristics matching the specified UUID.
+        func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
+            
+            let characteristicUUID = uuid.toCoreBluetooth()
+            
+            return characteristics
+                .filter { $0.key.uuid == characteristicUUID }
+                .map { $0.value.handle }
+        }
+        
         subscript(characteristic handle: UInt16) -> Data {
             
             get {
@@ -478,6 +494,29 @@ private extension DarwinPeripheral {
                 
                 guard let key = characteristics.first(where: { $0.value.handle == handle })?.key
                     else { fatalError("Invalid handle \(handle)") }
+                
+                characteristics[key]?.value = newValue
+            }
+        }
+        
+        subscript(characteristic uuid: BluetoothUUID) -> Data {
+            
+            get {
+                
+                let characteristicUUID = uuid.toCoreBluetooth()
+                
+                guard let characteristic = characteristics.first(where: { $0.key.uuid == characteristicUUID })?.value
+                    else { fatalError("Invalid UUID \(uuid)") }
+                
+                return characteristic.value
+            }
+            
+            set {
+                
+                let characteristicUUID = uuid.toCoreBluetooth()
+                
+                guard let key = characteristics.keys.first(where: { $0.uuid == characteristicUUID })
+                    else { fatalError("Invalid UUID \(uuid)") }
                 
                 characteristics[key]?.value = newValue
             }

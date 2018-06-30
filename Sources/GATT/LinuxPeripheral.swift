@@ -178,6 +178,12 @@
             database.removeAll()
         }
         
+        /// Return the handles of the characteristics matching the specified UUID.
+        public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
+            
+            return database.filter { $0.uuid == uuid }.map { $0.handle }
+        }
+        
         // MARK: Subscript
         
         public subscript(characteristic handle: UInt16) -> Data {

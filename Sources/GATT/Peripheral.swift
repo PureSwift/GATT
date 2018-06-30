@@ -43,9 +43,6 @@ public protocol PeripheralProtocol: class {
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }
     
-    /// Get the UUID of the service or characteristic for the specified attribute.
-    //func uuid(for handle: AttributeHandle) -> BluetoothUUID
-    
-    /// Get the handles associated with the specified UUID.
-    //func handles(for uuid: BluetoothUUID) -> AttributeHandle
+    /// Return the handles of the characteristics matching the specified UUID.
+    func characteristics(for uuid: BluetoothUUID) -> [UInt16]
 }
