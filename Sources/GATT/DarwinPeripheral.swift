@@ -52,9 +52,16 @@ import Bluetooth
         
         // MARK: - Initialization
         
-        public init(options: Options = Options()) {
+        public init(options: Options) {
             
             self.options = options
+            
+            super.init()
+        }
+        
+        public override convenience init() {
+            
+            self.init(options: Options())
         }
         
         // MARK: - Methods
@@ -329,10 +336,10 @@ public extension DarwinPeripheral {
         
         public let showPowerAlert: Bool
         
-        public let restoreIdentifier: String?
+        public let restoreIdentifier: String
         
         public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String? = nil) {
+                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinPeripheral") {
             
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
