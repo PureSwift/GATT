@@ -15,45 +15,17 @@ import CoreBluetooth
 
 internal enum DarwinDescriptor {
     
-    /// Characteristic Extended Properties
-    ///
-    /// The string representation of the UUID for the extended properties descriptor.
-    /// The corresponding value for this descriptor is an `NSNumber` object.
-    case extendedProperties(NSNumber)
-    
-    /// Characteristic User Description Descriptor
-    ///
-    /// The string representation of the UUID for the user description descriptor.
-    /// The corresponding value for this descriptor is an `NSString` object.
-    case userDescription(NSString)
-    
-    /// Client Characteristic Configuration Descriptor
-    ///
-    /// The string representation of the UUID for the client configuration descriptor.
-    /// The corresponding value for this descriptor is an `NSNumber` object.
-    case clientConfiguration(NSNumber)
-    
-    /// Server Characteristic Configuration Descriptor
-    ///
-    /// The string representation of the UUID for the server configuration descriptor.
-    /// The corresponding value for this descriptor is an `NSNumber` object.
-    case serverConfiguration(NSNumber)
-    
     /// Characteristic Format Descriptor
     ///
     /// The string representation of the UUID for the presentation format descriptor.
     /// The corresponding value for this descriptor is an `NSData` object
     case format(NSData)
     
-    /// Characteristic Aggregate Format Descriptor
+    /// Characteristic User Description Descriptor
     ///
-    /// The string representation of the UUID for the aggregate descriptor.
-    case aggregateFormat(NSData)
-    
-    /// Characteristic Valid Range Descriptor
-    ///
-    /// Data representing the valid min/max values accepted for a characteristic.
-    case validRange(NSData)
+    /// The string representation of the UUID for the user description descriptor.
+    /// The corresponding value for this descriptor is an `NSString` object.
+    case userDescription(NSString)
 }
 
 extension DarwinDescriptor {
@@ -62,13 +34,6 @@ extension DarwinDescriptor {
         
         switch uuid {
         
-        case BluetoothUUID.characteristicExtendedProperties:
-            
-            guard let descriptor = GATTCharacteristicExtendedProperties(data: data)
-                else { return nil }
-            
-            self = .extendedProperties(NSNumber(value: descriptor.properties.rawValue))
-            
         case BluetoothUUID.characteristicUserDescription:
             
             guard let descriptor = GATTUserDescription(data: data)
@@ -80,7 +45,23 @@ extension DarwinDescriptor {
             
             self = .format(data as NSData)
             
-            // FIXME: Implement all
+            /*
+            
+        case BluetoothUUID.characteristicExtendedProperties:
+            
+            guard let descriptor = GATTCharacteristicExtendedProperties(data: data)
+                else { return nil }
+            
+            self = .extendedProperties(NSNumber(value: descriptor.properties.rawValue))
+            
+        case BluetoothUUID.clientCharacteristicConfiguration:
+            
+            guard let descriptor = GATTClientCharacteristicConfiguration(data: data)
+                else { return nil }
+            
+            self = .clientConfiguration(descriptor.configuration.rawValue as NSNumber)
+ 
+            */
             
         default:
             
@@ -91,26 +72,16 @@ extension DarwinDescriptor {
     var uuid: BluetoothUUID {
         
         switch self {
-        case .extendedProperties: return .characteristicExtendedProperties
-        case .userDescription: return .characteristicUserDescription
-        case .clientConfiguration: return .clientCharacteristicConfiguration
-        case .serverConfiguration: return .serverCharacteristicConfiguration
         case .format: return .characteristicFormat
-        case .aggregateFormat: return .characteristicAggregateFormat
-        case .validRange: return .validRange
+        case .userDescription: return .characteristicUserDescription
         }
     }
     
     var value: AnyObject {
         
         switch self {
-        case let .extendedProperties(value): return value
-        case let .userDescription(value): return value
-        case let .clientConfiguration(value): return value
-        case let .serverConfiguration(value): return value
         case let .format(value): return value
-        case let .aggregateFormat(value): return value
-        case let .validRange(value): return value
+        case let .userDescription(value): return value
         }
     }
 }

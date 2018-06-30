@@ -123,7 +123,7 @@ import Bluetooth
             }
             
             // DB cache add
-            return database.add(service: service)
+            return database.add(service: service, coreService)
         }
         
         public func remove(service handle: UInt16) {
@@ -418,9 +418,7 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        func add(service: GATT.Service) -> UInt16 {
-            
-            let coreService = service.toCoreBluetooth()
+        func add(service: GATT.Service, _ coreService: CBMutableService) -> UInt16 {
             
             let serviceHandle = newHandle()
             
