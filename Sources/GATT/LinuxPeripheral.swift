@@ -19,33 +19,35 @@
         
         public var log: ((String) -> ())?
         
-        public let preferredMaximumTransmissionUnit: ATTMaximumTransmissionUnit
+        public let options: Options
         
         public let controller: HostController
         
-        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((PeripheralReadRequest) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((PeripheralWriteRequest) -> ())?
         
         // MARK: - Private Properties
         
-        private var database = GATTDatabase()
+        fileprivate var database = GATTDatabase()
         
-        private var isServerRunning = false
+        fileprivate var isServerRunning = false
         
-        private var serverSocket: L2CAPSocket!
+        fileprivate var serverSocket: L2CAPSocket?
         
-        private var serverThread: Thread!
+        fileprivate var serverThread: Thread?
+        
+        fileprivate var centrals = [Central]()
         
         // MARK: - Initialization
         
         public init(controller: HostController,
-                    preferredMaximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
+                    options: Options = Options()) {
             
             self.controller = controller
-            self.preferredMaximumTransmissionUnit = preferredMaximumTransmissionUnit
+            self.options = options
         }
         
         // MARK: - Methods
@@ -92,22 +94,42 @@
                             
                             while peripheral.isServerRunning {
                                 
+                                // ATT_MTU-3
+                                let maximumUpdateValueLength = Int(server.maximumTransmissionUnit.rawValue) - 3
+                                
+                                let central = Central(socket: newSocket)
+                                
                                 do {
                                     
-                                    var didWriteValues: (central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data)?
+                                    var didWriteValues: PeripheralWriteRequest?
                                     
                                     server.willRead = { (uuid, handle, value, offset)  in
-                                        peripheral.willRead?(Central(socket: newSocket), uuid, handle, value, offset)
+                                        
+                                        let request = PeripheralReadRequest(central: central,
+                                                                            maximumUpdateValueLength: maximumUpdateValueLength,
+                                                                            uuid: uuid,
+                                                                            handle: handle,
+                                                                            value: value,
+                                                                            offset: offset)
+                                        
+                                        return peripheral.willRead?(request)
                                     }
                                     
                                     server.willWrite = { (uuid, handle, value, newValue) in
                                         
-                                        if let error = peripheral.willWrite?(Central(socket: newSocket), uuid, handle, value, newValue) {
+                                        let request = PeripheralWriteRequest(central: central,
+                                                                            maximumUpdateValueLength: maximumUpdateValueLength,
+                                                                            uuid: uuid,
+                                                                            handle: handle,
+                                                                            value: value,
+                                                                            newValue: newValue)
+                                        
+                                        if let error = peripheral.willWrite?(request) {
                                             
                                             return error
                                         }
                                         
-                                        didWriteValues = (central: Central(socket: newSocket), uuid: uuid, handle: handle, value: value, newValue: newValue)
+                                        didWriteValues = request
                                         
                                         return nil
                                     }
@@ -122,7 +144,7 @@
                                     
                                     if let writtenValues = didWriteValues {
                                         
-                                        peripheral.didWrite?(writtenValues.central, writtenValues.uuid, writtenValues.handle, writtenValues.value, writtenValues.newValue)
+                                        peripheral.didWrite?(writtenValues)
                                     }
                                 }
                                 
@@ -150,7 +172,8 @@
             
             self.serverSocket = serverSocket
             self.serverThread = serverThread
-            self.serverThread.start()
+            
+            serverThread.start()
         }
         
         public func stop() {
@@ -191,6 +214,49 @@
             get { return database[handle: handle].value }
             
             set { database.write(newValue, forAttribute: handle) }
+        }
+    }
+    
+    @available(OSX 10.12, *)
+    public extension LinuxPeripheral {
+        
+        public struct Options {
+            
+            public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+            
+            public let maximumPreparedWrites: Int
+            
+            public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
+                        maximumPreparedWrites: Int = 100) {
+                
+                self.maximumTransmissionUnit = maximumTransmissionUnit
+                self.maximumPreparedWrites = maximumPreparedWrites
+            }
+        }
+    }
+    
+    @available(OSX 10.12, *)
+    private extension LinuxPeripheral {
+        
+        final class Client {
+            /*
+            let central: Central
+            
+            let server: GATTServer
+            
+            let thread: Thread
+            
+            private(set) weak var peripheral: LinuxPeripheral!
+            
+            init(socket: L2CAPSocket, peripheral: LinuxPeripheral) {
+                
+                self.central = Central(socket: socket)
+                
+                self.server = GATTServer(socket: socket)
+                server.database = peripheral.database
+                
+               
+            }*/
         }
     }
 

@@ -34,15 +34,60 @@ public protocol PeripheralProtocol: class {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)? { get set }
+    var willRead: ((PeripheralReadRequest) -> ATT.Error?)? { get set }
     
-    var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ATT.Error?)? { get set }
+    var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)? { get set }
     
-    var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ())? { get set }
+    var didWrite: ((PeripheralWriteRequest) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }
     
     /// Return the handles of the characteristics matching the specified UUID.
     func characteristics(for uuid: BluetoothUUID) -> [UInt16]
+}
+
+// MARK: - Supporting Types
+
+public protocol PeripheralRequest {
+    
+    var central: Central { get }
+    
+    var maximumUpdateValueLength: Int { get }
+    
+    var uuid: BluetoothUUID { get }
+    
+    var handle: UInt16 { get }
+    
+    var value: Data { get }
+}
+
+public struct PeripheralReadRequest: PeripheralRequest {
+    
+    public let central: Central
+    
+    public let maximumUpdateValueLength: Int
+    
+    public let uuid: BluetoothUUID
+    
+    public let handle: UInt16
+    
+    public let value: Data
+    
+    public let offset: Int
+}
+
+public struct PeripheralWriteRequest: PeripheralRequest {
+    
+    public let central: Central
+    
+    public let maximumUpdateValueLength: Int
+    
+    public let uuid: BluetoothUUID
+    
+    public let handle: UInt16
+    
+    public let value: Data
+    
+    public let newValue: Data
 }

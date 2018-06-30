@@ -32,11 +32,11 @@ import Bluetooth
             return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
-        public var willRead: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ offset: Int) -> ATT.Error?)?
+        public var willRead: ((PeripheralReadRequest) -> ATT.Error?)?
         
-        public var willWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ATT.Error?)?
+        public var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((_ central: Central, _ uuid: BluetoothUUID, _ handle: UInt16, _ value: Data, _ newValue: Data) -> ())?
+        public var didWrite: ((PeripheralWriteRequest) -> ())?
         
         // MARK: - Private Properties
         
@@ -157,7 +157,14 @@ import Bluetooth
             
             get { return database[characteristic: handle] }
             
-            set { database[characteristic: handle] = newValue }
+            set {
+                
+                database[characteristic: handle] = newValue
+                
+                internalManager.updateValue(newValue,
+                                            for: database.characteristic(for: handle),
+                                            onSubscribedCentrals: nil)
+            }
         }
         
         // MARK: - CBPeripheralManagerDelegate
@@ -170,6 +177,11 @@ import Bluetooth
             log?("Did update state \(state)")
             
             stateChanged(state)
+        }
+        
+        public func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState state: [String : Any]) {
+            
+            
         }
         
         @objc(peripheralManagerDidStartAdvertising:error:)
@@ -205,19 +217,24 @@ import Bluetooth
         public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             let peer = Central(request.central)
-            
+                        
             let characteristic = database[characteristic: request.characteristic]
+            
+            let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
             
             let value = characteristic.value
             
-            let handle = characteristic.handle
-            
-            let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
+            let readRequest = PeripheralReadRequest(central: peer,
+                                                maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                                                uuid: uuid,
+                                                handle: characteristic.handle,
+                                                value: value,
+                                                offset: request.offset)
             
             guard request.offset <= value.count
                 else { internalManager.respond(to: request, withResult: .invalidOffset); return }
             
-            if let error = willRead?(peer, uuid, handle, value, request.offset) {
+            if let error = willRead?(readRequest) {
                 
                 internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                 return
@@ -246,17 +263,21 @@ import Bluetooth
                 
                 let value = characteristic.value
                 
-                let handle = characteristic.handle
-                
                 let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
                 
                 let newBytes = request.value ?? Data()
                 
                 var newValue = value
-                
                 newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
                 
-                if let error = willWrite?(peer, uuid, handle, value, newValue) {
+                let writeRequest = PeripheralWriteRequest(central: peer,
+                                                        maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                                                        uuid: uuid,
+                                                        handle: characteristic.handle,
+                                                        value: value,
+                                                        newValue: newValue)
+                
+                if let error = willWrite?(writeRequest) {
                     
                     internalManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
                     
@@ -276,6 +297,24 @@ import Bluetooth
             }
             
             internalManager.respond(to: requests[0], withResult: .success)
+        }
+        
+        @objc
+        public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+            
+            
+        }
+        
+        @objc
+        public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+            
+            
+        }
+        
+        @objc
+        public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
+            
+            
         }
     }
 
@@ -476,6 +515,14 @@ private extension DarwinPeripheral {
             return characteristics
                 .filter { $0.key.uuid == characteristicUUID }
                 .map { $0.value.handle }
+        }
+        
+        func characteristic(for handle: UInt16) -> CBMutableCharacteristic {
+            
+            guard let characteristic = characteristics.first(where: { $0.value.handle == handle })?.key
+                else { fatalError("Invalid handle \(handle)") }
+            
+            return characteristic
         }
         
         subscript(characteristic handle: UInt16) -> Data {
