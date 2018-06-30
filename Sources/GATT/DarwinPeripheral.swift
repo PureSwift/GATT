@@ -355,10 +355,7 @@ public extension DarwinPeripheral {
             }
             
             #if swift(>=3.2) // Only with Xcode 9 SDK
-            if let identifier = self.restoreIdentifier {
-                
-                options[CBPeripheralManagerOptionRestoreIdentifierKey] = identifier
-            }
+            options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
             #endif
             
             return options
