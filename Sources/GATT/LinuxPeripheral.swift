@@ -19,7 +19,7 @@
         
         public var log: ((String) -> ())?
         
-        public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+        public let preferredMaximumTransmissionUnit: ATTMaximumTransmissionUnit
         
         public let controller: HostController
         
@@ -42,10 +42,10 @@
         // MARK: - Initialization
         
         public init(controller: HostController,
-                    maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
+                    preferredMaximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
             
             self.controller = controller
-            self.maximumTransmissionUnit = maximumTransmissionUnit
+            self.preferredMaximumTransmissionUnit = preferredMaximumTransmissionUnit
         }
         
         // MARK: - Methods
