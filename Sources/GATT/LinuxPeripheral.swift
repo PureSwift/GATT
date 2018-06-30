@@ -23,11 +23,11 @@
         
         public let controller: HostController
         
-        public var willRead: ((PeripheralReadRequest) -> ATT.Error?)?
+        public var willRead: ((GATTReadRequest) -> ATT.Error?)?
         
-        public var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)?
+        public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((PeripheralWriteRequest) -> ())?
+        public var didWrite: ((GATTWriteRequest) -> ())?
         
         // MARK: - Private Properties
         
@@ -105,11 +105,11 @@
                                 
                                 do {
                                     
-                                    var didWriteValues: PeripheralWriteRequest?
+                                    var didWriteValues: GATTWriteRequest?
                                     
                                     server.willRead = { (uuid, handle, value, offset)  in
                                         
-                                        let request = PeripheralReadRequest(central: central,
+                                        let request = GATTReadRequest(central: central,
                                                                             maximumUpdateValueLength: maximumUpdateValueLength,
                                                                             uuid: uuid,
                                                                             handle: handle,
@@ -121,7 +121,7 @@
                                     
                                     server.willWrite = { (uuid, handle, value, newValue) in
                                         
-                                        let request = PeripheralWriteRequest(central: central,
+                                        let request = GATTWriteRequest(central: central,
                                                                             maximumUpdateValueLength: maximumUpdateValueLength,
                                                                             uuid: uuid,
                                                                             handle: handle,

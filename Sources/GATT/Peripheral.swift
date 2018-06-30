@@ -34,11 +34,11 @@ public protocol PeripheralProtocol: class {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    var willRead: ((PeripheralReadRequest) -> ATT.Error?)? { get set }
+    var willRead: ((GATTReadRequest) -> ATT.Error?)? { get set }
     
-    var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)? { get set }
+    var willWrite: ((GATTWriteRequest) -> ATT.Error?)? { get set }
     
-    var didWrite: ((PeripheralWriteRequest) -> ())? { get set }
+    var didWrite: ((GATTWriteRequest) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }
@@ -49,7 +49,7 @@ public protocol PeripheralProtocol: class {
 
 // MARK: - Supporting Types
 
-public protocol PeripheralRequest {
+public protocol GATTRequest {
     
     var central: Central { get }
     
@@ -62,7 +62,7 @@ public protocol PeripheralRequest {
     var value: Data { get }
 }
 
-public struct PeripheralReadRequest: PeripheralRequest {
+public struct GATTReadRequest: GATTRequest {
     
     public let central: Central
     
@@ -77,7 +77,7 @@ public struct PeripheralReadRequest: PeripheralRequest {
     public let offset: Int
 }
 
-public struct PeripheralWriteRequest: PeripheralRequest {
+public struct GATTWriteRequest: GATTRequest {
     
     public let central: Central
     

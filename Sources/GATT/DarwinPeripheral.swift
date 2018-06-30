@@ -32,11 +32,11 @@ import Bluetooth
             return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
-        public var willRead: ((PeripheralReadRequest) -> ATT.Error?)?
+        public var willRead: ((GATTReadRequest) -> ATT.Error?)?
         
-        public var willWrite: ((PeripheralWriteRequest) -> ATT.Error?)?
+        public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((PeripheralWriteRequest) -> ())?
+        public var didWrite: ((GATTWriteRequest) -> ())?
         
         // MARK: - Private Properties
         
@@ -224,7 +224,7 @@ import Bluetooth
             
             let value = characteristic.value
             
-            let readRequest = PeripheralReadRequest(central: peer,
+            let readRequest = GATTReadRequest(central: peer,
                                                 maximumUpdateValueLength: request.central.maximumUpdateValueLength,
                                                 uuid: uuid,
                                                 handle: characteristic.handle,
@@ -270,7 +270,7 @@ import Bluetooth
                 var newValue = value
                 newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
                 
-                let writeRequest = PeripheralWriteRequest(central: peer,
+                let writeRequest = GATTWriteRequest(central: peer,
                                                         maximumUpdateValueLength: request.central.maximumUpdateValueLength,
                                                         uuid: uuid,
                                                         handle: characteristic.handle,

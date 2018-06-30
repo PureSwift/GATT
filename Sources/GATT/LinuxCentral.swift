@@ -8,11 +8,11 @@
 
 #if os(Linux) || (Xcode && SWIFT_PACKAGE)
     
-    import Foundation
-    import Bluetooth
-    import BluetoothLinux
+import Foundation
+import Bluetooth
+import BluetoothLinux
     
-    @available(OSX 10.12, *)
+@available(OSX 10.12, *)
 public final class LinuxCentral: CentralProtocol {
         
         public var log: ((String) -> ())?
@@ -31,12 +31,12 @@ public final class LinuxCentral: CentralProtocol {
             
         }
         
-        public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval) throws -> [CentralManager.Service] {
+        public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval) throws -> [Service] {
             
             fatalError()
         }
         
-        public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> [CentralManager.Characteristic] {
+        public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> [Characteristic] {
             
             
             fatalError()

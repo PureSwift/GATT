@@ -32,12 +32,12 @@ public protocol CentralProtocol: class {
     
     func discoverServices(_ services: [BluetoothUUID],
                           for peripheral: Peripheral,
-                          timeout: TimeInterval) throws -> [CentralManager.Service]
+                          timeout: TimeInterval) throws -> [Service]
     
     func discoverCharacteristics(_ characteristics: [BluetoothUUID],
                                 for service: BluetoothUUID,
                                 peripheral: Peripheral,
-                                timeout: TimeInterval) throws -> [CentralManager.Characteristic]
+                                timeout: TimeInterval) throws -> [Characteristic]
     
     func readValue(for characteristic: BluetoothUUID,
                    service: BluetoothUUID,
@@ -73,17 +73,22 @@ public extension CentralProtocol {
         return results.values.sorted(by: { $0.date < $1.date })
     }
 }
-
-public extension CentralManager {
     
-    public struct Service {
+    // MARK: - Supporting Types
+    
+    public protocol GATTAttribute {
+        
+        var uuid: BluetoothUUID { get }
+    }
+    
+    public struct Service: GATTAttribute {
         
         public let uuid: BluetoothUUID
         
         public let isPrimary: Bool
     }
     
-    public struct Characteristic {
+    public struct Characteristic: GATTAttribute {
         
         public typealias Property = GATT.CharacteristicProperty
         
@@ -91,7 +96,6 @@ public extension CentralManager {
         
         public let properties: BitMaskOptionSet<Property>
     }
-}
 
 /// Errors for GATT Central Manager
 public enum CentralError: Error {
