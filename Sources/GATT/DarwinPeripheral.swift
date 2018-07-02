@@ -275,6 +275,8 @@ import Bluetooth
                 let newBytes = request.value ?? Data()
                 
                 var newValue = value
+                let appendedByteCount = request.offset + newBytes.count - newValue.count
+                newValue.append(Data(count: appendedByteCount))
                 newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
                 
                 let writeRequest = GATTWriteRequest(central: peer,
