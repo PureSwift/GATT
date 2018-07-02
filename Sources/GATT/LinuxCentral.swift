@@ -22,38 +22,48 @@ public final class LinuxCentral: CentralProtocol {
             fatalError()
         }
         
-        public func scan(filterDuplicates: Bool, shouldContinueScanning: () -> (Bool), foundDevice: @escaping (ScanData) -> ()) throws {
+        public func scan(filterDuplicates: Bool = true, shouldContinueScanning: () -> (Bool), foundDevice: @escaping (ScanData) -> ()) throws {
             
             fatalError()
         }
         
-        public func connect(to peripheral: Peripheral, timeout: TimeInterval) throws {
+        public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
             
         }
         
-        public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval) throws -> [Service] {
+        public func discoverServices(_ services: [BluetoothUUID] = [], for peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Service] {
             
             fatalError()
         }
         
-        public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> [Characteristic] {
+        public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Characteristic] {
             
             
             fatalError()
         }
         
-        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws -> Data {
+        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
             
             fatalError()
         }
         
-        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws {
+        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
             
             fatalError()
         }
         
-        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval) throws {
+        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
             
+            fatalError()
+        }
+    
+        public func disconnect(peripheral: Peripheral) {
+            
+            fatalError()
+        }
+    
+        public func disconnectAll() {
+        
             fatalError()
         }
     }

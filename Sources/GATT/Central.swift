@@ -30,6 +30,10 @@ public protocol CentralProtocol: class {
     
     func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
+    func disconnect(peripheral: Peripheral)
+    
+    func disconnectAll()
+    
     func discoverServices(_ services: [BluetoothUUID],
                           for peripheral: Peripheral,
                           timeout: TimeInterval) throws -> [Service]
