@@ -213,11 +213,13 @@ import Bluetooth
             stateChanged(state)
         }
         
-        @objc
+        #if swift(>=3.2) // Only with Xcode 9 SDK
+        @objc(peripheralManager:willRestoreState:)
         public func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState state: [String : Any]) {
             
             log?("Will restore state \(state)")
         }
+        #endif
         
         @objc(peripheralManagerDidStartAdvertising:error:)
         public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
@@ -347,7 +349,7 @@ import Bluetooth
             internalManager.respond(to: requests[0], withResult: .success)
         }
         
-        @objc
+        @objc(peripheralManager:central:didSubscribeToCharacteristic:)
         public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
             
             log?("Central \(central.gattIdentifier) did subscribe to \(characteristic.uuid)")
@@ -369,7 +371,10 @@ import Bluetooth
                 
                 self.notifyQueue.removeFirst()
                 
-                self.notify(pendingNotification.data, for: pendingNotification.characteristic)
+                self.queue.asyncAfter(deadline: .now(), execute: { [weak self] in
+                    
+                    self?.notify(pendingNotification.data, for: pendingNotification.characteristic)
+                })
             }
         }
     }
