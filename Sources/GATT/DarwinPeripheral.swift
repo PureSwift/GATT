@@ -50,6 +50,8 @@ import Bluetooth
         
         private var database = Database()
         
+        private var notifyQueue = [(characteristic: CBMutableCharacteristic, data: Data)]()
+        
         // MARK: - Initialization
         
         public init(options: Options) {
@@ -164,13 +166,38 @@ import Bluetooth
             
             get { return database[characteristic: handle] }
             
-            set {
+            set { writeValue(newValue, for: handle) }
+        }
+        
+        private func writeValue(_ newValue: Data, for handle: UInt16) {
+            
+            // update GATT DB
+            database[characteristic: handle] = newValue
+            
+            let coreCharacteristic = database.characteristic(for: handle)
+            
+            notify(newValue, for: coreCharacteristic)
+        }
+        
+        private func notify(_ value: Data, for characteristic: CBMutableCharacteristic) {
+            
+            // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
+            let didNotify = internalManager.updateValue(value,
+                                                        for: characteristic,
+                                                        onSubscribedCentrals: nil)
+            
+            // The underlying transmit queue is full
+            if didNotify == false {
                 
-                database[characteristic: handle] = newValue
+                // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
+                // when more space in the transmit queue becomes available.
+                notifyQueue.append((characteristic, value))
                 
-                internalManager.updateValue(newValue,
-                                            for: database.characteristic(for: handle),
-                                            onSubscribedCentrals: nil)
+                log?("Did queue notification for \(characteristic.uuid!)")
+                
+            } else {
+                
+                log?("Did send notification for \(characteristic.uuid!)")
             }
         }
         
@@ -186,13 +213,23 @@ import Bluetooth
             stateChanged(state)
         }
         
+        @objc
         public func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState state: [String : Any]) {
             
-            
+            log?("Will restore state \(state)")
         }
         
         @objc(peripheralManagerDidStartAdvertising:error:)
         public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
+            
+            if let error = error {
+                
+                log?("Could not advertise (\(error))")
+                
+            } else {
+                
+                log?("Did start advertising")
+            }
             
             guard let semaphore = startAdvertisingState?.semaphore else { fatalError("Did not expect \(#function)") }
             
@@ -222,6 +259,8 @@ import Bluetooth
         
         @objc(peripheralManager:didReceiveReadRequest:)
         public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+            
+            log?("Did receive read request for \(request.characteristic.uuid)")
             
             let peer = Central(request.central)
                         
@@ -256,6 +295,8 @@ import Bluetooth
         
         @objc(peripheralManager:didReceiveWriteRequests:)
         public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+            
+            log?("Did receive write requests for \(requests.map { $0.characteristic.uuid })")
             
             assert(requests.isEmpty == false)
             
@@ -309,19 +350,27 @@ import Bluetooth
         @objc
         public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
             
-            
+            log?("Central \(central.gattIdentifier) did subscribe to \(characteristic.uuid)")
         }
         
         @objc
         public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
             
-            
+            log?("Central \(central.gattIdentifier) did unsubscribe from \(characteristic.uuid)")
         }
         
         @objc
         public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
             
+            log?("Ready to send notifications")
             
+            // send as many notifications as possible and re-queue if any fail
+            while let pendingNotification = self.notifyQueue.first {
+                
+                self.notifyQueue.removeFirst()
+                
+                self.notify(pendingNotification.data, for: pendingNotification.characteristic)
+            }
         }
     }
 
