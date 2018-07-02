@@ -259,10 +259,11 @@ import Bluetooth
             
             assert(requests.isEmpty == false)
             
-            var newValues = [Data](repeating: Data(), count: requests.count)
+            var writeRequests = [GATTWriteRequest]()
+            writeRequests.reserveCapacity(requests.count)
             
             // validate write requests
-            for (index, request) in requests.enumerated() {
+            for request in requests {
                 
                 let peer = Central(request.central)
                 
@@ -272,12 +273,7 @@ import Bluetooth
                 
                 let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
                 
-                let newBytes = request.value ?? Data()
-                
-                var newValue = value
-                let appendedByteCount = request.offset + newBytes.count - newValue.count
-                newValue.append(Data(count: appendedByteCount))
-                newValue.replaceSubrange(request.offset ..< request.offset + newBytes.count, with: newBytes)
+                let newValue = request.value ?? Data()
                 
                 let writeRequest = GATTWriteRequest(central: peer,
                                                         maximumUpdateValueLength: request.central.maximumUpdateValueLength,
@@ -294,18 +290,17 @@ import Bluetooth
                 }
                 
                 // compute new data
-                newValues[index] = newValue
-                
-                // did write callback
-                didWrite?(writeRequest)
+                writeRequests.append(writeRequest)
             }
             
             // write new values
-            for (index, request) in requests.enumerated() {
+            for request in writeRequests {
                 
-                let newValue = newValues[index]
+                // update GATT DB
+                database[characteristic: request.handle] = request.newValue
                 
-                database[data: request.characteristic] = newValue
+                // did write callback
+                didWrite?(request)
             }
             
             internalManager.respond(to: requests[0], withResult: .success)
