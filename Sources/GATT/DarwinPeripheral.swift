@@ -193,11 +193,11 @@ import Bluetooth
                 // when more space in the transmit queue becomes available.
                 notifyQueue.append((characteristic, value))
                 
-                log?("Did queue notification for \(characteristic.uuid!)")
+                log?("Did queue notification for \(characteristic.gattUUID)")
                 
             } else {
                 
-                log?("Did send notification for \(characteristic.uuid!)")
+                log?("Did send notification for \(characteristic.gattUUID)")
             }
         }
         

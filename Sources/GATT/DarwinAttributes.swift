@@ -151,6 +151,18 @@ import Bluetooth
             
             return convertedValues
         }
+// MARK: - Swift Compatibility
+
+extension CBCharacteristic {
+    
+    var gattUUID: CBUUID {
+        
+        #if swift(>=3.2)
+        return self.uuid
+        #else
+        return self.uuid!
+        #endif
     }
+}
 
 #endif
