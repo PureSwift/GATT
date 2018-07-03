@@ -27,7 +27,7 @@
         
         public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((GATTWriteRequest) -> ())?
+        public var didWrite: ((GATTWriteConfirmation) -> ())?
         
         // MARK: - Private Properties
         

@@ -36,7 +36,7 @@ import Bluetooth
         
         public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
         
-        public var didWrite: ((GATTWriteRequest) -> ())?
+        public var didWrite: ((GATTWriteConfirmation) -> ())?
         
         // MARK: - Private Properties
         
@@ -342,8 +342,14 @@ import Bluetooth
                 // update GATT DB
                 database[characteristic: request.handle] = request.newValue
                 
+                let confirmation = GATTWriteConfirmation(central: request.central,
+                                                         maximumUpdateValueLength: request.maximumUpdateValueLength,
+                                                         uuid: request.uuid,
+                                                         handle: request.handle,
+                                                         value: request.newValue)
+                
                 // did write callback
-                didWrite?(request)
+                didWrite?(confirmation)
             }
             
             internalManager.respond(to: requests[0], withResult: .success)

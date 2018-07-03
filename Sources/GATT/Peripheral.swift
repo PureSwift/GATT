@@ -38,7 +38,7 @@ public protocol PeripheralProtocol: class {
     
     var willWrite: ((GATTWriteRequest) -> ATT.Error?)? { get set }
     
-    var didWrite: ((GATTWriteRequest) -> ())? { get set }
+    var didWrite: ((GATTWriteConfirmation) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }
@@ -90,4 +90,17 @@ public struct GATTWriteRequest: GATTRequest {
     public let value: Data
     
     public let newValue: Data
+}
+
+public struct GATTWriteConfirmation: GATTRequest {
+    
+    public let central: Central
+    
+    public let maximumUpdateValueLength: Int
+    
+    public let uuid: BluetoothUUID
+    
+    public let handle: UInt16
+    
+    public let value: Data
 }
