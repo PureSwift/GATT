@@ -153,20 +153,4 @@ extension ATT.AttributePermission: CoreBluetoothBitmaskConvertible {
     }
 }
 
-// MARK: - Swift Compatibility
-
-internal extension CBCharacteristic {
-    
-    var gattUUID: CBUUID {
-        
-        #if swift(>=3.2)
-        return self.uuid
-        #elseif swift(>=3.1)
-        return self.uuid!
-        #elseif swift(>=3.0)
-        return self.uuid
-        #endif
-    }
-}
-
 #endif
