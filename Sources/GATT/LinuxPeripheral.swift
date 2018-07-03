@@ -206,6 +206,42 @@
                 // start running
                 server.database = peripheral.database
                 server.log = { [unowned self] in self.peripheral.log?("[\(self.central)]: " + $0) }
+                
+                server.willRead = { [unowned self] (uuid, handle, value, offset) in
+                    
+                    let request = GATTReadRequest(central: self.central,
+                                                  maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                                  uuid: uuid,
+                                                  handle: handle,
+                                                  value: value,
+                                                  offset: offset)
+                    
+                    return self.peripheral.willRead?(request)
+                }
+                
+                server.willWrite = { [unowned self] (uuid, handle, value, newValue) in
+                    
+                    let request = GATTWriteRequest(central: self.central,
+                                                   maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                                   uuid: uuid,
+                                                   handle: handle,
+                                                   value: value,
+                                                   newValue: newValue)
+                    
+                    return self.peripheral.willWrite?(request)
+                }
+                
+                server.didWrite = { [unowned self] (uuid, handle, newValue) in
+                    
+                    let confirmation = GATTWriteConfirmation(central: self.central,
+                                                             maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                                             uuid: uuid,
+                                                             handle: handle,
+                                                             value: newValue)
+                    
+                    self.peripheral.didWrite?(confirmation)
+                }
+                
                 thread.start()
             }
             
@@ -213,44 +249,7 @@
                 
                 while let peripheral = self.peripheral, peripheral.isServerRunning {
                     
-                    let central = self.central
-                    
-                    let maximumUpdateValueLength = self.maximumUpdateValueLength
-                    
                     do {
-                        
-                        var didWriteValues: GATTWriteRequest?
-                        
-                        server.willRead = { (uuid, handle, value, offset) in
-                            
-                            let request = GATTReadRequest(central: central,
-                                                          maximumUpdateValueLength: maximumUpdateValueLength,
-                                                          uuid: uuid,
-                                                          handle: handle,
-                                                          value: value,
-                                                          offset: offset)
-                            
-                            return peripheral.willRead?(request)
-                        }
-                        
-                        server.willWrite = { (uuid, handle, value, newValue) in
-                            
-                            let request = GATTWriteRequest(central: central,
-                                                           maximumUpdateValueLength: maximumUpdateValueLength,
-                                                           uuid: uuid,
-                                                           handle: handle,
-                                                           value: value,
-                                                           newValue: newValue)
-                            
-                            if let error = peripheral.willWrite?(request) {
-                                
-                                return error
-                            }
-                            
-                            didWriteValues = request
-                            
-                            return nil
-                        }
                         
                         server.database = peripheral.database
                         
@@ -258,14 +257,12 @@
                         
                         peripheral.database = server.database
                         
-                        let _ = try server.write()
-                        
-                        if let writtenValues = didWriteValues {
-                            
-                            peripheral.didWrite?(writtenValues)
-                        }
+                        /// write outgoing pending ATT PDUs
+                        var didWrite = false
+                        repeat { didWrite = try server.write() }
+                        while didWrite
                     }
-                        
+                    
                     catch {
                         
                         peripheral.log?("[\(central)]: Disconnected \(error)")
