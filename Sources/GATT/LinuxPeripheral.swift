@@ -150,7 +150,7 @@
             
             get { return database[handle: handle].value }
             
-            set { database.write(newValue, forAttribute: handle) }
+            set { clients.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
         }
     }
     
