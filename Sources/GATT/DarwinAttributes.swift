@@ -159,10 +159,12 @@ extension CBCharacteristic {
     
     var gattUUID: CBUUID {
         
-        #if swift(>=3.1)
+        #if swift(>=3.2)
         return self.uuid
-        #else
+        #elseif swift(>=3.1)
         return self.uuid!
+        #elseif swift(>=3.0)
+        return self.uuid
         #endif
     }
 }
