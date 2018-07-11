@@ -26,7 +26,7 @@ import Bluetooth
         
         public var log: ((String) -> ())?
         
-        public let identifier: String?
+        public let options: Options
         
         public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
         
@@ -51,8 +51,8 @@ import Bluetooth
         public var didDisconnect: (Peripheral) -> () = { _ in }
         
         // MARK: - Private Properties
-        
-        internal private(set) var internalManager: CBCentralManager!
+                
+        private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.managerQueue, options: self.options.optionsDictionary)
         
         internal lazy var managerQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue", attributes: [])
         
@@ -66,26 +66,16 @@ import Bluetooth
         ///
         /// - Parameter options: An optional dictionary containing initialization options for a central manager.
         /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
-        public init(options: [String: Any]?) {
+        public init(options: Options) {
             
-            #if swift(>=3.2)
-            if #available(OSX 10.13, iOS 9.0, *) {
-                self.identifier = options?[CBCentralManagerOptionRestoreIdentifierKey] as? String
-            } else {
-               self.identifier = nil
-            }
-            #else
-            self.identifier = nil
-            #endif
+            self.options = options
             
             super.init()
-            
-            self.internalManager = CBCentralManager(delegate: self, queue: self.managerQueue, options: options)
         }
         
         public override convenience init() {
             
-            self.init(options: nil)
+            self.init(options: Options())
         }
         
         // MARK: - Methods
@@ -392,6 +382,7 @@ import Bluetooth
         public func centralManager(_ central: CBCentralManager, willRestoreState options: [String : Any]) {
             
             log?("Will restore state \(options)")
+            
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
@@ -585,7 +576,41 @@ import Bluetooth
             // TODO: Read Descriptor Value
         }
     }
+
+// MARK: - Supporting Types
+
+public extension DarwinCentral {
     
+    public struct Options {
+        
+        public let showPowerAlert: Bool
+        
+        public let restoreIdentifier: String
+        
+        public init(showPowerAlert: Bool = false,
+                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinCentral") {
+            
+            self.showPowerAlert = showPowerAlert
+            self.restoreIdentifier = restoreIdentifier
+        }
+        
+        internal var optionsDictionary: [String: Any] {
+            
+            var options = [String: Any](minimumCapacity: 2)
+            
+            if showPowerAlert {
+                
+                options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
+            }
+            
+            #if swift(>=3.2) // Only with Xcode 9 SDK
+            options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
+            #endif
+            
+            return options
+        }
+    }
+}
 
     internal extension DarwinCentral {
         
