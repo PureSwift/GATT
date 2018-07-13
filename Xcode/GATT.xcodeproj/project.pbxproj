@@ -9,8 +9,11 @@
 /* Begin PBXBuildFile section */
 		6E0FC45F20F873B1009269B4 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
 		6E0FC46B20F873E8009269B4 /* GATTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46920F873E8009269B4 /* GATTTests.swift */; };
-		6E0FC46F20F874E3009269B4 /* L2CAPSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46D20F874E3009269B4 /* L2CAPSocket.swift */; };
-		6E0FC47020F874E3009269B4 /* HostController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46E20F874E3009269B4 /* HostController.swift */; };
+		6E0FC46F20F874E3009269B4 /* TestL2CAPSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */; };
+		6E0FC47020F874E3009269B4 /* TestHostController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46E20F874E3009269B4 /* TestHostController.swift */; };
+		6E0FC47320F875A3009269B4 /* TestPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47220F875A3009269B4 /* TestPeripheral.swift */; };
+		6E0FC47520F87C55009269B4 /* XCTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47420F87C55009269B4 /* XCTest.swift */; };
+		6E0FC47720F8F718009269B4 /* TestCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47620F8F718009269B4 /* TestCentral.swift */; };
 		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
 		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
 		6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
@@ -81,8 +84,11 @@
 		6E0FC46520F873DA009269B4 /* LinuxMain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		6E0FC46820F873E8009269B4 /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
 		6E0FC46920F873E8009269B4 /* GATTTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GATTTests.swift; sourceTree = "<group>"; };
-		6E0FC46D20F874E3009269B4 /* L2CAPSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = L2CAPSocket.swift; sourceTree = "<group>"; };
-		6E0FC46E20F874E3009269B4 /* HostController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HostController.swift; sourceTree = "<group>"; };
+		6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestL2CAPSocket.swift; sourceTree = "<group>"; };
+		6E0FC46E20F874E3009269B4 /* TestHostController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHostController.swift; sourceTree = "<group>"; };
+		6E0FC47220F875A3009269B4 /* TestPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestPeripheral.swift; sourceTree = "<group>"; };
+		6E0FC47420F87C55009269B4 /* XCTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTest.swift; sourceTree = "<group>"; };
+		6E0FC47620F8F718009269B4 /* TestCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCentral.swift; sourceTree = "<group>"; };
 		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
 		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
 		6E49B221205325B3002EA5DC /* AdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvertisementData.swift; sourceTree = "<group>"; };
@@ -156,10 +162,13 @@
 		6E0FC46720F873E8009269B4 /* GATTTests */ = {
 			isa = PBXGroup;
 			children = (
+				6E0FC47420F87C55009269B4 /* XCTest.swift */,
 				6E0FC46820F873E8009269B4 /* XCTestManifests.swift */,
 				6E0FC46920F873E8009269B4 /* GATTTests.swift */,
-				6E0FC46E20F874E3009269B4 /* HostController.swift */,
-				6E0FC46D20F874E3009269B4 /* L2CAPSocket.swift */,
+				6E0FC47220F875A3009269B4 /* TestPeripheral.swift */,
+				6E0FC47620F8F718009269B4 /* TestCentral.swift */,
+				6E0FC46E20F874E3009269B4 /* TestHostController.swift */,
+				6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */,
 			);
 			name = GATTTests;
 			path = ../Tests/GATTTests;
@@ -468,9 +477,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E0FC47020F874E3009269B4 /* HostController.swift in Sources */,
+				6E0FC47020F874E3009269B4 /* TestHostController.swift in Sources */,
+				6E0FC47720F8F718009269B4 /* TestCentral.swift in Sources */,
 				6E0FC46B20F873E8009269B4 /* GATTTests.swift in Sources */,
-				6E0FC46F20F874E3009269B4 /* L2CAPSocket.swift in Sources */,
+				6E0FC46F20F874E3009269B4 /* TestL2CAPSocket.swift in Sources */,
+				6E0FC47520F87C55009269B4 /* XCTest.swift in Sources */,
+				6E0FC47320F875A3009269B4 /* TestPeripheral.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
