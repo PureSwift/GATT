@@ -22,6 +22,8 @@ final class TestCentral: CentralProtocol {
                                              maximumTransmissionUnit: self.maximumTransmissionUnit,
                                              log: { self.log?($0) })
     
+    let peripheral: TestPeripheral
+    
     var foundDevices = [ScanData]()
     
     var connectedDevice: Peripheral?
@@ -33,12 +35,14 @@ final class TestCentral: CentralProtocol {
     internal private(set) var foundCharacteristics = [BluetoothUUID: [GATTClient.Characteristic]]()
     
     init(socket: TestL2CAPSocket,
+         peripheral: TestPeripheral,
          maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
          log: ((String) -> ())? = nil) {
         
         self.socket = socket
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.log = log
+        self.peripheral = peripheral
     }
     
     func scan(filterDuplicates: Bool = true,
@@ -56,6 +60,9 @@ final class TestCentral: CentralProtocol {
             else { throw CentralError.unknownPeripheral(peripheral) }
         
         connectedDevice = peripheral
+        
+        // exchange mtu
+        try run()
     }
     
     func discoverServices(_ services: [BluetoothUUID] = [],
@@ -72,7 +79,7 @@ final class TestCentral: CentralProtocol {
         
         client.discoverAllPrimaryServices { response = $0 }
         
-        while response == nil { usleep(1) }
+        while response == nil { try run() }
         
         switch response! {
             
@@ -221,5 +228,38 @@ final class TestCentral: CentralProtocol {
     func disconnectAll() {
         
         connectedDevice = nil
+    }
+    
+    private func run() throws {
+        
+        let server = (gatt: self.peripheral.client.server, socket: self.peripheral.socket)
+        let client = (gatt: self.client, socket: self.socket)
+        
+        var didWrite = false
+        repeat {
+            
+            didWrite = false
+            
+            while try client.gatt.write() {
+                
+                didWrite = true
+            }
+            
+            while server.socket.receivedData.isEmpty == false {
+                
+                try server.gatt.read()
+            }
+            
+            while try server.gatt.write() {
+                
+                didWrite = true
+            }
+            
+            while client.socket.receivedData.isEmpty == false {
+                
+                try client.gatt.read()
+            }
+            
+        } while didWrite
     }
 }

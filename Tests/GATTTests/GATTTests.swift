@@ -57,12 +57,23 @@ final class GATTTests: XCTestCase {
         let server = peripheral.client.server
         
         // central
-        let central = TestCentral(socket: clientSocket, maximumTransmissionUnit: clientMTU)
+        let central = TestCentral(socket: clientSocket, peripheral: peripheral, maximumTransmissionUnit: clientMTU)
         let client = central.client
         
-        // run fake sockets
-        do { try run(server: (server, serverSocket), client: (client, clientSocket)) }
-        catch { XCTFail("Error: \(error)") }
+        central.foundDevices = [
+            ScanData(date: Date(),
+                     peripheral: Peripheral(identifier: UUID()),
+                     rssi: -50,
+                     advertisementData: AdvertisementData([:]))
+        ]
+        
+        var foundDevices = [Peripheral]()
+        XCTAssertNoThrow(foundDevices = try central.scan(duration: 30).map { $0.peripheral })
+        
+        guard let device = foundDevices.first
+            else { XCTFail(); return }
+        
+        XCTAssertNoThrow(try central.connect(to: device))
         
         XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
         XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
@@ -77,8 +88,8 @@ final class GATTTests: XCTestCase {
     func testDiscovery() {
         
         let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
-        let serverMTU = ATTMaximumTransmissionUnit(rawValue: 200)! // 0x00c8
-        let finalMTU = clientMTU
+        let serverMTU = ATTMaximumTransmissionUnit.default // 23
+        let finalMTU = serverMTU
         XCTAssertEqual(ATTMaximumTransmissionUnit(server: clientMTU.rawValue, client: serverMTU.rawValue), finalMTU)
         
         let testPDUs: [(ATTProtocolDataUnit, [UInt8])] = [
@@ -90,9 +101,9 @@ final class GATTTests: XCTestCase {
             (ATTMaximumTransmissionUnitRequest(clientMTU: clientMTU.rawValue),
              [0x02, 0x68, 0x00]),
             /**
-             Exchange MTU Response - MTU:200
+             Exchange MTU Response - MTU:23
              Opcode: 0x03
-             Client Rx MTU: 0x00c8
+             Client Rx MTU: 0x0017
              */
             (ATTMaximumTransmissionUnitResponse(serverMTU: serverMTU.rawValue),
              [0x03, 0xC8, 0x00]),
@@ -116,7 +127,7 @@ final class GATTTests: XCTestCase {
                                                          endGroupHandle: 0x0004,
                                                          value: BluetoothUUID.batteryService.littleEndian.data)
                 ])!,
-            [0x41, 0x20, 0x0C, 0x00, 0x08, 0x00, 0x04, 0x00, 0x11, 0x06, 0x01, 0x00, 0x04, 0x00, 0x0F, 0x18]),
+            [0x11, 0x06, 0x01, 0x00, 0x04, 0x00, 0x0F, 0x18]),
             /**
              Read By Group Type Request - Start Handle:0x0005 - End Handle:0xffff - UUID:2800 (GATT Primary Service Declaration)
              Opcode: 0x10
@@ -141,8 +152,8 @@ final class GATTTests: XCTestCase {
         test(testPDUs)
         
         // setup sockets
-        let serverSocket = TestL2CAPSocket()
-        let clientSocket = TestL2CAPSocket()
+        let serverSocket = TestL2CAPSocket(name: "Server")
+        let clientSocket = TestL2CAPSocket(name: "Client")
         clientSocket.target = serverSocket
         serverSocket.target = clientSocket // weak references
         
@@ -153,15 +164,35 @@ final class GATTTests: XCTestCase {
         let server = peripheral.client.server
         
         // central
-        let central = TestCentral(socket: clientSocket, maximumTransmissionUnit: clientMTU)
+        let central = TestCentral(socket: clientSocket,
+                                  peripheral: peripheral,
+                                  maximumTransmissionUnit: clientMTU)
         let client = central.client
         
-        // run fake sockets
-        do { try run(server: (server, serverSocket), client: (client, clientSocket)) }
-        catch { XCTFail("Error: \(error)") }
+        central.foundDevices = [
+            ScanData(date: Date(),
+                     peripheral: Peripheral(identifier: UUID()),
+                     rssi: -50,
+                     advertisementData: AdvertisementData([:]))
+        ]
+        
+        var foundDevices = [Peripheral]()
+        XCTAssertNoThrow(foundDevices = try central.scan(duration: 30).map { $0.peripheral })
+        
+        guard let device = foundDevices.first
+            else { XCTFail(); return }
+        
+        XCTAssertNoThrow(try central.connect(to: device))
         
         XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
         XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
+        
+        var services = [Service]()
+        XCTAssertNoThrow(services = try central.discoverServices(for: device))
+        
+        XCTAssertFalse(services.isEmpty)
+        XCTAssertEqual(services.first?.uuid, .batteryService)
+        XCTAssertEqual(services.first?.isPrimary, true)
         
         // validate GATT PDUs
         let mockData = split(pdu: testPDUs.map { $0.1 })
@@ -173,36 +204,6 @@ final class GATTTests: XCTestCase {
 
 extension GATTTests {
     
-    func run(server: (gatt: GATTServer, socket: TestL2CAPSocket), client: (gatt: GATTClient, socket: TestL2CAPSocket)) throws {
-        
-        var didWrite = false
-        repeat {
-            
-            didWrite = false
-            
-            while try client.gatt.write() {
-                
-                didWrite = true
-            }
-            
-            while server.socket.receivedData.isEmpty == false {
-                
-                try server.gatt.read()
-            }
-            
-            while try server.gatt.write() {
-                
-                didWrite = true
-            }
-            
-            while client.socket.receivedData.isEmpty == false {
-                
-                try client.gatt.read()
-            }
-            
-        } while didWrite
-    }
-    
     func test(_ testPDUs: [(ATTProtocolDataUnit, [UInt8])]) {
         
         // decode and compare
@@ -211,7 +212,7 @@ extension GATTTests {
             guard let decodedPDU = type(of: testPDU).init(data: Data(testData))
                 else { XCTFail("Could not decode \(type(of: testPDU))"); return }
             
-            dump(decodedPDU)
+            //dump(decodedPDU)
             
             XCTAssertEqual(decodedPDU.data, Data(testData))
             

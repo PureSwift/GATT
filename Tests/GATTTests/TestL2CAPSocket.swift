@@ -14,6 +14,8 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     
     // MARK: - Properties
     
+    let name: String
+    
     let address: Address
     
     /// Protocol/Service Multiplexer (PSM)
@@ -39,18 +41,20 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     
     fileprivate(set) var receivedData = Data() {
         
-        didSet { print("L2CAP Socket buffer \([UInt8](receivedData))") }
+        didSet { print("L2CAP Socket \(name) \([UInt8](receivedData))") }
     }
     
     private(set) var cache = [Data]()
     
     init(address: Address = .any,
+         name: String = "",
          protocolServiceMultiplexer: UInt16 = UInt16(ATT.PSM.rawValue),
          channelIdentifier: UInt16 = ATT.CID) {
         
         self.address = address
         self.protocolServiceMultiplexer = protocolServiceMultiplexer
         self.channelIdentifier = channelIdentifier
+        self.name = name
     }
     
     // MARK: - Methods
