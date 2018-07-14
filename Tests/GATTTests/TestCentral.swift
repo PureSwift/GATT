@@ -218,6 +218,8 @@ final class TestCentral: CentralProtocol {
         
         guard connectedDevice == peripheral
             else { throw CentralError.disconnected(peripheral) }
+        
+        
     }
     
     func disconnect(peripheral: Peripheral) {

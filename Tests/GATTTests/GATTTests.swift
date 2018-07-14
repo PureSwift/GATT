@@ -15,6 +15,8 @@ final class GATTTests: XCTestCase {
     
     static var allTests = [
         ("testMTUExchange", testMTUExchange),
+        ("testServiceDiscovery", testServiceDiscovery),
+        ("testReadValue", testReadValue)
         ]
     
     func testMTUExchange() {
@@ -328,6 +330,98 @@ final class GATTTests: XCTestCase {
             else { XCTFail(); return }
         
         XCTAssertEqual(characteristicValue, batteryLevel)
+    }
+    
+    func testNotification() {
+        
+        let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
+        let serverMTU = ATTMaximumTransmissionUnit.default // 23
+        let finalMTU = serverMTU
+        XCTAssertEqual(ATTMaximumTransmissionUnit(server: clientMTU.rawValue, client: serverMTU.rawValue), finalMTU)
+        
+        // setup sockets
+        let serverSocket = TestL2CAPSocket(name: "Server")
+        let clientSocket = TestL2CAPSocket(name: "Client")
+        clientSocket.target = serverSocket
+        serverSocket.target = clientSocket // weak references
+        
+        // peripheral
+        let peripheral = TestPeripheral(socket: serverSocket,
+                                        options: TestPeripheral.Options(maximumTransmissionUnit: serverMTU,
+                                                                        maximumPreparedWrites: .max))
+        let server = peripheral.client.server
+        XCTAssertNoThrow(try peripheral.start())
+        defer { peripheral.stop() }
+        
+        // service
+        let batteryLevel = GATTBatteryLevel(level: .min)
+        
+        let characteristics = [
+            GATT.Characteristic(uuid: type(of: batteryLevel).uuid,
+                                value: batteryLevel.data,
+                                permissions: [.read],
+                                properties: [.read, .notify],
+                                descriptors: [GATTClientCharacteristicConfiguration().descriptor])
+        ]
+        
+        let service = GATT.Service(uuid: .batteryService,
+                                   primary: true,
+                                   characteristics: characteristics)
+        
+        let serviceAttribute = try! peripheral.add(service: service)
+        defer { peripheral.remove(service: serviceAttribute) }
+        
+        // central
+        let central = TestCentral(socket: clientSocket,
+                                  peripheral: peripheral,
+                                  maximumTransmissionUnit: clientMTU)
+        let client = central.client
+        
+        #if os(macOS)
+        let peripheralIdentifier = Peripheral(identifier: UUID())
+        #elseif os(Linux)
+        let peripheralIdentifier = Peripheral(identifier: .any)
+        #endif
+        
+        central.foundDevices = [
+            ScanData(date: Date(),
+                     peripheral: peripheralIdentifier,
+                     rssi: -50,
+                     advertisementData: AdvertisementData())
+        ]
+        
+        var foundDevices = [Peripheral]()
+        XCTAssertNoThrow(foundDevices = try central.scan(duration: 30).map { $0.peripheral })
+        
+        guard let device = foundDevices.first
+            else { XCTFail(); return }
+        
+        XCTAssertNoThrow(try central.connect(to: device))
+        
+        XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
+        XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
+        
+        var services = [Service]()
+        XCTAssertNoThrow(services = try central.discoverServices(for: device))
+        
+        guard let foundService = services.first,
+            services.count == 1
+            else { XCTFail(); return }
+        
+        XCTAssertEqual(foundService.uuid, .batteryService)
+        XCTAssertEqual(foundService.isPrimary, true)
+        
+        var foundCharacteristics = [Characteristic]()
+        XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService.uuid, peripheral: device))
+        
+        guard let foundCharacteristic = foundCharacteristics.first,
+            foundCharacteristics.count == 1
+            else { XCTFail(); return }
+        
+        XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
+        XCTAssertEqual(foundCharacteristic.properties, [.read, .notify])
+        
+        
     }
 }
 
