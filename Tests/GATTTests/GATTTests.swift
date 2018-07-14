@@ -62,11 +62,17 @@ final class GATTTests: XCTestCase {
         let central = TestCentral(socket: clientSocket, peripheral: peripheral, maximumTransmissionUnit: clientMTU)
         let client = central.client
         
+        #if os(macOS)
+        let peripheralIdentifier = Peripheral(identifier: UUID())
+        #elseif os(Linux)
+        let peripheralIdentifier = Peripheral(identifier: .any)
+        #endif
+        
         central.foundDevices = [
             ScanData(date: Date(),
-                     peripheral: Peripheral(identifier: UUID()),
+                     peripheral: peripheralIdentifier,
                      rssi: -50,
-                     advertisementData: AdvertisementData([:]))
+                     advertisementData: AdvertisementData())
         ]
         
         var foundDevices = [Peripheral]()

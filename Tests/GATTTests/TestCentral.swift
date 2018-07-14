@@ -30,9 +30,9 @@ final class TestCentral: CentralProtocol {
     
     internal private(set) var foundPeripherals = [Peripheral]()
     
-    internal private(set) var foundServices = [GATTClient.Service]()
+    internal private(set) var foundServices: [GATTClient.Service] = []
     
-    internal private(set) var foundCharacteristics = [BluetoothUUID: [GATTClient.Characteristic]]()
+    internal private(set) var foundCharacteristics: [BluetoothUUID: [GATTClient.Characteristic]] = [:]
     
     init(socket: TestL2CAPSocket,
          peripheral: TestPeripheral,

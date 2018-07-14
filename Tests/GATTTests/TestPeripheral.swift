@@ -155,10 +155,15 @@ internal extension TestPeripheral {
         
         init(socket: TestL2CAPSocket, peripheral: TestPeripheral) {
             
+            #if os(macOS)
+            self.central = Central(identifier: UUID())
+            #elseif os(Linux)
+            self.central = Central(identifier: .any)
+            #endif
+            
             // initialize
             self.peripheral = peripheral
             self.connectionID = peripheral.newConnectionID()
-            self.central = Central(identifier: UUID())
             self.server = GATTServer(socket: socket,
                                      maximumTransmissionUnit: peripheral.options.maximumTransmissionUnit,
                                      maximumPreparedWrites: peripheral.options.maximumPreparedWrites)

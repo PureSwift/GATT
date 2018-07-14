@@ -81,7 +81,6 @@
 /* Begin PBXFileReference section */
 		6E0FC45A20F873B1009269B4 /* GATTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GATTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E0FC45E20F873B1009269B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E0FC46520F873DA009269B4 /* LinuxMain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		6E0FC46820F873E8009269B4 /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
 		6E0FC46920F873E8009269B4 /* GATTTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GATTTests.swift; sourceTree = "<group>"; };
 		6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestL2CAPSocket.swift; sourceTree = "<group>"; };
@@ -177,7 +176,6 @@
 		6E0FC46C20F873FE009269B4 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				6E0FC46520F873DA009269B4 /* LinuxMain.swift */,
 				6E0FC46720F873E8009269B4 /* GATTTests */,
 			);
 			name = Tests;
