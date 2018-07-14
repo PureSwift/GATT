@@ -85,7 +85,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(clientSocket.cache, mockData.client)
     }
     
-    func testDiscovery() {
+    func testServiceDiscovery() {
         
         let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
         let serverMTU = ATTMaximumTransmissionUnit.default // 23
@@ -145,28 +145,7 @@ final class GATTTests: XCTestCase {
              Error Code: 0x0a (Attribute Not Found)
              */
             (ATTErrorResponse(request: .readByGroupTypeRequest, attributeHandle: 0x0005, error: .attributeNotFound),
-             [0x01, 0x10, 0x05, 0x00, 0x0A]),
-            /**
-             Read By Type Request - Start Handle:0x0001 - End Handle:0x0004 - UUID:2803 (GATT Characteristic Declaration)
-             Opcode: 0x08
-             Starting Handle: 0x0001
-             Ending Handle: 0x0004
-             Attribute Type: 2803 (GATT Characteristic Declaration)
-             */
-            (ATTReadByTypeRequest(startHandle: 0x0001, endHandle: 0x0004, attributeType: .characteristic),
-             [0x08, 0x01, 0x00, 0x04, 0x00, 0x03, 0x28]),
-            /**
-             Read By Type Response
-             Opcode: 0x09
-             Length: 0007
-             Value: 02 00 12 03 00 19 2a
-             */
-            (ATTReadByTypeResponse(attributeData: [
-                ATTReadByTypeResponse.AttributeData(
-                    handle: 0x0002,
-                    value: Data([0x02, 0x00, 0x12, 0x03, 0x00, 0x19, 0x2a])
-                )])!,
-             [0x09, 0x07, 0x02, 0x00, 0x12, 0x03, 0x00, 0x19, 0x2A])
+             [0x01, 0x10, 0x05, 0x00, 0x0A])
         ]
         
         // decode and validate bytes
@@ -237,16 +216,6 @@ final class GATTTests: XCTestCase {
         
         XCTAssertEqual(foundService.uuid, .batteryService)
         XCTAssertEqual(foundService.isPrimary, true)
-        
-        var foundCharacteristics = [Characteristic]()
-        XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService.uuid, peripheral: device))
-        
-        guard let foundCharacteristic = foundCharacteristics.first,
-            foundCharacteristics.count == 1
-            else { XCTFail(); return }
-        
-        XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
-        XCTAssertEqual(foundCharacteristic.properties, [.read, .notify])
         
         // validate GATT PDUs
         let mockData = split(pdu: testPDUs.map { $0.1 })
