@@ -26,7 +26,9 @@ public final class LinuxCentral: CentralProtocol {
     
     internal private(set) var scanData = [Peripheral: AdvertisingReport](minimumCapacity: 1)
     
-    internal private(set) var connections = [Peripheral: L2CAPSocket](minimumCapacity: 1)
+    internal private(set) var connections = [Peripheral: Server](minimumCapacity: 1)
+    
+    private var lastConnectionID = 0
     
     public init(hostController: HostController) {
         
@@ -92,8 +94,11 @@ public final class LinuxCentral: CentralProtocol {
                                  for peripheral: Peripheral,
                                  timeout: TimeInterval = 30) throws -> [Service] {
         
-        guard let socket = connections[peripheral]
+        guard let advertisementData = scanData[peripheral]
             else { throw CentralError.unknownPeripheral(peripheral) }
+        
+        guard let socket = connections[peripheral]
+            else { throw CentralError.disconnected(peripheral) }
         
         
     }
@@ -123,6 +128,13 @@ public final class LinuxCentral: CentralProtocol {
     
     // MARK: - Private Methods
     
+    fileprivate func newConnectionID() -> Int {
+        
+        lastConnectionID += 1
+        
+        return lastConnectionID
+    }
+    
     private func async <T> (timeout: TimeInterval, _ operation: @escaping () throws -> (T)) throws -> (T) {
         
         var result: ErrorValue<T>?
@@ -139,7 +151,7 @@ public final class LinuxCentral: CentralProtocol {
         while Date() < endDate {
             
             guard let response = result
-                else { sleep(100); continue }
+                else { usleep(100); continue }
             
             switch response {
             case let .error(error):
@@ -153,6 +165,26 @@ public final class LinuxCentral: CentralProtocol {
         throw CentralError.timeout
     }
 }
+
+// MARK: - Supporting Types
+
+@available(OSX 10.12, *)
+private extension LinuxCentral {
+    
+    final class Server {
+        
+        let connectionID: Int
+        
+        let peripheral: Peripheral
+        
+        let client: GATTClient
+        
+        
+        
+        lazy var thread: Thread = Thread { [weak self] in self?.main() }
+    }
+}
+
 /// Basic wrapper for error / value pairs.
 private enum ErrorValue<T> {
     
