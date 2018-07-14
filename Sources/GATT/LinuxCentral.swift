@@ -9,15 +9,24 @@
 #if os(Linux) || (Xcode && SWIFT_PACKAGE)
     
 import Foundation
+import Dispatch
 import Bluetooth
 import BluetoothLinux
-    
+
 @available(OSX 10.12, *)
 public final class LinuxCentral: CentralProtocol {
+    
+    internal typealias AdvertisingReport = HCILEAdvertisingReport.Report
     
     public var log: ((String) -> ())?
     
     public let hostController: HostController
+    
+    internal lazy var asyncQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
+    
+    internal private(set) var scanData = [Peripheral: AdvertisingReport](minimumCapacity: 1)
+    
+    internal private(set) var connections = [Peripheral: L2CAPSocket](minimumCapacity: 1)
     
     public init(hostController: HostController) {
         
@@ -28,7 +37,9 @@ public final class LinuxCentral: CentralProtocol {
                      shouldContinueScanning: () -> (Bool),
                      foundDevice: @escaping (ScanData) -> ()) throws {
         
-        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, shouldContinue: shouldContinueScanning) { (report) in
+        self.log?("Scanning...")
+        
+        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
             
             #if os(Linux)
             let peripheral = Peripheral(identifier: report.address)
@@ -43,23 +54,56 @@ public final class LinuxCentral: CentralProtocol {
                                     rssi: Double(report.rssi.rawValue),
                                     advertisementData: advertisement)
             
+            self.scanData[peripheral] = report
             
+            foundDevice(scanData)
         }
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
         
+        guard let advertisementData = scanData[peripheral]
+            else { throw CentralError.unknownPeripheral(peripheral) }
+        
+        let socket = try async(timeout: timeout) {
+            
+            try L2CAPSocket.lowEnergyClient(
+                destination: (address: advertisementData.address,
+                              type: AddressType(lowEnergy: advertisementData.addressType)
+                )
+            )
+        }
+        
+        // keep connection open and store for future use
+        self.connections[peripheral] = socket
     }
     
-    public func discoverServices(_ services: [BluetoothUUID] = [], for peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Service] {
+    public func disconnect(peripheral: Peripheral) {
         
-        fatalError()
+        self.connections[peripheral] = nil
     }
     
-    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Characteristic] {
+    public func disconnectAll() {
+        
+        self.connections.removeAll(keepingCapacity: true)
+    }
+    
+    public func discoverServices(_ services: [BluetoothUUID] = [],
+                                 for peripheral: Peripheral,
+                                 timeout: TimeInterval = 30) throws -> [Service] {
+        
+        guard let socket = connections[peripheral]
+            else { throw CentralError.unknownPeripheral(peripheral) }
         
         
-        fatalError()
+    }
+    
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
+                                        for service: BluetoothUUID,
+                                        peripheral: Peripheral,
+                                        timeout: TimeInterval = 30) throws -> [Characteristic] {
+        
+        
     }
     
     public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
@@ -77,15 +121,43 @@ public final class LinuxCentral: CentralProtocol {
         fatalError()
     }
     
-    public func disconnect(peripheral: Peripheral) {
-        
-        fatalError()
-    }
+    // MARK: - Private Methods
     
-    public func disconnectAll() {
+    private func async <T> (timeout: TimeInterval, _ operation: @escaping () throws -> (T)) throws -> (T) {
         
-        fatalError()
+        var result: ErrorValue<T>?
+        
+        asyncQueue.async {
+            
+            do { result = .value(try operation()) }
+            
+            catch { result = .error(error) }
+        }
+        
+        let endDate = Date() + timeout
+        
+        while Date() < endDate {
+            
+            guard let response = result
+                else { sleep(100); continue }
+            
+            switch response {
+            case let .error(error):
+                throw error
+            case let .value(value):
+                return value
+            }
+        }
+        
+        // did timeout
+        throw CentralError.timeout
     }
+}
+/// Basic wrapper for error / value pairs.
+private enum ErrorValue<T> {
+    
+    case error(Error)
+    case value(T)
 }
 
 #endif
