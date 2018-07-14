@@ -36,6 +36,25 @@ public struct AdvertisementData {
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
     public let solicitedServiceUUIDs: [BluetoothUUID]
+    
+    public init(localName: String? = nil,
+                manufacturerData: Data? = nil,
+                serviceData: [BluetoothUUID: Data] = [:],
+                serviceUUIDs: [BluetoothUUID] = [],
+                overflowServiceUUIDs: [BluetoothUUID] = [],
+                txPowerLevel: Double? = nil,
+                isConnectable: Bool? = nil,
+                solicitedServiceUUIDs: [BluetoothUUID] = []) {
+        
+        self.localName = localName
+        self.manufacturerData = manufacturerData
+        self.serviceData = serviceData
+        self.serviceUUIDs = serviceUUIDs
+        self.overflowServiceUUIDs = overflowServiceUUIDs
+        self.txPowerLevel = txPowerLevel
+        self.isConnectable = isConnectable
+        self.solicitedServiceUUIDs = solicitedServiceUUIDs
+    }
 }
 
 // MARK: - Equatable
