@@ -14,65 +14,85 @@ import BluetoothLinux
     
 @available(OSX 10.12, *)
 public final class LinuxCentral: CentralProtocol {
-        
-        public var log: ((String) -> ())?
-        
-        public init() {
-            
-            fatalError()
-        }
-        
-        public func scan(filterDuplicates: Bool = true, shouldContinueScanning: () -> (Bool), foundDevice: @escaping (ScanData) -> ()) throws {
-            
-            fatalError()
-        }
-        
-        public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
-            
-        }
-        
-        public func discoverServices(_ services: [BluetoothUUID] = [], for peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Service] {
-            
-            fatalError()
-        }
-        
-        public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Characteristic] {
-            
-            
-            fatalError()
-        }
-        
-        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
-            
-            fatalError()
-        }
-        
-        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
-            
-            fatalError()
-        }
-        
-        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
-            
-            fatalError()
-        }
     
-        public func disconnect(peripheral: Peripheral) {
-            
-            fatalError()
-        }
+    public var log: ((String) -> ())?
     
-        public func disconnectAll() {
+    public let hostController: HostController
+    
+    public init(hostController: HostController) {
         
-            fatalError()
+        self.hostController = hostController
+    }
+    
+    public func scan(filterDuplicates: Bool = true,
+                     shouldContinueScanning: () -> (Bool),
+                     foundDevice: @escaping (ScanData) -> ()) throws {
+        
+        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, shouldContinue: shouldContinueScanning) { (report) in
+            
+            #if os(Linux)
+            let peripheral = Peripheral(identifier: report.address)
+            #elseif os(macOS)
+            let peripheral = Peripheral(identifier: UUID())
+            #endif
+            
+            let advertisement = AdvertisementData() // FIXME:
+            
+            let scanData = ScanData(date: Date(),
+                                    peripheral: peripheral,
+                                    rssi: Double(report.rssi.rawValue),
+                                    advertisementData: advertisement)
+            
+            
         }
     }
+    
+    public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+        
+    }
+    
+    public func discoverServices(_ services: [BluetoothUUID] = [], for peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Service] {
+        
+        fatalError()
+    }
+    
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [], for service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> [Characteristic] {
+        
+        
+        fatalError()
+    }
+    
+    public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
+        
+        fatalError()
+    }
+    
+    public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+        
+        fatalError()
+    }
+    
+    public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+        
+        fatalError()
+    }
+    
+    public func disconnect(peripheral: Peripheral) {
+        
+        fatalError()
+    }
+    
+    public func disconnectAll() {
+        
+        fatalError()
+    }
+}
 
 #endif
 
 #if os(Linux)
     
-    /// The platform specific peripheral.
-    public typealias CentralManager = LinuxCentral
+/// The platform specific peripheral.
+public typealias CentralManager = LinuxCentral
     
 #endif
