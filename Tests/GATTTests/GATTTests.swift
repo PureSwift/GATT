@@ -19,14 +19,26 @@ final class GATTTests: XCTestCase {
     
     func testMTUExchange() {
         
-        guard let mtu = ATTMaximumTransmissionUnit(rawValue: 512)
-            else { XCTFail(); return }
+        /**
+         Exchange MTU Request - MTU:104
+         Opcode: 0x02
+         Client Rx MTU: 0x0068
+         
+         Exchange MTU Response - MTU:200
+         Opcode: 0x03
+         Client Rx MTU: 0x00c8
+         */
+        
+        let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
+        let serverMTU = ATTMaximumTransmissionUnit(rawValue: 200)! // 0x00c8
+        let finalMTU = clientMTU
+        XCTAssertEqual(ATTMaximumTransmissionUnit(server: clientMTU.rawValue, client: serverMTU.rawValue), finalMTU)
         
         let testPDUs: [(ATTProtocolDataUnit, [UInt8])] = [
-            (ATTMaximumTransmissionUnitRequest(clientMTU: mtu.rawValue),
-             [0x02, 0x00, 0x02]),
-            (ATTMaximumTransmissionUnitResponse(serverMTU: mtu.rawValue),
-             [0x03, 0x00, 0x02])
+            (ATTMaximumTransmissionUnitRequest(clientMTU: clientMTU.rawValue),
+             [0x02, 0x68, 0x00]),
+            (ATTMaximumTransmissionUnitResponse(serverMTU: serverMTU.rawValue),
+             [0x03, 0xC8, 0x00])
         ]
         
         // decode and validate bytes
@@ -39,17 +51,117 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket // weak references
         
         // peripheral
-        let peripheral = TestPeripheral(socket: serverSocket)
+        let peripheral = TestPeripheral(socket: serverSocket,
+                                        options: TestPeripheral.Options(maximumTransmissionUnit: serverMTU,
+                                                                        maximumPreparedWrites: .max))
+        let server = peripheral.client.server
+        
+        // central
+        let central = TestCentral(socket: clientSocket, maximumTransmissionUnit: clientMTU)
+        let client = central.client
         
         // run fake sockets
-        do { try run(server: (peripheral.client.server, serverSocket), client: (client, clientSocket)) }
+        do { try run(server: (server, serverSocket), client: (client, clientSocket)) }
         catch { XCTFail("Error: \(error)") }
         
-        XCTAssertEqual(server.connection.maximumTransmissionUnit, client.connection.maximumTransmissionUnit)
-        XCTAssertEqual(server.connection.maximumTransmissionUnit, mtu)
-        XCTAssertNotEqual(server.connection.maximumTransmissionUnit, .default)
-        XCTAssertEqual(client.connection.maximumTransmissionUnit, mtu)
-        XCTAssertNotEqual(client.connection.maximumTransmissionUnit, .default)
+        XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
+        XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
+        
+        // validate GATT PDUs
+        let mockData = split(pdu: testPDUs.map { $0.1 })
+        
+        XCTAssertEqual(serverSocket.cache, mockData.server)
+        XCTAssertEqual(clientSocket.cache, mockData.client)
+    }
+    
+    func testDiscovery() {
+        
+        let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
+        let serverMTU = ATTMaximumTransmissionUnit(rawValue: 200)! // 0x00c8
+        let finalMTU = clientMTU
+        XCTAssertEqual(ATTMaximumTransmissionUnit(server: clientMTU.rawValue, client: serverMTU.rawValue), finalMTU)
+        
+        let testPDUs: [(ATTProtocolDataUnit, [UInt8])] = [
+            /**
+             Exchange MTU Request - MTU:104
+             Opcode: 0x02
+             Client Rx MTU: 0x0068
+             */
+            (ATTMaximumTransmissionUnitRequest(clientMTU: clientMTU.rawValue),
+             [0x02, 0x68, 0x00]),
+            /**
+             Exchange MTU Response - MTU:200
+             Opcode: 0x03
+             Client Rx MTU: 0x00c8
+             */
+            (ATTMaximumTransmissionUnitResponse(serverMTU: serverMTU.rawValue),
+             [0x03, 0xC8, 0x00]),
+            /**
+             Read By Group Type Request - Start Handle:0x0001 - End Handle:0xffff - UUID:2800 (GATT Primary Service Declaration)
+             Opcode: 0x10
+             Starting Handle: 0x0001
+             Ending Handle: 0xffff
+             Attribute Group Type: 2800 (GATT Primary Service Declaration)
+             */
+            (ATTReadByGroupTypeRequest(startHandle: 0x0001, endHandle: 0xffff, type: .primaryService),
+            [0x10, 0x01, 0x00, 0xFF, 0xFF, 0x00, 0x28]),
+            /**
+             Read By Group Type Response
+             Opcode: 0x11
+             List Length: 0006
+             Attribute Handle: 0x0001 End Group Handle: 0x0004 UUID: 180F (Battery Service)
+             */
+            (ATTReadByGroupTypeResponse(attributeData: [
+                ATTReadByGroupTypeResponse.AttributeData(attributeHandle: 0x001,
+                                                         endGroupHandle: 0x0004,
+                                                         value: BluetoothUUID.batteryService.littleEndian.data)
+                ])!,
+            [0x41, 0x20, 0x0C, 0x00, 0x08, 0x00, 0x04, 0x00, 0x11, 0x06, 0x01, 0x00, 0x04, 0x00, 0x0F, 0x18]),
+            /**
+             Read By Group Type Request - Start Handle:0x0005 - End Handle:0xffff - UUID:2800 (GATT Primary Service Declaration)
+             Opcode: 0x10
+             Starting Handle: 0x0005
+             Ending Handle: 0xffff
+             Attribute Group Type: 2800 (GATT Primary Service Declaration)
+             */
+            (ATTReadByGroupTypeRequest(startHandle: 0x0005, endHandle: 0xffff, type: .primaryService),
+             [0x10, 0x05, 0x00, 0xFF, 0xFF, 0x00, 0x28]),
+            /**
+             Error Response - Attribute Handle: 0x0005 - Error Code: 0x0A - Attribute Not Found
+             Opcode: 0x01
+             Request Opcode In Error: 0x10 (Read By Group Type Request)
+             Attribute Handle In Error: 0x0005 (5)
+             Error Code: 0x0a (Attribute Not Found)
+             */
+            (ATTErrorResponse(request: .readByGroupTypeRequest, attributeHandle: 0x0005, error: .attributeNotFound),
+             [0x01, 0x10, 0x05, 0x00, 0x0A])
+        ]
+        
+        // decode and validate bytes
+        test(testPDUs)
+        
+        // setup sockets
+        let serverSocket = TestL2CAPSocket()
+        let clientSocket = TestL2CAPSocket()
+        clientSocket.target = serverSocket
+        serverSocket.target = clientSocket // weak references
+        
+        // peripheral
+        let peripheral = TestPeripheral(socket: serverSocket,
+                                        options: TestPeripheral.Options(maximumTransmissionUnit: serverMTU,
+                                                                        maximumPreparedWrites: .max))
+        let server = peripheral.client.server
+        
+        // central
+        let central = TestCentral(socket: clientSocket, maximumTransmissionUnit: clientMTU)
+        let client = central.client
+        
+        // run fake sockets
+        do { try run(server: (server, serverSocket), client: (client, clientSocket)) }
+        catch { XCTFail("Error: \(error)") }
+        
+        XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
+        XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
         
         // validate GATT PDUs
         let mockData = split(pdu: testPDUs.map { $0.1 })
@@ -60,6 +172,36 @@ final class GATTTests: XCTestCase {
 }
 
 extension GATTTests {
+    
+    func run(server: (gatt: GATTServer, socket: TestL2CAPSocket), client: (gatt: GATTClient, socket: TestL2CAPSocket)) throws {
+        
+        var didWrite = false
+        repeat {
+            
+            didWrite = false
+            
+            while try client.gatt.write() {
+                
+                didWrite = true
+            }
+            
+            while server.socket.receivedData.isEmpty == false {
+                
+                try server.gatt.read()
+            }
+            
+            while try server.gatt.write() {
+                
+                didWrite = true
+            }
+            
+            while client.socket.receivedData.isEmpty == false {
+                
+                try client.gatt.read()
+            }
+            
+        } while didWrite
+    }
     
     func test(_ testPDUs: [(ATTProtocolDataUnit, [UInt8])]) {
         
