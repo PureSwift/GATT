@@ -113,7 +113,7 @@ final class TestCentral: CentralProtocol {
         
         client.discoverAllCharacteristics(of: gattService) { response = $0 }
         
-        while response == nil { usleep(1) }
+        while response == nil { try run() }
         
         switch response! {
             
@@ -150,7 +150,7 @@ final class TestCentral: CentralProtocol {
         
         client.readCharacteristic(gattCharacteristic) { response = $0 }
         
-        while response == nil { usleep(1) }
+        while response == nil { try run() }
         
         switch response! {
             
@@ -193,7 +193,7 @@ final class TestCentral: CentralProtocol {
         
         client.writeCharacteristic(gattCharacteristic, data: data) { response = $0 }
         
-        while response == nil { usleep(1) }
+        while response == nil { try run() }
         
         switch response! {
             

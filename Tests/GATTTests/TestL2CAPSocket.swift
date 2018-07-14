@@ -41,7 +41,7 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     
     fileprivate(set) var receivedData = Data() {
         
-        didSet { print("L2CAP Socket \(name) \([UInt8](receivedData))") }
+        didSet { if receivedData.isEmpty == false { print("L2CAP Socket \(name) \([UInt8](receivedData))") } }
     }
     
     private(set) var cache = [Data]()
