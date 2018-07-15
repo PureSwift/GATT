@@ -267,7 +267,7 @@
                         
                         peripheral.log?("[\(central)]: Disconnected \(error)")
                         
-                        do { try peripheral.controller.enableLowEnergyAdvertising() } 
+                        do { try peripheral.controller.enableLowEnergyAdvertising() }
                         catch HCIError.commandDisallowed { /* ignore */ }
                         catch { fatalError("Could not enable advertising.") }
                         

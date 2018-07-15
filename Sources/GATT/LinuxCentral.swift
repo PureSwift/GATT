@@ -28,7 +28,7 @@ public final class LinuxCentral: CentralProtocol {
     
     internal private(set) var scanData = [Peripheral: AdvertisingReport](minimumCapacity: 1)
     
-    internal private(set) var connections = [Peripheral: Server](minimumCapacity: 1)
+    internal private(set) var connections = [Peripheral: Connection](minimumCapacity: 1)
     
     private var lastConnectionID = 0
     
@@ -81,20 +81,29 @@ public final class LinuxCentral: CentralProtocol {
         }
         
         // keep connection open and store for future use
-        let connection = Server(connectionIdentifier: newConnectionID(),
-                                socket: socket,
-                                maximumTransmissionUnit: maximumTransmissionUnit)
+        let connection = Connection(identifier: newConnectionID(),
+                                    socket: socket,
+                                    maximumTransmissionUnit: maximumTransmissionUnit)
         
+        connection.log = { [weak self] in self?.log?($0) }
+        
+        connection.error = { [weak self] _ in
+            self?.disconnect(peripheral: peripheral)
+        }
+        
+        // store connection
         self.connections[peripheral] = connection
     }
     
     public func disconnect(peripheral: Peripheral) {
         
+        self.connections[peripheral]?.stop()
         self.connections[peripheral] = nil
     }
     
     public func disconnectAll() {
         
+        self.connections.values.forEach { $0.stop() }
         self.connections.removeAll(keepingCapacity: true)
     }
     
@@ -102,13 +111,8 @@ public final class LinuxCentral: CentralProtocol {
                                  for peripheral: Peripheral,
                                  timeout: TimeInterval = 30) throws -> [Service] {
         
-        guard let advertisementData = scanData[peripheral]
-            else { throw CentralError.unknownPeripheral(peripheral) }
-        
-        guard let connection = connections[peripheral]
-            else { throw CentralError.disconnected(peripheral) }
-        
-        
+        return try connection(for: peripheral)
+            .discoverServices(services, for: peripheral, timeout: timeout)
     }
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
@@ -116,7 +120,10 @@ public final class LinuxCentral: CentralProtocol {
                                         peripheral: Peripheral,
                                         timeout: TimeInterval = 30) throws -> [Characteristic] {
         
+        let connection = try self.connection(for: peripheral)
         
+        
+        fatalError()
     }
     
     public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
@@ -141,6 +148,17 @@ public final class LinuxCentral: CentralProtocol {
         lastConnectionID += 1
         
         return lastConnectionID
+    }
+    
+    private func connection(for peripheral: Peripheral) throws -> Connection {
+        
+        guard let _ = scanData[peripheral]
+            else { throw CentralError.unknownPeripheral(peripheral) }
+        
+        guard let connection = connections[peripheral]
+            else { throw CentralError.disconnected(peripheral) }
+        
+        return connection
     }
     
     private func async <T> (timeout: TimeInterval, _ operation: @escaping () throws -> (T)) throws -> (T) {
@@ -177,19 +195,11 @@ public final class LinuxCentral: CentralProtocol {
 // MARK: - Supporting Types
 
 @available(OSX 10.12, *)
-internal protocol LinuxCentralServerDelegate: class {
-    
-    func serverLog(_ server: LinuxCentral.Server, message: String)
-    
-    func serverError(_ server: LinuxCentral.Server, error: Error)
-}
-
-@available(OSX 10.12, *)
 internal extension LinuxCentral {
     
-    final class Server {
+    final class Connection {
         
-        let connectionIdentifier: Int
+        let identifier: Int
         
         let peripheral: Peripheral
         
@@ -197,23 +207,23 @@ internal extension LinuxCentral {
         
         var log: ((String) -> ())?
         
-        var log: ((String) -> ())?
+        var error: ((Error) -> ())?
         
         private(set) var isRunning = true
         
         private var thread: Thread?
         
-        init(connectionIdentifier: Int,
+        init(identifier: Int,
              socket: L2CAPSocket,
              maximumTransmissionUnit: ATTMaximumTransmissionUnit) {
             
-            self.connectionIdentifier = connectionIdentifier
+            self.identifier = identifier
             self.peripheral = Peripheral(socket: socket)
             self.client = GATTClient(socket: socket,
                                      maximumTransmissionUnit: maximumTransmissionUnit)
             
             // configure client
-            client.log = { [unowned self] in self.delegate?.serverLog("[\(self.client)]: " + $0) }
+            client.log = { [unowned self] in self.log?("[\(self.client)]: " + $0) }
             
             // run socket in background
             start()
@@ -224,10 +234,8 @@ internal extension LinuxCentral {
             self.isRunning = true
             
             let thread = Thread { [weak self] in self?.main() }
-            thread.name = "LinuxCentral Connection \(connectionIdentifier)"
+            thread.name = "LinuxCentral Connection \(identifier)"
             thread.start()
-            
-            delegate?.serverDidStart(self)
             
             self.thread = thread
         }
@@ -256,10 +264,74 @@ internal extension LinuxCentral {
             
             catch {
                 
+                self.log?("[\(self.client)]: \(error)")
+                self.error?(error)
                 
+                stop()
             }
         }
         
+        private func async <T> (timeout: TimeInterval,
+                                request: (@escaping ((GATTClientResponse<T>)) -> ()) -> ()) throws -> T {
+            
+            var result: GATTClientResponse<T>?
+            
+            request({ result = $0 })
+            
+            let endDate = Date() + timeout
+            
+            while Date() < endDate {
+                
+                guard let response = result
+                    else { usleep(100); continue }
+                
+                switch response {
+                case let .error(error):
+                    throw error
+                case let .value(value):
+                    return value
+                }
+            }
+            
+            throw CentralError.timeout
+        }
+        
+        public func discoverServices(_ services: [BluetoothUUID] = [],
+                                     for peripheral: Peripheral,
+                                     timeout: TimeInterval) throws -> [Service] {
+            
+            let foundServices = try async(timeout: timeout) {
+                client.discoverAllPrimaryServices(completion: $0)
+            }
+            
+            return foundServices.map { Service(uuid: $0.uuid, isPrimary: $0.type == .primaryService) }
+        }
+        
+        public func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                            for service: BluetoothUUID,
+                                            peripheral: Peripheral,
+                                            timeout: TimeInterval) throws -> [Characteristic] {
+            
+            
+            
+            
+            return []
+        }
+        
+        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
+            
+            fatalError()
+        }
+        
+        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+            
+            fatalError()
+        }
+        
+        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+            
+            fatalError()
+        }
     }
 }
 
