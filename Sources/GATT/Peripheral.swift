@@ -14,6 +14,11 @@ import Bluetooth
 /// Implementation varies by operating system.
 public protocol PeripheralProtocol: class {
     
+    /// Central Peer
+    ///
+    /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+    associatedtype Central: Peer
+    
     /// Start advertising the peripheral and listening for incoming connections.
     func start() throws
     
@@ -34,11 +39,11 @@ public protocol PeripheralProtocol: class {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    var willRead: ((GATTReadRequest) -> ATT.Error?)? { get set }
+    var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)? { get set }
     
-    var willWrite: ((GATTWriteRequest) -> ATT.Error?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)? { get set }
     
-    var didWrite: ((GATTWriteConfirmation) -> ())? { get set }
+    var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }
@@ -51,6 +56,8 @@ public protocol PeripheralProtocol: class {
 
 public protocol GATTRequest {
     
+    associatedtype Central: Peer
+    
     var central: Central { get }
     
     var maximumUpdateValueLength: Int { get }
@@ -62,7 +69,7 @@ public protocol GATTRequest {
     var value: Data { get }
 }
 
-public struct GATTReadRequest: GATTRequest {
+public struct GATTReadRequest <Central: Peer> : GATTRequest {
     
     public let central: Central
     
@@ -77,7 +84,7 @@ public struct GATTReadRequest: GATTRequest {
     public let offset: Int
 }
 
-public struct GATTWriteRequest: GATTRequest {
+public struct GATTWriteRequest <Central: Peer> : GATTRequest {
     
     public let central: Central
     
@@ -92,7 +99,7 @@ public struct GATTWriteRequest: GATTRequest {
     public let newValue: Data
 }
 
-public struct GATTWriteConfirmation: GATTRequest {
+public struct GATTWriteConfirmation <Central: Peer> : GATTRequest {
     
     public let central: Central
     

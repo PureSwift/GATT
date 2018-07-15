@@ -32,11 +32,11 @@ import Bluetooth
             return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
         }
         
-        public var willRead: ((GATTReadRequest) -> ATT.Error?)?
+        public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
         
-        public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
+        public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
         
-        public var didWrite: ((GATTWriteConfirmation) -> ())?
+        public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
         
         // MARK: - Private Properties
         
@@ -386,6 +386,22 @@ import Bluetooth
     }
 
 // MARK: - Supporting Types
+
+public extension DarwinPeripheral {
+    
+    /// Peripheral Peer
+    ///
+    /// Represents a remote peripheral device that has been discovered.
+    public struct Central: Peer {
+        
+        public let identifier: UUID
+        
+        init(_ central: CBCentral) {
+            
+            self.identifier = central.gattIdentifier
+        }
+    }
+}
 
 public extension DarwinPeripheral {
     

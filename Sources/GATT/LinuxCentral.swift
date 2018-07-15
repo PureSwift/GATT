@@ -6,8 +6,6 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-#if os(Linux) || (Xcode && SWIFT_PACKAGE)
-    
 import Foundation
 import Dispatch
 import Bluetooth
@@ -15,8 +13,6 @@ import BluetoothLinux
 
 @available(OSX 10.12, *)
 public final class LinuxCentral: CentralProtocol {
-    
-    internal typealias AdvertisingReport = HCILEAdvertisingReport.Report
     
     public var log: ((String) -> ())?
     
@@ -41,7 +37,7 @@ public final class LinuxCentral: CentralProtocol {
     
     public func scan(filterDuplicates: Bool = true,
                      shouldContinueScanning: () -> (Bool),
-                     foundDevice: @escaping (ScanData) -> ()) throws {
+                     foundDevice: @escaping (ScanData<Peripheral>) -> ()) throws {
         
         self.log?("Scanning...")
         
@@ -120,10 +116,8 @@ public final class LinuxCentral: CentralProtocol {
                                         peripheral: Peripheral,
                                         timeout: TimeInterval = 30) throws -> [Characteristic] {
         
-        let connection = try self.connection(for: peripheral)
-        
-        
-        fatalError()
+        return try connection(for: peripheral)
+            .discoverCharacteristics(characteristics, for: service, peripheral: peripheral, timeout: timeout)
     }
     
     public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
@@ -193,6 +187,29 @@ public final class LinuxCentral: CentralProtocol {
 }
 
 // MARK: - Supporting Types
+
+@available(OSX 10.12, *)
+public extension LinuxCentral {
+    
+    /// Peripheral Peer
+    ///
+    /// Represents a remote peripheral device that has been discovered.
+    public struct Peripheral: Peer {
+        
+        public let identifier: Bluetooth.Address
+        
+        fileprivate init(socket: BluetoothLinux.L2CAPSocket) {
+            
+            self.identifier = socket.address
+        }
+    }
+}
+
+@available(OSX 10.12, *)
+internal extension LinuxCentral {
+    
+    internal typealias AdvertisingReport = HCILEAdvertisingReport.Report
+}
 
 @available(OSX 10.12, *)
 internal extension LinuxCentral {
@@ -312,9 +329,6 @@ internal extension LinuxCentral {
                                             peripheral: Peripheral,
                                             timeout: TimeInterval) throws -> [Characteristic] {
             
-            
-            
-            
             return []
         }
         
@@ -341,8 +355,6 @@ private enum ErrorValue<T> {
     case error(Error)
     case value(T)
 }
-
-#endif
 
 #if os(Linux)
     

@@ -9,24 +9,19 @@
 import Foundation
 import Bluetooth
 
-#if (os(watchOS) && !swift(>=3.2))
-
-/// Not supported in watchOS before Xcode 9
-public protocol CentralProtocol: class { }
-
-#else
-
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
 public protocol CentralProtocol: class {
+    
+    associatedtype Peripheral: Peer
     
     var log: ((String) -> ())? { get set }
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               shouldContinueScanning: () -> (Bool),
-              foundDevice: @escaping (ScanData) -> ()) throws
+              foundDevice: @escaping (ScanData<Peripheral>) -> ()) throws
     
     func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
@@ -36,39 +31,32 @@ public protocol CentralProtocol: class {
     
     func discoverServices(_ services: [BluetoothUUID],
                           for peripheral: Peripheral,
-                          timeout: TimeInterval) throws -> [Service]
+                          timeout: TimeInterval) throws -> [Service<Peripheral>]
     
     func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                for service: BluetoothUUID,
-                                peripheral: Peripheral,
-                                timeout: TimeInterval) throws -> [Characteristic]
+                                for service: Service<Peripheral>,
+                                timeout: TimeInterval) throws -> [Characteristic<Peripheral>]
     
-    func readValue(for characteristic: BluetoothUUID,
-                   service: BluetoothUUID,
-                   peripheral: Peripheral,
+    func readValue(for characteristic: Characteristic<Peripheral>,
                    timeout: TimeInterval) throws -> Data
     
     func writeValue(_ data: Data,
-                    for characteristic: BluetoothUUID,
+                    for characteristic: Characteristic<Peripheral>,
                     withResponse: Bool,
-                    service: BluetoothUUID,
-                    peripheral: Peripheral,
                     timeout: TimeInterval) throws
     
     func notify(_ notification: ((Data) -> ())?,
-                for characteristic: BluetoothUUID,
-                service: BluetoothUUID,
-                peripheral: Peripheral,
+                for characteristic: Characteristic<Peripheral>,
                 timeout: TimeInterval) throws
 }
 
 public extension CentralProtocol {
     
-    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData] {
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral>] {
         
         let endDate = Date() + duration
         
-        var results = [Peripheral: ScanData]()
+        var results = [Peripheral: ScanData<Peripheral>](minimumCapacity: 1)
         
         try scan(filterDuplicates: filterDuplicates,
                   shouldContinueScanning: { Date() < endDate },
@@ -78,122 +66,61 @@ public extension CentralProtocol {
     }
 }
     
-    // MARK: - Supporting Types
-    
-    public protocol GATTAttribute {
-        
-        var uuid: BluetoothUUID { get }
-    }
-    
-    public struct Service: GATTAttribute {
-        
-        public let uuid: BluetoothUUID
-        
-        public let isPrimary: Bool
-    }
-    
-    public struct Characteristic: GATTAttribute {
-        
-        public typealias Property = GATT.CharacteristicProperty
-        
-        public let uuid: BluetoothUUID
-        
-        public let properties: BitMaskOptionSet<Property>
-    }
+// MARK: - Supporting Types
 
-/// Errors for GATT Central Manager
-public enum CentralError: Error {
+public protocol GATTAttribute {
     
-    /// Operation timeout.
-    case timeout
+    associatedtype Peripheral: Peer
     
-    /// Peripheral is disconnected.
-    case disconnected(Peripheral)
+    var identifier: Int { get }
     
-    /// Peripheral from previous scan / unknown.
-    case unknownPeripheral(Peripheral)
+    var uuid: BluetoothUUID { get }
     
-    /// The specified attribute was not found.
-    case invalidAttribute(BluetoothUUID)
-    
-    #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
-    
-    /// Bluetooth controller is not enabled.
-    case invalidState(DarwinBluetoothState)
-    
-    #endif
+    var peripheral: Peripheral { get }
 }
 
-// MARK: - CustomNSError
-
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-
-import Foundation
-
-extension CentralError: CustomNSError {
+public struct Service <Peripheral: Peer> : GATTAttribute {
     
-    public enum UserInfoKey: String {
-        
-        /// Bluetooth UUID value (for characteristic or service).
-        case uuid = "org.pureswift.GATT.CentralError.BluetoothUUID"
-        
-        /// Device Identifier
-        case peripheral = "org.pureswift.GATT.CentralError.Peripheral"
-        
-        /// State
-        case state = "org.pureswift.GATT.CentralError.BluetoothState"
-    }
+    public let identifier: Int
     
-    public static var errorDomain: String {
-        return "org.pureswift.GATT.CentralError"
-    }
+    public let uuid: BluetoothUUID
     
-    /// The user-info dictionary.
-    public var errorUserInfo: [String : Any] {
+    public let peripheral: Peripheral
+    
+    public let isPrimary: Bool
+    
+    public init(identifier: Int,
+                uuid: BluetoothUUID,
+                peripheral: Peripheral,
+                isPrimary: Bool = true) {
         
-        var userInfo = [String: Any](minimumCapacity: 2)
-        
-        switch self {
-            
-        case .timeout:
-            
-            let description = String(format: NSLocalizedString("The operation timed out.", comment: "org.pureswift.GATT.CentralError.timeout"))
-            
-            userInfo[NSLocalizedDescriptionKey] = description
-            
-        case let .disconnected(peripheral):
-            
-            let description = String(format: NSLocalizedString("The operation cannot be completed becuase the peripheral is disconnected.", comment: "org.pureswift.GATT.CentralError.disconnected"))
-            
-            userInfo[NSLocalizedDescriptionKey] = description
-            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
-            
-        case let .unknownPeripheral(peripheral):
-            
-            let description = String(format: NSLocalizedString("Unknown peripheral %@.", comment: "org.pureswift.GATT.CentralError.unknownPeripheral"), peripheral.identifier.uuidString)
-            
-            userInfo[NSLocalizedDescriptionKey] = description
-            userInfo[UserInfoKey.peripheral.rawValue] = peripheral
-            
-        case let .invalidAttribute(uuid):
-            
-            let description = String(format: NSLocalizedString("Invalid attribute %@.", comment: "org.pureswift.GATT.CentralError.invalidAttribute"), uuid.description)
-            
-            userInfo[NSLocalizedDescriptionKey] = description
-            userInfo[UserInfoKey.uuid.rawValue] = uuid
-            
-        case let .invalidState(state):
-            
-            let description = String(format: NSLocalizedString("Invalid state %@.", comment: "org.pureswift.GATT.CentralError.invalidState"), "\(state)")
-            
-            userInfo[NSLocalizedDescriptionKey] = description
-            userInfo[UserInfoKey.state.rawValue] = state
-        }
-        
-        return userInfo
+        self.identifier = identifier
+        self.uuid = uuid
+        self.peripheral = peripheral
+        self.isPrimary = isPrimary
     }
 }
 
-#endif
-
-#endif
+public struct Characteristic <Peripheral: Peer> : GATTAttribute {
+    
+    public typealias Property = GATT.CharacteristicProperty
+    
+    public let identifier: Int
+    
+    public let uuid: BluetoothUUID
+    
+    public let peripheral: Peripheral
+    
+    public let properties: BitMaskOptionSet<Property>
+    
+    public init(identifier: Int,
+                uuid: BluetoothUUID,
+                peripheral: Peripheral,
+                properties: BitMaskOptionSet<Property>) {
+        
+        self.identifier = identifier
+        self.uuid = uuid
+        self.peripheral = peripheral
+        self.properties = properties
+    }
+}

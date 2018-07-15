@@ -581,6 +581,23 @@ import Bluetooth
 
 public extension DarwinCentral {
     
+    /// Central Peer
+    ///
+    /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+    public struct Central: Peer {
+        
+        public let identifier: UUID
+        
+        init(_ peripheral: CBPeripheral) {
+            
+            self.identifier = peripheral.gattIdentifier
+        }
+
+    }
+}
+
+public extension DarwinCentral {
+    
     public struct Options {
         
         public let showPowerAlert: Bool

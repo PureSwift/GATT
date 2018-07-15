@@ -7,282 +7,299 @@
 //
 
 #if os(Linux) || (Xcode && SWIFT_PACKAGE)
+
+import Foundation
+import Bluetooth
+import BluetoothLinux
+
+@available(OSX 10.12, *)
+public final class LinuxPeripheral: PeripheralProtocol {
     
-    import Foundation
-    import Bluetooth
-    import BluetoothLinux
+    // MARK: - Properties
     
-    @available(OSX 10.12, *)
-    public final class LinuxPeripheral: PeripheralProtocol {
+    public var log: ((String) -> ())?
+    
+    public let options: Options
+    
+    public let controller: HostController
+    
+    public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
+    
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
+    
+    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
+    
+    // MARK: - Private Properties
+    
+    fileprivate var database = GATTDatabase()
+    
+    fileprivate var isServerRunning = false
+    
+    fileprivate var serverSocket: L2CAPSocket?
+    
+    fileprivate var serverThread: Thread?
+    
+    fileprivate var connections = [Connection]()
+    
+    private var lastConnectionID = 0
+    
+    // MARK: - Initialization
+    
+    public init(controller: HostController,
+                options: Options = Options()) {
         
-        // MARK: - Properties
+        self.controller = controller
+        self.options = options
+    }
+    
+    // MARK: - Methods
+    
+    public func start() throws {
         
-        public var log: ((String) -> ())?
+        guard isServerRunning == false else { return }
         
-        public let options: Options
+        // enable advertising
+        do { try controller.enableLowEnergyAdvertising() }
+        catch HCIError.commandDisallowed { /* ignore */ }
         
-        public let controller: HostController
+        let serverSocket = try L2CAPSocket.lowEnergyServer(controllerAddress: controller.address,
+                                                           isRandom: false,
+                                                           securityLevel: .low)
         
-        public var willRead: ((GATTReadRequest) -> ATT.Error?)?
+        isServerRunning = true
         
-        public var willWrite: ((GATTWriteRequest) -> ATT.Error?)?
+        log?("Started GATT Server")
         
-        public var didWrite: ((GATTWriteConfirmation) -> ())?
+        let serverThread = Thread { [weak self] in self?.main() }
         
-        // MARK: - Private Properties
+        self.serverSocket = serverSocket
+        self.serverThread = serverThread
         
-        fileprivate var database = GATTDatabase()
+        serverThread.start()
+    }
+    
+    public func stop() {
         
-        fileprivate var isServerRunning = false
+        guard isServerRunning else { return }
         
-        fileprivate var serverSocket: L2CAPSocket?
+        isServerRunning = false
         
-        fileprivate var serverThread: Thread?
+        self.serverSocket = nil
+        self.serverThread = nil
+    }
+    
+    public func add(service: GATT.Service) throws -> UInt16 {
         
-        fileprivate var clients = [Client]()
+        return database.add(service: service)
+    }
+    
+    public func remove(service handle: UInt16) {
         
-        private var lastConnectionID = 0
+        database.remove(service: handle)
+    }
+    
+    public func removeAllServices() {
         
-        // MARK: - Initialization
+        database.removeAll()
+    }
+    
+    /// Return the handles of the characteristics matching the specified UUID.
+    public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
         
-        public init(controller: HostController,
-                    options: Options = Options()) {
+        return database.filter { $0.uuid == uuid }.map { $0.handle }
+    }
+    
+    // MARK: - Private Methods
+    
+    private func main() {
+        
+        guard let serverSocket = self.serverSocket
+            else { fatalError("No server socket") }
+        
+        while isServerRunning {
             
-            self.controller = controller
-            self.options = options
+            do {
+                
+                let newSocket = try serverSocket.waitForConnection()
+                
+                guard isServerRunning else { return }
+                
+                log?("[\(newSocket.address)]: New \(newSocket.addressType) connection")
+                
+                let connection = Connection(socket: newSocket, peripheral: self)
+                
+                connections.append(connection)
+            }
+                
+            catch { log?("Error waiting for new connection: \(error)") }
         }
         
-        // MARK: - Methods
+        log?("Stopped GATT Server")
+    }
+    
+    fileprivate func newConnectionID() -> Int {
         
-        public func start() throws {
+        lastConnectionID += 1
+        
+        return lastConnectionID
+    }
+    
+    // MARK: Subscript
+    
+    public subscript(characteristic handle: UInt16) -> Data {
+        
+        get { return database[handle: handle].value }
+        
+        set { clients.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
+    }
+}
+
+@available(OSX 10.12, *)
+public extension LinuxPeripheral {
+    
+    public struct Options {
+        
+        public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+        
+        public let maximumPreparedWrites: Int
+        
+        public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
+                    maximumPreparedWrites: Int = 100) {
             
-            guard isServerRunning == false else { return }
+            self.maximumTransmissionUnit = maximumTransmissionUnit
+            self.maximumPreparedWrites = maximumPreparedWrites
+        }
+    }
+}
+
+@available(OSX 10.12, *)
+public extension LinuxPeripheral {
+    
+    /// Central Peer
+    ///
+    /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+    public struct Central: Peer {
+        
+        public let identifier: Bluetooth.Address
+        
+        fileprivate init(socket: BluetoothLinux.L2CAPSocket) {
             
-            // enable advertising
-            do { try controller.enableLowEnergyAdvertising() }
-            catch HCIError.commandDisallowed { /* ignore */ }
+            self.identifier = socket.address
+        }
+    }
+}
+
+@available(OSX 10.12, *)
+private extension LinuxPeripheral {
+    
+    final class Connection {
+        
+        let connectionID: Int
+        
+        let central: Central
+        
+        let server: GATTServer
+        
+        lazy var thread: Thread = Thread { [weak self] in self?.main() }
+        
+        private(set) weak var peripheral: LinuxPeripheral!
+        
+        private var maximumUpdateValueLength: Int {
             
-            let serverSocket = try L2CAPSocket.lowEnergyServer(controllerAddress: controller.address,
-                                                               isRandom: false,
-                                                               securityLevel: .low)
-            
-            isServerRunning = true
-            
-            log?("Started GATT Server")
-            
-            let serverThread = Thread { [weak self] in self?.main() }
-            
-            self.serverSocket = serverSocket
-            self.serverThread = serverThread
-            
-            serverThread.start()
+            // ATT_MTU-3
+            return Int(server.maximumTransmissionUnit.rawValue) - 3
         }
         
-        public func stop() {
+        init(socket: L2CAPSocket, peripheral: LinuxPeripheral) {
             
-            guard isServerRunning else { return }
+            // initialize
+            self.peripheral = peripheral
+            self.connectionID = peripheral.newConnectionID()
+            self.central = Central(socket: socket)
+            self.server = GATTServer(socket: socket,
+                                     maximumTransmissionUnit: peripheral.options.maximumTransmissionUnit,
+                                     maximumPreparedWrites: peripheral.options.maximumPreparedWrites)
             
-            isServerRunning = false
+            // start running
+            server.database = peripheral.database
+            server.log = { [unowned self] in self.peripheral.log?("[\(self.central)]: " + $0) }
             
-            self.serverSocket = nil
-            self.serverThread = nil
+            server.willRead = { [unowned self] (uuid, handle, value, offset) in
+                
+                let request = GATTReadRequest(central: self.central,
+                                              maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                              uuid: uuid,
+                                              handle: handle,
+                                              value: value,
+                                              offset: offset)
+                
+                return self.peripheral.willRead?(request)
+            }
+            
+            server.willWrite = { [unowned self] (uuid, handle, value, newValue) in
+                
+                let request = GATTWriteRequest(central: self.central,
+                                               maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                               uuid: uuid,
+                                               handle: handle,
+                                               value: value,
+                                               newValue: newValue)
+                
+                return self.peripheral.willWrite?(request)
+            }
+            
+            server.didWrite = { [unowned self] (uuid, handle, newValue) in
+                
+                let confirmation = GATTWriteConfirmation(central: self.central,
+                                                         maximumUpdateValueLength: self.maximumUpdateValueLength,
+                                                         uuid: uuid,
+                                                         handle: handle,
+                                                         value: newValue)
+                
+                self.peripheral.didWrite?(confirmation)
+            }
+            
+            thread.start()
         }
-        
-        public func add(service: GATT.Service) throws -> UInt16 {
-            
-            return database.add(service: service)
-        }
-        
-        public func remove(service handle: UInt16) {
-            
-            database.remove(service: handle)
-        }
-        
-        public func removeAllServices() {
-            
-            database.removeAll()
-        }
-        
-        /// Return the handles of the characteristics matching the specified UUID.
-        public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
-            
-            return database.filter { $0.uuid == uuid }.map { $0.handle }
-        }
-        
-        // MARK: - Private Methods
         
         private func main() {
             
-            guard let serverSocket = self.serverSocket
-                else { fatalError("No server socket") }
-            
-            while isServerRunning {
+            while let peripheral = self.peripheral, peripheral.isServerRunning {
                 
                 do {
                     
-                    let newSocket = try serverSocket.waitForConnection()
+                    server.database = peripheral.database
                     
-                    guard isServerRunning else { return }
+                    try server.read()
                     
-                    log?("[\(newSocket.address)]: New \(newSocket.addressType) connection")
+                    peripheral.database = server.database
                     
-                    let client = Client(socket: newSocket, peripheral: self)
-                    
-                    clients.append(client)
-                }
-                    
-                catch { log?("Error waiting for new connection: \(error)") }
-            }
-            
-            log?("Stopped GATT Server")
-        }
-        
-        fileprivate func newConnectionID() -> Int {
-            
-            lastConnectionID += 1
-            
-            return lastConnectionID
-        }
-        
-        // MARK: Subscript
-        
-        public subscript(characteristic handle: UInt16) -> Data {
-            
-            get { return database[handle: handle].value }
-            
-            set { clients.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
-        }
-    }
-    
-    @available(OSX 10.12, *)
-    public extension LinuxPeripheral {
-        
-        public struct Options {
-            
-            public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
-            
-            public let maximumPreparedWrites: Int
-            
-            public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
-                        maximumPreparedWrites: Int = 100) {
-                
-                self.maximumTransmissionUnit = maximumTransmissionUnit
-                self.maximumPreparedWrites = maximumPreparedWrites
-            }
-        }
-    }
-    
-    @available(OSX 10.12, *)
-    private extension LinuxPeripheral {
-        
-        final class Client {
-            
-            let connectionID: Int
-            
-            let central: Central
-            
-            let server: GATTServer
-            
-            lazy var thread: Thread = Thread { [weak self] in self?.main() }
-            
-            private(set) weak var peripheral: LinuxPeripheral!
-            
-            private var maximumUpdateValueLength: Int {
-                
-                // ATT_MTU-3
-                return Int(server.maximumTransmissionUnit.rawValue) - 3
-            }
-            
-            init(socket: L2CAPSocket, peripheral: LinuxPeripheral) {
-                
-                // initialize
-                self.peripheral = peripheral
-                self.connectionID = peripheral.newConnectionID()
-                self.central = Central(socket: socket)
-                self.server = GATTServer(socket: socket,
-                                         maximumTransmissionUnit: peripheral.options.maximumTransmissionUnit,
-                                         maximumPreparedWrites: peripheral.options.maximumPreparedWrites)
-                
-                // start running
-                server.database = peripheral.database
-                server.log = { [unowned self] in self.peripheral.log?("[\(self.central)]: " + $0) }
-                
-                server.willRead = { [unowned self] (uuid, handle, value, offset) in
-                    
-                    let request = GATTReadRequest(central: self.central,
-                                                  maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                                  uuid: uuid,
-                                                  handle: handle,
-                                                  value: value,
-                                                  offset: offset)
-                    
-                    return self.peripheral.willRead?(request)
-                }
-                
-                server.willWrite = { [unowned self] (uuid, handle, value, newValue) in
-                    
-                    let request = GATTWriteRequest(central: self.central,
-                                                   maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                                   uuid: uuid,
-                                                   handle: handle,
-                                                   value: value,
-                                                   newValue: newValue)
-                    
-                    return self.peripheral.willWrite?(request)
-                }
-                
-                server.didWrite = { [unowned self] (uuid, handle, newValue) in
-                    
-                    let confirmation = GATTWriteConfirmation(central: self.central,
-                                                             maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                                             uuid: uuid,
-                                                             handle: handle,
-                                                             value: newValue)
-                    
-                    self.peripheral.didWrite?(confirmation)
-                }
-                
-                thread.start()
-            }
-            
-            private func main() {
-                
-                while let peripheral = self.peripheral, peripheral.isServerRunning {
-                    
-                    do {
-                        
-                        server.database = peripheral.database
-                        
-                        try server.read()
-                        
-                        peripheral.database = server.database
-                        
-                        /// write outgoing pending ATT PDUs
-                        var didWrite = false
-                        repeat { didWrite = try server.write() }
+                    /// write outgoing pending ATT PDUs
+                    var didWrite = false
+                    repeat { didWrite = try server.write() }
                         while didWrite
-                    }
-                    
-                    catch {
-                        
-                        peripheral.log?("[\(central)]: Disconnected \(error)")
-                        
-                        do { try peripheral.controller.enableLowEnergyAdvertising() }
-                        catch HCIError.commandDisallowed { /* ignore */ }
-                        catch { fatalError("Could not enable advertising.") }
-                        
-                        break // end while loop
-                    }
                 }
-                
-                // remove from peripheral
-                guard let index = self.peripheral?.clients.index(where: { $0.connectionID == connectionID })
-                    else { return }
-                
-                self.peripheral?.clients.remove(at: index)
+                    
+                catch {
+                    
+                    peripheral.log?("[\(central)]: Disconnected \(error)")
+                    
+                    do { try peripheral.controller.enableLowEnergyAdvertising() }
+                    catch HCIError.commandDisallowed { /* ignore */ }
+                    catch { fatalError("Could not enable advertising.") }
+                    
+                    break // end while loop
+                }
             }
+            
+            // remove from peripheral
+            guard let index = self.peripheral?.clients.index(where: { $0.connectionID == connectionID })
+                else { return }
+            
+            self.peripheral?.clients.remove(at: index)
         }
     }
+}
 
 #endif
 
