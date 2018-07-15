@@ -358,9 +358,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         accessQueue.sync { [unowned self] in
             
-            var newValue = self.internalState.notify.notifications[characteristic.peripheral] ?? [:]
-            newValue[characteristic] = notification
-            self.internalState.notify.notifications[characteristic.peripheral] = newValue
+            var cache = self.internalState.cache[characteristic.peripheral] ?? Cache()
+            cache.characteristics.notifications[characteristic.identifier] = notification
+            self.internalState.cache[characteristic.peripheral] = cache
         }
     }
     
@@ -547,13 +547,12 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
                 
                 // notification
                 assert(error == nil, "Notifications should never fail")
-                
-                let uuid = BluetoothUUID(coreBluetooth: coreCharacteristic.uuid)
-                
+                                
                 let data = coreCharacteristic.value ?? Data()
                 
-                guard let peripheralNotifications = self.internalState.notify.notifications[Peripheral(corePeripheral)],
-                    let notification = peripheralNotifications[uuid]
+                guard let cache = self.internalState.cache[Peripheral(corePeripheral)],
+                    let key = cache.characteristics.values.first(where: { $0.value === coreCharacteristic })?.key,
+                    let notification = cache.characteristics.notifications[key]
                     else { assertionFailure("Unexpected notification for \(coreCharacteristic.uuid)"); return }
                 
                 // notify
