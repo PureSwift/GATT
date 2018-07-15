@@ -22,6 +22,8 @@ public final class LinuxCentral: CentralProtocol {
     
     public let hostController: HostController
     
+    public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+    
     internal lazy var asyncQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
     
     internal private(set) var scanData = [Peripheral: AdvertisingReport](minimumCapacity: 1)
@@ -30,9 +32,11 @@ public final class LinuxCentral: CentralProtocol {
     
     private var lastConnectionID = 0
     
-    public init(hostController: HostController) {
+    public init(hostController: HostController,
+                maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
         
         self.hostController = hostController
+        self.maximumTransmissionUnit = maximumTransmissionUnit
     }
     
     public func scan(filterDuplicates: Bool = true,
@@ -77,7 +81,11 @@ public final class LinuxCentral: CentralProtocol {
         }
         
         // keep connection open and store for future use
-        self.connections[peripheral] = socket
+        let connection = Server(connectionIdentifier: newConnectionID(),
+                                socket: socket,
+                                maximumTransmissionUnit: maximumTransmissionUnit)
+        
+        self.connections[peripheral] = connection
     }
     
     public func disconnect(peripheral: Peripheral) {
@@ -97,7 +105,7 @@ public final class LinuxCentral: CentralProtocol {
         guard let advertisementData = scanData[peripheral]
             else { throw CentralError.unknownPeripheral(peripheral) }
         
-        guard let socket = connections[peripheral]
+        guard let connection = connections[peripheral]
             else { throw CentralError.disconnected(peripheral) }
         
         
@@ -169,19 +177,89 @@ public final class LinuxCentral: CentralProtocol {
 // MARK: - Supporting Types
 
 @available(OSX 10.12, *)
-private extension LinuxCentral {
+internal protocol LinuxCentralServerDelegate: class {
+    
+    func serverLog(_ server: LinuxCentral.Server, message: String)
+    
+    func serverError(_ server: LinuxCentral.Server, error: Error)
+}
+
+@available(OSX 10.12, *)
+internal extension LinuxCentral {
     
     final class Server {
         
-        let connectionID: Int
+        let connectionIdentifier: Int
         
         let peripheral: Peripheral
         
         let client: GATTClient
         
+        var log: ((String) -> ())?
         
+        var log: ((String) -> ())?
         
-        lazy var thread: Thread = Thread { [weak self] in self?.main() }
+        private(set) var isRunning = true
+        
+        private var thread: Thread?
+        
+        init(connectionIdentifier: Int,
+             socket: L2CAPSocket,
+             maximumTransmissionUnit: ATTMaximumTransmissionUnit) {
+            
+            self.connectionIdentifier = connectionIdentifier
+            self.peripheral = Peripheral(socket: socket)
+            self.client = GATTClient(socket: socket,
+                                     maximumTransmissionUnit: maximumTransmissionUnit)
+            
+            // configure client
+            client.log = { [unowned self] in self.delegate?.serverLog("[\(self.client)]: " + $0) }
+            
+            // run socket in background
+            start()
+        }
+        
+        private func start() {
+            
+            self.isRunning = true
+            
+            let thread = Thread { [weak self] in self?.main() }
+            thread.name = "LinuxCentral Connection \(connectionIdentifier)"
+            thread.start()
+            
+            delegate?.serverDidStart(self)
+            
+            self.thread = thread
+        }
+        
+        func stop() {
+            
+            isRunning = false
+            thread = nil
+        }
+        
+        private func main() {
+            
+            do {
+                
+                while isRunning {
+                    
+                    // write outgoing pending ATT PDUs (requests)
+                    var didWrite = false
+                    repeat { didWrite = try client.write() }
+                    while didWrite
+                    
+                    // wait for incoming data (response, notifications, indications)
+                    try client.read()
+                }
+            }
+            
+            catch {
+                
+                
+            }
+        }
+        
     }
 }
 

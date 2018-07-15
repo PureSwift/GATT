@@ -6,17 +6,16 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
-    import CoreBluetooth
-#endif
+import Foundation
+import Bluetooth
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-    import struct Foundation.UUID
-    public typealias PeerIdentifier = Foundation.UUID
+import CoreBluetooth
+public typealias PeerIdentifier = Foundation.UUID
 #elseif os(Linux)
-    import BluetoothLinux
-    import struct Bluetooth.Address
-    public typealias PeerIdentifier = Bluetooth.Address
+import BluetoothLinux
+import struct Bluetooth.Address
+public typealias PeerIdentifier = Bluetooth.Address
 #endif
 
 public protocol Peer: Hashable {
@@ -59,25 +58,23 @@ extension Central: CustomStringConvertible {
 
 #if os(Linux)
     
-    extension Central {
+extension Central {
+    
+    init(socket: BluetoothLinux.L2CAPSocket) {
         
-        init(socket: BluetoothLinux.L2CAPSocket) {
-            
-            self.identifier = socket.address
-        }
+        self.identifier = socket.address
     }
+}
 
 #elseif (Xcode && SWIFT_PACKAGE)
+
+extension Central {
     
-    import BluetoothLinux
-    
-    extension Central {
+    init(socket: L2CAPSocketProtocol) {
         
-        init(socket: L2CAPSocket) {
-            
-            fatalError("Linux Only")
-        }
+        fatalError("Linux Only")
     }
+}
 
 #endif
 
@@ -123,6 +120,28 @@ extension Peripheral: CustomStringConvertible {
             self.identifier = peripheral.gattIdentifier
         }
     }
+
+#endif
+
+#if os(Linux)
+
+extension Peripheral {
+    
+    init(socket: BluetoothLinux.L2CAPSocket) {
+        
+        self.identifier = socket.address
+    }
+}
+
+#elseif (Xcode && SWIFT_PACKAGE)
+
+extension Peripheral {
+    
+    init(socket: L2CAPSocketProtocol) {
+        
+        fatalError("Linux Only")
+    }
+}
 
 #endif
 
