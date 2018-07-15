@@ -148,7 +148,7 @@ public final class LinuxPeripheral: PeripheralProtocol {
         
         get { return database[handle: handle].value }
         
-        set { clients.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
+        set { connections.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
     }
 }
 
@@ -291,10 +291,10 @@ private extension LinuxPeripheral {
             }
             
             // remove from peripheral
-            guard let index = self.peripheral?.clients.index(where: { $0.connectionID == connectionID })
+            guard let index = self.peripheral?.connections.index(where: { $0.connectionID == connectionID })
                 else { return }
             
-            self.peripheral?.clients.remove(at: index)
+            self.peripheral?.connections.remove(at: index)
         }
     }
 }

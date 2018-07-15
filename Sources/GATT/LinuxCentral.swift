@@ -56,6 +56,8 @@ public final class LinuxCentral: CentralProtocol {
             
             foundDevice(scanData)
         }
+        
+        self.log?("Did discover \(self.scanData.count) peripherals")
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {

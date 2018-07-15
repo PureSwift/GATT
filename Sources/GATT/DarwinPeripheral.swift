@@ -302,7 +302,7 @@ import Bluetooth
             
             assert(requests.isEmpty == false)
             
-            var writeRequests = [GATTWriteRequest]()
+            var writeRequests = [GATTWriteRequest<Central>]()
             writeRequests.reserveCapacity(requests.count)
             
             // validate write requests
