@@ -6,8 +6,6 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if os(Linux) || (Xcode && SWIFT_PACKAGE)
-
 import Foundation
 import Bluetooth
 import BluetoothLinux
@@ -300,8 +298,6 @@ private extension LinuxPeripheral {
         }
     }
 }
-
-#endif
 
 #if os(Linux)
 

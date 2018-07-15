@@ -72,7 +72,7 @@ public protocol GATTAttribute {
     
     associatedtype Peripheral: Peer
     
-    var identifier: Int { get }
+    var identifier: UInt { get }
     
     var uuid: BluetoothUUID { get }
     
@@ -81,7 +81,7 @@ public protocol GATTAttribute {
 
 public struct Service <Peripheral: Peer> : GATTAttribute {
     
-    public let identifier: Int
+    public let identifier: UInt
     
     public let uuid: BluetoothUUID
     
@@ -89,7 +89,7 @@ public struct Service <Peripheral: Peer> : GATTAttribute {
     
     public let isPrimary: Bool
     
-    public init(identifier: Int,
+    public init(identifier: UInt,
                 uuid: BluetoothUUID,
                 peripheral: Peripheral,
                 isPrimary: Bool = true) {
@@ -105,7 +105,7 @@ public struct Characteristic <Peripheral: Peer> : GATTAttribute {
     
     public typealias Property = GATT.CharacteristicProperty
     
-    public let identifier: Int
+    public let identifier: UInt
     
     public let uuid: BluetoothUUID
     
@@ -113,7 +113,7 @@ public struct Characteristic <Peripheral: Peer> : GATTAttribute {
     
     public let properties: BitMaskOptionSet<Property>
     
-    public init(identifier: Int,
+    public init(identifier: UInt,
                 uuid: BluetoothUUID,
                 peripheral: Peripheral,
                 properties: BitMaskOptionSet<Property>) {

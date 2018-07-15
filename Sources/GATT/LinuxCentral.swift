@@ -43,16 +43,12 @@ public final class LinuxCentral: CentralProtocol {
         
         try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
             
-            #if os(Linux)
             let peripheral = Peripheral(identifier: report.address)
-            #elseif os(macOS)
-            let peripheral = Peripheral(identifier: UUID())
-            #endif
             
             let advertisement = AdvertisementData() // FIXME:
             
-            let scanData = ScanData(date: Date(),
-                                    peripheral: peripheral,
+            let scanData = ScanData(peripheral: peripheral,
+                                    date: Date(),
                                     rssi: Double(report.rssi.rawValue),
                                     advertisementData: advertisement)
             
@@ -65,7 +61,7 @@ public final class LinuxCentral: CentralProtocol {
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
         
         guard let advertisementData = scanData[peripheral]
-            else { throw CentralError.unknownPeripheral(peripheral) }
+            else { throw CentralError.unknownPeripheral }
         
         let socket = try async(timeout: timeout) {
             
@@ -105,32 +101,37 @@ public final class LinuxCentral: CentralProtocol {
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
                                  for peripheral: Peripheral,
-                                 timeout: TimeInterval = 30) throws -> [Service] {
+                                 timeout: TimeInterval = 30) throws -> [Service<Peripheral>] {
         
         return try connection(for: peripheral)
             .discoverServices(services, for: peripheral, timeout: timeout)
     }
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
-                                        for service: BluetoothUUID,
-                                        peripheral: Peripheral,
-                                        timeout: TimeInterval = 30) throws -> [Characteristic] {
+                                        for service: Service<Peripheral>,
+                                        timeout: TimeInterval = 30) throws -> [Characteristic<Peripheral>] {
         
-        return try connection(for: peripheral)
-            .discoverCharacteristics(characteristics, for: service, peripheral: peripheral, timeout: timeout)
+        return try connection(for: service.peripheral)
+            .discoverCharacteristics(characteristics, for: service, timeout: timeout)
     }
     
-    public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
-        
-        fatalError()
-    }
-    
-    public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+    public func readValue(for characteristic: Characteristic<Peripheral>,
+                          timeout: TimeInterval = 30) throws -> Data {
         
         fatalError()
     }
     
-    public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+    public func writeValue(_ data: Data,
+                           for characteristic: Characteristic<Peripheral>,
+                           withResponse: Bool = true,
+                           timeout: TimeInterval = 30) throws {
+        
+        fatalError()
+    }
+    
+    public func notify(_ notification: ((Data) -> ())?,
+                       for characteristic: Characteristic<Peripheral>,
+                       timeout: TimeInterval = 30) throws {
         
         fatalError()
     }
@@ -147,10 +148,10 @@ public final class LinuxCentral: CentralProtocol {
     private func connection(for peripheral: Peripheral) throws -> Connection {
         
         guard let _ = scanData[peripheral]
-            else { throw CentralError.unknownPeripheral(peripheral) }
+            else { throw CentralError.unknownPeripheral }
         
         guard let connection = connections[peripheral]
-            else { throw CentralError.disconnected(peripheral) }
+            else { throw CentralError.disconnected }
         
         return connection
     }
@@ -198,6 +199,11 @@ public extension LinuxCentral {
         
         public let identifier: Bluetooth.Address
         
+        internal init(identifier: Bluetooth.Address) {
+            
+            self.identifier = identifier
+        }
+        
         fileprivate init(socket: BluetoothLinux.L2CAPSocket) {
             
             self.identifier = socket.address
@@ -229,6 +235,8 @@ internal extension LinuxCentral {
         private(set) var isRunning = true
         
         private var thread: Thread?
+        
+        private var cache = Cache()
         
         init(identifier: Int,
              socket: L2CAPSocket,
@@ -313,38 +321,118 @@ internal extension LinuxCentral {
             throw CentralError.timeout
         }
         
-        public func discoverServices(_ services: [BluetoothUUID] = [],
-                                     for peripheral: Peripheral,
-                                     timeout: TimeInterval) throws -> [Service] {
+        func discoverServices(_ services: [BluetoothUUID],
+                              for peripheral: Peripheral,
+                              timeout: TimeInterval) throws -> [Service<Peripheral>] {
             
+            // GATT request
             let foundServices = try async(timeout: timeout) {
                 client.discoverAllPrimaryServices(completion: $0)
             }
             
-            return foundServices.map { Service(uuid: $0.uuid, isPrimary: $0.type == .primaryService) }
+            // store in cache
+            cache.update(foundServices)
+            
+            return cache.services.values.map {
+                Service(identifier: $0.key,
+                        uuid: $0.value.uuid,
+                        peripheral: peripheral,
+                        isPrimary: $0.value.type == .primaryService)
+            }
         }
         
-        public func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                            for service: BluetoothUUID,
-                                            peripheral: Peripheral,
-                                            timeout: TimeInterval) throws -> [Characteristic] {
+        func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                     for service: Service<Peripheral>,
+                                     timeout: TimeInterval = 30) throws -> [Characteristic<Peripheral>] {
             
-            return []
+            assert(service.peripheral == self.peripheral)
+            
+            // get service
+            guard let gattService = self.cache.services.values[service.identifier]
+                else { throw CentralError.invalidAttribute(service.uuid) }
+            
+            // GATT request
+            let foundCharacteristics = try async(timeout: timeout) {
+                client.discoverAllCharacteristics(of: gattService, completion: $0)
+            }
+            
+            // store in cache
+            cache.insert(foundCharacteristics, for: gattService)
+            
+            return cache.characteristics.values.map {
+                Characteristic(identifier: $0.key,
+                               uuid: $0.value.uuid,
+                               peripheral: peripheral,
+                               properties: $0.value.properties)
+            }
+        }
+    }
+}
+
+@available(OSX 10.12, *)
+internal extension LinuxCentral.Connection {
+    
+    struct Cache {
+        
+        fileprivate init() { }
+        
+        var services = Services()
+        
+        struct Services {
+            
+            fileprivate(set) var values: [UInt: GATTClient.Service] = [:]
+            
+            private var lastIdentifier: UInt = 0
+            
+            fileprivate mutating func newIdentifier() -> UInt {
+                
+                lastIdentifier += 1
+                
+                return lastIdentifier
+            }
         }
         
-        public func readValue(for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws -> Data {
+        mutating func update(_ newValues: [GATTClient.Service]) {
             
-            fatalError()
+            services.values.reserveCapacity(newValues.count)
+            
+            newValues.forEach {
+                let identifier = services.newIdentifier()
+                services.values[identifier] = $0
+            }
         }
         
-        public func writeValue(_ data: Data, for characteristic: BluetoothUUID, withResponse: Bool = true, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+        var characteristics = Characteristics()
+        
+        struct Characteristics {
             
-            fatalError()
+            fileprivate(set) var values: [UInt: GATTClient.Characteristic] = [:]
+            
+            private var lastIdentifier: UInt = 0
+            
+            fileprivate mutating func newIdentifier() -> UInt {
+                
+                lastIdentifier += 1
+                
+                return lastIdentifier
+            }
         }
         
-        public func notify(_ notification: ((Data) -> ())?, for characteristic: BluetoothUUID, service: BluetoothUUID, peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+        mutating func insert(_ newValues: [GATTClient.Characteristic],
+                             for service: GATTClient.Service) {
             
-            fatalError()
+            // remove old cache
+            while let index = characteristics.values.index(where: {
+                $0.value.handle.declaration > service.handle &&
+                $0.value.handle.declaration < service.end }) {
+                
+                characteristics.values.remove(at: index)
+            }
+            
+            newValues.forEach {
+                let identifier = characteristics.newIdentifier()
+                characteristics.values[identifier] = $0
+            }
         }
     }
 }
