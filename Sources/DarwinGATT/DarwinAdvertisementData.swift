@@ -6,8 +6,12 @@
 //
 
 import Foundation
-import CoreBluetooth
 import Bluetooth
+import GATT
+
+#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+
+import CoreBluetooth
 
 internal extension AdvertisementData {
     
@@ -46,3 +50,5 @@ internal extension AdvertisementData {
         self.solicitedServiceUUIDs = (coreBluetooth[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
     }
 }
+
+#endif

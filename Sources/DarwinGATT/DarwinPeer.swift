@@ -5,6 +5,8 @@
 //  Created by Alsey Coleman Miller on 7/14/18.
 //
 
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+
 import Foundation
 import CoreBluetooth
 
@@ -45,3 +47,5 @@ internal extension CBPeripheral {
         #endif
     }
 }
+
+#endif

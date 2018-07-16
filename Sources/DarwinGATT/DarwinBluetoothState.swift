@@ -8,8 +8,6 @@
 
 import Foundation
 
-#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
-
 /// Darwin Bluetooth State
 ///
 /// - SeeAlso: [CBManagerState](https://developer.apple.com/documentation/corebluetooth/cbmanagerstate).
@@ -45,5 +43,3 @@ extension DarwinBluetoothState: CustomStringConvertible {
         }
     }
 }
-
-#endif

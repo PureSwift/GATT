@@ -82,6 +82,21 @@ public struct GATTReadRequest <Central: Peer> : GATTRequest {
     public let value: Data
     
     public let offset: Int
+    
+    public init(central: Central,
+                maximumUpdateValueLength: Int,
+                uuid: BluetoothUUID,
+                handle: UInt16,
+                value: Data,
+                offset: Int) {
+        
+        self.central = central
+        self.maximumUpdateValueLength = maximumUpdateValueLength
+        self.uuid = uuid
+        self.handle = handle
+        self.value = value
+        self.offset = offset
+    }
 }
 
 public struct GATTWriteRequest <Central: Peer> : GATTRequest {
@@ -97,6 +112,21 @@ public struct GATTWriteRequest <Central: Peer> : GATTRequest {
     public let value: Data
     
     public let newValue: Data
+    
+    public init(central: Central,
+                maximumUpdateValueLength: Int,
+                uuid: BluetoothUUID,
+                handle: UInt16,
+                value: Data,
+                newValue: Data) {
+        
+        self.central = central
+        self.maximumUpdateValueLength = maximumUpdateValueLength
+        self.uuid = uuid
+        self.handle = handle
+        self.value = value
+        self.newValue = newValue
+    }
 }
 
 public struct GATTWriteConfirmation <Central: Peer> : GATTRequest {
@@ -110,4 +140,17 @@ public struct GATTWriteConfirmation <Central: Peer> : GATTRequest {
     public let handle: UInt16
     
     public let value: Data
+    
+    public init(central: Central,
+                maximumUpdateValueLength: Int,
+                uuid: BluetoothUUID,
+                handle: UInt16,
+                value: Data) {
+        
+        self.central = central
+        self.maximumUpdateValueLength = maximumUpdateValueLength
+        self.uuid = uuid
+        self.handle = handle
+        self.value = value
+    }
 }

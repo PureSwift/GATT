@@ -9,6 +9,7 @@
 import Foundation
 import Bluetooth
 import BluetoothLinux
+import GATT
 
 @available(OSX 10.12, *)
 public final class LinuxPeripheral: PeripheralProtocol {
