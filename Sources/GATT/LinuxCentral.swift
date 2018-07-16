@@ -60,7 +60,7 @@ public final class LinuxCentral: CentralProtocol {
         self.log?("Did discover \(self.scanData.count) peripherals")
     }
     
-    public func connect(to peripheral: Peripheral, timeout: TimeInterval = 30) throws {
+    public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         guard let advertisementData = scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
@@ -103,7 +103,7 @@ public final class LinuxCentral: CentralProtocol {
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
                                  for peripheral: Peripheral,
-                                 timeout: TimeInterval = 30) throws -> [Service<Peripheral>] {
+                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral>] {
         
         return try connection(for: peripheral)
             .discoverServices(services, for: peripheral, timeout: timeout)
@@ -111,14 +111,14 @@ public final class LinuxCentral: CentralProtocol {
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
                                         for service: Service<Peripheral>,
-                                        timeout: TimeInterval = 30) throws -> [Characteristic<Peripheral>] {
+                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral>] {
         
         return try connection(for: service.peripheral)
             .discoverCharacteristics(characteristics, for: service, timeout: timeout)
     }
     
     public func readValue(for characteristic: Characteristic<Peripheral>,
-                          timeout: TimeInterval = 30) throws -> Data {
+                          timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
         
         fatalError()
     }
@@ -126,14 +126,14 @@ public final class LinuxCentral: CentralProtocol {
     public func writeValue(_ data: Data,
                            for characteristic: Characteristic<Peripheral>,
                            withResponse: Bool = true,
-                           timeout: TimeInterval = 30) throws {
+                           timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         fatalError()
     }
     
     public func notify(_ notification: ((Data) -> ())?,
                        for characteristic: Characteristic<Peripheral>,
-                       timeout: TimeInterval = 30) throws {
+                       timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         fatalError()
     }
@@ -273,6 +273,8 @@ internal extension LinuxCentral {
             thread = nil
         }
         
+        // MARK: - Private Methods
+        
         private func main() {
             
             do {
@@ -323,6 +325,8 @@ internal extension LinuxCentral {
             throw CentralError.timeout
         }
         
+        // MARK: GATT Requests
+        
         func discoverServices(_ services: [BluetoothUUID],
                               for peripheral: Peripheral,
                               timeout: TimeInterval) throws -> [Service<Peripheral>] {
@@ -345,9 +349,9 @@ internal extension LinuxCentral {
         
         func discoverCharacteristics(_ characteristics: [BluetoothUUID],
                                      for service: Service<Peripheral>,
-                                     timeout: TimeInterval = 30) throws -> [Characteristic<Peripheral>] {
+                                     timeout: TimeInterval) throws -> [Characteristic<Peripheral>] {
             
-            assert(service.peripheral == self.peripheral)
+            assert(service.peripheral == peripheral)
             
             // get service
             guard let gattService = self.cache.services.values[service.identifier]
@@ -368,6 +372,75 @@ internal extension LinuxCentral {
                                properties: $0.value.properties)
             }
         }
+        
+        func readValue(for characteristic: Characteristic<Peripheral>,
+                       timeout: TimeInterval) throws -> Data {
+            
+            assert(characteristic.peripheral == peripheral)
+            
+            // GATT characteristic
+            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+                else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            
+            // GATT request
+            let value = try async(timeout: timeout) {
+                client.readCharacteristic(gattCharacteristic, completion: $0)
+            }
+            
+            return value
+        }
+        
+        func writeValue(_ data: Data,
+                        for characteristic: Characteristic<Peripheral>,
+                        withResponse: Bool = true,
+                        timeout: TimeInterval) throws {
+            
+            assert(characteristic.peripheral == peripheral)
+            
+            // GATT characteristic
+            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+                else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            
+            // GATT request
+            try async(timeout: timeout) {
+                client.writeCharacteristic(gattCharacteristic, data: data, reliableWrites: withResponse, completion: $0)
+            }
+        }
+        
+        func discoverDescriptors(for characteristic: Characteristic<Peripheral>, timeout: TimeInterval) throws {
+            
+            assert(characteristic.peripheral == peripheral)
+            
+            // GATT characteristic
+            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+                else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            
+            // GATT request
+            try async(timeout: timeout) {
+                client.discoverDescriptors(for: gattCharacteristic,
+                                           service: <#T##(declaration: GATTClient.Service, characteristics: [GATTClient.Characteristic])#>,
+                                           completion: <#T##(GATTClientResponse<[GATTClient.Descriptor]>) -> ()#>)
+            }
+        }
+        
+        func notify(_ notification: ((Data) -> ())?,
+                    for characteristic: Characteristic<Peripheral>,
+                    timeout: TimeInterval) throws {
+            
+            assert(characteristic.peripheral == peripheral)
+            
+            // GATT characteristic
+            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+                else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            
+            // GATT request
+            try async(timeout: timeout) {
+                client.registerNotification(notification,
+                                            for: gattCharacteristic,
+                                            descriptors: ,
+                                            completion: $0)
+            }
+        }
     }
 }
 
@@ -378,20 +451,28 @@ internal extension LinuxCentral.Connection {
         
         fileprivate init() { }
         
+        var services = [UInt: ServiceCache]()
+    }
+    
+    struct ServiceCache {
+        
+        let attribute: GATTClient.Service
+    }
+    
+    struct Cache {
+        
+        struct ServiceCache {
+            
+            
+        }
+        
+        fileprivate init() { }
+        
         var services = Services()
         
         struct Services {
             
             fileprivate(set) var values: [UInt: GATTClient.Service] = [:]
-            
-            private var lastIdentifier: UInt = 0
-            
-            fileprivate mutating func newIdentifier() -> UInt {
-                
-                lastIdentifier += 1
-                
-                return lastIdentifier
-            }
         }
         
         mutating func update(_ newValues: [GATTClient.Service]) {
@@ -399,7 +480,7 @@ internal extension LinuxCentral.Connection {
             services.values.reserveCapacity(newValues.count)
             
             newValues.forEach {
-                let identifier = services.newIdentifier()
+                let identifier = UInt($0.handle)
                 services.values[identifier] = $0
             }
         }
@@ -410,14 +491,7 @@ internal extension LinuxCentral.Connection {
             
             fileprivate(set) var values: [UInt: GATTClient.Characteristic] = [:]
             
-            private var lastIdentifier: UInt = 0
-            
-            fileprivate mutating func newIdentifier() -> UInt {
-                
-                lastIdentifier += 1
-                
-                return lastIdentifier
-            }
+            fileprivate(set) var notifications: [UInt: ((Data) -> ())] = [:]
         }
         
         mutating func insert(_ newValues: [GATTClient.Characteristic],
@@ -426,14 +500,21 @@ internal extension LinuxCentral.Connection {
             // remove old cache
             while let index = characteristics.values.index(where: {
                 $0.value.handle.declaration > service.handle &&
-                $0.value.handle.declaration < service.end }) {
+                $0.value.handle.declaration <= service.end }) {
                 
                 characteristics.values.remove(at: index)
             }
             
+            // insert new values
             newValues.forEach {
-                let identifier = characteristics.newIdentifier()
+                let identifier = UInt($0.handle.declaration)
                 characteristics.values[identifier] = $0
+            }
+            
+            // remove old notifications
+            while let key = characteristics.notifications.keys
+                .first(where: { characteristics.values.keys.contains($0) == false }) {
+                characteristics.notifications[key] = nil
             }
         }
     }
