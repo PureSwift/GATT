@@ -363,7 +363,7 @@ internal extension LinuxCentral {
             }
             
             // store in cache
-            cache.insert(foundCharacteristics, for: gattService)
+            cache.insert(foundCharacteristics, for: service.identifier)
             
             return cache.service(for: service.identifier)?.characteristics.map {
                 Characteristic(identifier: $0.key,
@@ -450,14 +450,25 @@ internal extension LinuxCentral {
                 
             } else {
                 
+                // fetch descriptors
+                let _ = try discoverDescriptors(for: characteristic, timeout: timeout)
                 
+                // get updated cache
+                if let cache = self.cache.characteristic(for: characteristic.identifier)?.1.descriptors.values.map({ $0.attribute }) {
+                    
+                    descriptors = Array(cache)
+                    
+                } else {
+                    
+                    descriptors = []
+                }
             }
             
             // GATT request
             try async(timeout: timeout) {
                 client.registerNotification(notification,
                                             for: gattCharacteristic.attribute,
-                                            descriptors: gattCharacteristic.descriptors,
+                                            descriptors: descriptors,
                                             completion: $0)
             }
         }
@@ -518,15 +529,29 @@ internal extension LinuxCentral.Connection {
         }
         
         mutating func insert(_ newValues: [GATTClient.Characteristic],
-                             for service: GATTClient.Service) {
+                             for service: UInt) {
             
             // remove old values
-            services[UInt(service.handle)]?.characteristics.removeAll(keepingCapacity: true)
+            services[service]?.characteristics.removeAll(keepingCapacity: true)
             
             // insert new values
             newValues.forEach {
-                services[UInt(service.handle)]?.characteristics[UInt($0.handle.declaration)] = CharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
+                services[service]?.characteristics[UInt($0.handle.declaration)] = CharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
             }
+        }
+        
+        mutating func insert(_ newValues: [GATTClient.Descriptor],
+                             for service: UInt,
+                             characteristic: UInt) {
+            
+            var descriptorsCache = [UInt: DescriptorCache]()
+            
+            descriptorsCache.reserveCapacity(newValues.count)
+            newValues.forEach {
+                descriptorsCache[UInt($0.handle)] = DescriptorCache(attribute: $0)
+            }
+            
+            services[service]?.characteristics[characteristic]?.descriptors = descriptorsCache
         }
     }
     
