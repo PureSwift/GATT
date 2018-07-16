@@ -16,12 +16,14 @@ public protocol CentralProtocol: class {
     
     associatedtype Peripheral: Peer
     
+    associatedtype Advertisement: AdvertisementData
+    
     var log: ((String) -> ())? { get set }
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               shouldContinueScanning: () -> (Bool),
-              foundDevice: @escaping (ScanData<Peripheral>) -> ()) throws
+              foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws
     
     func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
@@ -52,11 +54,11 @@ public protocol CentralProtocol: class {
 
 public extension CentralProtocol {
     
-    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral>] {
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
         
         let endDate = Date() + duration
         
-        var results = [Peripheral: ScanData<Peripheral>](minimumCapacity: 1)
+        var results = [Peripheral: ScanData<Peripheral, Advertisement>](minimumCapacity: 1)
         
         try scan(filterDuplicates: filterDuplicates,
                   shouldContinueScanning: { Date() < endDate },

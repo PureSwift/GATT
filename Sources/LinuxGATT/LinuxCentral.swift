@@ -15,6 +15,8 @@ import GATT
 @available(OSX 10.12, *)
 public final class LinuxCentral: CentralProtocol {
     
+    public typealias Advertisement = LinuxAdvertisementData
+    
     public var log: ((String) -> ())?
     
     public let hostController: HostController
@@ -38,7 +40,7 @@ public final class LinuxCentral: CentralProtocol {
     
     public func scan(filterDuplicates: Bool = true,
                      shouldContinueScanning: () -> (Bool),
-                     foundDevice: @escaping (ScanData<Peripheral>) -> ()) throws {
+                     foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         self.log?("Scanning...")
         
@@ -46,7 +48,7 @@ public final class LinuxCentral: CentralProtocol {
             
             let peripheral = Peripheral(identifier: report.address)
             
-            let advertisement = AdvertisementData() // FIXME:
+            let advertisement = Advertisement(data: report.responseData)
             
             let scanData = ScanData(peripheral: peripheral,
                                     date: Date(),

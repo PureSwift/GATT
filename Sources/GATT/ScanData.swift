@@ -10,7 +10,7 @@ import Foundation
 import Bluetooth
 
 /// The data for a scan result.
-public struct ScanData <Peripheral: Peer> {
+public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData> {
     
     /// The discovered peripheral.
     public let peripheral: Peripheral
@@ -22,12 +22,12 @@ public struct ScanData <Peripheral: Peer> {
     public let rssi: Double
     
     /// Advertisement data.
-    public let advertisementData: AdvertisementData
+    public let advertisementData: Advertisement
     
     public init(peripheral: Peripheral,
                 date: Date = Date(),
                 rssi: Double,
-                advertisementData: AdvertisementData) {
+                advertisementData: Advertisement) {
         
         self.peripheral = peripheral
         self.date = date

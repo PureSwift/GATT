@@ -21,6 +21,8 @@ public typealias CentralManager = DarwinCentral
 @objc
 public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDelegate, CBPeripheralDelegate {
     
+    public typealias Advertisement = DarwinAdvertisementData
+    
     // MARK: - Properties
     
     public var log: ((String) -> ())?
@@ -81,7 +83,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     public func scan(filterDuplicates: Bool = true,
                      shouldContinueScanning: () -> (Bool),
-                     foundDevice: @escaping (ScanData<Peripheral>) -> ()) throws {
+                     foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -419,7 +421,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         let scanResult = ScanData(peripheral: identifier,
                                   date: Date(),
                                   rssi: rssi.doubleValue,
-                                  advertisementData: AdvertisementData(advertisementData))
+                                  advertisementData: Advertisement(advertisementData))
         
         accessQueue.sync { [unowned self] in
             
@@ -678,9 +680,9 @@ internal extension DarwinCentral {
         
         struct Scan {
             
-            var peripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData<Peripheral>)]()
+            var peripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData<Peripheral, Advertisement>)]()
             
-            var foundDevice: ((ScanData<Peripheral>) -> ())?
+            var foundDevice: ((ScanData<Peripheral, Advertisement>) -> ())?
         }
         
         var connect = Connect()
