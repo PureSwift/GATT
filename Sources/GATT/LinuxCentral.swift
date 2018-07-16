@@ -337,13 +337,13 @@ internal extension LinuxCentral {
             }
             
             // store in cache
-            cache.update(foundServices)
+            cache.insert(foundServices)
             
-            return cache.services.values.map {
+            return cache.services.map {
                 Service(identifier: $0.key,
-                        uuid: $0.value.uuid,
+                        uuid: $0.value.attribute.uuid,
                         peripheral: peripheral,
-                        isPrimary: $0.value.type == .primaryService)
+                        isPrimary: $0.value.attribute.type == .primaryService)
             }
         }
         
@@ -354,7 +354,7 @@ internal extension LinuxCentral {
             assert(service.peripheral == peripheral)
             
             // get service
-            guard let gattService = self.cache.services.values[service.identifier]
+            guard let gattService = cache.service(for: service.identifier)?.attribute
                 else { throw CentralError.invalidAttribute(service.uuid) }
             
             // GATT request
@@ -365,12 +365,12 @@ internal extension LinuxCentral {
             // store in cache
             cache.insert(foundCharacteristics, for: gattService)
             
-            return cache.characteristics.values.map {
+            return cache.service(for: service.identifier)?.characteristics.map {
                 Characteristic(identifier: $0.key,
-                               uuid: $0.value.uuid,
+                               uuid: $0.value.attribute.uuid,
                                peripheral: peripheral,
-                               properties: $0.value.properties)
-            }
+                               properties: $0.value.attribute.properties)
+            } ?? []
         }
         
         func readValue(for characteristic: Characteristic<Peripheral>,
@@ -379,12 +379,12 @@ internal extension LinuxCentral {
             assert(characteristic.peripheral == peripheral)
             
             // GATT characteristic
-            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+            guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.identifier)
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             // GATT request
             let value = try async(timeout: timeout) {
-                client.readCharacteristic(gattCharacteristic, completion: $0)
+                client.readCharacteristic(gattCharacteristic.attribute, completion: $0)
             }
             
             return value
@@ -398,12 +398,15 @@ internal extension LinuxCentral {
             assert(characteristic.peripheral == peripheral)
             
             // GATT characteristic
-            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+            guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.identifier)
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             // GATT request
             try async(timeout: timeout) {
-                client.writeCharacteristic(gattCharacteristic, data: data, reliableWrites: withResponse, completion: $0)
+                client.writeCharacteristic(gattCharacteristic.attribute,
+                                           data: data,
+                                           reliableWrites: withResponse,
+                                           completion: $0)
             }
         }
         
@@ -412,15 +415,20 @@ internal extension LinuxCentral {
             assert(characteristic.peripheral == peripheral)
             
             // GATT characteristic
-            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+            guard let (gattService, gattCharacteristic) = cache.characteristic(for: characteristic.identifier)
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
+            let service = (declaration: gattService.attribute,
+                           characteristics: Array(gattService.characteristics.values.map { $0.attribute }))
+            
             // GATT request
-            try async(timeout: timeout) {
-                client.discoverDescriptors(for: gattCharacteristic,
-                                           service: <#T##(declaration: GATTClient.Service, characteristics: [GATTClient.Characteristic])#>,
-                                           completion: <#T##(GATTClientResponse<[GATTClient.Descriptor]>) -> ()#>)
+            let foundDescriptors = try async(timeout: timeout) {
+                client.discoverDescriptors(for: gattCharacteristic.attribute,
+                                           service: service,
+                                           completion: $0)
             }
+            
+            
         }
         
         func notify(_ notification: ((Data) -> ())?,
@@ -430,14 +438,26 @@ internal extension LinuxCentral {
             assert(characteristic.peripheral == peripheral)
             
             // GATT characteristic
-            guard let gattCharacteristic = self.cache.characteristics.values[characteristic.identifier]
+            guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.identifier)
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            
+            // Gatt Descriptors
+            let descriptors: [GATTClient.Descriptor]
+            
+            if gattCharacteristic.descriptors.values.contains(where: { $0.attribute.uuid == .clientCharacteristicConfiguration }) {
+                
+                descriptors = Array(gattCharacteristic.descriptors.values.map { $0.attribute })
+                
+            } else {
+                
+                
+            }
             
             // GATT request
             try async(timeout: timeout) {
                 client.registerNotification(notification,
-                                            for: gattCharacteristic,
-                                            descriptors: ,
+                                            for: gattCharacteristic.attribute,
+                                            descriptors: gattCharacteristic.descriptors,
                                             completion: $0)
             }
         }
@@ -451,72 +471,84 @@ internal extension LinuxCentral.Connection {
         
         fileprivate init() { }
         
-        var services = [UInt: ServiceCache]()
-    }
-    
-    struct ServiceCache {
+        private(set) var services = [UInt: ServiceCache](minimumCapacity: 1)
         
-        let attribute: GATTClient.Service
-    }
-    
-    struct Cache {
-        
-        struct ServiceCache {
+        func service(for identifier: UInt) -> ServiceCache? {
             
-            
+            return services[identifier]
         }
         
-        fileprivate init() { }
-        
-        var services = Services()
-        
-        struct Services {
+        func characteristic(for identifier: UInt) -> (ServiceCache, CharacteristicCache)? {
             
-            fileprivate(set) var values: [UInt: GATTClient.Service] = [:]
+            for service in services.values {
+                
+                guard let characteristic = service.characteristics[identifier]
+                    else { continue }
+                
+                return (service, characteristic)
+            }
+            
+            return nil
         }
         
-        mutating func update(_ newValues: [GATTClient.Service]) {
+        func descriptor(for identifier: UInt) -> (ServiceCache, CharacteristicCache, DescriptorCache)? {
             
-            services.values.reserveCapacity(newValues.count)
+            for service in services.values {
+                
+                for characteristic in service.characteristics.values {
+                    
+                    for descriptor in characteristic.descriptors.values {
+                        
+                        return (service, characteristic, descriptor)
+                    }
+                }
+            }
+            
+            return nil
+        }
+        
+        mutating func insert(_ newValues: [GATTClient.Service]) {
+            
+            services.removeAll(keepingCapacity: true)
             
             newValues.forEach {
                 let identifier = UInt($0.handle)
-                services.values[identifier] = $0
+                services[identifier] = ServiceCache(attribute: $0, characteristics: [:])
             }
-        }
-        
-        var characteristics = Characteristics()
-        
-        struct Characteristics {
-            
-            fileprivate(set) var values: [UInt: GATTClient.Characteristic] = [:]
-            
-            fileprivate(set) var notifications: [UInt: ((Data) -> ())] = [:]
         }
         
         mutating func insert(_ newValues: [GATTClient.Characteristic],
                              for service: GATTClient.Service) {
             
-            // remove old cache
-            while let index = characteristics.values.index(where: {
-                $0.value.handle.declaration > service.handle &&
-                $0.value.handle.declaration <= service.end }) {
-                
-                characteristics.values.remove(at: index)
-            }
+            // remove old values
+            services[UInt(service.handle)]?.characteristics.removeAll(keepingCapacity: true)
             
             // insert new values
             newValues.forEach {
-                let identifier = UInt($0.handle.declaration)
-                characteristics.values[identifier] = $0
-            }
-            
-            // remove old notifications
-            while let key = characteristics.notifications.keys
-                .first(where: { characteristics.values.keys.contains($0) == false }) {
-                characteristics.notifications[key] = nil
+                services[UInt(service.handle)]?.characteristics[UInt($0.handle.declaration)] = CharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
             }
         }
+    }
+    
+    struct ServiceCache {
+        
+        let attribute: GATTClient.Service
+        
+        var characteristics = [UInt: CharacteristicCache]()
+    }
+    
+    struct CharacteristicCache {
+        
+        let attribute: GATTClient.Characteristic
+        
+        var notification: GATTClient.Notification?
+        
+        var descriptors = [UInt: DescriptorCache]()
+    }
+    
+    struct DescriptorCache {
+        
+        let attribute: GATTClient.Descriptor
     }
 }
 
