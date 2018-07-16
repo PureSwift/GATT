@@ -96,6 +96,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         }
         
         self.log?("Scanning...")
+        
         self.internalManager.scanForPeripherals(withServices: nil, options: options)
         
         // sleep until scan finishes
@@ -286,7 +287,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     public func writeValue(_ data: Data,
                            for characteristic: Characteristic<Peripheral>,
                            withResponse: Bool = true,
-                           timeout: TimeInterval = 30) throws {
+                           timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -324,7 +325,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     public func notify(_ notification: ((Data) -> ())?,
                        for characteristic: Characteristic<Peripheral>,
-                       timeout: TimeInterval = 30) throws {
+                       timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -547,7 +548,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
                 
                 // notification
                 assert(error == nil, "Notifications should never fail")
-                                
+                
                 let data = coreCharacteristic.value ?? Data()
                 
                 guard let cache = self.internalState.cache[Peripheral(corePeripheral)],
