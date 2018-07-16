@@ -428,9 +428,11 @@ internal extension LinuxCentral {
                                            completion: $0)
             }
             
+            cache.insert(foundDescriptors, for: characteristic.identifier)
+            
             return cache.characteristic(for: characteristic.identifier)?.1.descriptors.map {
                 Descriptor(identifier: $0.key, uuid: $0.value.attribute.uuid, peripheral: peripheral)
-            }
+            } ?? []
         }
         
         func notify(_ notification: ((Data) -> ())?,
@@ -543,17 +545,22 @@ internal extension LinuxCentral.Connection {
         }
         
         mutating func insert(_ newValues: [GATTClient.Descriptor],
-                             for service: UInt,
-                             characteristic: UInt) {
+                             for characteristic: UInt) {
             
             var descriptorsCache = [UInt: DescriptorCache]()
-            
             descriptorsCache.reserveCapacity(newValues.count)
+            
             newValues.forEach {
                 descriptorsCache[UInt($0.handle)] = DescriptorCache(attribute: $0)
             }
             
-            services[service]?.characteristics[characteristic]?.descriptors = descriptorsCache
+            for (serviceIdentifier, service) in services {
+                
+                guard let _ = service.characteristics[characteristic]
+                    else { continue }
+                
+                services[serviceIdentifier]?.characteristics[characteristic]?.descriptors = descriptorsCache
+            }
         }
     }
     

@@ -140,6 +140,5 @@ public struct Descriptor <Peripheral: Peer>: GATTAttribute {
         self.identifier = identifier
         self.uuid = uuid
         self.peripheral = peripheral
-        self.properties = properties
     }
 }
