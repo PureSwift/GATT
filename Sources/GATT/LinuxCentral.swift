@@ -410,7 +410,7 @@ internal extension LinuxCentral {
             }
         }
         
-        func discoverDescriptors(for characteristic: Characteristic<Peripheral>, timeout: TimeInterval) throws {
+        func discoverDescriptors(for characteristic: Characteristic<Peripheral>, timeout: TimeInterval) throws -> [Descriptor<Peripheral>] {
             
             assert(characteristic.peripheral == peripheral)
             
@@ -428,7 +428,9 @@ internal extension LinuxCentral {
                                            completion: $0)
             }
             
-            
+            return cache.characteristic(for: characteristic.identifier)?.1.descriptors.map {
+                Descriptor(identifier: $0.key, uuid: $0.value.attribute.uuid, peripheral: peripheral)
+            }
         }
         
         func notify(_ notification: ((Data) -> ())?,

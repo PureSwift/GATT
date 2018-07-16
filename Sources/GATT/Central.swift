@@ -124,3 +124,22 @@ public struct Characteristic <Peripheral: Peer> : GATTAttribute {
         self.properties = properties
     }
 }
+
+public struct Descriptor <Peripheral: Peer>: GATTAttribute {
+    
+    public let identifier: UInt
+    
+    public let uuid: BluetoothUUID
+    
+    public let peripheral: Peripheral
+    
+    public init(identifier: UInt,
+                uuid: BluetoothUUID,
+                peripheral: Peripheral) {
+        
+        self.identifier = identifier
+        self.uuid = uuid
+        self.peripheral = peripheral
+        self.properties = properties
+    }
+}
