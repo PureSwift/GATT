@@ -6,6 +6,8 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+
 import Foundation
 
 /// Darwin Bluetooth State
@@ -43,3 +45,5 @@ extension DarwinBluetoothState: CustomStringConvertible {
         }
     }
 }
+
+#endif

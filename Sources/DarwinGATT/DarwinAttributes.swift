@@ -6,11 +6,11 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+import Foundation
 import Bluetooth
 
 #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
 
-import Foundation
 import CoreBluetooth
 
 internal protocol CoreBluetoothAttributeConvertible {

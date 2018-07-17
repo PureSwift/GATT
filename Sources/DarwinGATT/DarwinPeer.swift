@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 7/14/18.
 //
 
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
 
 import Foundation
 import CoreBluetooth

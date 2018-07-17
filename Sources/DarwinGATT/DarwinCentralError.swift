@@ -8,6 +8,8 @@
 import Foundation
 import Bluetooth
 
+#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+
 /// Errors for GATT Central Manager
 public enum DarwinCentralError: Error {
     
@@ -47,3 +49,5 @@ extension DarwinCentralError: CustomNSError {
         return userInfo
     }
 }
+
+#endif
