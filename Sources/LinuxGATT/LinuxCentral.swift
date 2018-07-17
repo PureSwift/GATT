@@ -23,7 +23,7 @@ public final class LinuxCentral: CentralProtocol {
     
     public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
     
-    internal lazy var asyncQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
+    internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(LinuxCentral.self) Operation Queue")
     
     internal private(set) var scanData = [Peripheral: AdvertisingReport](minimumCapacity: 1)
     
@@ -123,7 +123,8 @@ public final class LinuxCentral: CentralProtocol {
     public func readValue(for characteristic: Characteristic<Peripheral>,
                           timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
         
-        fatalError()
+        return try connection(for: characteristic.peripheral)
+            .readValue(for: characteristic, timeout: timeout)
     }
     
     public func writeValue(_ data: Data,
@@ -131,14 +132,16 @@ public final class LinuxCentral: CentralProtocol {
                            withResponse: Bool = true,
                            timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        fatalError()
+        return try connection(for: characteristic.peripheral)
+            .writeValue(data, for: characteristic, withResponse: withResponse, timeout: timeout)
     }
     
     public func notify(_ notification: ((Data) -> ())?,
                        for characteristic: Characteristic<Peripheral>,
                        timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        fatalError()
+        return try connection(for: characteristic.peripheral)
+            .notify(notification, for: characteristic, timeout: timeout)
     }
     
     // MARK: - Private Methods
@@ -264,7 +267,6 @@ internal extension LinuxCentral {
             self.isRunning = true
             
             let thread = Thread { [weak self] in self?.main() }
-            thread.name = "LinuxCentral Connection \(identifier)"
             thread.start()
             
             self.thread = thread
@@ -550,8 +552,7 @@ internal extension LinuxCentral.Connection {
         mutating func insert(_ newValues: [GATTClient.Descriptor],
                              for characteristic: UInt) {
             
-            var descriptorsCache = [UInt: DescriptorCache]()
-            descriptorsCache.reserveCapacity(newValues.count)
+            var descriptorsCache = [UInt: DescriptorCache](minimumCapacity: newValues.count)
             
             newValues.forEach {
                 descriptorsCache[UInt($0.handle)] = DescriptorCache(attribute: $0)
