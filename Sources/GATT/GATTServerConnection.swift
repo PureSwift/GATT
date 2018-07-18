@@ -13,8 +13,6 @@ public final class GATTServerConnection <Central: Peer> {
     
     // MARK: - Properties
     
-    public let identifier: Int
-    
     public let central: Central
     
     public var callback = Callback()
@@ -33,7 +31,7 @@ public final class GATTServerConnection <Central: Peer> {
         }
     }
     
-    internal lazy var writeQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) \(self.identifier) Write Queue")
+    internal lazy var writeQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) \(self.central) Write Queue")
     
     internal var maximumUpdateValueLength: Int {
         
@@ -43,13 +41,11 @@ public final class GATTServerConnection <Central: Peer> {
     
     // MARK: - Initialization
     
-    public init(identifier: Int,
-                central: Central,
+    public init(central: Central,
                 socket: L2CAPSocketProtocol,
                 maximumTransmissionUnit: ATTMaximumTransmissionUnit,
                 maximumPreparedWrites: Int) {
         
-        self.identifier = identifier
         self.central = central
         self.server = GATTServer(socket: socket,
                                  maximumTransmissionUnit: maximumTransmissionUnit,
@@ -73,7 +69,8 @@ public final class GATTServerConnection <Central: Peer> {
     
     private func configureServer() {
         
-        server.log = { [unowned self] in self.callback.log?("[\(self.central)]: " + $0) }
+        // log
+        server.log = { [unowned self] in self.callback.log?($0) }
         
         // wakeup ATT writer
         server.writePending = { [unowned self] in self.write() }
@@ -117,7 +114,8 @@ public final class GATTServerConnection <Central: Peer> {
     // IO error
     private func error(_ error: Error) {
         
-        self.callback.log?("[\(central)]: Disconnected \(error)")
+        self.callback.log?("Disconnected \(error)")
+        self.isRunning = false
         self.callback.didDisconnect?(error)
     }
     
@@ -127,7 +125,7 @@ public final class GATTServerConnection <Central: Peer> {
         
         do {
             
-            if let database = self.callback.willWriteDatabase?() {
+            if let database = self.callback.willReadDatabase?() {
                 
                 self.server.database = database
             }
@@ -145,11 +143,13 @@ public final class GATTServerConnection <Central: Peer> {
         // write outgoing PDU in the background.
         writeQueue.async { [weak self] in
             
+            guard (self?.isRunning ?? false) else { sleep(1); return }
+            
             do {
                 
                 /// write outgoing pending ATT PDUs
                 var didWrite = false
-                repeat { didWrite = try self?.server.write() ?? false }
+                repeat { didWrite = try (self?.server.write() ?? false) }
                 while didWrite && (self?.isRunning ?? false)
             }
             
@@ -171,7 +171,7 @@ public extension GATTServerConnection {
         
         public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
         
-        public var willWriteDatabase: (() -> (GATTDatabase))?
+        public var willReadDatabase: (() -> (GATTDatabase))?
         
         public var didWriteDatabase: ((GATTDatabase) -> ())?
         

@@ -38,9 +38,9 @@ public final class LinuxPeripheral: PeripheralProtocol {
     
     fileprivate var serverThread: Thread?
     
-    fileprivate var connections = [GATTServerConnection<Central>]()
+    fileprivate var connections = [UInt: GATTServerConnection<Central>]()
     
-    private var lastConnectionID = 0
+    private var lastConnectionID: UInt = 0
     
     // MARK: - Initialization
     
@@ -125,13 +125,21 @@ public final class LinuxPeripheral: PeripheralProtocol {
                 
                 log?("[\(newSocket.address)]: New \(newSocket.addressType) connection")
                 
-                let connection = GATTServerConnection(identifier: newConnectionID(),
-                                                      central: Central(socket: newSocket),
+                let connectionIdentifier = newConnectionID()
+                let connection = GATTServerConnection(central: Central(socket: newSocket),
                                                       socket: newSocket,
                                                       maximumTransmissionUnit: options.maximumTransmissionUnit,
                                                       maximumPreparedWrites: options.maximumPreparedWrites)
                 
-                connections.append(connection)
+                connection.callback.log? = { [unowned self] in self.log?("[\(connection.central)]: " + $0) }
+                connection.callback.didWrite = { [unowned self] in self.didWrite?($0) }
+                connection.callback.willWrite = { [unowned self] in self.willWrite?($0) }
+                connection.callback.willRead = { [unowned self] in self.willRead?($0) }
+                connection.callback.willReadDatabase = { [unowned self] in self.database }
+                connection.callback.didWriteDatabase = { [unowned self] in self.database = $0 }
+                connection.callback.didDisconnect = { [unowned self] in self.disconnect(connectionIdentifier, error: $0) }
+                
+                self.connections[connectionIdentifier] = connection
             }
                 
             catch { log?("Error waiting for new connection: \(error)") }
@@ -140,11 +148,22 @@ public final class LinuxPeripheral: PeripheralProtocol {
         log?("Stopped GATT Server")
     }
     
-    fileprivate func newConnectionID() -> Int {
+    private func newConnectionID() -> UInt {
         
         lastConnectionID += 1
         
         return lastConnectionID
+    }
+    
+    private func disconnect(_ connection: UInt, error: Error) {
+        
+        // enable LE advertising
+        do { try controller.enableLowEnergyAdvertising() }
+        catch HCIError.commandDisallowed { /* ignore */ }
+        catch { fatalError("Could not enable advertising.") }
+        
+        // remove from peripheral, release and close socket
+        connections[connection] = nil
     }
     
     // MARK: Subscript
@@ -153,7 +172,7 @@ public final class LinuxPeripheral: PeripheralProtocol {
         
         get { return database[handle: handle].value }
         
-        set { connections.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
+        set { connections.values.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
     }
 }
 
@@ -192,121 +211,9 @@ public extension LinuxPeripheral {
     }
 }
 
-@available(OSX 10.12, *)
-private extension LinuxPeripheral {
-    
-    final class Connection {
-        
-        let connectionID: Int
-        
-        let central: Central
-        
-        let server: GATTServer
-        
-        lazy var thread: Thread = Thread { [weak self] in self?.main() }
-        
-        private(set) weak var peripheral: LinuxPeripheral!
-        
-        private var maximumUpdateValueLength: Int {
-            
-            // ATT_MTU-3
-            return Int(server.maximumTransmissionUnit.rawValue) - 3
-        }
-        
-        init(socket: L2CAPSocket, peripheral: LinuxPeripheral) {
-            
-            // initialize
-            self.peripheral = peripheral
-            self.connectionID = peripheral.newConnectionID()
-            self.central = Central(socket: socket)
-            self.server = GATTServer(socket: socket,
-                                     maximumTransmissionUnit: peripheral.options.maximumTransmissionUnit,
-                                     maximumPreparedWrites: peripheral.options.maximumPreparedWrites)
-            
-            // start running
-            server.database = peripheral.database
-            server.log = { [unowned self] in self.peripheral.log?("[\(self.central)]: " + $0) }
-            
-            server.willRead = { [unowned self] (uuid, handle, value, offset) in
-                
-                let request = GATTReadRequest(central: self.central,
-                                              maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                              uuid: uuid,
-                                              handle: handle,
-                                              value: value,
-                                              offset: offset)
-                
-                return self.peripheral.willRead?(request)
-            }
-            
-            server.willWrite = { [unowned self] (uuid, handle, value, newValue) in
-                
-                let request = GATTWriteRequest(central: self.central,
-                                               maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                               uuid: uuid,
-                                               handle: handle,
-                                               value: value,
-                                               newValue: newValue)
-                
-                return self.peripheral.willWrite?(request)
-            }
-            
-            server.didWrite = { [unowned self] (uuid, handle, newValue) in
-                
-                let confirmation = GATTWriteConfirmation(central: self.central,
-                                                         maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                                         uuid: uuid,
-                                                         handle: handle,
-                                                         value: newValue)
-                
-                self.peripheral.didWrite?(confirmation)
-            }
-            
-            thread.start()
-        }
-        
-        private func main() {
-            
-            while let peripheral = self.peripheral, peripheral.isServerRunning {
-                
-                do {
-                    
-                    server.database = peripheral.database
-                    
-                    try server.read()
-                    
-                    peripheral.database = server.database
-                    
-                    /// write outgoing pending ATT PDUs
-                    var didWrite = false
-                    repeat { didWrite = try server.write() }
-                        while didWrite
-                }
-                    
-                catch {
-                    
-                    peripheral.log?("[\(central)]: Disconnected \(error)")
-                    
-                    do { try peripheral.controller.enableLowEnergyAdvertising() }
-                    catch HCIError.commandDisallowed { /* ignore */ }
-                    catch { fatalError("Could not enable advertising.") }
-                    
-                    break // end while loop
-                }
-            }
-            
-            // remove from peripheral
-            guard let index = self.peripheral?.connections.index(where: { $0.connectionID == connectionID })
-                else { return }
-            
-            self.peripheral?.connections.remove(at: index)
-        }
-    }
-}
-
 #if os(Linux)
 
-    /// The platform specific peripheral.
-    public typealias PeripheralManager = LinuxPeripheral
+/// The platform specific peripheral.
+public typealias PeripheralManager = LinuxPeripheral
 
 #endif
