@@ -38,7 +38,7 @@ public final class LinuxPeripheral: PeripheralProtocol {
     
     fileprivate var serverThread: Thread?
     
-    fileprivate var connections = [Connection]()
+    fileprivate var connections = [GATTServerConnection<Central>]()
     
     private var lastConnectionID = 0
     
@@ -125,7 +125,11 @@ public final class LinuxPeripheral: PeripheralProtocol {
                 
                 log?("[\(newSocket.address)]: New \(newSocket.addressType) connection")
                 
-                let connection = Connection(socket: newSocket, peripheral: self)
+                let connection = GATTServerConnection(identifier: newConnectionID(),
+                                                      central: Central(socket: newSocket),
+                                                      socket: newSocket,
+                                                      maximumTransmissionUnit: options.maximumTransmissionUnit,
+                                                      maximumPreparedWrites: options.maximumPreparedWrites)
                 
                 connections.append(connection)
             }
@@ -149,7 +153,7 @@ public final class LinuxPeripheral: PeripheralProtocol {
         
         get { return database[handle: handle].value }
         
-        set { connections.forEach { $0.server.writeValue(newValue, forCharacteristic: handle) } }
+        set { connections.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
     }
 }
 
