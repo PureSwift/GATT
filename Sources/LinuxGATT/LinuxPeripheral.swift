@@ -30,15 +30,17 @@ public final class LinuxPeripheral: PeripheralProtocol {
     
     // MARK: - Private Properties
     
-    fileprivate var database = GATTDatabase()
+    internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Database Queue")
     
-    fileprivate var isServerRunning = false
+    private var database = GATTDatabase()
     
-    fileprivate var serverSocket: L2CAPSocket?
+    private var isServerRunning = false
     
-    fileprivate var serverThread: Thread?
+    private var serverSocket: L2CAPSocket?
     
-    fileprivate var connections = [UInt: GATTServerConnection<Central>]()
+    private var serverThread: Thread?
+    
+    private var connections = [UInt: GATTServerConnection]()
     
     private var lastConnectionID: UInt = 0
     
@@ -105,7 +107,18 @@ public final class LinuxPeripheral: PeripheralProtocol {
     /// Return the handles of the characteristics matching the specified UUID.
     public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
         
-        return database.filter { $0.uuid == uuid }.map { $0.handle }
+        return database
+            .filter { $0.uuid == uuid }
+            .map { $0.handle }
+    }
+    
+    // MARK: - Subscript
+    
+    public subscript(characteristic handle: UInt16) -> Data {
+        
+        get { return writeDatabase { $0[handle: handle].value } }
+        
+        set { connections.values.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
     }
     
     // MARK: - Private Methods
@@ -135,8 +148,7 @@ public final class LinuxPeripheral: PeripheralProtocol {
                 connection.callback.didWrite = { [unowned self] in self.didWrite?($0) }
                 connection.callback.willWrite = { [unowned self] in self.willWrite?($0) }
                 connection.callback.willRead = { [unowned self] in self.willRead?($0) }
-                connection.callback.willReadDatabase = { [unowned self] in self.database }
-                connection.callback.didWriteDatabase = { [unowned self] in self.database = $0 }
+                connection.callback.writeDatabase = { [unowned self] in self.writeDatabase($0) }
                 connection.callback.didDisconnect = { [unowned self] in self.disconnect(connectionIdentifier, error: $0) }
                 
                 self.connections[connectionIdentifier] = connection
@@ -157,22 +169,18 @@ public final class LinuxPeripheral: PeripheralProtocol {
     
     private func disconnect(_ connection: UInt, error: Error) {
         
+        // remove from peripheral, release and close socket
+        connections[connection] = nil
+        
         // enable LE advertising
         do { try controller.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         catch { fatalError("Could not enable advertising.") }
-        
-        // remove from peripheral, release and close socket
-        connections[connection] = nil
     }
     
-    // MARK: Subscript
-    
-    public subscript(characteristic handle: UInt16) -> Data {
+    private func writeDatabase <T> (_ block: (inout GATTDatabase) -> (T)) -> T {
         
-        get { return database[handle: handle].value }
-        
-        set { connections.values.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
+        return databaseQueue.sync { block(&self.database) }
     }
 }
 
