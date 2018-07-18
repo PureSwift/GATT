@@ -596,10 +596,3 @@ private enum ErrorValue<T> {
     case error(Error)
     case value(T)
 }
-
-#if os(Linux)
-    
-/// The platform specific peripheral.
-public typealias CentralManager = LinuxCentral
-    
-#endif

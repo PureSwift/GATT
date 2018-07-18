@@ -13,7 +13,7 @@ import GATT
 
 import CoreBluetooth
 
-public struct DarwinAdvertisementData: AdvertisementData {
+public struct DarwinAdvertisementData: AdvertisementDataProtocol {
     
     /// The local name of a peripheral.
     public let localName: String?

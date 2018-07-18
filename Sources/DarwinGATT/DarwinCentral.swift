@@ -16,8 +16,6 @@ import CoreBluetooth
 
 /// The platform specific peripheral.
 
-public typealias CentralManager = DarwinCentral
-
 @objc
 public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDelegate, CBPeripheralDelegate {
     

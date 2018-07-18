@@ -37,7 +37,7 @@ public final class GATTPeripheral <Central: Peer, HostController: BluetoothHostC
     
     private var serverThread: Thread?
     
-    private var connections = [UInt: GATTServerConnection<Central>]()
+    private var connections = [UInt: GATTServerConnection<Central, L2CAPSocket>]()
     
     private var lastConnectionID: UInt = 0
     

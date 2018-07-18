@@ -9,7 +9,7 @@ import Foundation
 import Bluetooth
 
 @available(OSX 10.12, *)
-public final class GATTServerConnection <Central: Peer> {
+public final class GATTServerConnection <Central: Peer, L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
     
@@ -42,7 +42,7 @@ public final class GATTServerConnection <Central: Peer> {
     // MARK: - Initialization
     
     public init(central: Central,
-                socket: L2CAPSocketProtocol,
+                socket: L2CAPSocket,
                 maximumTransmissionUnit: ATTMaximumTransmissionUnit,
                 maximumPreparedWrites: Int) {
         

@@ -15,9 +15,6 @@ import GATT
 import CoreBluetooth
 import CoreLocation
 
-/// The platform specific peripheral.
-public typealias PeripheralManager = DarwinPeripheral
-
 public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralManagerDelegate {
     
     // MARK: - Properties

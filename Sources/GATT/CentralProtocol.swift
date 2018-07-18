@@ -16,7 +16,7 @@ public protocol CentralProtocol: class {
     
     associatedtype Peripheral: Peer
     
-    associatedtype Advertisement: AdvertisementData
+    associatedtype Advertisement: AdvertisementDataProtocol
     
     var log: ((String) -> ())? { get set }
     
