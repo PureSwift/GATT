@@ -26,8 +26,6 @@ public enum CentralError: Error {
 
 // MARK: - CustomNSError
 
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-
 extension CentralError: CustomNSError {
     
     public enum UserInfoKey: String {
@@ -76,5 +74,3 @@ extension CentralError: CustomNSError {
         return userInfo
     }
 }
-
-#endif
