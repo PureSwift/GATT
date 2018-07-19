@@ -11,7 +11,9 @@ import Dispatch
 import Bluetooth
 
 @available(OSX 10.12, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol> : CentralProtocol  {
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
+    
+    public typealias Advertisement = AdvertisementData
     
     public typealias AdvertisingReport = HCILEAdvertisingReport.Report
     
@@ -21,7 +23,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
     
-    public var newConnection: ((AdvertisingReport) throws -> ())?
+    public var newConnection: ((AdvertisingReport) throws -> (L2CAPSocket))?
     
     internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
     
@@ -40,7 +42,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func scan(filterDuplicates: Bool = true,
                      shouldContinueScanning: () -> (Bool),
-                     foundDevice: @escaping (ScanData<Peripheral, AdvertisementData>) -> (L2CAPSocket)) throws {
+                     foundDevice: @escaping (ScanData<Peripheral, AdvertisementData>) -> ()) throws {
         
         self.log?("Scanning...")
         
@@ -65,7 +67,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        guard let (report, scanData) = scanData[peripheral]
+        guard let report = scanData[peripheral]?.report
             else { throw CentralError.unknownPeripheral }
         
         guard let newConnection = self.newConnection

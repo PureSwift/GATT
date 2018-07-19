@@ -9,7 +9,7 @@ import Foundation
 import Bluetooth
 
 @available(OSX 10.12, *)
-public final class GATTPeripheral <Central: Peer, HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
+public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
     
     // MARK: - Properties
     
@@ -37,7 +37,7 @@ public final class GATTPeripheral <Central: Peer, HostController: BluetoothHostC
     
     private var serverThread: Thread?
     
-    private var connections = [UInt: GATTServerConnection<Central, L2CAPSocket>]()
+    private var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
     
     private var lastConnectionID: UInt = 0
     
