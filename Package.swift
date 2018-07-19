@@ -7,10 +7,6 @@ let package = Package(
         Target(
           name: "DarwinGATT",
           dependencies: [.Target(name: "GATT")]
-        ),
-        Target(
-          name: "LinuxGATT",
-          dependencies: [.Target(name: "GATT")]
         )
     ],
     dependencies: [

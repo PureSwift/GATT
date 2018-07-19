@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Dispatch
 import Bluetooth
 
 @available(OSX 10.12, *)
-public final class GATTServerConnection <Central: Peer, L2CAPSocket: L2CAPSocketProtocol> {
+public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
     

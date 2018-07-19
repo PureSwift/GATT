@@ -9,17 +9,17 @@ import Foundation
 import Bluetooth
 
 @available(OSX 10.12, *)
-public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSocketProtocol> {
+public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
     
     public let peripheral: Peripheral
     
-    public let client: GATTClient
-    
     public var log: ((String) -> ())?
     
     public var error: ((Error) -> ())?
+    
+    internal let client: GATTClient
     
     internal private(set) var isRunning = true
     
@@ -44,79 +44,11 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
         start()
     }
     
-    private func start() {
-        
-        self.isRunning = true
-        
-        let thread = Thread { [weak self] in self?.main() }
-        thread.start()
-        
-        self.thread = thread
-    }
+    // MARK: - Methods
     
-    func stop() {
-        
-        isRunning = false
-        thread = nil
-    }
-    
-    // MARK: - Private Methods
-    
-    private func main() {
-        
-        do {
-            
-            while isRunning {
-                
-                // write outgoing pending ATT PDUs (requests)
-                var didWrite = false
-                repeat { didWrite = try client.write() }
-                    while didWrite
-                
-                // wait for incoming data (response, notifications, indications)
-                try client.read()
-            }
-        }
-            
-        catch {
-            
-            self.log?("[\(self.client)]: \(error)")
-            self.error?(error)
-            
-            stop()
-        }
-    }
-    
-    private func async <T> (timeout: TimeInterval,
-                            request: (@escaping ((GATTClientResponse<T>)) -> ()) -> ()) throws -> T {
-        
-        var result: GATTClientResponse<T>?
-        
-        request({ result = $0 })
-        
-        let endDate = Date() + timeout
-        
-        while Date() < endDate {
-            
-            guard let response = result
-                else { usleep(100); continue }
-            
-            switch response {
-            case let .error(error):
-                throw error
-            case let .value(value):
-                return value
-            }
-        }
-        
-        throw CentralError.timeout
-    }
-    
-    // MARK: GATT Requests
-    
-    func discoverServices(_ services: [BluetoothUUID],
-                          for peripheral: Peripheral,
-                          timeout: TimeInterval) throws -> [Service<Peripheral>] {
+    public func discoverServices(_ services: [BluetoothUUID],
+                                 for peripheral: Peripheral,
+                                 timeout: TimeInterval) throws -> [Service<Peripheral>] {
         
         // GATT request
         let foundServices = try async(timeout: timeout) {
@@ -134,9 +66,9 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
         }
     }
     
-    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                 for service: Service<Peripheral>,
-                                 timeout: TimeInterval) throws -> [Characteristic<Peripheral>] {
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                        for service: Service<Peripheral>,
+                                        timeout: TimeInterval) throws -> [Characteristic<Peripheral>] {
         
         assert(service.peripheral == peripheral)
         
@@ -160,8 +92,8 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
             } ?? []
     }
     
-    func readValue(for characteristic: Characteristic<Peripheral>,
-                   timeout: TimeInterval) throws -> Data {
+    public func readValue(for characteristic: Characteristic<Peripheral>,
+                          timeout: TimeInterval) throws -> Data {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -177,10 +109,10 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
         return value
     }
     
-    func writeValue(_ data: Data,
-                    for characteristic: Characteristic<Peripheral>,
-                    withResponse: Bool = true,
-                    timeout: TimeInterval) throws {
+    public func writeValue(_ data: Data,
+                           for characteristic: Characteristic<Peripheral>,
+                           withResponse: Bool = true,
+                           timeout: TimeInterval) throws {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -197,7 +129,7 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
         }
     }
     
-    func discoverDescriptors(for characteristic: Characteristic<Peripheral>, timeout: TimeInterval) throws -> [Descriptor<Peripheral>] {
+    public func discoverDescriptors(for characteristic: Characteristic<Peripheral>, timeout: TimeInterval) throws -> [Descriptor<Peripheral>] {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -222,9 +154,9 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
             } ?? []
     }
     
-    func notify(_ notification: ((Data) -> ())?,
-                for characteristic: Characteristic<Peripheral>,
-                timeout: TimeInterval) throws {
+    public func notify(_ notification: ((Data) -> ())?,
+                       for characteristic: Characteristic<Peripheral>,
+                       timeout: TimeInterval) throws {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -262,6 +194,74 @@ public final class GATTClientConnection <Peripheral: Peer, L2CAPSocket: L2CAPSoc
                                         descriptors: descriptors,
                                         completion: $0)
         }
+    }
+    
+    // MARK: - Private Methods
+    
+    private func start() {
+        
+        self.isRunning = true
+        
+        let thread = Thread { [weak self] in self?.main() }
+        thread.start()
+        
+        self.thread = thread
+    }
+    
+    private func stop() {
+        
+        isRunning = false
+        thread = nil
+    }
+    
+    private func main() {
+        
+        do {
+            
+            while isRunning {
+                
+                // write outgoing pending ATT PDUs (requests)
+                var didWrite = false
+                repeat { didWrite = try client.write() }
+                while didWrite
+                
+                // wait for incoming data (response, notifications, indications)
+                try client.read()
+            }
+        }
+        
+        catch {
+            
+            self.log?("[\(self.client)]: \(error)")
+            self.error?(error)
+            
+            stop()
+        }
+    }
+    
+    private func async <T> (timeout: TimeInterval,
+                            request: (@escaping ((GATTClientResponse<T>)) -> ()) -> ()) throws -> T {
+        
+        var result: GATTClientResponse<T>?
+        
+        request({ result = $0 })
+        
+        let endDate = Date() + timeout
+        
+        while Date() < endDate {
+            
+            guard let response = result
+                else { usleep(100); continue }
+            
+            switch response {
+            case let .error(error):
+                throw error
+            case let .value(value):
+                return value
+            }
+        }
+        
+        throw CentralError.timeout
     }
 }
 
@@ -369,11 +369,4 @@ internal extension GATTClientConnection {
         
         let attribute: GATTClient.Descriptor
     }
-}
-
-/// Basic wrapper for error / value pairs.
-private enum ErrorValue<T> {
-    
-    case error(Error)
-    case value(T)
 }
