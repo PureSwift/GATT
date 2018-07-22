@@ -72,7 +72,7 @@ public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
             connection.server.database = database
             
             // modify database
-            server.writeValue(value, forCharacteristic: handle)
+            connection.server.writeValue(value, forCharacteristic: handle)
             
             // update peripheral database
             database = connection.server.database

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Dispatch
 import Bluetooth
 
 @available(OSX 10.12, *)
@@ -29,15 +30,15 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     // MARK: - Private Properties
     
-    internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Database Queue")
+    internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(self) Database Queue")
     
-    private var database = GATTDatabase()
+    internal private(set) var database = GATTDatabase()
     
-    private var isServerRunning = false
+    internal private(set) var isServerRunning = false
+    
+    internal private(set) var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
     
     private var serverThread: Thread?
-    
-    private var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
     
     private var lastConnectionID: UInt = 0
     

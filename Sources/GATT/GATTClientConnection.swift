@@ -27,6 +27,12 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     private var thread: Thread?
     
+    internal var maximumUpdateValueLength: Int {
+        
+        // ATT_MTU-3
+        return Int(client.maximumTransmissionUnit.rawValue) - 3
+    }
+    
     // MARK: - Initialization
     
     public init(peripheral: Peripheral,
