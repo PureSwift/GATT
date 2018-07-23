@@ -10,7 +10,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 3)
+        .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 3),
+        .Package(url: "git@github.com:PureSwift/Android.git", majorVersion: 0)
     ],
     exclude: ["Xcode", "Carthage"]
 )
