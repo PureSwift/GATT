@@ -6,9 +6,9 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-import Foundation
-
 #if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+
+import Foundation
 
 /// Darwin Bluetooth State
 ///
