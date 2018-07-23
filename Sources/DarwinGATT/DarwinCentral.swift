@@ -241,13 +241,16 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         // wait
         try semaphore.wait()
         
-        return accessQueue.sync { [unowned self] in
-            self.internalState.cache[service.peripheral]?.characteristics.values.map {
-                Characteristic(identifier: $0.key,
-                               uuid: BluetoothUUID(coreBluetooth: $0.value.uuid),
-                               peripheral: service.peripheral,
-                               properties: Characteristic.Property.from(coreBluetooth: $0.value.properties))
-            } ?? []
+        // get cached characteristics
+        let charachertisticCache = accessQueue._sync { [unowned self] in
+            self.internalState.cache[service.peripheral]?.characteristics.values ?? [:]
+        }
+        
+        return charachertisticCache.map {
+            Characteristic(identifier: $0.key,
+                           uuid: BluetoothUUID(coreBluetooth: $0.value.uuid),
+                           peripheral: service.peripheral,
+                           properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.properties))
         }
     }
     
@@ -749,7 +752,9 @@ internal extension DarwinCentral {
         
         mutating func update(_ newValues: [CBService]) {
             
+            #if swift(>=3.2)
             services.values.reserveCapacity(newValues.count)
+            #endif
             
             newValues.forEach {
                 let identifier = UInt(bitPattern: $0.hashValue)
