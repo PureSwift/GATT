@@ -8,64 +8,103 @@
 
 /* Begin PBXBuildFile section */
 		6E0FC45F20F873B1009269B4 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
-		6E0FC46B20F873E8009269B4 /* GATTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46920F873E8009269B4 /* GATTTests.swift */; };
-		6E0FC46F20F874E3009269B4 /* TestL2CAPSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */; };
-		6E0FC47020F874E3009269B4 /* TestHostController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC46E20F874E3009269B4 /* TestHostController.swift */; };
-		6E0FC47320F875A3009269B4 /* TestPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47220F875A3009269B4 /* TestPeripheral.swift */; };
-		6E0FC47520F87C55009269B4 /* XCTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47420F87C55009269B4 /* XCTest.swift */; };
-		6E0FC47720F8F718009269B4 /* TestCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0FC47620F8F718009269B4 /* TestCentral.swift */; };
-		6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
-		6E17DC231CB1DC250043C644 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
-		6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
-		6E49B223205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
-		6E49B224205325B3002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
-		6E49B22720532A94002EA5DC /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
-		6E49B22820532A94002EA5DC /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
-		6E49B22920532A94002EA5DC /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
-		6E49B22A20532A94002EA5DC /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E49B221205325B3002EA5DC /* AdvertisementData.swift */; };
-		6E49B22B20532A94002EA5DC /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
-		6E49B22D20532A94002EA5DC /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
-		6E49B22E20532A94002EA5DC /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
-		6E49B22F20532A94002EA5DC /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
-		6E49B23020532A94002EA5DC /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
-		6E49B23120532A94002EA5DC /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
 		6E49B23520532A94002EA5DC /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6E7B43CE1D459322007D3C36 /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
-		6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
-		6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
-		6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
-		6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
-		6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
-		6EAABC012001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
-		6EAABC022001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
-		6EAABC032001AF4C009B38C0 /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAABC002001AF4C009B38C0 /* ScanData.swift */; };
+		6EA5D1512107DE66009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6EA5D1682107DE6A009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6EA5D17F2107DE6D009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6EA5D1962107DE70009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6EA5D1BF2107E25F009998FD /* GATTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A22107E259009998FD /* GATTTests.swift */; };
+		6EA5D1C02107E25F009998FD /* XCTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A32107E259009998FD /* XCTest.swift */; };
+		6EA5D1C12107E25F009998FD /* TestHostController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A42107E259009998FD /* TestHostController.swift */; };
+		6EA5D1C22107E25F009998FD /* XCTestManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A52107E259009998FD /* XCTestManifests.swift */; };
+		6EA5D1C32107E25F009998FD /* TestL2CAPSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */; };
+		6EA5D1C42107E26A009998FD /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B72107E259009998FD /* DarwinCentral.swift */; };
+		6EA5D1C52107E26A009998FD /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */; };
+		6EA5D1C62107E26A009998FD /* DarwinPeer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B92107E259009998FD /* DarwinPeer.swift */; };
+		6EA5D1C72107E26A009998FD /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */; };
+		6EA5D1C82107E26A009998FD /* DarwinCentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */; };
+		6EA5D1C92107E26A009998FD /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */; };
+		6EA5D1CA2107E26A009998FD /* DarwinAdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */; };
+		6EA5D1CB2107E26A009998FD /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */; };
+		6EA5D1CC2107E26A009998FD /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B72107E259009998FD /* DarwinCentral.swift */; };
+		6EA5D1CD2107E26A009998FD /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */; };
+		6EA5D1CE2107E26A009998FD /* DarwinPeer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B92107E259009998FD /* DarwinPeer.swift */; };
+		6EA5D1CF2107E26A009998FD /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */; };
+		6EA5D1D02107E26A009998FD /* DarwinCentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */; };
+		6EA5D1D12107E26A009998FD /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */; };
+		6EA5D1D22107E26A009998FD /* DarwinAdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */; };
+		6EA5D1D32107E26A009998FD /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */; };
+		6EA5D1D42107E26B009998FD /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B72107E259009998FD /* DarwinCentral.swift */; };
+		6EA5D1D52107E26B009998FD /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */; };
+		6EA5D1D62107E26B009998FD /* DarwinPeer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B92107E259009998FD /* DarwinPeer.swift */; };
+		6EA5D1D72107E26B009998FD /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */; };
+		6EA5D1D82107E26B009998FD /* DarwinCentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */; };
+		6EA5D1D92107E26B009998FD /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */; };
+		6EA5D1DA2107E26B009998FD /* DarwinAdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */; };
+		6EA5D1DB2107E26B009998FD /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */; };
+		6EA5D1DC2107E26B009998FD /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B72107E259009998FD /* DarwinCentral.swift */; };
+		6EA5D1DD2107E26B009998FD /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */; };
+		6EA5D1DE2107E26B009998FD /* DarwinPeer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B92107E259009998FD /* DarwinPeer.swift */; };
+		6EA5D1DF2107E26B009998FD /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */; };
+		6EA5D1E02107E26B009998FD /* DarwinCentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */; };
+		6EA5D1E12107E26B009998FD /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */; };
+		6EA5D1E22107E26B009998FD /* DarwinAdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */; };
+		6EA5D1E32107E26B009998FD /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */; };
+		6EA5D1E42107E26F009998FD /* GATTPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A92107E259009998FD /* GATTPeripheral.swift */; };
+		6EA5D1E52107E26F009998FD /* CentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AA2107E259009998FD /* CentralError.swift */; };
+		6EA5D1E62107E26F009998FD /* PeripheralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */; };
+		6EA5D1E72107E26F009998FD /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AC2107E259009998FD /* Peripheral.swift */; };
+		6EA5D1E82107E270009998FD /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AD2107E259009998FD /* ScanData.swift */; };
+		6EA5D1E92107E270009998FD /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AE2107E259009998FD /* Central.swift */; };
+		6EA5D1EA2107E270009998FD /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AF2107E259009998FD /* AdvertisementData.swift */; };
+		6EA5D1EB2107E270009998FD /* GATTCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B02107E259009998FD /* GATTCentral.swift */; };
+		6EA5D1EC2107E270009998FD /* CentralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B12107E259009998FD /* CentralProtocol.swift */; };
+		6EA5D1ED2107E270009998FD /* GATTServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B22107E259009998FD /* GATTServerConnection.swift */; };
+		6EA5D1EE2107E270009998FD /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B32107E259009998FD /* TimeInterval.swift */; };
+		6EA5D1EF2107E270009998FD /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B42107E259009998FD /* Peer.swift */; };
+		6EA5D1F02107E270009998FD /* GATTClientConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B52107E259009998FD /* GATTClientConnection.swift */; };
+		6EA5D1F12107E270009998FD /* GATTPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A92107E259009998FD /* GATTPeripheral.swift */; };
+		6EA5D1F22107E270009998FD /* CentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AA2107E259009998FD /* CentralError.swift */; };
+		6EA5D1F32107E270009998FD /* PeripheralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */; };
+		6EA5D1F42107E270009998FD /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AC2107E259009998FD /* Peripheral.swift */; };
+		6EA5D1F52107E270009998FD /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AD2107E259009998FD /* ScanData.swift */; };
+		6EA5D1F62107E270009998FD /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AE2107E259009998FD /* Central.swift */; };
+		6EA5D1F72107E270009998FD /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AF2107E259009998FD /* AdvertisementData.swift */; };
+		6EA5D1F82107E270009998FD /* GATTCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B02107E259009998FD /* GATTCentral.swift */; };
+		6EA5D1F92107E270009998FD /* CentralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B12107E259009998FD /* CentralProtocol.swift */; };
+		6EA5D1FA2107E270009998FD /* GATTServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B22107E259009998FD /* GATTServerConnection.swift */; };
+		6EA5D1FB2107E270009998FD /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B32107E259009998FD /* TimeInterval.swift */; };
+		6EA5D1FC2107E270009998FD /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B42107E259009998FD /* Peer.swift */; };
+		6EA5D1FD2107E270009998FD /* GATTClientConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B52107E259009998FD /* GATTClientConnection.swift */; };
+		6EA5D1FE2107E271009998FD /* GATTPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A92107E259009998FD /* GATTPeripheral.swift */; };
+		6EA5D1FF2107E271009998FD /* CentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AA2107E259009998FD /* CentralError.swift */; };
+		6EA5D2002107E271009998FD /* PeripheralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */; };
+		6EA5D2012107E271009998FD /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AC2107E259009998FD /* Peripheral.swift */; };
+		6EA5D2022107E271009998FD /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AD2107E259009998FD /* ScanData.swift */; };
+		6EA5D2032107E271009998FD /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AE2107E259009998FD /* Central.swift */; };
+		6EA5D2042107E271009998FD /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AF2107E259009998FD /* AdvertisementData.swift */; };
+		6EA5D2052107E271009998FD /* GATTCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B02107E259009998FD /* GATTCentral.swift */; };
+		6EA5D2062107E271009998FD /* CentralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B12107E259009998FD /* CentralProtocol.swift */; };
+		6EA5D2072107E271009998FD /* GATTServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B22107E259009998FD /* GATTServerConnection.swift */; };
+		6EA5D2082107E271009998FD /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B32107E259009998FD /* TimeInterval.swift */; };
+		6EA5D2092107E271009998FD /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B42107E259009998FD /* Peer.swift */; };
+		6EA5D20A2107E271009998FD /* GATTClientConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B52107E259009998FD /* GATTClientConnection.swift */; };
+		6EA5D20B2107E271009998FD /* GATTPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A92107E259009998FD /* GATTPeripheral.swift */; };
+		6EA5D20C2107E271009998FD /* CentralError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AA2107E259009998FD /* CentralError.swift */; };
+		6EA5D20D2107E271009998FD /* PeripheralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */; };
+		6EA5D20E2107E271009998FD /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AC2107E259009998FD /* Peripheral.swift */; };
+		6EA5D20F2107E271009998FD /* ScanData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AD2107E259009998FD /* ScanData.swift */; };
+		6EA5D2102107E271009998FD /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AE2107E259009998FD /* Central.swift */; };
+		6EA5D2112107E271009998FD /* AdvertisementData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1AF2107E259009998FD /* AdvertisementData.swift */; };
+		6EA5D2122107E271009998FD /* GATTCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B02107E259009998FD /* GATTCentral.swift */; };
+		6EA5D2132107E271009998FD /* CentralProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B12107E259009998FD /* CentralProtocol.swift */; };
+		6EA5D2142107E271009998FD /* GATTServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B22107E259009998FD /* GATTServerConnection.swift */; };
+		6EA5D2152107E271009998FD /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B32107E259009998FD /* TimeInterval.swift */; };
+		6EA5D2162107E271009998FD /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B42107E259009998FD /* Peer.swift */; };
+		6EA5D2172107E271009998FD /* GATTClientConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B52107E259009998FD /* GATTClientConnection.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
-		6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */; };
-		6EE9102C1FDE5C17007AD3EA /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
-		6EE9102D1FDE5C17007AD3EA /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
-		6EE9102E1FDE5C17007AD3EA /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
-		6EE9102F1FDE5C17007AD3EA /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
-		6EE910301FDE5C17007AD3EA /* DarwinCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC201CB1DC150043C644 /* DarwinCentral.swift */; };
-		6EE910311FDE5C17007AD3EA /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EE910351FDE5C17007AD3EA /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6EF2BA5D20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */; };
-		6EF2BA5E20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */; };
-		6EF2BA5F20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */; };
-		6EF2BA6020D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */; };
-		6EF2BA6220D15FD8008F7731 /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */; };
-		6EF2BA6320D15FD8008F7731 /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */; };
-		6EF2BA6420D15FD8008F7731 /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */; };
-		6EF2BA6520D15FD8008F7731 /* DarwinDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */; };
-		6EF45FC11CC6D355001F7A39 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E17DC221CB1DC250043C644 /* Central.swift */; };
-		6EF45FC21CC6D355001F7A39 /* DarwinAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */; };
-		6EF45FC31CC6D355001F7A39 /* LinuxPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */; };
-		6EF45FC41CC6D355001F7A39 /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */; };
-		6EF45FC71CC6D355001F7A39 /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE84DA11CAF422100A40C4D /* Peripheral.swift */; };
 		6EF45FCA1CC6D355001F7A39 /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		6EF9426D2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
-		6EF9426E2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
-		6EF9426F2016464B00EEB821 /* LinuxCentral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF9426C2016464B00EEB821 /* LinuxCentral.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,38 +115,79 @@
 			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
 			remoteInfo = "GATT-macOS";
 		};
+		6EA5D2182107EDAA009998FD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E49B22520532A94002EA5DC;
+			remoteInfo = "GATT-tvOS";
+		};
+		6EA5D21A2107EDB1009998FD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE84D831CAF419D00A40C4D;
+			remoteInfo = "GATT-macOS";
+		};
+		6EA5D21C2107EDB8009998FD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EF45FBF1CC6D355001F7A39;
+			remoteInfo = "GATT-iOS";
+		};
+		6EA5D21E2107EDBD009998FD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6EE84D7B1CAF419D00A40C4D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6EE9102A1FDE5C17007AD3EA;
+			remoteInfo = "GATT-watchOS";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		6E0FC45A20F873B1009269B4 /* GATTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GATTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E0FC45E20F873B1009269B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E0FC46820F873E8009269B4 /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
-		6E0FC46920F873E8009269B4 /* GATTTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GATTTests.swift; sourceTree = "<group>"; };
-		6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestL2CAPSocket.swift; sourceTree = "<group>"; };
-		6E0FC46E20F874E3009269B4 /* TestHostController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHostController.swift; sourceTree = "<group>"; };
-		6E0FC47220F875A3009269B4 /* TestPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestPeripheral.swift; sourceTree = "<group>"; };
-		6E0FC47420F87C55009269B4 /* XCTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTest.swift; sourceTree = "<group>"; };
-		6E0FC47620F8F718009269B4 /* TestCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCentral.swift; sourceTree = "<group>"; };
-		6E17DC201CB1DC150043C644 /* DarwinCentral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
-		6E17DC221CB1DC250043C644 /* Central.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
-		6E49B221205325B3002EA5DC /* AdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvertisementData.swift; sourceTree = "<group>"; };
 		6E49B23A20532A94002EA5DC /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7BD6121CAF9C9500F0ABF3 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cartfile; path = ../Cartfile; sourceTree = "<group>"; };
 		6E7BD6131CAF9C9500F0ABF3 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
-		6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinAttributes.swift; sourceTree = "<group>"; };
-		6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Peer.swift; sourceTree = "<group>"; };
-		6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinuxPeripheral.swift; sourceTree = "<group>"; };
-		6EAABC002001AF4C009B38C0 /* ScanData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanData.swift; sourceTree = "<group>"; };
+		6EA5D1562107DE66009998FD /* DarwinGATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DarwinGATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EA5D16D2107DE6A009998FD /* DarwinGATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DarwinGATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EA5D1842107DE6D009998FD /* DarwinGATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DarwinGATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EA5D19B2107DE70009998FD /* DarwinGATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DarwinGATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EA5D19E2107DEE5009998FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6EA5D1A02107E259009998FD /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
+		6EA5D1A22107E259009998FD /* GATTTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTTests.swift; sourceTree = "<group>"; };
+		6EA5D1A32107E259009998FD /* XCTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTest.swift; sourceTree = "<group>"; };
+		6EA5D1A42107E259009998FD /* TestHostController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHostController.swift; sourceTree = "<group>"; };
+		6EA5D1A52107E259009998FD /* XCTestManifests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
+		6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestL2CAPSocket.swift; sourceTree = "<group>"; };
+		6EA5D1A92107E259009998FD /* GATTPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTPeripheral.swift; sourceTree = "<group>"; };
+		6EA5D1AA2107E259009998FD /* CentralError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentralError.swift; sourceTree = "<group>"; };
+		6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralProtocol.swift; sourceTree = "<group>"; };
+		6EA5D1AC2107E259009998FD /* Peripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Peripheral.swift; sourceTree = "<group>"; };
+		6EA5D1AD2107E259009998FD /* ScanData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanData.swift; sourceTree = "<group>"; };
+		6EA5D1AE2107E259009998FD /* Central.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Central.swift; sourceTree = "<group>"; };
+		6EA5D1AF2107E259009998FD /* AdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvertisementData.swift; sourceTree = "<group>"; };
+		6EA5D1B02107E259009998FD /* GATTCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTCentral.swift; sourceTree = "<group>"; };
+		6EA5D1B12107E259009998FD /* CentralProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentralProtocol.swift; sourceTree = "<group>"; };
+		6EA5D1B22107E259009998FD /* GATTServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTServerConnection.swift; sourceTree = "<group>"; };
+		6EA5D1B32107E259009998FD /* TimeInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
+		6EA5D1B42107E259009998FD /* Peer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Peer.swift; sourceTree = "<group>"; };
+		6EA5D1B52107E259009998FD /* GATTClientConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTClientConnection.swift; sourceTree = "<group>"; };
+		6EA5D1B72107E259009998FD /* DarwinCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinCentral.swift; sourceTree = "<group>"; };
+		6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinDescriptor.swift; sourceTree = "<group>"; };
+		6EA5D1B92107E259009998FD /* DarwinPeer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinPeer.swift; sourceTree = "<group>"; };
+		6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinPeripheral.swift; sourceTree = "<group>"; };
+		6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinCentralError.swift; sourceTree = "<group>"; };
+		6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinAttributes.swift; sourceTree = "<group>"; };
+		6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinAdvertisementData.swift; sourceTree = "<group>"; };
+		6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinBluetoothState.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6EE84DA11CAF422100A40C4D /* Peripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Peripheral.swift; sourceTree = "<group>"; };
-		6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinPeripheral.swift; sourceTree = "<group>"; };
 		6EE9103A1FDE5C17007AD3EA /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinBluetoothState.swift; sourceTree = "<group>"; };
-		6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinDescriptor.swift; sourceTree = "<group>"; };
 		6EF45FCF1CC6D355001F7A39 /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		6EF9426C2016464B00EEB821 /* LinuxCentral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxCentral.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +200,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6E49B23320532A94002EA5DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D14F2107DE66009998FD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1662107DE6A009998FD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D17D2107DE6D009998FD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1942107DE70009998FD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -158,27 +266,79 @@
 			path = GATTTests;
 			sourceTree = "<group>";
 		};
-		6E0FC46720F873E8009269B4 /* GATTTests */ = {
+		6EA5D19D2107DEE5009998FD /* DarwinGATT */ = {
 			isa = PBXGroup;
 			children = (
-				6E0FC47420F87C55009269B4 /* XCTest.swift */,
-				6E0FC46820F873E8009269B4 /* XCTestManifests.swift */,
-				6E0FC46920F873E8009269B4 /* GATTTests.swift */,
-				6E0FC47220F875A3009269B4 /* TestPeripheral.swift */,
-				6E0FC47620F8F718009269B4 /* TestCentral.swift */,
-				6E0FC46E20F874E3009269B4 /* TestHostController.swift */,
-				6E0FC46D20F874E3009269B4 /* TestL2CAPSocket.swift */,
+				6EA5D19E2107DEE5009998FD /* Info.plist */,
 			);
-			name = GATTTests;
-			path = ../Tests/GATTTests;
+			path = DarwinGATT;
 			sourceTree = "<group>";
 		};
-		6E0FC46C20F873FE009269B4 /* Tests */ = {
+		6EA5D19F2107E259009998FD /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				6E0FC46720F873E8009269B4 /* GATTTests */,
+				6EA5D1A02107E259009998FD /* LinuxMain.swift */,
+				6EA5D1A12107E259009998FD /* GATTTests */,
 			);
 			name = Tests;
+			path = ../Tests;
+			sourceTree = "<group>";
+		};
+		6EA5D1A12107E259009998FD /* GATTTests */ = {
+			isa = PBXGroup;
+			children = (
+				6EA5D1A22107E259009998FD /* GATTTests.swift */,
+				6EA5D1A32107E259009998FD /* XCTest.swift */,
+				6EA5D1A42107E259009998FD /* TestHostController.swift */,
+				6EA5D1A52107E259009998FD /* XCTestManifests.swift */,
+				6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */,
+			);
+			path = GATTTests;
+			sourceTree = "<group>";
+		};
+		6EA5D1A72107E259009998FD /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				6EA5D1A82107E259009998FD /* GATT */,
+				6EA5D1B62107E259009998FD /* DarwinGATT */,
+			);
+			name = Sources;
+			path = ../Sources;
+			sourceTree = "<group>";
+		};
+		6EA5D1A82107E259009998FD /* GATT */ = {
+			isa = PBXGroup;
+			children = (
+				6EA5D1A92107E259009998FD /* GATTPeripheral.swift */,
+				6EA5D1AA2107E259009998FD /* CentralError.swift */,
+				6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */,
+				6EA5D1AC2107E259009998FD /* Peripheral.swift */,
+				6EA5D1AD2107E259009998FD /* ScanData.swift */,
+				6EA5D1AE2107E259009998FD /* Central.swift */,
+				6EA5D1AF2107E259009998FD /* AdvertisementData.swift */,
+				6EA5D1B02107E259009998FD /* GATTCentral.swift */,
+				6EA5D1B12107E259009998FD /* CentralProtocol.swift */,
+				6EA5D1B22107E259009998FD /* GATTServerConnection.swift */,
+				6EA5D1B32107E259009998FD /* TimeInterval.swift */,
+				6EA5D1B42107E259009998FD /* Peer.swift */,
+				6EA5D1B52107E259009998FD /* GATTClientConnection.swift */,
+			);
+			path = GATT;
+			sourceTree = "<group>";
+		};
+		6EA5D1B62107E259009998FD /* DarwinGATT */ = {
+			isa = PBXGroup;
+			children = (
+				6EA5D1B72107E259009998FD /* DarwinCentral.swift */,
+				6EA5D1B82107E259009998FD /* DarwinDescriptor.swift */,
+				6EA5D1B92107E259009998FD /* DarwinPeer.swift */,
+				6EA5D1BA2107E259009998FD /* DarwinPeripheral.swift */,
+				6EA5D1BB2107E259009998FD /* DarwinCentralError.swift */,
+				6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */,
+				6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */,
+				6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */,
+			);
+			path = DarwinGATT;
 			sourceTree = "<group>";
 		};
 		6EE84D7A1CAF419D00A40C4D = {
@@ -186,11 +346,12 @@
 			children = (
 				6E7BD6121CAF9C9500F0ABF3 /* Cartfile */,
 				6E7BD6131CAF9C9500F0ABF3 /* Package.swift */,
-				6EE84D9E1CAF421100A40C4D /* Sources */,
-				6E0FC46C20F873FE009269B4 /* Tests */,
+				6EA5D1A72107E259009998FD /* Sources */,
+				6EA5D19F2107E259009998FD /* Tests */,
 				6EE84D861CAF419D00A40C4D /* GATT */,
 				6E0FC45B20F873B1009269B4 /* GATTTests */,
 				6EE84D851CAF419D00A40C4D /* Products */,
+				6EA5D19D2107DEE5009998FD /* DarwinGATT */,
 				6EFB3E6720D3EB0600364CA0 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -203,6 +364,10 @@
 				6EE9103A1FDE5C17007AD3EA /* GATT.framework */,
 				6E49B23A20532A94002EA5DC /* GATT.framework */,
 				6E0FC45A20F873B1009269B4 /* GATTTests.xctest */,
+				6EA5D1562107DE66009998FD /* DarwinGATT.framework */,
+				6EA5D16D2107DE6A009998FD /* DarwinGATT.framework */,
+				6EA5D1842107DE6D009998FD /* DarwinGATT.framework */,
+				6EA5D19B2107DE70009998FD /* DarwinGATT.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -212,34 +377,6 @@
 			children = (
 				6EE84D871CAF419D00A40C4D /* GATT.h */,
 				6EE84D891CAF419D00A40C4D /* Info.plist */,
-			);
-			path = GATT;
-			sourceTree = "<group>";
-		};
-		6EE84D9E1CAF421100A40C4D /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				6EE84D9F1CAF421100A40C4D /* GATT */,
-			);
-			name = Sources;
-			path = ../Sources;
-			sourceTree = "<group>";
-		};
-		6EE84D9F1CAF421100A40C4D /* GATT */ = {
-			isa = PBXGroup;
-			children = (
-				6E17DC221CB1DC250043C644 /* Central.swift */,
-				6EE84DA11CAF422100A40C4D /* Peripheral.swift */,
-				6E49B221205325B3002EA5DC /* AdvertisementData.swift */,
-				6E7BD6161CAFA45F00F0ABF3 /* Peer.swift */,
-				6EAABC002001AF4C009B38C0 /* ScanData.swift */,
-				6E17DC201CB1DC150043C644 /* DarwinCentral.swift */,
-				6EE84DA31CAF424E00A40C4D /* DarwinPeripheral.swift */,
-				6E7BD6141CAFA06900F0ABF3 /* DarwinAttributes.swift */,
-				6EF2BA5C20D15FAC008F7731 /* DarwinBluetoothState.swift */,
-				6EF2BA6120D15FD8008F7731 /* DarwinDescriptor.swift */,
-				6EF9426C2016464B00EEB821 /* LinuxCentral.swift */,
-				6E7BD6181CB04DB800F0ABF3 /* LinuxPeripheral.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -259,6 +396,38 @@
 			buildActionMask = 2147483647;
 			files = (
 				6E49B23520532A94002EA5DC /* GATT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1502107DE66009998FD /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1512107DE66009998FD /* GATT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1672107DE6A009998FD /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1682107DE6A009998FD /* GATT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D17E2107DE6D009998FD /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D17F2107DE6D009998FD /* GATT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1952107DE70009998FD /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1962107DE70009998FD /* GATT.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +492,82 @@
 			name = "GATT-tvOS";
 			productName = GATT;
 			productReference = 6E49B23A20532A94002EA5DC /* GATT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		6EA5D1412107DE66009998FD /* DarwinGATT-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EA5D1532107DE66009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-macOS" */;
+			buildPhases = (
+				6EA5D1422107DE66009998FD /* Sources */,
+				6EA5D14F2107DE66009998FD /* Frameworks */,
+				6EA5D1502107DE66009998FD /* Headers */,
+				6EA5D1522107DE66009998FD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6EA5D21B2107EDB1009998FD /* PBXTargetDependency */,
+			);
+			name = "DarwinGATT-macOS";
+			productName = GATT;
+			productReference = 6EA5D1562107DE66009998FD /* DarwinGATT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		6EA5D1582107DE6A009998FD /* DarwinGATT-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EA5D16A2107DE6A009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-iOS" */;
+			buildPhases = (
+				6EA5D1592107DE6A009998FD /* Sources */,
+				6EA5D1662107DE6A009998FD /* Frameworks */,
+				6EA5D1672107DE6A009998FD /* Headers */,
+				6EA5D1692107DE6A009998FD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6EA5D21D2107EDB8009998FD /* PBXTargetDependency */,
+			);
+			name = "DarwinGATT-iOS";
+			productName = GATT;
+			productReference = 6EA5D16D2107DE6A009998FD /* DarwinGATT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		6EA5D16F2107DE6D009998FD /* DarwinGATT-watchOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EA5D1812107DE6D009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-watchOS" */;
+			buildPhases = (
+				6EA5D1702107DE6D009998FD /* Sources */,
+				6EA5D17D2107DE6D009998FD /* Frameworks */,
+				6EA5D17E2107DE6D009998FD /* Headers */,
+				6EA5D1802107DE6D009998FD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6EA5D21F2107EDBD009998FD /* PBXTargetDependency */,
+			);
+			name = "DarwinGATT-watchOS";
+			productName = GATT;
+			productReference = 6EA5D1842107DE6D009998FD /* DarwinGATT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		6EA5D1862107DE70009998FD /* DarwinGATT-tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EA5D1982107DE70009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-tvOS" */;
+			buildPhases = (
+				6EA5D1872107DE70009998FD /* Sources */,
+				6EA5D1942107DE70009998FD /* Frameworks */,
+				6EA5D1952107DE70009998FD /* Headers */,
+				6EA5D1972107DE70009998FD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6EA5D2192107EDAA009998FD /* PBXTargetDependency */,
+			);
+			name = "DarwinGATT-tvOS";
+			productName = GATT;
+			productReference = 6EA5D19B2107DE70009998FD /* DarwinGATT.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		6EE84D831CAF419D00A40C4D /* GATT-macOS */ = {
@@ -397,6 +642,9 @@
 					6E49B22520532A94002EA5DC = {
 						LastSwiftMigration = 0940;
 					};
+					6EA5D1582107DE6A009998FD = {
+						ProvisioningStyle = Manual;
+					};
 					6EE84D831CAF419D00A40C4D = {
 						CreatedOnToolsVersion = 7.3;
 						LastSwiftMigration = 0920;
@@ -428,6 +676,10 @@
 				6EE9102A1FDE5C17007AD3EA /* GATT-watchOS */,
 				6E49B22520532A94002EA5DC /* GATT-tvOS */,
 				6E0FC45920F873B1009269B4 /* GATTTests */,
+				6EA5D1412107DE66009998FD /* DarwinGATT-macOS */,
+				6EA5D1582107DE6A009998FD /* DarwinGATT-iOS */,
+				6EA5D16F2107DE6D009998FD /* DarwinGATT-watchOS */,
+				6EA5D1862107DE70009998FD /* DarwinGATT-tvOS */,
 			);
 		};
 /* End PBXProject section */
@@ -441,6 +693,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6E49B23620532A94002EA5DC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1522107DE66009998FD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1692107DE6A009998FD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1802107DE6D009998FD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1972107DE70009998FD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -475,12 +755,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E0FC47020F874E3009269B4 /* TestHostController.swift in Sources */,
-				6E0FC47720F8F718009269B4 /* TestCentral.swift in Sources */,
-				6E0FC46B20F873E8009269B4 /* GATTTests.swift in Sources */,
-				6E0FC46F20F874E3009269B4 /* TestL2CAPSocket.swift in Sources */,
-				6E0FC47520F87C55009269B4 /* XCTest.swift in Sources */,
-				6E0FC47320F875A3009269B4 /* TestPeripheral.swift in Sources */,
+				6EA5D1C02107E25F009998FD /* XCTest.swift in Sources */,
+				6EA5D1C22107E25F009998FD /* XCTestManifests.swift in Sources */,
+				6EA5D1C12107E25F009998FD /* TestHostController.swift in Sources */,
+				6EA5D1BF2107E25F009998FD /* GATTTests.swift in Sources */,
+				6EA5D1C32107E25F009998FD /* TestL2CAPSocket.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,18 +767,79 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E49B22720532A94002EA5DC /* Central.swift in Sources */,
-				6E49B22820532A94002EA5DC /* DarwinPeripheral.swift in Sources */,
-				6E49B22920532A94002EA5DC /* DarwinAttributes.swift in Sources */,
-				6E49B22A20532A94002EA5DC /* AdvertisementData.swift in Sources */,
-				6E49B22B20532A94002EA5DC /* ScanData.swift in Sources */,
-				6EF2BA6020D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */,
-				6EF2BA6520D15FD8008F7731 /* DarwinDescriptor.swift in Sources */,
-				6E49B22D20532A94002EA5DC /* LinuxPeripheral.swift in Sources */,
-				6E49B22E20532A94002EA5DC /* Peer.swift in Sources */,
-				6E49B22F20532A94002EA5DC /* DarwinCentral.swift in Sources */,
-				6E49B23020532A94002EA5DC /* Peripheral.swift in Sources */,
-				6E49B23120532A94002EA5DC /* LinuxCentral.swift in Sources */,
+				6EA5D1EC2107E270009998FD /* CentralProtocol.swift in Sources */,
+				6EA5D1E62107E26F009998FD /* PeripheralProtocol.swift in Sources */,
+				6EA5D1E52107E26F009998FD /* CentralError.swift in Sources */,
+				6EA5D1E42107E26F009998FD /* GATTPeripheral.swift in Sources */,
+				6EA5D1EA2107E270009998FD /* AdvertisementData.swift in Sources */,
+				6EA5D1E72107E26F009998FD /* Peripheral.swift in Sources */,
+				6EA5D1EB2107E270009998FD /* GATTCentral.swift in Sources */,
+				6EA5D1E82107E270009998FD /* ScanData.swift in Sources */,
+				6EA5D1ED2107E270009998FD /* GATTServerConnection.swift in Sources */,
+				6EA5D1EF2107E270009998FD /* Peer.swift in Sources */,
+				6EA5D1F02107E270009998FD /* GATTClientConnection.swift in Sources */,
+				6EA5D1E92107E270009998FD /* Central.swift in Sources */,
+				6EA5D1EE2107E270009998FD /* TimeInterval.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1422107DE66009998FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1C42107E26A009998FD /* DarwinCentral.swift in Sources */,
+				6EA5D1CB2107E26A009998FD /* DarwinBluetoothState.swift in Sources */,
+				6EA5D1C52107E26A009998FD /* DarwinDescriptor.swift in Sources */,
+				6EA5D1CA2107E26A009998FD /* DarwinAdvertisementData.swift in Sources */,
+				6EA5D1C72107E26A009998FD /* DarwinPeripheral.swift in Sources */,
+				6EA5D1C92107E26A009998FD /* DarwinAttributes.swift in Sources */,
+				6EA5D1C82107E26A009998FD /* DarwinCentralError.swift in Sources */,
+				6EA5D1C62107E26A009998FD /* DarwinPeer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1592107DE6A009998FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1CC2107E26A009998FD /* DarwinCentral.swift in Sources */,
+				6EA5D1D32107E26A009998FD /* DarwinBluetoothState.swift in Sources */,
+				6EA5D1CD2107E26A009998FD /* DarwinDescriptor.swift in Sources */,
+				6EA5D1D22107E26A009998FD /* DarwinAdvertisementData.swift in Sources */,
+				6EA5D1CF2107E26A009998FD /* DarwinPeripheral.swift in Sources */,
+				6EA5D1D12107E26A009998FD /* DarwinAttributes.swift in Sources */,
+				6EA5D1D02107E26A009998FD /* DarwinCentralError.swift in Sources */,
+				6EA5D1CE2107E26A009998FD /* DarwinPeer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1702107DE6D009998FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1D42107E26B009998FD /* DarwinCentral.swift in Sources */,
+				6EA5D1DB2107E26B009998FD /* DarwinBluetoothState.swift in Sources */,
+				6EA5D1D52107E26B009998FD /* DarwinDescriptor.swift in Sources */,
+				6EA5D1DA2107E26B009998FD /* DarwinAdvertisementData.swift in Sources */,
+				6EA5D1D72107E26B009998FD /* DarwinPeripheral.swift in Sources */,
+				6EA5D1D92107E26B009998FD /* DarwinAttributes.swift in Sources */,
+				6EA5D1D82107E26B009998FD /* DarwinCentralError.swift in Sources */,
+				6EA5D1D62107E26B009998FD /* DarwinPeer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EA5D1872107DE70009998FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EA5D1DC2107E26B009998FD /* DarwinCentral.swift in Sources */,
+				6EA5D1E32107E26B009998FD /* DarwinBluetoothState.swift in Sources */,
+				6EA5D1DD2107E26B009998FD /* DarwinDescriptor.swift in Sources */,
+				6EA5D1E22107E26B009998FD /* DarwinAdvertisementData.swift in Sources */,
+				6EA5D1DF2107E26B009998FD /* DarwinPeripheral.swift in Sources */,
+				6EA5D1E12107E26B009998FD /* DarwinAttributes.swift in Sources */,
+				6EA5D1E02107E26B009998FD /* DarwinCentralError.swift in Sources */,
+				6EA5D1DE2107E26B009998FD /* DarwinPeer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,18 +847,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6E7BD6171CAFA45F00F0ABF3 /* Peer.swift in Sources */,
-				6EAABC012001AF4C009B38C0 /* ScanData.swift in Sources */,
-				6E17DC231CB1DC250043C644 /* Central.swift in Sources */,
-				6E49B222205325B3002EA5DC /* AdvertisementData.swift in Sources */,
-				6EE84DA21CAF422100A40C4D /* Peripheral.swift in Sources */,
-				6EF2BA5D20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */,
-				6EF2BA6220D15FD8008F7731 /* DarwinDescriptor.swift in Sources */,
-				6E7BD6151CAFA06900F0ABF3 /* DarwinAttributes.swift in Sources */,
-				6E7BD6191CB04DB800F0ABF3 /* LinuxPeripheral.swift in Sources */,
-				6EF9426D2016464B00EEB821 /* LinuxCentral.swift in Sources */,
-				6EE84DA41CAF424E00A40C4D /* DarwinPeripheral.swift in Sources */,
-				6E17DC211CB1DC150043C644 /* DarwinCentral.swift in Sources */,
+				6EA5D2132107E271009998FD /* CentralProtocol.swift in Sources */,
+				6EA5D20D2107E271009998FD /* PeripheralProtocol.swift in Sources */,
+				6EA5D20C2107E271009998FD /* CentralError.swift in Sources */,
+				6EA5D20B2107E271009998FD /* GATTPeripheral.swift in Sources */,
+				6EA5D2112107E271009998FD /* AdvertisementData.swift in Sources */,
+				6EA5D20E2107E271009998FD /* Peripheral.swift in Sources */,
+				6EA5D2122107E271009998FD /* GATTCentral.swift in Sources */,
+				6EA5D20F2107E271009998FD /* ScanData.swift in Sources */,
+				6EA5D2142107E271009998FD /* GATTServerConnection.swift in Sources */,
+				6EA5D2162107E271009998FD /* Peer.swift in Sources */,
+				6EA5D2172107E271009998FD /* GATTClientConnection.swift in Sources */,
+				6EA5D2102107E271009998FD /* Central.swift in Sources */,
+				6EA5D2152107E271009998FD /* TimeInterval.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -526,18 +867,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6EE9102C1FDE5C17007AD3EA /* Central.swift in Sources */,
-				6E8F3AF52051CF3A006964D5 /* DarwinPeripheral.swift in Sources */,
-				6EE9102D1FDE5C17007AD3EA /* DarwinAttributes.swift in Sources */,
-				6E49B224205325B3002EA5DC /* AdvertisementData.swift in Sources */,
-				6EAABC032001AF4C009B38C0 /* ScanData.swift in Sources */,
-				6EF2BA5F20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */,
-				6EF2BA6420D15FD8008F7731 /* DarwinDescriptor.swift in Sources */,
-				6EE9102E1FDE5C17007AD3EA /* LinuxPeripheral.swift in Sources */,
-				6EE9102F1FDE5C17007AD3EA /* Peer.swift in Sources */,
-				6EE910301FDE5C17007AD3EA /* DarwinCentral.swift in Sources */,
-				6EE910311FDE5C17007AD3EA /* Peripheral.swift in Sources */,
-				6EF9426F2016464B00EEB821 /* LinuxCentral.swift in Sources */,
+				6EA5D1F92107E270009998FD /* CentralProtocol.swift in Sources */,
+				6EA5D1F32107E270009998FD /* PeripheralProtocol.swift in Sources */,
+				6EA5D1F22107E270009998FD /* CentralError.swift in Sources */,
+				6EA5D1F12107E270009998FD /* GATTPeripheral.swift in Sources */,
+				6EA5D1F72107E270009998FD /* AdvertisementData.swift in Sources */,
+				6EA5D1F42107E270009998FD /* Peripheral.swift in Sources */,
+				6EA5D1F82107E270009998FD /* GATTCentral.swift in Sources */,
+				6EA5D1F52107E270009998FD /* ScanData.swift in Sources */,
+				6EA5D1FA2107E270009998FD /* GATTServerConnection.swift in Sources */,
+				6EA5D1FC2107E270009998FD /* Peer.swift in Sources */,
+				6EA5D1FD2107E270009998FD /* GATTClientConnection.swift in Sources */,
+				6EA5D1F62107E270009998FD /* Central.swift in Sources */,
+				6EA5D1FB2107E270009998FD /* TimeInterval.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -545,18 +887,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6EF45FC11CC6D355001F7A39 /* Central.swift in Sources */,
-				6E8F3AF42051CF39006964D5 /* DarwinPeripheral.swift in Sources */,
-				6EF45FC21CC6D355001F7A39 /* DarwinAttributes.swift in Sources */,
-				6E49B223205325B3002EA5DC /* AdvertisementData.swift in Sources */,
-				6EAABC022001AF4C009B38C0 /* ScanData.swift in Sources */,
-				6EF2BA5E20D15FAC008F7731 /* DarwinBluetoothState.swift in Sources */,
-				6EF2BA6320D15FD8008F7731 /* DarwinDescriptor.swift in Sources */,
-				6EF45FC31CC6D355001F7A39 /* LinuxPeripheral.swift in Sources */,
-				6EF45FC41CC6D355001F7A39 /* Peer.swift in Sources */,
-				6E7B43CE1D459322007D3C36 /* DarwinCentral.swift in Sources */,
-				6EF45FC71CC6D355001F7A39 /* Peripheral.swift in Sources */,
-				6EF9426E2016464B00EEB821 /* LinuxCentral.swift in Sources */,
+				6EA5D2062107E271009998FD /* CentralProtocol.swift in Sources */,
+				6EA5D2002107E271009998FD /* PeripheralProtocol.swift in Sources */,
+				6EA5D1FF2107E271009998FD /* CentralError.swift in Sources */,
+				6EA5D1FE2107E271009998FD /* GATTPeripheral.swift in Sources */,
+				6EA5D2042107E271009998FD /* AdvertisementData.swift in Sources */,
+				6EA5D2012107E271009998FD /* Peripheral.swift in Sources */,
+				6EA5D2052107E271009998FD /* GATTCentral.swift in Sources */,
+				6EA5D2022107E271009998FD /* ScanData.swift in Sources */,
+				6EA5D2072107E271009998FD /* GATTServerConnection.swift in Sources */,
+				6EA5D2092107E271009998FD /* Peer.swift in Sources */,
+				6EA5D20A2107E271009998FD /* GATTClientConnection.swift in Sources */,
+				6EA5D2032107E271009998FD /* Central.swift in Sources */,
+				6EA5D2082107E271009998FD /* TimeInterval.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,12 +911,33 @@
 			target = 6EE84D831CAF419D00A40C4D /* GATT-macOS */;
 			targetProxy = 6E0FC46020F873B1009269B4 /* PBXContainerItemProxy */;
 		};
+		6EA5D2192107EDAA009998FD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E49B22520532A94002EA5DC /* GATT-tvOS */;
+			targetProxy = 6EA5D2182107EDAA009998FD /* PBXContainerItemProxy */;
+		};
+		6EA5D21B2107EDB1009998FD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE84D831CAF419D00A40C4D /* GATT-macOS */;
+			targetProxy = 6EA5D21A2107EDB1009998FD /* PBXContainerItemProxy */;
+		};
+		6EA5D21D2107EDB8009998FD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EF45FBF1CC6D355001F7A39 /* GATT-iOS */;
+			targetProxy = 6EA5D21C2107EDB8009998FD /* PBXContainerItemProxy */;
+		};
+		6EA5D21F2107EDBD009998FD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6EE9102A1FDE5C17007AD3EA /* GATT-watchOS */;
+			targetProxy = 6EA5D21E2107EDBD009998FD /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6E0FC46220F873B1009269B4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
@@ -587,7 +951,7 @@
 				INFOPLIST_FILE = GATTTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.GATTTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -598,6 +962,7 @@
 		6E0FC46320F873B1009269B4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
@@ -611,7 +976,7 @@
 				INFOPLIST_FILE = GATTTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks $FRAMEWORK_SEARCH_PATHS";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.GATTTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				SWIFT_VERSION = 4.0;
@@ -631,6 +996,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -650,6 +1016,195 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		6EA5D1542107DE66009998FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6EA5D1552107DE66009998FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/Mac;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		6EA5D16B2107DE6A009998FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/iOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6EA5D16C2107DE6A009998FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/iOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6EA5D1822107DE6D009998FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/watchOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6EA5D1832107DE6D009998FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/watchOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		6EA5D1992107DE70009998FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/tvOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6EA5D19A2107DE70009998FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = $SRCROOT/../Carthage/Build/tvOS;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = DarwinGATT/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
+				PRODUCT_NAME = DarwinGATT;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -800,6 +1355,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -819,6 +1375,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 			};
@@ -838,6 +1395,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -858,6 +1416,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -880,6 +1439,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -904,6 +1464,7 @@
 				FRAMEWORK_VERSION = A;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.pureswift.$(PRODUCT_MODULE_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -929,6 +1490,42 @@
 			buildConfigurations = (
 				6E49B23820532A94002EA5DC /* Debug */,
 				6E49B23920532A94002EA5DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6EA5D1532107DE66009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6EA5D1542107DE66009998FD /* Debug */,
+				6EA5D1552107DE66009998FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6EA5D16A2107DE6A009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6EA5D16B2107DE6A009998FD /* Debug */,
+				6EA5D16C2107DE6A009998FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6EA5D1812107DE6D009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-watchOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6EA5D1822107DE6D009998FD /* Debug */,
+				6EA5D1832107DE6D009998FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6EA5D1982107DE70009998FD /* Build configuration list for PBXNativeTarget "DarwinGATT-tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6EA5D1992107DE70009998FD /* Debug */,
+				6EA5D19A2107DE70009998FD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
