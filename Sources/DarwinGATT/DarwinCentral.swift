@@ -242,7 +242,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         try semaphore.wait()
         
         // get cached characteristics
-        let charachertisticCache = accessQueue._sync { [unowned self] in
+        let charachertisticCache = accessQueue.sync { [unowned self] in
             self.internalState.cache[service.peripheral]?.characteristics.values ?? [:]
         }
         

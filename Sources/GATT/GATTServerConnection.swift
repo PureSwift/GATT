@@ -138,28 +138,32 @@ public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
         guard self.isRunning
             else { sleep(1); return }
         
-        guard let writeDatabase = self.callback.writeDatabase
+        guard let writeDatabase = self.callback.writeDatabase,
+            let readConnection = self.callback.readConnection
             else { usleep(100); return }
         
-        // write GATT DB serially
-        writeDatabase({ [weak self] (database) in
+        readConnection({ [weak self] in
             
-            guard let connection = self
-                else { return }
-            
-            do {
+            // write GATT DB serially
+            writeDatabase({ [weak self] (database) in
                 
                 // update server with database from peripheral
-                connection.server.database = database
-                
-                // read incoming PDUs and may modify database
-                try connection.server.read()
+                self?.server.database = database
+            })
+            
+            // read incoming PDUs and may modify internal database
+            do { try self?.server.read() }
+            catch { self?.error(error) }
+            
+            // write GATT DB serially
+            writeDatabase({ [weak self] (database) in
                 
                 // update peripheral database
-                database = connection.server.database
-            }
-            
-            catch { connection.error(error) }
+                if let modifiedDatabase = self?.server.database {
+                    
+                    database = modifiedDatabase
+                }
+            })
         })
     }
     
@@ -197,6 +201,8 @@ public extension GATTServerConnection {
         public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
         
         public var writeDatabase: (((inout GATTDatabase) -> ()) -> ())?
+        
+        public var readConnection: ((() -> ()) -> ())?
         
         public var didDisconnect: ((Error) -> ())?
         

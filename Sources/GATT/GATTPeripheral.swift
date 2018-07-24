@@ -28,9 +28,20 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public var newConnection: (() throws -> (socket: L2CAPSocket, central: Central))?
     
+    public var activeConnections: [Central] {
+        
+        return connectionsQueue.sync { [unowned self] in
+            self.connections.values.map { $0.central }
+        }
+    }
+    
     // MARK: - Private Properties
     
     internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(self) Database Queue")
+    
+    internal lazy var readQueue: DispatchQueue = DispatchQueue(label: "\(self) Read Queue")
+    
+    internal lazy var connectionsQueue: DispatchQueue = DispatchQueue(label: "\(self) Connections Queue")
     
     internal private(set) var database = GATTDatabase()
     
@@ -104,9 +115,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     /// Return the handles of the characteristics matching the specified UUID.
     public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
         
-        return database
-            .filter { $0.uuid == uuid }
-            .map { $0.handle }
+        return self.writeDatabase { $0.filter { $0.uuid == uuid }.map { $0.handle } }
     }
     
     // MARK: - Subscript
@@ -115,13 +124,18 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         
         get { return writeDatabase { $0[handle: handle].value } }
         
-        set { connections.values.forEach { $0.writeValue(newValue, forCharacteristic: handle) } }
+        set {
+            connectionsQueue
+                .sync { [unowned self] in self.connections.values }
+                .forEach { $0.writeValue(newValue, forCharacteristic: handle) }
+        }
     }
     
     // MARK: - Private Methods
     
     private func main() {
         
+        // wait for new connections
         while isServerRunning, let newConnection = self.newConnection {
             
             do {
@@ -130,22 +144,24 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
                 
                 guard isServerRunning else { return }
                 
-                log?("[\(central)]: New connection")
-                
                 let connectionIdentifier = newConnectionID()
                 let connection = GATTServerConnection(central: central,
                                                       socket: newSocket,
                                                       maximumTransmissionUnit: options.maximumTransmissionUnit,
                                                       maximumPreparedWrites: options.maximumPreparedWrites)
                 
-                connection.callback.log? = { [unowned self] in self.log?("[\(connection.central)]: " + $0) }
+                connection.callback.log = { [unowned self] in self.log?("[\(connection.central)]: " + $0) }
                 connection.callback.didWrite = { [unowned self] in self.didWrite?($0) }
                 connection.callback.willWrite = { [unowned self] in self.willWrite?($0) }
                 connection.callback.willRead = { [unowned self] in self.willRead?($0) }
                 connection.callback.writeDatabase = { [unowned self] in self.writeDatabase($0) }
+                connection.callback.readConnection = { [unowned self] in self.readConnection($0) }
                 connection.callback.didDisconnect = { [unowned self] in self.disconnect(connectionIdentifier, error: $0) }
                 
-                self.connections[connectionIdentifier] = connection
+                // hold strong reference to connection
+                connectionsQueue.sync { [unowned self] in
+                    self.connections[connectionIdentifier] = connection
+                }
             }
                 
             catch { log?("Error waiting for new connection: \(error)") }
@@ -154,6 +170,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         log?("Stopped GATT Server")
     }
     
+    @inline(__always)
     private func newConnectionID() -> UInt {
         
         lastConnectionID += 1
@@ -164,7 +181,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     private func disconnect(_ connection: UInt, error: Error) {
         
         // remove from peripheral, release and close socket
-        connections[connection] = nil
+        connectionsQueue.sync { [unowned self] in
+            self.connections[connection] = nil
+        }
         
         // enable LE advertising
         do { try controller.enableLowEnergyAdvertising() }
@@ -172,9 +191,16 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         catch { log?("Could not enable advertising. \(error)") }
     }
     
+    @inline(__always)
     private func writeDatabase <T> (_ block: (inout GATTDatabase) -> (T)) -> T {
         
         return databaseQueue.sync { block(&self.database) }
+    }
+    
+    @inline(__always)
+    private func readConnection(_ block: () -> ()) {
+        
+        return readQueue.sync(execute: block)
     }
 }
 
