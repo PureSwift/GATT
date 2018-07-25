@@ -70,6 +70,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         self.options = options
         
         super.init()
+        
+        let _ = self.internalManager // initialize manager
     }
     
     public override convenience init() {
@@ -130,6 +132,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
             else { throw CentralError.unknownPeripheral }
+        
+        guard corePeripheral.state != .connected
+            else { return } // already connected
         
         // store semaphore
         let semaphore = Semaphore(timeout: timeout, operation: .connect(peripheral))
@@ -751,10 +756,6 @@ internal extension DarwinCentral {
         }
         
         mutating func update(_ newValues: [CBService]) {
-            
-            #if swift(>=3.2)
-            services.values.reserveCapacity(newValues.count)
-            #endif
             
             newValues.forEach {
                 let identifier = UInt(bitPattern: $0.hashValue)
