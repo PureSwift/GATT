@@ -253,9 +253,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         return charachertisticCache.map {
             Characteristic(identifier: $0.key,
-                           uuid: BluetoothUUID(coreBluetooth: $0.value.uuid),
+                           uuid: BluetoothUUID(coreBluetooth: $0.value.attribute.uuid),
                            peripheral: service.peripheral,
-                           properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.properties))
+                           properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.attribute.properties))
         }
     }
     
@@ -274,7 +274,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         let coreCharacteristic: CBCharacteristic = try self.accessQueue.sync { [unowned self] in
             
-            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]
+            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]?.attribute
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             return coreCharacteristic
@@ -310,7 +310,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         let coreCharacteristic: CBCharacteristic = try self.accessQueue.sync { [unowned self] in
             
-            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]
+            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]?.attribute
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             return coreCharacteristic
@@ -348,7 +348,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         let coreCharacteristic: CBCharacteristic = try self.accessQueue.sync { [unowned self] in
             
-            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]
+            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]?.attribute
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             return coreCharacteristic
@@ -369,7 +369,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         accessQueue.sync { [unowned self] in
             
             var cache = self.internalState.cache[characteristic.peripheral] ?? Cache()
-            cache.characteristics.notifications[characteristic.identifier] = notification
+            cache.characteristics.values[characteristic.identifier] = (coreCharacteristic, notification)
             self.internalState.cache[characteristic.peripheral] = cache
         }
     }
@@ -446,6 +446,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         accessQueue.sync { [unowned self] in
             self.internalState.connect.semaphore?.stopWaiting()
             self.internalState.connect.semaphore = nil
+            self.internalState.cache[Peripheral(corePeripheral)] = Cache() // initialize cache
         }
     }
     
@@ -534,6 +535,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     @objc(peripheral:didUpdateValueForCharacteristic:error:)
     public func peripheral(_ corePeripheral: CBPeripheral, didUpdateValueFor coreCharacteristic: CBCharacteristic, error: Swift.Error?) {
         
+        let data = coreCharacteristic.value ?? Data()
+        
         if let error = error {
             
             log?("Error reading characteristic (\(error))")
@@ -558,11 +561,11 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
                 // notification
                 assert(error == nil, "Notifications should never fail")
                 
-                let data = coreCharacteristic.value ?? Data()
-                
                 guard let cache = self.internalState.cache[Peripheral(corePeripheral)],
-                    let key = cache.characteristics.values.first(where: { $0.value === coreCharacteristic })?.key,
-                    let notification = cache.characteristics.notifications[key]
+                    let characteristicCache = cache.characteristics.values.first(where: { $0.value.attribute === coreCharacteristic })?.value
+                    else { assertionFailure("Invalid characteristic \(coreCharacteristic.uuid)"); return }
+                
+                guard let notification = characteristicCache.notification
                     else { assertionFailure("Unexpected notification for \(coreCharacteristic.uuid)"); return }
                 
                 // notify
@@ -767,9 +770,7 @@ internal extension DarwinCentral {
         
         struct Characteristics {
             
-            fileprivate(set) var values: [UInt: CBCharacteristic] = [:]
-            
-            fileprivate(set) var notifications: [UInt: (Data) -> ()] = [:]
+            fileprivate(set) var values: [UInt: (attribute: CBCharacteristic, notification: ((Data) -> ())?)] = [:]
         }
         
         mutating func insert(_ newValues: [CBCharacteristic],
@@ -777,20 +778,14 @@ internal extension DarwinCentral {
             
             // remove old characteristics for service
             while let key = characteristics.values
-                .first(where: { $0.value.service === service })?.key {
+                .first(where: { $0.value.attribute.service === service })?.key {
                 characteristics.values[key] = nil
             }
             
             // insert new characteristics
             newValues.forEach {
                 let identifier = UInt(bitPattern: $0.hashValue)
-                characteristics.values[identifier] = $0
-            }
-            
-            // remove old notifications
-            while let key = characteristics.notifications.keys
-                .first(where: { characteristics.values.keys.contains($0) == false }) {
-                characteristics.values[key] = nil
+                characteristics.values[identifier] = (attribute: $0, notification: nil)
             }
         }
     }
