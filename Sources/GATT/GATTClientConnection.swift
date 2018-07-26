@@ -15,17 +15,25 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public let peripheral: Peripheral
     
-    public var log: ((String) -> ())?
-    
-    public var error: ((Error) -> ())?
+    public var callback = GATTClientConnectionCallback()
     
     internal let client: GATTClient
     
-    internal private(set) var isRunning = true
+    internal private(set) var isRunning: Bool = true
+    
+    private lazy var readThread: Thread = Thread { [weak self] in
+        
+        // run until object is released
+        while let connection = self {
+            
+            // run the main loop exactly once.
+            self?.readMain()
+        }
+    }
+    
+    internal lazy var writeQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) \(self.peripheral) Write Queue")
     
     internal private(set) var cache = GATTClientConnectionCache()
-    
-    private var thread: Thread?
     
     internal var maximumUpdateValueLength: Int {
         
@@ -43,11 +51,11 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         self.client = GATTClient(socket: socket,
                                  maximumTransmissionUnit: maximumTransmissionUnit)
         
-        // configure client
-        client.log = { [unowned self] in self.log?("[\(peripheral)]: " + $0) }
+        // configure GATT client
+        self.configureClient()
         
-        // run socket in background
-        start()
+        // run read thread
+        self.readThread.start()
     }
     
     // MARK: - Methods
@@ -204,44 +212,52 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Private Methods
     
-    private func start() {
+    private func configureClient() {
         
-        self.isRunning = true
+        // log
+        client.log = { [unowned self] in self.callback.log?("[\(self.peripheral)]: " + $0) }
         
-        let thread = Thread { [weak self] in self?.main() }
-        thread.start()
+        // wakeup ATT writer
+        client.writePending = { [unowned self] in self.write() }
         
-        self.thread = thread
+        // send MTU request
+        self.write()
     }
     
-    private func stop() {
+    // IO error
+    private func error(_ error: Error) {
         
-        isRunning = false
-        thread = nil
+        self.callback.log?("Disconnected \(error)")
+        self.isRunning = false
+        self.callback.didDisconnect?(error)
     }
     
-    private func main() {
+    private func readMain() {
         
-        do {
+        guard self.isRunning
+            else { sleep(1); return }
+        
+        // read incoming PDUs / response
+        do { try self.client.read() }
+        catch { self.error(error) }
+    }
+    
+    private func write() {
+        
+        // write outgoing PDU in the background.
+        writeQueue.async { [weak self] in
             
-            while isRunning {
+            guard (self?.isRunning ?? false) else { sleep(1); return }
+            
+            do {
                 
-                // write outgoing pending ATT PDUs (requests)
+                /// write outgoing pending ATT PDUs
                 var didWrite = false
-                repeat { didWrite = try client.write() }
-                while didWrite
-                
-                // wait for incoming data (response, notifications, indications)
-                try client.read()
+                repeat { didWrite = try (self?.client.write() ?? false) }
+                    while didWrite && (self?.isRunning ?? false)
             }
-        }
-        
-        catch {
-            
-            self.log?("[\(self.client)]: \(error)")
-            self.error?(error)
-            
-            stop()
+                
+            catch { self?.error(error) }
         }
     }
     
@@ -271,7 +287,16 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     }
 }
 
+// MARK: - Supporting Types
 
+public struct GATTClientConnectionCallback {
+    
+    public var log: ((String) -> ())?
+    
+    public var didDisconnect: ((Error) -> ())?
+    
+    fileprivate init() { }
+}
 
 struct GATTClientConnectionCache {
     
