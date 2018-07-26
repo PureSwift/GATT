@@ -23,7 +23,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     internal private(set) var isRunning = true
     
-    internal private(set) var cache = Cache()
+    internal private(set) var cache = GATTClientConnectionCache()
     
     private var thread: Thread?
     
@@ -271,108 +271,106 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     }
 }
 
-@available(OSX 10.12, *)
-internal extension GATTClientConnection {
+
+
+struct GATTClientConnectionCache {
     
-    struct Cache {
+    fileprivate init() { }
+    
+    private(set) var services = [UInt: GATTClientConnectionServiceCache](minimumCapacity: 1)
+    
+    func service(for identifier: UInt) -> GATTClientConnectionServiceCache? {
         
-        fileprivate init() { }
+        return services[identifier]
+    }
+    
+    func characteristic(for identifier: UInt) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache)? {
         
-        private(set) var services = [UInt: ServiceCache](minimumCapacity: 1)
-        
-        func service(for identifier: UInt) -> ServiceCache? {
+        for service in services.values {
             
-            return services[identifier]
+            guard let characteristic = service.characteristics[identifier]
+                else { continue }
+            
+            return (service, characteristic)
         }
         
-        func characteristic(for identifier: UInt) -> (ServiceCache, CharacteristicCache)? {
-            
-            for service in services.values {
-                
-                guard let characteristic = service.characteristics[identifier]
-                    else { continue }
-                
-                return (service, characteristic)
-            }
-            
-            return nil
-        }
+        return nil
+    }
+    
+    func descriptor(for identifier: UInt) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache, GATTClientConnectionDescriptorCache)? {
         
-        func descriptor(for identifier: UInt) -> (ServiceCache, CharacteristicCache, DescriptorCache)? {
+        for service in services.values {
             
-            for service in services.values {
+            for characteristic in service.characteristics.values {
                 
-                for characteristic in service.characteristics.values {
+                for descriptor in characteristic.descriptors.values {
                     
-                    for descriptor in characteristic.descriptors.values {
-                        
-                        return (service, characteristic, descriptor)
-                    }
+                    return (service, characteristic, descriptor)
                 }
             }
-            
-            return nil
         }
         
-        mutating func insert(_ newValues: [GATTClient.Service]) {
-            
-            services.removeAll(keepingCapacity: true)
-            
-            newValues.forEach {
-                let identifier = UInt($0.handle)
-                services[identifier] = ServiceCache(attribute: $0, characteristics: [:])
-            }
-        }
+        return nil
+    }
+    
+    mutating func insert(_ newValues: [GATTClient.Service]) {
         
-        mutating func insert(_ newValues: [GATTClient.Characteristic],
-                             for service: UInt) {
-            
-            // remove old values
-            services[service]?.characteristics.removeAll(keepingCapacity: true)
-            
-            // insert new values
-            newValues.forEach {
-                services[service]?.characteristics[UInt($0.handle.declaration)] = CharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
-            }
-        }
+        services.removeAll(keepingCapacity: true)
         
-        mutating func insert(_ newValues: [GATTClient.Descriptor],
-                             for characteristic: UInt) {
-            
-            var descriptorsCache = [UInt: DescriptorCache](minimumCapacity: newValues.count)
-            
-            newValues.forEach {
-                descriptorsCache[UInt($0.handle)] = DescriptorCache(attribute: $0)
-            }
-            
-            for (serviceIdentifier, service) in services {
-                
-                guard let _ = service.characteristics[characteristic]
-                    else { continue }
-                
-                services[serviceIdentifier]?.characteristics[characteristic]?.descriptors = descriptorsCache
-            }
+        newValues.forEach {
+            let identifier = UInt($0.handle)
+            services[identifier] = GATTClientConnectionServiceCache(attribute: $0, characteristics: [:])
         }
     }
     
-    struct ServiceCache {
+    mutating func insert(_ newValues: [GATTClient.Characteristic],
+                         for service: UInt) {
         
-        let attribute: GATTClient.Service
+        // remove old values
+        services[service]?.characteristics.removeAll(keepingCapacity: true)
         
-        var characteristics = [UInt: CharacteristicCache]()
+        // insert new values
+        newValues.forEach {
+            services[service]?.characteristics[UInt($0.handle.declaration)] = GATTClientConnectionCharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
+        }
     }
     
-    struct CharacteristicCache {
+    mutating func insert(_ newValues: [GATTClient.Descriptor],
+                         for characteristic: UInt) {
         
-        let attribute: GATTClient.Characteristic
+        var descriptorsCache = [UInt: GATTClientConnectionDescriptorCache](minimumCapacity: newValues.count)
         
-        var notification: GATTClient.Notification?
+        newValues.forEach {
+            descriptorsCache[UInt($0.handle)] = GATTClientConnectionDescriptorCache(attribute: $0)
+        }
         
-        var descriptors = [UInt: DescriptorCache]()
+        for (serviceIdentifier, service) in services {
+            
+            guard let _ = service.characteristics[characteristic]
+                else { continue }
+            
+            services[serviceIdentifier]?.characteristics[characteristic]?.descriptors = descriptorsCache
+        }
     }
+}
+
+struct GATTClientConnectionServiceCache {
     
-    struct DescriptorCache {
-        
-        let attribute: GATTClient.Descriptor
-    }
+    let attribute: GATTClient.Service
+    
+    var characteristics = [UInt: GATTClientConnectionCharacteristicCache]()
+}
+
+struct GATTClientConnectionCharacteristicCache {
+    
+    let attribute: GATTClient.Characteristic
+    
+    var notification: GATTClient.Notification?
+    
+    var descriptors = [UInt: GATTClientConnectionDescriptorCache]()
+}
+
+struct GATTClientConnectionDescriptorCache {
+    
+    let attribute: GATTClient.Descriptor
 }

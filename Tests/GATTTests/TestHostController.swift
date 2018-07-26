@@ -152,14 +152,14 @@ final class CentralHostController: BluetoothHostControllerInterface {
     /// Polls and waits for events.
     func pollEvent<EP>(_ eventParameterType: EP.Type,
                        shouldContinue: () -> (Bool),
-                       event: (EP) throws -> ()) throws where EP : HCIEventParameter {
+                       event eventCallback: (EP) throws -> ()) throws where EP : HCIEventParameter {
         
         var events = self.scanEvents
         
         while shouldContinue(), let eventData = events.popFirst() {
             
-            guard let event = T.init(data: eventData)
-                else { assertionFailure(); return }
+            guard let event = EP.init(data: eventData)
+                else { assertionFailure("Invalid data"); return }
             
             try eventCallback(event)
         }

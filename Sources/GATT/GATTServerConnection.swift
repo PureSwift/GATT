@@ -16,7 +16,7 @@ public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public let central: Central
     
-    public var callback = Callback()
+    public var callback = GATTServerConnectionCallback()
     
     internal let server: GATTServer
     
@@ -188,24 +188,21 @@ public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
 }
 
 @available(OSX 10.12, *)
-public extension GATTServerConnection {
+public struct GATTServerConnectionCallback {
     
-    public struct Callback {
-        
-        public var log: ((String) -> ())?
-        
-        public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
-        
-        public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
-        
-        public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
-        
-        public var writeDatabase: (((inout GATTDatabase) -> ()) -> ())?
-        
-        public var readConnection: ((() -> ()) -> ())?
-        
-        public var didDisconnect: ((Error) -> ())?
-        
-        fileprivate init() { }
-    }
+    public var log: ((String) -> ())?
+    
+    public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
+    
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
+    
+    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
+    
+    public var writeDatabase: (((inout GATTDatabase) -> ()) -> ())?
+    
+    public var readConnection: ((() -> ()) -> ())?
+    
+    public var didDisconnect: ((Error) -> ())?
+    
+    fileprivate init() { }
 }

@@ -16,7 +16,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public var log: ((String) -> ())?
     
-    public let options: Options
+    public let options: GATTPeripheralOptions
     
     public let controller: HostController
     
@@ -56,7 +56,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     // MARK: - Initialization
     
     public init(controller: HostController,
-                options: Options = Options()) {
+                options: GATTPeripheralOptions = GATTPeripheralOptions()) {
         
         self.controller = controller
         self.options = options
@@ -205,19 +205,16 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
 }
 
 @available(OSX 10.12, *)
-public extension GATTPeripheral {
+public struct GATTPeripheralOptions {
     
-    public struct Options {
+    public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+    
+    public let maximumPreparedWrites: Int
+    
+    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
+                maximumPreparedWrites: Int = 100) {
         
-        public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
-        
-        public let maximumPreparedWrites: Int
-        
-        public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
-                    maximumPreparedWrites: Int = 100) {
-            
-            self.maximumTransmissionUnit = maximumTransmissionUnit
-            self.maximumPreparedWrites = maximumPreparedWrites
-        }
+        self.maximumTransmissionUnit = maximumTransmissionUnit
+        self.maximumPreparedWrites = maximumPreparedWrites
     }
 }
