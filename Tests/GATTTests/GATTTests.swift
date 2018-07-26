@@ -55,58 +55,11 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = TestHostController(address: .any)
-        let clientHostController = TestHostController(address: .any)
-        
-        // SEND  [200C] LE Set Scan Enable - 0x00, Filter duplicates: 0  0C 20 02 00 01
-        clientHostController.queue.append(
-            .command(HCILowEnergyCommand.setScanEnable.opcode,
-                     [0x0C, 0x20, 0x02, 0x00, 0x01])
-        )
-        
-        // RECV  Command Complete [200C] - LE Set Scan Enable  0E 04 01 0C 20 00
-        clientHostController.queue.append(.event([0x0E, 0x04, 0x01, 0x0C, 0x20, 0x00]))
-        
-        // SEND  [200B] LE Set Scan Parameters - Active - 30/300 (ms)  0B 20 07 01 E0 01 30 00 00 00
-        clientHostController.queue.append(
-            .command(
-                HCILowEnergyCommand.setScanParameters.opcode,
-                [0x0B, 0x20, 0x07, 0x01, 0xE0, 0x01, 0x30, 0x00, 0x00, 0x00])
-        )
-        
-        // RECV  Command Complete [200B] - LE Set Scan Parameters  0E 04 01 0B 20 00
-        clientHostController.queue.append(
-            .event([0x0E, 0x04, 0x01, 0x0B, 0x20, 0x00])
-        )
-        
-        // SEND  [200C] LE Set Scan Enable - 0x01, Filter duplicates: 1  0C 20 02 01 00
-        clientHostController.queue.append(
-            .command(HCILowEnergyCommand.setScanEnable.opcode,
-                     [0x0C, 0x20, 0x02, 0x01, 0x01])
-        )
-        
-        // RECV  Command Complete [200C] - LE Set Scan Enable  0E 04 01 0C 20 00
-        clientHostController.queue.append(.event([0x0E, 0x04, 0x01, 0x0C, 0x20, 0x00]))
-        
-        // RECV  LE Meta Event - LE Advertising Report - 1 - 02:E4:72:17:FD:E2  -55 dBm - Type 9
-        // 3E 1B 02 01 03 01 E2 FD 17 72 E4 02 0F 02 01 1B 0B FF 4C 00 09 06 03 1A C0 A8 01 02 C9
-        clientHostController.queue.append(.event([0x3E, 0x1B, 0x02, 0x01, 0x03, 0x01, 0xE2, 0xFD, 0x17, 0x72, 0xE4, 0x02, 0x0F, 0x02, 0x01, 0x1B, 0x0B, 0xFF, 0x4C, 0x00, 0x09, 0x06, 0x03, 0x1A, 0xC0, 0xA8, 0x01, 0x02, 0xC9]))
-        
-        // RECV  LE Meta Event - LE Advertising Report - 0 - C8:69:CD:46:0B:5D  -54 dBm - Type 16
-        // 3E 1A 02 01 00 00 5D 0B 46 CD 69 C8 0E 02 01 1A 0A FF 4C 00 10 05 01 10 C3 14 DD CA
-        clientHostController.queue.append(.event([0x3E, 0x1A, 0x02, 0x01, 0x00, 0x00, 0x5D, 0x0B, 0x46, 0xCD, 0x69, 0xC8, 0x0E, 0x02, 0x01, 0x1A, 0x0A, 0xFF, 0x4C, 0x00, 0x10, 0x05, 0x01, 0x10, 0xC3, 0x14, 0xDD, 0xCA]))
-        
-        // SEND  [200C] LE Set Scan Enable - 0x00, Filter duplicates: 1  0C 20 02 00 01
-        clientHostController.queue.append(
-            .command(HCILowEnergyCommand.setScanEnable.opcode,
-                     [0x0C, 0x20, 0x02, 0x00, 0x01])
-        )
-        
-        // Command Complete [200C] - LE Set Scan Enable  0E 04 01 0C 20 00
-        clientHostController.queue.append(.event([0x0E, 0x04, 0x01, 0x0C, 0x20, 0x00]))
+        let serverHostController = PeripheralHostController(address: .any)
+        let clientHostController = CentralHostController(address: .any)
         
         // peripheral
-        typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPSocket>
+        typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
         let options = TestPeripheral.Options(maximumTransmissionUnit: serverMTU, maximumPreparedWrites: .max)
         let peripheral = TestPeripheral(controller: serverHostController, options: options)
         
@@ -117,7 +70,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try peripheral.start())
         
         // central
-        typealias TestCentral = GATTCentral<TestHostController, TestL2CAPSocket>
+        typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
         let central = TestCentral(hostController: clientHostController, maximumTransmissionUnit: clientMTU)
         central.newConnection = { (report) in
             return clientSocket
