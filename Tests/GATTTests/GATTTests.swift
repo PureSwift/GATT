@@ -64,8 +64,17 @@ final class GATTTests: XCTestCase {
         let peripheral = TestPeripheral(controller: serverHostController, options: options)
         peripheral.log = { print("Peripheral:", $0) }
         
+        var incomingConnections = [(serverSocket, Central(identifier: serverSocket.address))]
+        
         peripheral.newConnection = {
-            return (serverSocket, Central(identifier: serverSocket.address))
+            
+            repeat {
+                if let newConnecion = incomingConnections.popFirst() {
+                    return newConnecion
+                } else {
+                    sleep(1)
+                }
+            } while true
         }
          
         XCTAssertNoThrow(try peripheral.start())
@@ -100,11 +109,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnectAll() }
         
-        sleep(2)
-        
-        //let expectation = self.expectation(description: "Async connection")
-        
-        //waitForExpectations(timeout: 2.0, handler: nil)
+        usleep(1000)
         
         XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
         XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
