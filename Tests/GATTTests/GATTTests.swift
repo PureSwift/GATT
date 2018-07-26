@@ -16,9 +16,8 @@ final class GATTTests: XCTestCase {
     
     static var allTests = [
         ("testMTUExchange", testMTUExchange),
-        /*
         ("testServiceDiscovery", testServiceDiscovery),
-        ("testReadValue", testReadValue)*/
+        //("testReadValue", testReadValue)
         ]
     
     func testMTUExchange() {
@@ -78,10 +77,12 @@ final class GATTTests: XCTestCase {
         }
          
         XCTAssertNoThrow(try peripheral.start())
+        defer { peripheral.stop() }
         
         // central
         typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
         let central = TestCentral(hostController: clientHostController, maximumTransmissionUnit: clientMTU)
+        central.log = { print("Central:", $0) }
         central.newConnection = { (report) in
             return clientSocket
         }
@@ -120,7 +121,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(serverSocket.cache, mockData.server)
         XCTAssertEqual(clientSocket.cache, mockData.client)
     }
-    /*
+    
     func testServiceDiscovery() {
         
         let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
@@ -184,22 +185,34 @@ final class GATTTests: XCTestCase {
              [0x01, 0x10, 0x05, 0x00, 0x0A])
         ]
         
-        // decode and validate bytes
-        test(testPDUs)
-        
         // setup sockets
         let serverSocket = TestL2CAPSocket(name: "Server")
         let clientSocket = TestL2CAPSocket(name: "Client")
         clientSocket.target = serverSocket
-        serverSocket.target = clientSocket // weak references
+        serverSocket.target = clientSocket
+        
+        // host controller
+        let serverHostController = PeripheralHostController(address: .any)
+        let clientHostController = CentralHostController(address: .any)
         
         // peripheral
-        let peripheral = TestPeripheral(socket: serverSocket,
-                                        options: TestPeripheral.Options(maximumTransmissionUnit: serverMTU,
-                                                                        maximumPreparedWrites: .max))
-        let server = peripheral.client.server
-        XCTAssertNoThrow(try peripheral.start())
-        defer { peripheral.stop() }
+        typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
+        let options = GATTPeripheralOptions(maximumTransmissionUnit: serverMTU, maximumPreparedWrites: .max)
+        let peripheral = TestPeripheral(controller: serverHostController, options: options)
+        peripheral.log = { print("Peripheral:", $0) }
+        
+        var incomingConnections = [(serverSocket, Central(identifier: serverSocket.address))]
+        
+        peripheral.newConnection = {
+            
+            repeat {
+                if let newConnecion = incomingConnections.popFirst() {
+                    return newConnecion
+                } else {
+                    sleep(1)
+                }
+            } while true
+        }
         
         // service
         let batteryLevel = GATTBatteryLevel(level: .min)
@@ -219,37 +232,44 @@ final class GATTTests: XCTestCase {
         let serviceAttribute = try! peripheral.add(service: service)
         defer { peripheral.remove(service: serviceAttribute) }
         
+        // start server
+        XCTAssertNoThrow(try peripheral.start())
+        defer { peripheral.stop() }
+        
         // central
-        let central = TestCentral(socket: clientSocket,
-                                  peripheral: peripheral,
-                                  maximumTransmissionUnit: clientMTU)
-        let client = central.client
-        
-        #if os(macOS)
-        let peripheralIdentifier = Peripheral(identifier: UUID())
-        #elseif os(Linux)
-        let peripheralIdentifier = Peripheral(identifier: .any)
-        #endif
-        
-        central.foundDevices = [
-            ScanData(date: Date(),
-                     peripheral: peripheralIdentifier,
-                     rssi: -50,
-                     advertisementData: AdvertisementData())
+        typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
+        let central = TestCentral(hostController: clientHostController, maximumTransmissionUnit: clientMTU)
+        central.log = { print("Central:", $0) }
+        central.newConnection = { (report) in
+            return clientSocket
+        }
+        central.hostController.scanEvents = [
+            /**
+             Jul 26 15:32:14.813  HCI Event        0x0000  12:3B:6A:1B:36:A8  LE Meta Event - LE Advertising Report - 0 - 12:3B:6A:1B:36:A8  -86 dBm - abeacon_36A8
+             Parameter Length: 26 (0x1A)
+             Num Reports: 0X01
+             Event Type: Scan Response (SCAN_RSP)
+             Address Type: Public
+             Peer Address: 12:3B:6A:1B:36:A8
+             Length Data: 0X0E
+             Local Name: abeacon_36A8
+             Data: 0D 09 61 62 65 61 63 6F 6E 5F 33 36 41 38
+             RSSI: -86 dBm
+             */
+            Data([/* 0x3E, 0x1A, */ 0x02, 0x01, 0x04, 0x00, 0xA8, 0x36, 0x1B, 0x6A, 0x3B, 0x12, 0x0E, 0x0D, 0x09, 0x61, 0x62, 0x65, 0x61, 0x63, 0x6F, 0x6E, 0x5F, 0x33, 0x36, 0x41, 0x38, 0xAA])
         ]
         
+        // scan for devices
         var foundDevices = [Peripheral]()
-        XCTAssertNoThrow(foundDevices = try central.scan(duration: 30).map { $0.peripheral })
+        XCTAssertNoThrow(foundDevices = try central.scan(duration: 0.001).map { $0.peripheral })
         
         guard let device = foundDevices.first
             else { XCTFail(); return }
         
         XCTAssertNoThrow(try central.connect(to: device))
+        defer { central.disconnectAll() }
         
-        XCTAssertEqual(client.maximumTransmissionUnit, finalMTU)
-        XCTAssertEqual(server.maximumTransmissionUnit, finalMTU)
-        
-        var services = [Service]()
+        var services = [Service<Peripheral>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
         
         guard let foundService = services.first,
@@ -259,6 +279,9 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(foundService.uuid, .batteryService)
         XCTAssertEqual(foundService.isPrimary, true)
         
+        XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
+        XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
+        
         // validate GATT PDUs
         let mockData = split(pdu: testPDUs.map { $0.1 })
         
@@ -266,6 +289,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(clientSocket.cache, mockData.client)
     }
     
+    /*
     func testReadValue() {
         
         let clientMTU = ATTMaximumTransmissionUnit(rawValue: 104)! // 0x0068
@@ -456,8 +480,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(foundCharacteristic.properties, [.read, .notify])
         
         
-    }
-    */
+    }*/
 }
 
 @available(OSX 10.12, *)

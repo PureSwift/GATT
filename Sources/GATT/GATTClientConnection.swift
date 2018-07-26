@@ -44,7 +44,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                                  maximumTransmissionUnit: maximumTransmissionUnit)
         
         // configure client
-        client.log = { [unowned self] in self.log?("[\(self.client)]: " + $0) }
+        client.log = { [unowned self] in self.log?("[\(peripheral)]: " + $0) }
         
         // run socket in background
         start()
