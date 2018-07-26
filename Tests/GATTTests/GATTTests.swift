@@ -17,7 +17,7 @@ final class GATTTests: XCTestCase {
     static var allTests = [
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
-        //("testReadValue", testReadValue)
+        ("testReadValue", testReadValue)
         ]
     
     func testMTUExchange() {
@@ -111,7 +111,6 @@ final class GATTTests: XCTestCase {
         defer { central.disconnectAll() }
         
         usleep(1000)
-        sleep(1)
         
         XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
         XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)

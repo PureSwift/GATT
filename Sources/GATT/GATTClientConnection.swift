@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Dispatch
 import Bluetooth
 
 @available(OSX 10.12, *)
