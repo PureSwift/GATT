@@ -185,6 +185,9 @@ final class GATTTests: XCTestCase {
              [0x01, 0x10, 0x05, 0x00, 0x0A])
         ]
         
+        // decode and validate bytes
+        test(testPDUs)
+        
         // setup sockets
         let serverSocket = TestL2CAPSocket(name: "Server")
         let clientSocket = TestL2CAPSocket(name: "Client")
@@ -264,10 +267,10 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(foundDevices = try central.scan(duration: 0.001).map { $0.peripheral })
         
         guard let device = foundDevices.first
-            else { XCTFail(); return }
+            else { XCTFail("No peripherals scanned"); return }
         
         XCTAssertNoThrow(try central.connect(to: device))
-        defer { central.disconnectAll() }
+        defer { central.disconnect(peripheral: device) }
         
         var services = [Service<Peripheral>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
