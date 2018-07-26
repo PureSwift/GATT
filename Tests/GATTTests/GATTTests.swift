@@ -62,6 +62,7 @@ final class GATTTests: XCTestCase {
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
         let options = GATTPeripheralOptions(maximumTransmissionUnit: serverMTU, maximumPreparedWrites: .max)
         let peripheral = TestPeripheral(controller: serverHostController, options: options)
+        peripheral.log = { print("Peripheral:", $0) }
         
         peripheral.newConnection = {
             return (serverSocket, Central(identifier: serverSocket.address))
@@ -88,7 +89,7 @@ final class GATTTests: XCTestCase {
              Data: 0D 09 61 62 65 61 63 6F 6E 5F 33 36 41 38 
              RSSI: -86 dBm
             */
-            Data([/* 0x3E, 0x1A, 0x02, */ 0x01, 0x04, 0x00, 0xA8, 0x36, 0x1B, 0x6A, 0x3B, 0x12, 0x0E, 0x0D, 0x09, 0x61, 0x62, 0x65, 0x61, 0x63, 0x6F, 0x6E, 0x5F, 0x33, 0x36, 0x41, 0x38, 0xAA])
+            Data([/* 0x3E, 0x1A, */ 0x02, 0x01, 0x04, 0x00, 0xA8, 0x36, 0x1B, 0x6A, 0x3B, 0x12, 0x0E, 0x0D, 0x09, 0x61, 0x62, 0x65, 0x61, 0x63, 0x6F, 0x6E, 0x5F, 0x33, 0x36, 0x41, 0x38, 0xAA])
         ]
         var foundDevices = [Peripheral]()
         XCTAssertNoThrow(foundDevices = try central.scan(duration: 0.001).map { $0.peripheral })
@@ -97,6 +98,13 @@ final class GATTTests: XCTestCase {
             else { XCTFail(); return }
         
         XCTAssertNoThrow(try central.connect(to: device))
+        defer { central.disconnectAll() }
+        
+        sleep(2)
+        
+        //let expectation = self.expectation(description: "Async connection")
+        
+        //waitForExpectations(timeout: 2.0, handler: nil)
         
         XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
         XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
