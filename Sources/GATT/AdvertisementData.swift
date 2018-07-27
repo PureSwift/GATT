@@ -24,7 +24,7 @@ public struct AdvertisementData: AdvertisementDataProtocol {
     
     public let data: Data
     
-    internal init(data: Data) {
+    public init(data: Data) {
         
         self.data = data
     }
@@ -76,7 +76,46 @@ public extension AdvertisementData {
     /// An array of service UUIDs
     public var serviceUUIDs: [BluetoothUUID] {
         
-        return []
+        let types: [GAPData.Type] = [
+            GAPCompleteListOf16BitServiceClassUUIDs.self,
+            GAPIncompleteListOf16BitServiceClassUUIDs.self,
+            GAPCompleteListOf32BitServiceClassUUIDs.self,
+            GAPIncompleteListOf32BitServiceClassUUIDs.self,
+            GAPCompleteListOf128BitServiceClassUUIDs.self,
+            GAPIncompleteListOf128BitServiceClassUUIDs.self
+        ]
+        
+        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true),
+            decoded.isEmpty == false
+            else { return [] }
+        
+        var uuids = [BluetoothUUID]()
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPCompleteListOf16BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit16($0) } })
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPIncompleteListOf16BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit16($0) } })
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPCompleteListOf32BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit32($0) } })
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPIncompleteListOf32BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit32($0) } })
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPCompleteListOf128BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID(uuid: $0) } })
+        
+        uuids += decoded
+            .flatMap { $0 as? GAPIncompleteListOf128BitServiceClassUUIDs }
+            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID(uuid: $0) } })
+        
+        return uuids
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
