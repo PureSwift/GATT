@@ -17,7 +17,8 @@ final class GATTTests: XCTestCase {
     static var allTests = [
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
-        ("testReadValue", testReadValue)
+        ("testCharacteristicValue", testCharacteristicValue),
+        ("testNotification", testNotification)
         ]
     
     func testMTUExchange() {
@@ -110,7 +111,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnectAll() }
         
-        usleep(1000)
+        sleep(1)
         
         XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
         XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
@@ -293,7 +294,7 @@ final class GATTTests: XCTestCase {
     }
     
     
-    func testReadValue() {
+    func testCharacteristicValue() {
         
         // setup sockets
         let serverSocket = TestL2CAPSocket(name: "Server")
@@ -325,14 +326,14 @@ final class GATTTests: XCTestCase {
         }
         
         // service
-        let batteryLevel = GATTBatteryLevel(level: .min)
+        let batteryLevel = GATTBatteryLevel(level: .max)
         
         let characteristics = [
             GATT.Characteristic(uuid: type(of: batteryLevel).uuid,
                                 value: batteryLevel.data,
-                                permissions: [.read],
-                                properties: [.read, .notify],
-                                descriptors: [GATTClientCharacteristicConfiguration().descriptor])
+                                permissions: [.read, .write],
+                                properties: [.read, .write],
+                                descriptors: [])
         ]
         
         let service = GATT.Service(uuid: .batteryService,
@@ -341,6 +342,8 @@ final class GATTTests: XCTestCase {
         
         let serviceAttribute = try! peripheral.add(service: service)
         defer { peripheral.remove(service: serviceAttribute) }
+        
+        let characteristicValueHandle = peripheral.characteristics(for: .batteryLevel)[0]
         
         // start server
         XCTAssertNoThrow(try peripheral.start())
@@ -385,8 +388,9 @@ final class GATTTests: XCTestCase {
             else { XCTFail(); return }
         
         XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
-        XCTAssertEqual(foundCharacteristic.properties, [.read, .notify])
+        XCTAssertEqual(foundCharacteristic.properties, [.read, .write])
         
+        // read value
         var characteristicData = Data()
         XCTAssertNoThrow(characteristicData = try central.readValue(for: foundCharacteristic))
         
@@ -394,6 +398,36 @@ final class GATTTests: XCTestCase {
             else { XCTFail(); return }
         
         XCTAssertEqual(characteristicValue, batteryLevel)
+        
+        // write value
+        let newValue = GATTBatteryLevel(level: .min)
+        
+        let didWriteExpectation = expectation(description: "Did Write")
+        
+        peripheral.willWrite = {
+            XCTAssertEqual($0.uuid, .batteryLevel)
+            XCTAssertEqual($0.value, batteryLevel.data)
+            XCTAssertEqual($0.newValue, newValue.data)
+            didWriteExpectation.fulfill()
+            return nil
+        }
+        
+        let willWriteExpectation = expectation(description: "Will Write")
+        
+        peripheral.didWrite = {
+            XCTAssertEqual($0.uuid, .batteryLevel)
+            XCTAssertEqual($0.value, newValue.data)
+            willWriteExpectation.fulfill()
+        }
+        
+        XCTAssertNoThrow(try central.writeValue(newValue.data, for: foundCharacteristic, withResponse: true))
+        
+        waitForExpectations(timeout: 1.0, handler: nil)
+        
+        XCTAssertEqual(peripheral[characteristic: characteristicValueHandle], newValue.data)
+        XCTAssertNotEqual(peripheral[characteristic: characteristicValueHandle], characteristicValue.data)
+        
+        
     }
     
     func testNotification() {
@@ -508,9 +542,11 @@ final class GATTTests: XCTestCase {
         // wait
         waitForExpectations(timeout: 2.0, handler: nil)
         
+        // validate notification
         XCTAssertEqual(peripheral[characteristic: characteristicValueHandle], newValue.data, "Value not updated on peripheral")
         XCTAssertEqual(notificationValue, newValue, "Notification not recieved")
         
+        // stop notifications
         XCTAssertNoThrow(try central.notify(nil, for: foundCharacteristic))
     }
 }
