@@ -18,7 +18,8 @@ final class GATTTests: XCTestCase {
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
         ("testCharacteristicValue", testCharacteristicValue),
-        ("testNotification", testNotification)
+        ("testNotification", testNotification),
+        ("testAdvertisingData", testAdvertisingData)
         ]
     
     func testMTUExchange() {
@@ -548,6 +549,47 @@ final class GATTTests: XCTestCase {
         
         // stop notifications
         XCTAssertNoThrow(try central.notify(nil, for: foundCharacteristic))
+    }
+    
+    func testAdvertisingData() {
+        
+        do {
+            
+            let scanEvents = [
+                /**
+                 12:3B:6A:1B:36:A8  LE Meta Event - LE Advertising Report - 0 - 12:3B:6A:1B:36:A8  -86 dBm - abeacon_36A8
+                 Parameter Length: 26 (0x1A)
+                 Num Reports: 0X01
+                 Event Type: Scan Response (SCAN_RSP)
+                 Address Type: Public
+                 Peer Address: 12:3B:6A:1B:36:A8
+                 Length Data: 0X0E
+                 Local Name: abeacon_36A8
+                 Data: 0D 09 61 62 65 61 63 6F 6E 5F 33 36 41 38
+                 RSSI: -86 dBm
+                 */
+                Data([/* 0x3E, 0x1A, */ 0x02, 0x01, 0x04, 0x00, 0xA8, 0x36, 0x1B, 0x6A, 0x3B, 0x12, 0x0E, 0x0D, 0x09, 0x61, 0x62, 0x65, 0x61, 0x63, 0x6F, 0x6E, 0x5F, 0x33, 0x36, 0x41, 0x38, 0xAA])
+            ]
+            
+            
+            // central
+            typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
+            let central = TestCentral(hostController: CentralHostController(address: .any))
+            central.log = { print("Central:", $0) }
+            central.hostController.scanEvents = scanEvents
+            
+            // scan for devices
+            var scanResults = [ScanData<Peripheral, AdvertisementData>]()
+            XCTAssertNoThrow(scanResults = try central.scan(duration: 0.1))
+            
+            guard let scanData = scanResults.first
+                else { XCTFail("No peripherals scanned"); return }
+            
+            XCTAssertEqual(scanData.rssi, -86)
+            XCTAssertEqual(scanData.peripheral.identifier.rawValue, "12:3B:6A:1B:36:A8")
+            XCTAssertEqual(scanData.advertisementData.localName, "abeacon_36A8")
+            XCTAssertEqual(scanData.advertisementData.serviceUUIDs, [.bit16(0xFEF5)])
+        }
     }
 }
 
