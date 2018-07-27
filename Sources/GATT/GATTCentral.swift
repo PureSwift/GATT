@@ -88,9 +88,9 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                                               socket: socket,
                                               maximumTransmissionUnit: maximumTransmissionUnit)
         
-        connection.log = { [weak self] in self?.log?($0) }
+        connection.callback.log = { [weak self] in self?.log?($0) }
         
-        connection.error = { [weak self] _ in
+        connection.callback.didDisconnect = { [weak self] _ in
             self?.disconnect(peripheral: peripheral)
         }
         

@@ -21,8 +21,7 @@ public func XCTAssertNoThrow<T>(_ expression: @autoclosure () throws -> T,
     do { let _ = try expression() }
         
     catch {
-        print("threw error \"\(error)\"")
-        XCTFail(message(), file: file, line: line)
+        XCTFail("threw error \"\(error)\"" + message(), file: file, line: line)
     }
 }
 #endif

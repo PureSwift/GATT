@@ -71,6 +71,11 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     /// Reads from the socket.
     func recieve(_ bufferSize: Int) throws -> Data {
         
+        while self.receivedData.isEmpty {
+            
+            usleep(10)
+        }
+        
         let data = Data(receivedData.prefix(bufferSize))
         
         // slice buffer
