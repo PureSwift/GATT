@@ -102,6 +102,10 @@
 		6EA5D2152107E271009998FD /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B32107E259009998FD /* TimeInterval.swift */; };
 		6EA5D2162107E271009998FD /* Peer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B42107E259009998FD /* Peer.swift */; };
 		6EA5D2172107E271009998FD /* GATTClientConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1B52107E259009998FD /* GATTClientConnection.swift */; };
+		6EC89FEB211231CD007D7BBB /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC89FEA211231CD007D7BBB /* Array.swift */; };
+		6EC89FEC211231CD007D7BBB /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC89FEA211231CD007D7BBB /* Array.swift */; };
+		6EC89FED211231CD007D7BBB /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC89FEA211231CD007D7BBB /* Array.swift */; };
+		6EC89FEE211231CD007D7BBB /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC89FEA211231CD007D7BBB /* Array.swift */; };
 		6EE84D881CAF419D00A40C4D /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EE910351FDE5C17007AD3EA /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EF45FCA1CC6D355001F7A39 /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -183,6 +187,7 @@
 		6EA5D1BC2107E259009998FD /* DarwinAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinAttributes.swift; sourceTree = "<group>"; };
 		6EA5D1BD2107E259009998FD /* DarwinAdvertisementData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinAdvertisementData.swift; sourceTree = "<group>"; };
 		6EA5D1BE2107E259009998FD /* DarwinBluetoothState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinBluetoothState.swift; sourceTree = "<group>"; };
+		6EC89FEA211231CD007D7BBB /* Array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
 		6EE84D841CAF419D00A40C4D /* GATT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GATT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EE84D871CAF419D00A40C4D /* GATT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GATT.h; sourceTree = "<group>"; };
 		6EE84D891CAF419D00A40C4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -309,19 +314,20 @@
 		6EA5D1A82107E259009998FD /* GATT */ = {
 			isa = PBXGroup;
 			children = (
-				6EA5D1A92107E259009998FD /* GATTPeripheral.swift */,
-				6EA5D1AA2107E259009998FD /* CentralError.swift */,
-				6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */,
-				6EA5D1AC2107E259009998FD /* Peripheral.swift */,
-				6EA5D1AD2107E259009998FD /* ScanData.swift */,
-				6EA5D1AE2107E259009998FD /* Central.swift */,
 				6EA5D1AF2107E259009998FD /* AdvertisementData.swift */,
-				6EA5D1B02107E259009998FD /* GATTCentral.swift */,
+				6EA5D1AE2107E259009998FD /* Central.swift */,
+				6EA5D1AA2107E259009998FD /* CentralError.swift */,
 				6EA5D1B12107E259009998FD /* CentralProtocol.swift */,
-				6EA5D1B22107E259009998FD /* GATTServerConnection.swift */,
-				6EA5D1B32107E259009998FD /* TimeInterval.swift */,
 				6EA5D1B42107E259009998FD /* Peer.swift */,
+				6EA5D1AC2107E259009998FD /* Peripheral.swift */,
+				6EA5D1AB2107E259009998FD /* PeripheralProtocol.swift */,
+				6EA5D1AD2107E259009998FD /* ScanData.swift */,
+				6EA5D1B32107E259009998FD /* TimeInterval.swift */,
+				6EA5D1B02107E259009998FD /* GATTCentral.swift */,
 				6EA5D1B52107E259009998FD /* GATTClientConnection.swift */,
+				6EA5D1A92107E259009998FD /* GATTPeripheral.swift */,
+				6EA5D1B22107E259009998FD /* GATTServerConnection.swift */,
+				6EC89FEA211231CD007D7BBB /* Array.swift */,
 			);
 			path = GATT;
 			sourceTree = "<group>";
@@ -776,6 +782,7 @@
 				6EA5D1EB2107E270009998FD /* GATTCentral.swift in Sources */,
 				6EA5D1E82107E270009998FD /* ScanData.swift in Sources */,
 				6EA5D1ED2107E270009998FD /* GATTServerConnection.swift in Sources */,
+				6EC89FEE211231CD007D7BBB /* Array.swift in Sources */,
 				6EA5D1EF2107E270009998FD /* Peer.swift in Sources */,
 				6EA5D1F02107E270009998FD /* GATTClientConnection.swift in Sources */,
 				6EA5D1E92107E270009998FD /* Central.swift in Sources */,
@@ -856,6 +863,7 @@
 				6EA5D2122107E271009998FD /* GATTCentral.swift in Sources */,
 				6EA5D20F2107E271009998FD /* ScanData.swift in Sources */,
 				6EA5D2142107E271009998FD /* GATTServerConnection.swift in Sources */,
+				6EC89FEB211231CD007D7BBB /* Array.swift in Sources */,
 				6EA5D2162107E271009998FD /* Peer.swift in Sources */,
 				6EA5D2172107E271009998FD /* GATTClientConnection.swift in Sources */,
 				6EA5D2102107E271009998FD /* Central.swift in Sources */,
@@ -876,6 +884,7 @@
 				6EA5D1F82107E270009998FD /* GATTCentral.swift in Sources */,
 				6EA5D1F52107E270009998FD /* ScanData.swift in Sources */,
 				6EA5D1FA2107E270009998FD /* GATTServerConnection.swift in Sources */,
+				6EC89FED211231CD007D7BBB /* Array.swift in Sources */,
 				6EA5D1FC2107E270009998FD /* Peer.swift in Sources */,
 				6EA5D1FD2107E270009998FD /* GATTClientConnection.swift in Sources */,
 				6EA5D1F62107E270009998FD /* Central.swift in Sources */,
@@ -896,6 +905,7 @@
 				6EA5D2052107E271009998FD /* GATTCentral.swift in Sources */,
 				6EA5D2022107E271009998FD /* ScanData.swift in Sources */,
 				6EA5D2072107E271009998FD /* GATTServerConnection.swift in Sources */,
+				6EC89FEC211231CD007D7BBB /* Array.swift in Sources */,
 				6EA5D2092107E271009998FD /* Peer.swift in Sources */,
 				6EA5D20A2107E271009998FD /* GATTClientConnection.swift in Sources */,
 				6EA5D2032107E271009998FD /* Central.swift in Sources */,
