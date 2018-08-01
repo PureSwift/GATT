@@ -10,8 +10,7 @@ import Foundation
 import Dispatch
 import Bluetooth
 
-@available(iOS 10.0, *)
-@available(OSX 10.12, *)
+@available(OSX 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
     public typealias Advertisement = AdvertisementData
