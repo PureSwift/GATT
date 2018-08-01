@@ -650,10 +650,10 @@ public extension DarwinCentral {
         
         public let showPowerAlert: Bool
         
-        public let restoreIdentifier: String
+        public let restoreIdentifier: String?
         
         public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinCentral") {
+                    restoreIdentifier: String? = nil) {
             
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
