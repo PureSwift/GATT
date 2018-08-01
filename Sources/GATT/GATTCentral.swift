@@ -10,6 +10,7 @@ import Foundation
 import Dispatch
 import Bluetooth
 
+@available(iOS 10.0, *)
 @available(OSX 10.12, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
