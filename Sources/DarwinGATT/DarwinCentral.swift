@@ -404,13 +404,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         stateChanged(state)
     }
     
-    @objc
-    public func centralManager(_ central: CBCentralManager, willRestoreState options: [String : Any]) {
-        
-        log?("Will restore state \(options)")
-        
-    }
-    
     @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
     public func centralManager(_ central: CBCentralManager,
                                didDiscover peripheral: CBPeripheral,
