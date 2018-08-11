@@ -384,6 +384,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             
             let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
             
+            assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
+            
             return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
             
         } else {
