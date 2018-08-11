@@ -15,7 +15,7 @@ public struct Peripheral: Peer {
     
     public let identifier: Bluetooth.Address
     
-    internal init(identifier: Bluetooth.Address) {
+    public init(identifier: Bluetooth.Address) {
         
         self.identifier = identifier
     }
