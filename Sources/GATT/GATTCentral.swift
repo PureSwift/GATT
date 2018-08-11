@@ -148,6 +148,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             .notify(notification, for: characteristic, timeout: timeout)
     }
     
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
+        
+        return try connection(for: peripheral).client.maximumTransmissionUnit
+    }
+    
     // MARK: - Private Methods
     
     private func newConnectionID() -> Int {

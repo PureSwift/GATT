@@ -50,6 +50,8 @@ public protocol CentralProtocol: class {
     func notify(_ notification: ((Data) -> ())?,
                 for characteristic: Characteristic<Peripheral>,
                 timeout: TimeInterval) throws
+    
+    func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit 
 }
 
 public extension CentralProtocol {

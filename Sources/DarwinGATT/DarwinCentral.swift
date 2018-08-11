@@ -343,9 +343,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             try self.connectedPeripheral(characteristic.peripheral)
         }
         
-        guard corePeripheral.state == .connected
-            else { throw CentralError.disconnected }
-        
         let coreCharacteristic: CBCharacteristic = try self.accessQueue.sync { [unowned self] in
             
             guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]?.attribute
@@ -371,6 +368,27 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             var cache = self.internalState.cache[characteristic.peripheral] ?? Cache()
             cache.characteristics.values[characteristic.identifier] = (coreCharacteristic, notification)
             self.internalState.cache[characteristic.peripheral] = cache
+        }
+    }
+    
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
+        
+        guard state == .poweredOn
+            else { throw DarwinCentralError.invalidState(state) }
+        
+        let corePeripheral = try accessQueue.sync { [unowned self] in
+            try self.connectedPeripheral(peripheral)
+        }
+        
+        if #available(iOS 9.0, macOS 10.12, *) {
+            
+            let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
+            
+            return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
+            
+        } else {
+            
+            return .default
         }
     }
     
