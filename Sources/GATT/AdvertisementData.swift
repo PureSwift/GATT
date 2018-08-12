@@ -12,11 +12,27 @@ import Bluetooth
 /// GATT Advertisement Data.
 public protocol AdvertisementDataProtocol: Equatable {
     
+    /// The local name of a peripheral.
     var localName: String? { get }
     
+    /// The Manufacturer data of a peripheral.
     var manufacturerData: Data? { get }
     
+    /// A Boolean value that indicates whether the advertising event type is connectable.
     var isConnectable: Bool? { get }
+    
+    /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
+    /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
+    var txPowerLevel: Double? { get }
+    
+    /// Service-specific advertisement data.
+    var serviceData: [BluetoothUUID: Data] { get }
+    
+    /// An array of service UUIDs
+    var serviceUUIDs: [BluetoothUUID] { get }
+    
+    /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
+    var solicitedServiceUUIDs: [BluetoothUUID] { get }
 }
 
 
@@ -116,13 +132,6 @@ public extension AdvertisementData {
             .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID(uuid: $0) } })
         
         return uuids
-    }
-    
-    /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
-    /// in the “overflow” area of the advertisement data.
-    public var overflowServiceUUIDs: [BluetoothUUID] {
-        
-        return []
     }
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
