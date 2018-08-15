@@ -158,6 +158,7 @@ internal extension LowEnergyAdvertisingData {
             else { return nil }
         
         var uuids = [BluetoothUUID]()
+        uuids.reserveCapacity(decoded.count)
         
         uuids += decoded
             .flatMap { $0 as? GAPCompleteListOf16BitServiceClassUUIDs }
@@ -217,18 +218,16 @@ internal extension LowEnergyAdvertisingData {
             else { return nil }
         
         var uuids = [BluetoothUUID]()
+        uuids.reserveCapacity(decoded.count)
         
-        uuids += decoded
-            .flatMap { $0 as? GAPListOf16BitServiceSolicitationUUIDs }
-            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit16($0) } })
+        decoded.flatMap { $0 as? GAPListOf16BitServiceSolicitationUUIDs }
+            .forEach { $0.uuids.forEach { uuids.append(.bit16($0)) } }
         
-        uuids += decoded
-            .flatMap { $0 as? GAPListOf32BitServiceSolicitationUUIDs }
-            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit32($0) } })
+        decoded.flatMap { $0 as? GAPListOf32BitServiceSolicitationUUIDs }
+            .forEach { $0.uuids.forEach { uuids.append(.bit32($0)) } }
         
-        uuids += decoded
-            .flatMap { $0 as? GAPListOf128BitServiceSolicitationUUIDs }
-            .reduce([BluetoothUUID](), { $0.0 + $0.1.uuids.map { BluetoothUUID.bit128($0) } })
+        decoded.flatMap { $0 as? GAPListOf128BitServiceSolicitationUUIDs }
+            .forEach { $0.uuids.forEach { uuids.append(.bit128(UInt128(uuid: $0))) } }
         
         return uuids
     }
