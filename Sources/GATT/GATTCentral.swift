@@ -44,17 +44,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         self.log?("Scanning...")
         
-        let scanParameters = HCILESetScanParameters(type: .active,
-                                                    interval: .max,
-                                                    window: .max,
-                                                    addressType: .public,
-                                                    filterPolicy: .accept)
-        
-        let scanType = scanParameters.type
+        let scanType = options.scanParameters.type
         
         var scanResults = [Peripheral: AdvertisementData]()
         
-        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: scanParameters, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
+        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
             
             let peripheral = Peripheral(identifier: report.address)
             
