@@ -32,7 +32,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     private var lastConnectionID = 0
     
     public init(hostController: HostController,
-                options: GATTCentralOptions) {
+                options: GATTCentralOptions = GATTCentralOptions()) {
         
         self.hostController = hostController
         self.options = options

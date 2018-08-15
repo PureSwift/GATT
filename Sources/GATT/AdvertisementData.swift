@@ -138,7 +138,29 @@ internal extension LowEnergyAdvertisingData {
     /// Service-specific advertisement data.
     internal var serviceData: [BluetoothUUID: Data]? {
         
-        return [:] // FIXME: Implement service data parsing
+        let types: [GAPData.Type] = [
+            GAPServiceData16BitUUID.self,
+            GAPServiceData32BitUUID.self,
+            GAPServiceData128BitUUID.self
+        ]
+        
+        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true),
+            decoded.isEmpty == false
+            else { return nil }
+        
+        var serviceData = [BluetoothUUID: Data]()
+        serviceData.reserveCapacity(decoded.count)
+        
+        decoded.flatMap { $0 as? GAPServiceData16BitUUID }
+            .forEach { serviceData[.bit16($0.uuid)] = $0.serviceData }
+        
+        decoded.flatMap { $0 as? GAPServiceData32BitUUID }
+            .forEach { serviceData[.bit32($0.uuid)] = $0.serviceData }
+        
+        decoded.flatMap { $0 as? GAPServiceData128BitUUID }
+            .forEach { serviceData[.bit128(UInt128(uuid: $0.uuid))] = $0.serviceData }
+        
+        return serviceData
     }
     
     /// An array of service UUIDs
