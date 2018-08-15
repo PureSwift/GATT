@@ -15,6 +15,7 @@ import Bluetooth
 final class GATTTests: XCTestCase {
     
     static var allTests = [
+        ("testScanData", testScanData),
         ("testAdverisementData", testAdverisementData),
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
@@ -22,6 +23,35 @@ final class GATTTests: XCTestCase {
         ("testNotification", testNotification),
         ("testAdvertisingData", testAdvertisingData)
         ]
+    
+    func testScanData() {
+        
+        do {
+            
+            /**
+             RECV  LE Meta Event - LE Advertising Report - 0 - 58:E2:8F:7C:0B:B3  -45 dBm - Proximity
+             
+             Parameter Length: 34 (0x22)
+             Num Reports: 0X01
+             Event Type: Connectable undirected advertising (ADV_IND)
+             Address Type: Public
+             Peer Address: 58:E2:8F:7C:0B:B3
+             Length Data: 0X16
+             Flags: 0X1A
+             16 bit UUIDs: 0X1803 0X1804 0X1802
+             Local Name: Proximity
+             Data: 02 01 1A 07 03 03 18 04 18 02 18 0A 09 50 72 6F 78 69 6D 69 74 79
+             RSSI: -45 dBm
+             */
+            
+            let data = Data([0x3E, 0x22, 0x02, 0x01, 0x00, 0x00, 0xB3, 0x0B, 0x7C, 0x8F, 0xE2, 0x58, 0x16, 0x02, 0x01, 0x1A, 0x07, 0x03, 0x03, 0x18, 0x04, 0x18, 0x02, 0x18, 0x0A, 0x09, 0x50, 0x72, 0x6F, 0x78, 0x69, 0x6D, 0x69, 0x74, 0x79, 0xD3])
+            
+            guard let report = HCILEAdvertisingReport(data: data)
+                else { XCTFail("Could not parse HCI event"); return }
+            
+            
+        }
+    }
     
     func testAdverisementData() {
         
