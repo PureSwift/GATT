@@ -19,17 +19,17 @@ public struct DarwinAdvertisementData: AdvertisementDataProtocol {
     public let localName: String?
     
     /// The Manufacturer data of a peripheral.
-    public let manufacturerData: Data?
+    public let manufacturerData: GAPManufacturerSpecificData?
     
     /// Service-specific advertisement data.
-    public let serviceData: [BluetoothUUID: Data]
+    public let serviceData: [BluetoothUUID: Data]?
     
     /// An array of service UUIDs
-    public let serviceUUIDs: [BluetoothUUID]
+    public let serviceUUIDs: [BluetoothUUID]?
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
     /// in the “overflow” area of the advertisement data.
-    public let overflowServiceUUIDs: [BluetoothUUID]
+    public let overflowServiceUUIDs: [BluetoothUUID]?
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
@@ -39,7 +39,7 @@ public struct DarwinAdvertisementData: AdvertisementDataProtocol {
     public let isConnectable: Bool?
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    public let solicitedServiceUUIDs: [BluetoothUUID]
+    public let solicitedServiceUUIDs: [BluetoothUUID]?
 }
 
 // MARK: - Equatable
@@ -67,7 +67,15 @@ internal extension DarwinAdvertisementData {
         
         self.localName = coreBluetooth[CBAdvertisementDataLocalNameKey] as? String
         
-        self.manufacturerData = coreBluetooth[CBAdvertisementDataManufacturerDataKey] as? Data
+        if let manufacturerDataBytes = coreBluetooth[CBAdvertisementDataManufacturerDataKey] as? Data,
+            let manufacturerData = GAPManufacturerSpecificData(data: manufacturerDataBytes) {
+            
+            self.manufacturerData = manufacturerData
+            
+        } else {
+            
+            self.manufacturerData = nil
+        }
         
         if let coreBluetoothServiceData = coreBluetooth[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] {
             
@@ -84,18 +92,18 @@ internal extension DarwinAdvertisementData {
             
         } else {
             
-            self.serviceData = [:]
+            self.serviceData = nil
         }
         
-        self.serviceUUIDs = (coreBluetooth[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        self.serviceUUIDs = (coreBluetooth[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
         
-        self.overflowServiceUUIDs = (coreBluetooth[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        self.overflowServiceUUIDs = (coreBluetooth[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
         
         self.txPowerLevel = (coreBluetooth[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.doubleValue
         
         self.isConnectable = (coreBluetooth[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
         
-        self.solicitedServiceUUIDs = (coreBluetooth[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        self.solicitedServiceUUIDs = (coreBluetooth[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
     }
 }
 
