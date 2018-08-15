@@ -96,10 +96,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                 assert(scanType == .active, "Cannot recieve scan response in \(scanType) scanning mode")
                 
                 // get previous advertisement
-                guard var advertisementData = scanResults[peripheral]
+                guard let advertisement = scanResults[peripheral]?.advertisement
                     else { self.log?("[\(peripheral)]: Missing previous advertisement for scan response"); return }
                 
-                advertisementData.scanResponse = responseData
+                let advertisementData = AdvertisementData(advertisement: advertisement,
+                                                          scanResponse: responseData)
                 
                 let scanData = ScanData(peripheral: peripheral,
                                         date: Date(),
@@ -123,7 +124,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         guard let newConnection = self.newConnection
             else { return }
         
-        let socket = try async(timeout: timeout) { try newConnection(report) }
+        let socket = try async(timeout: timeout) { try newConnection(scanData) }
         
         /**
         try L2CAPSocket.lowEnergyClient(
@@ -136,7 +137,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         // keep connection open and store for future use
         let connection = GATTClientConnection(peripheral: peripheral,
                                               socket: socket,
-                                              maximumTransmissionUnit: maximumTransmissionUnit)
+                                              maximumTransmissionUnit: options.maximumTransmissionUnit)
         
         connection.callback.log = { [weak self] in self?.log?($0) }
         
@@ -261,7 +262,7 @@ public struct GATTCentralOptions {
     internal static let defaultScanParameters = HCILESetScanParameters(
         type: .active,
         interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
-        window: LowEnergyScanTimeInterval(rawValue: 0x0030),
+        window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
         addressType: .public,
         filterPolicy: .accept
     )
@@ -271,9 +272,10 @@ public struct GATTCentralOptions {
     public let scanParameters: HCILESetScanParameters
     
     public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
-                scanParameters: HCILESetScanParameters = Options.defaultScanParameters) {
+                scanParameters: HCILESetScanParameters = GATTCentralOptions.defaultScanParameters) {
         
         self.maximumTransmissionUnit = maximumTransmissionUnit
+        self.scanParameters = scanParameters
     }
 }
 
