@@ -159,15 +159,15 @@ final class CentralHostController: BluetoothHostControllerInterface {
         
         var events = self.advertisingReports
         
-        while shouldContinue(), let eventBuffer = events.popFirst() {
-            
+        while let eventBuffer = events.popFirst() {
+                        
             let actualBytesRead = eventBuffer.count
             let eventHeader = HCIEventHeader(data: Data(eventBuffer[0 ..< HCIEventHeader.length]))
             let eventData = Data(eventBuffer[HCIEventHeader.length ..< actualBytesRead])
             
             guard let eventParameter = EP.init(data: eventData)
                 else { throw BluetoothHostControllerError.garbageResponse(Data(eventData)) }
-            
+                        
             assert(eventHeader?.event.rawValue == EP.event.rawValue)
             
             try eventCallback(eventParameter)
