@@ -148,8 +148,7 @@ internal extension LowEnergyAdvertisingData {
             decoded.isEmpty == false
             else { return nil }
         
-        var serviceData = [BluetoothUUID: Data]()
-        serviceData.reserveCapacity(decoded.count)
+        var serviceData = [BluetoothUUID: Data](minimumCapacity: decoded.count)
         
         decoded.flatMap { $0 as? GAPServiceData16BitUUID }
             .forEach { serviceData[.bit16($0.uuid)] = $0.serviceData }

@@ -48,12 +48,20 @@ internal extension LowEnergyAdvertisingData {
             else { return nil }
         
         // determine length based on last zero
-        var data = data
-        while data.last == 0 {
+        var index = data.count - 1
+        
+        while index >= 0, data[index] == 0 {
             
-            data = data.dropLast()
+            index -= 1
         }
         
-        self.init(data: data)
+        if index > 0 {
+            
+            self.init(data: data.subdata(in: 0 ..< index + 1))
+            
+        } else {
+            
+            self.init(data: Data())
+        }
     }
 }
