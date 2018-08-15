@@ -29,27 +29,37 @@ final class GATTTests: XCTestCase {
         do {
             
             /**
-             RECV  LE Meta Event - LE Advertising Report - 0 - 58:E2:8F:7C:0B:B3  -45 dBm - Proximity
+             HCI Event RECV  0x0000  94:E3:6D:62:1E:01  LE Meta Event - LE Advertising Report - 0 - 94:E3:6D:62:1E:01  -65 dBm - Type 2
              
-             Parameter Length: 34 (0x22)
+             Parameter Length: 42 (0x2A)
              Num Reports: 0X01
              Event Type: Connectable undirected advertising (ADV_IND)
              Address Type: Public
-             Peer Address: 58:E2:8F:7C:0B:B3
-             Length Data: 0X16
-             Flags: 0X1A
-             16 bit UUIDs: 0X1803 0X1804 0X1802
-             Local Name: Proximity
-             Data: 02 01 1A 07 03 03 18 04 18 02 18 0A 09 50 72 6F 78 69 6D 69 74 79
-             RSSI: -45 dBm
+             Peer Address: 94:E3:6D:62:1E:01
+             Length Data: 0X1E
+             Flags: 0X06
+             Apple Manufacturing Data
+             Length: 26 (0x1A)
+             Data: 02 01 06 1A FF 4C 00 02 15 FD A5 06 93 A4 E2 4F B1 AF CF C6 EB 07 64 78 25 27 12 0B 86 BE
+             RSSI: -65 dBm
              */
             
-            let data = Data([0x3E, 0x22, 0x02, 0x01, 0x00, 0x00, 0xB3, 0x0B, 0x7C, 0x8F, 0xE2, 0x58, 0x16, 0x02, 0x01, 0x1A, 0x07, 0x03, 0x03, 0x18, 0x04, 0x18, 0x02, 0x18, 0x0A, 0x09, 0x50, 0x72, 0x6F, 0x78, 0x69, 0x6D, 0x69, 0x74, 0x79, 0xD3])
+            let data = Data([/* 0x3E, 0x2A, 0x02, */ 0x01, 0x00, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1E, 0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02, 0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25, 0x27, 0x12, 0x0B, 0x86, 0xBE, 0xBF])
             
-            guard let report = HCILEAdvertisingReport(data: data)
+            guard let advertisingReports = HCILEAdvertisingReport(data: data),
+                let report = advertisingReports.reports.first
                 else { XCTFail("Could not parse HCI event"); return }
             
+            XCTAssertEqual(report.responseData.isConnectable, true)
             
+            let peripheral = Peripheral(identifier: Address(rawValue: "94:E3:6D:62:1E:01")!)
+            
+            let scanData = ScanData(peripheral: peripheral,
+                                    date: Date(),
+                                    rssi: -65.0,
+                                    advertisementData: AdvertisementData(advertisement: report.responseData))
+            
+            XCTAssertEqual(scanData.peripheral.identifier, report.address)
         }
     }
     
@@ -138,19 +148,7 @@ final class GATTTests: XCTestCase {
             return clientSocket
         }
         central.hostController.scanEvents = [
-            /**
-             Jul 26 15:32:14.813  HCI Event        0x0000  12:3B:6A:1B:36:A8  LE Meta Event - LE Advertising Report - 0 - 12:3B:6A:1B:36:A8  -86 dBm - abeacon_36A8
-             Parameter Length: 26 (0x1A)
-             Num Reports: 0X01
-             Event Type: Scan Response (SCAN_RSP)
-             Address Type: Public
-             Peer Address: 12:3B:6A:1B:36:A8
-             Length Data: 0X0E
-             Local Name: abeacon_36A8
-             Data: 0D 09 61 62 65 61 63 6F 6E 5F 33 36 41 38 
-             RSSI: -86 dBm
-            */
-            Data([/* 0x3E, 0x1A, */ 0x02, 0x01, 0x04, 0x00, 0xA8, 0x36, 0x1B, 0x6A, 0x3B, 0x12, 0x0E, 0x0D, 0x09, 0x61, 0x62, 0x65, 0x61, 0x63, 0x6F, 0x6E, 0x5F, 0x33, 0x36, 0x41, 0x38, 0xAA])
+            Data([/* 0x3E, 0x2A, */ 0x01, 0x00, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1E, 0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02, 0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25, 0x27, 0x12, 0x0B, 0x86, 0xBE, 0xBF])
         ]
         var foundDevices = [Peripheral]()
         XCTAssertNoThrow(foundDevices = try central.scan(duration: 0.001).map { $0.peripheral })

@@ -58,15 +58,12 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             
             let peripheral = Peripheral(identifier: report.address)
             
-            // parse advertisement data
-            let responseData = LowEnergyAdvertisingData(data: report.responseData) ?? LowEnergyAdvertisingData()
-            
             switch report.event {
                 
             // advertisement
             case .scannable, .directed, .undirected, .nonConnectable:
                 
-                let advertisementData = AdvertisementData(advertisement: responseData)
+                let advertisementData = AdvertisementData(advertisement: report.responseData)
                 
                 scanResults[peripheral] = advertisementData
                 
@@ -100,7 +97,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                     else { self.log?("[\(peripheral)]: Missing previous advertisement for scan response"); return }
                 
                 let advertisementData = AdvertisementData(advertisement: advertisement,
-                                                          scanResponse: responseData)
+                                                          scanResponse: report.responseData)
                 
                 let scanData = ScanData(peripheral: peripheral,
                                         date: Date(),
