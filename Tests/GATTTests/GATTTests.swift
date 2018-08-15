@@ -16,7 +16,7 @@ final class GATTTests: XCTestCase {
     
     static var allTests = [
         ("testScanData", testScanData),
-        ("testAdverisementData", testAdverisementData),
+        ("testAndroidAdverisementData", testAndroidAdverisementData),
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
         ("testCharacteristicValue", testCharacteristicValue),
@@ -51,18 +51,18 @@ final class GATTTests: XCTestCase {
             
             XCTAssertEqual(report.responseData.isConnectable, true)
             
-            let peripheral = Peripheral(identifier: Address(rawValue: "94:E3:6D:62:1E:01")!)
+            let peripheral = Peripheral(identifier: report.address)
             
             let scanData = ScanData(peripheral: peripheral,
                                     date: Date(),
                                     rssi: -65.0,
                                     advertisementData: AdvertisementData(advertisement: report.responseData))
             
-            XCTAssertEqual(scanData.peripheral.identifier, report.address)
+            XCTAssertEqual(scanData.peripheral.identifier.rawValue, "94:E3:6D:62:1E:01")
         }
     }
     
-    func testAdverisementData() {
+    func testAndroidAdverisementData() {
         
         do {
             
@@ -73,9 +73,10 @@ final class GATTTests: XCTestCase {
             
             let data = Data([30, 255, 201, 247, 96, 149, 116, 22, 75, 149, 132, 91, 112, 127, 199, 195, 16, 244, 138, 148, 29, 249, 106, 239, 32, 229, 249, 20, 175, 152, 151, 11, 8, 80, 84, 65, 67, 255, 255, 255, 255, 255, 255, 5, 255, 4, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
             
-            //let advertisementData = AdvertisementData(data: data)
+            guard let advertisementData = AdvertisementData(android: data)
+                else { XCTFail("Could not parse"); return }
             
-            //XCTAssertNil(advertisementData.localName)
+            XCTAssertEqual(advertisementData.manufacturerData?.companyIdentifier, .apple)
         }
     }
     
