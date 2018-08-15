@@ -38,11 +38,15 @@ public protocol AdvertisementDataProtocol: Equatable {
 
 public struct AdvertisementData: AdvertisementDataProtocol {
     
-    public let data: Data
+    public let advertisement: LowEnergyAdvertisingData
     
-    public init(data: Data) {
+    public var scanResponse: LowEnergyAdvertisingData?
+    
+    public init(advertisement: LowEnergyAdvertisingData,
+                scanResponse: LowEnergyAdvertisingData? = nil) {
         
-        self.data = data
+        self.advertisement = advertisement
+        self.scanResponse = scanResponse
     }
 }
 
@@ -50,7 +54,8 @@ extension AdvertisementData: Equatable {
     
     public static func == (lhs: AdvertisementData, rhs: AdvertisementData) -> Bool {
         
-        return lhs.data == rhs.data
+        return lhs.advertisment == rhs.advertisment
+            && lhs.scanResponse == rhs.scanResponse
     }
 }
 
@@ -66,13 +71,20 @@ public extension AdvertisementData {
             GAPShortLocalName.self
         ]
         
-        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true)
-            else { return nil }
+        for data in [advertisment, scanResponse].flatMap({ $0?.data }) {
+            
+            guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true)
+                else { continue }
+            
+            guard let name = decoded.flatMap({ $0 as? GAPCompleteLocalName }).first?.name
+                ?? decoded.flatMap({ $0 as? GAPShortLocalName }).first?.name
+                else { continue }
+            
+            return name
+        }
         
-        let completeNames = decoded.flatMap { $0 as? GAPCompleteLocalName }
-        let shortNames = decoded.flatMap { $0 as? GAPShortLocalName }
-        
-        return completeNames.first?.name ?? shortNames.first?.name
+        // not found
+        return nil
     }
     
     /// The Manufacturer data of a peripheral.

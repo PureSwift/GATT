@@ -211,7 +211,7 @@ public struct GATTPeripheralOptions {
     
     public let maximumPreparedWrites: Int
     
-    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default,
+    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
                 maximumPreparedWrites: Int = 100) {
         
         self.maximumTransmissionUnit = maximumTransmissionUnit

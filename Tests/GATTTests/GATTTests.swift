@@ -22,6 +22,23 @@ final class GATTTests: XCTestCase {
         ("testAdvertisingData", testAdvertisingData)
         ]
     
+    func testAdverisementData() {
+        
+        do {
+            
+            /**
+             08-14 22:04:08.760 17447-17447/com.jmarkstar.swiftdemo W/Swift: AdvertisementData(data: 62 bytes) localName
+             08-14 22:04:08.761 17447-17447/com.jmarkstar.swiftdemo W/Swift: [30, 255, 201, 247, 96, 149, 116, 22, 75, 149, 132, 91, 112, 127, 199, 195, 16, 244, 138, 148, 29, 249, 106, 239, 32, 229, 249, 20, 175, 152, 151, 11, 8, 80, 84, 65, 67, 255, 255, 255, 255, 255, 255, 5, 255, 4, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+             */
+            
+            let data = Data([30, 255, 201, 247, 96, 149, 116, 22, 75, 149, 132, 91, 112, 127, 199, 195, 16, 244, 138, 148, 29, 249, 106, 239, 32, 229, 249, 20, 175, 152, 151, 11, 8, 80, 84, 65, 67, 255, 255, 255, 255, 255, 255, 5, 255, 4, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+            
+            let advertisementData = AdvertisementData(data: data)
+            
+            XCTAssertNil(advertisementData.localName)
+        }
+    }
+    
     func testMTUExchange() {
         
         /**
