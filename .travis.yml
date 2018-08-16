@@ -28,13 +28,11 @@ env:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$(pwd)/tests/$SWIFT_VERSION-ubuntu14.04/usr/bin:"${PATH}" ; fi
   # Compile with SPM
-  - swift build
+  - swift test
   # Compile with Xcode
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then carthage bootstrap ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cd Xcode ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme GATT-macOS | xcpretty && exit ${PIPESTATUS[0]} ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme GATT-iOS | xcpretty && exit ${PIPESTATUS[0]} ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme GATT-watchOS | xcpretty && exit ${PIPESTATUS[0]} ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme GATT-tvOS | xcpretty && exit ${PIPESTATUS[0]} ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme PeripheralUnitTestsClient | xcpretty && exit ${PIPESTATUS[0]} ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme PeripheralUnitTestsServer | xcpretty && exit ${PIPESTATUS[0]} ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean test -scheme DarwinGATT-macOS ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme DarwinGATT-iOS ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme DarwinGATT-watchOS ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then xcodebuild clean build -scheme DarwinGATT-tvOS ; fi
