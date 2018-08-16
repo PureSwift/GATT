@@ -77,8 +77,8 @@ final class GATTTests: XCTestCase {
             guard let advertisementData = AdvertisementData(android: data)
                 else { XCTFail("Could not parse"); return }
             
-            XCTAssertEqual(advertisementData.localName, "CLI-W200")
-            XCTAssertEqual(advertisementData.serviceUUIDs, [.savantSystems2])
+            XCTAssertEqual(advertisementData.localName ?? "", "CLI-W200")
+            XCTAssertEqual(advertisementData.serviceUUIDs ?? [], [.savantSystems2])
         }
     }
     
