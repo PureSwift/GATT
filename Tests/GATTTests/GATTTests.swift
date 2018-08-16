@@ -67,22 +67,6 @@ final class GATTTests: XCTestCase {
         do {
             
             /**
-             08-15 17:25:07.112 28642-28642/com.jmarkstar.swiftdemo W/Swift: AndroidCentral: ScanCallback onScanResult(callbackType:result:) name: Ghostyu address: 94:E3:6D:62:1E:01
-             08-15 17:25:07.114 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record device name: Optional("Ghostyu\0\0")
-             08-15 17:25:07.115 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record bytes: [2, 1, 6, 26, 255, 76, 0, 2, 21, 253, 165, 6, 147, 164, 226, 79, 177, 175, 207, 198, 235, 7, 100, 120, 37, 39, 18, 11, 134, 190, 10, 9, 71, 104, 111, 115, 116, 121, 117, 0, 0, 19, 22, 10, 24, 71, 89, 148, 227, 109, 98, 30, 1, 39, 18, 11, 134, 94, 255, 255, 255, 0]
-             */
-            
-            let data = Data([2, 1, 6, 26, 255, 76, 0, 2, 21, 253, 165, 6, 147, 164, 226, 79, 177, 175, 207, 198, 235, 7, 100, 120, 37, 39, 18, 11, 134, 190, 10, 9, 71, 104, 111, 115, 116, 121, 117, 0, 0, 19, 22, 10, 24, 71, 89, 148, 227, 109, 98, 30, 1, 39, 18, 11, 134, 94, 255, 255, 255, 0])
-            
-            guard let advertisementData = AdvertisementData(android: data)
-                else { XCTFail("Could not parse"); return }
-            
-            XCTAssertEqual(advertisementData.localName, "Ghostyu\0\0")
-        }
-        
-        do {
-            
-            /**
              08-15 17:25:04.814 28642-28642/com.jmarkstar.swiftdemo W/Swift: AndroidCentral: ScanCallback onScanResult(callbackType:result:) name: CLI-W200 address: 00:1A:AE:06:EF:9E
              08-15 17:25:04.816 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record device name: Optional("CLI-W200")
              08-15 17:25:04.817 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record bytes: [3, 3, 169, 254, 15, 255, 217, 1, 1, 2, 0, 0, 0, 26, 174, 6, 239, 157, 0, 96, 9, 9, 67, 76, 73, 45, 87, 50, 48, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -94,6 +78,7 @@ final class GATTTests: XCTestCase {
                 else { XCTFail("Could not parse"); return }
             
             XCTAssertEqual(advertisementData.localName, "CLI-W200")
+            XCTAssertEqual(advertisementData.serviceUUIDs, [.savantSystems2])
         }
     }
     

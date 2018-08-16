@@ -39,7 +39,7 @@ public extension AdvertisementData {
     }
 }
 
-internal extension LowEnergyAdvertisingData {
+private extension LowEnergyAdvertisingData {
     
     init?(android data: Data) {
         
@@ -47,21 +47,6 @@ internal extension LowEnergyAdvertisingData {
         guard data.count == 31
             else { return nil }
         
-        // determine length based on last zero
-        var index = data.count - 1
-        
-        while index >= 0, data[index] == 0 {
-            
-            index -= 1
-        }
-        
-        if index > 0 {
-            
-            self.init(data: data.subdata(in: 0 ..< index + 1))
-            
-        } else {
-            
-            self.init(data: Data())
-        }
+        self.init(data: data)
     }
 }
