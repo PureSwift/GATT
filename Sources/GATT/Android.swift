@@ -43,7 +43,7 @@ private extension LowEnergyAdvertisingData {
     
     init?(android data: Data) {
         
-        // always 32 (passive scan) or 62 bytes (active scan)
+        // always 31 (passive scan) or 62 bytes (active scan)
         guard data.count == 31
             else { return nil }
         
