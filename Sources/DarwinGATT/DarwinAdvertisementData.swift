@@ -13,89 +13,102 @@ import GATT
 
 import CoreBluetooth
 
+/// CoreBluetooth Adverisement Data
 public struct DarwinAdvertisementData: AdvertisementDataProtocol {
     
-    /// The local name of a peripheral.
-    public let localName: String?
+    // MARK: - Properties
     
-    /// The Manufacturer data of a peripheral.
-    public let manufacturerData: Data?
+    internal let data: [String: NSObject]
     
-    /// Service-specific advertisement data.
-    public let serviceData: [BluetoothUUID: Data]
+    // MARK: - Initialization
     
-    /// An array of service UUIDs
-    public let serviceUUIDs: [BluetoothUUID]
-    
-    /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
-    /// in the “overflow” area of the advertisement data.
-    public let overflowServiceUUIDs: [BluetoothUUID]
-    
-    /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
-    /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
-    public let txPowerLevel: Double?
-    
-    /// A Boolean value that indicates whether the advertising event type is connectable.
-    public let isConnectable: Bool?
-    
-    /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    public let solicitedServiceUUIDs: [BluetoothUUID]
+    internal init(_ coreBluetooth: [String: Any]) {
+        
+        guard let data = coreBluetooth as? [String: NSObject]
+            else { fatalError("Invalid dictionary \(coreBluetooth)") }
+        
+        self.data = data
+    }
 }
-
+    
 // MARK: - Equatable
 
 extension DarwinAdvertisementData: Equatable {
     
     public static func == (lhs: DarwinAdvertisementData, rhs: DarwinAdvertisementData) -> Bool {
         
-        return lhs.localName == rhs.localName
-            && lhs.manufacturerData == rhs.manufacturerData
-            && lhs.serviceData == rhs.serviceData
-            && lhs.serviceUUIDs == rhs.serviceUUIDs
-            && lhs.overflowServiceUUIDs == rhs.overflowServiceUUIDs
-            && lhs.txPowerLevel == rhs.txPowerLevel
-            && lhs.isConnectable == rhs.isConnectable
-            && lhs.solicitedServiceUUIDs == rhs.solicitedServiceUUIDs
+        return lhs.data == rhs.data
     }
 }
-
-// MARK: - CoreBluetooth
-
-internal extension DarwinAdvertisementData {
     
-    init(_ coreBluetooth: [String: Any]) {
+// MARK: - AdvertisementDataProtocol
+    
+public extension DarwinAdvertisementData {
+    
+    /// The local name of a peripheral.
+    public var localName: String? {
         
-        self.localName = coreBluetooth[CBAdvertisementDataLocalNameKey] as? String
+        return data[CBAdvertisementDataLocalNameKey] as? String
+    }
+    
+    /// The Manufacturer data of a peripheral.
+    public var manufacturerData: GAPManufacturerSpecificData? {
         
-        self.manufacturerData = coreBluetooth[CBAdvertisementDataManufacturerDataKey] as? Data
+        guard let manufacturerDataBytes = data[CBAdvertisementDataManufacturerDataKey] as? Data,
+            let manufacturerData = GAPManufacturerSpecificData(data: manufacturerDataBytes)
+            else { return nil }
         
-        if let coreBluetoothServiceData = coreBluetooth[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] {
+        return manufacturerData
+    }
+    
+    /// Service-specific advertisement data.
+    public var serviceData: [BluetoothUUID: Data]? {
+        
+        guard let coreBluetoothServiceData = data[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data]
+            else { return nil }
+        
+        var serviceData = [BluetoothUUID: Data](minimumCapacity: coreBluetoothServiceData.count)
             
-            var serviceData = [BluetoothUUID: Data](minimumCapacity: coreBluetoothServiceData.count)
-            
-            for (key, value) in coreBluetoothServiceData {
+        for (key, value) in coreBluetoothServiceData {
                 
-                let uuid = BluetoothUUID(coreBluetooth: key)
+            let uuid = BluetoothUUID(coreBluetooth: key)
                 
-                serviceData[uuid] = value
-            }
-            
-            self.serviceData = serviceData
-            
-        } else {
-            
-            self.serviceData = [:]
+            serviceData[uuid] = value
         }
+            
+        return serviceData
+    }
+    
+    /// An array of service UUIDs
+    public var serviceUUIDs: [BluetoothUUID]? {
         
-        self.serviceUUIDs = (coreBluetooth[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        return (data[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+    }
+    
+    /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
+    /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
+    public var txPowerLevel: Double? {
         
-        self.overflowServiceUUIDs = (coreBluetooth[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        return (data[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.doubleValue
+    }
+    
+    /// A Boolean value that indicates whether the advertising event type is connectable.
+    public var isConnectable: Bool? {
         
-        self.txPowerLevel = (coreBluetooth[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.doubleValue
+        return (data[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
+    }
+    
+    /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
+    public var solicitedServiceUUIDs: [BluetoothUUID]? {
         
-        self.isConnectable = (coreBluetooth[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
+        return (data[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+    }
+    
+    /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
+    /// in the “overflow” area of the advertisement data.
+    public var overflowServiceUUIDs: [BluetoothUUID]? {
         
-        self.solicitedServiceUUIDs = (coreBluetooth[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) } ?? []
+        return (data[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
     }
 }
 

@@ -15,29 +15,27 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public typealias Advertisement = AdvertisementData
     
-    public typealias AdvertisingReport = HCILEAdvertisingReport.Report
-    
     public var log: ((String) -> ())?
     
     public let hostController: HostController
     
-    public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+    public let options: GATTCentralOptions
     
-    public var newConnection: ((AdvertisingReport) throws -> (L2CAPSocket))?
+    public var newConnection: ((ScanData<Peripheral, AdvertisementData>) throws -> (L2CAPSocket))?
     
     internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
     
-    internal private(set) var scanData = [Peripheral: (report: AdvertisingReport, scanData: ScanData<Peripheral, AdvertisementData>)](minimumCapacity: 1)
+    internal private(set) var scanData = [Peripheral: ScanData<Peripheral, AdvertisementData>](minimumCapacity: 1)
     
     internal private(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
     
     private var lastConnectionID = 0
     
     public init(hostController: HostController,
-                maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
+                options: GATTCentralOptions = GATTCentralOptions()) {
         
         self.hostController = hostController
-        self.maximumTransmissionUnit = maximumTransmissionUnit
+        self.options = options
     }
     
     public func scan(filterDuplicates: Bool = true,
@@ -46,20 +44,64 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         self.log?("Scanning...")
         
-        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
+        let scanType = options.scanParameters.type
+        
+        var scanResults = [Peripheral: AdvertisementData]()
+        
+        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
             
             let peripheral = Peripheral(identifier: report.address)
             
-            let advertisement = Advertisement(data: report.responseData)
-            
-            let scanData = ScanData(peripheral: peripheral,
-                                    date: Date(),
-                                    rssi: Double(report.rssi.rawValue),
-                                    advertisementData: advertisement)
-            
-            self.scanData[peripheral] = (report, scanData)
-            
-            foundDevice(scanData)
+            switch report.event {
+                
+            // advertisement
+            case .scannable, .directed, .undirected, .nonConnectable:
+                
+                let advertisementData = AdvertisementData(advertisement: report.responseData)
+                
+                scanResults[peripheral] = advertisementData
+                
+                switch scanType {
+                    
+                case .active:
+                    
+                    // wait for scan response
+                    break
+                    
+                case .passive:
+                    
+                    // dont wait for scan response, report immediatly
+                    let scanData = ScanData(peripheral: peripheral,
+                                            date: Date(),
+                                            rssi: Double(report.rssi.rawValue),
+                                            advertisementData: advertisementData)
+                    
+                    // store found device
+                    self.scanData[peripheral] = scanData
+                    foundDevice(scanData)
+                }
+                
+            // scan response
+            case .scanResponse:
+                
+                assert(scanType == .active, "Cannot recieve scan response in \(scanType) scanning mode")
+                
+                // get previous advertisement
+                guard let advertisement = scanResults[peripheral]?.advertisement
+                    else { self.log?("[\(peripheral)]: Missing previous advertisement for scan response"); return }
+                
+                let advertisementData = AdvertisementData(advertisement: advertisement,
+                                                          scanResponse: report.responseData)
+                
+                let scanData = ScanData(peripheral: peripheral,
+                                        date: Date(),
+                                        rssi: Double(report.rssi.rawValue),
+                                        advertisementData: advertisementData)
+                
+                // store found device
+                self.scanData[peripheral] = scanData
+                foundDevice(scanData)
+            }
         }
         
         self.log?("Did discover \(self.scanData.count) peripherals")
@@ -67,13 +109,13 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        guard let report = scanData[peripheral]?.report
+        guard let scanData = scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         
         guard let newConnection = self.newConnection
             else { return }
         
-        let socket = try async(timeout: timeout) { try newConnection(report) }
+        let socket = try async(timeout: timeout) { try newConnection(scanData) }
         
         /**
         try L2CAPSocket.lowEnergyClient(
@@ -86,7 +128,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         // keep connection open and store for future use
         let connection = GATTClientConnection(peripheral: peripheral,
                                               socket: socket,
-                                              maximumTransmissionUnit: maximumTransmissionUnit)
+                                              maximumTransmissionUnit: options.maximumTransmissionUnit)
         
         connection.callback.log = { [weak self] in self?.log?($0) }
         
@@ -201,6 +243,30 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         // did timeout
         throw CentralError.timeout
+    }
+}
+
+// MARK: - Supporting Types
+
+public struct GATTCentralOptions {
+    
+    internal static let defaultScanParameters = HCILESetScanParameters(
+        type: .active,
+        interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
+        window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
+        addressType: .public,
+        filterPolicy: .accept
+    )
+    
+    public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+    
+    public let scanParameters: HCILESetScanParameters
+    
+    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
+                scanParameters: HCILESetScanParameters = GATTCentralOptions.defaultScanParameters) {
+        
+        self.maximumTransmissionUnit = maximumTransmissionUnit
+        self.scanParameters = scanParameters
     }
 }
 

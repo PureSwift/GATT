@@ -100,7 +100,7 @@ final class CentralHostController: BluetoothHostControllerInterface {
     
     var log: ((String) -> ())?
     
-    var scanEvents = [Data]() //[HCILEAdvertisingReport]()
+    var advertisingReports = [Data]() //[HCILEAdvertisingReport]()
     
     init(address: Address = .any) {
         
@@ -150,18 +150,27 @@ final class CentralHostController: BluetoothHostControllerInterface {
     }
     
     /// Polls and waits for events.
-    func pollEvent<EP>(_ eventParameterType: EP.Type,
-                       shouldContinue: () -> (Bool),
-                       event eventCallback: (EP) throws -> ()) throws where EP : HCIEventParameter {
+    func pollEvent<EP: HCIEventParameter>(_ eventParameterType: EP.Type,
+                                          shouldContinue: () -> (Bool),
+                                          event eventCallback: (EP) throws -> ()) throws  {
         
-        var events = self.scanEvents
+        guard eventParameterType == HCILowEnergyMetaEvent.self
+            else { fatalError("Invalid event parameter type") }
         
-        while shouldContinue(), let eventData = events.popFirst() {
+        var events = self.advertisingReports
+        
+        while let eventBuffer = events.popFirst() {
+                        
+            let actualBytesRead = eventBuffer.count
+            let eventHeader = HCIEventHeader(data: Data(eventBuffer[0 ..< HCIEventHeader.length]))
+            let eventData = Data(eventBuffer[HCIEventHeader.length ..< actualBytesRead])
             
-            guard let event = EP.init(data: eventData)
-                else { assertionFailure("Invalid data"); return }
+            guard let eventParameter = EP.init(data: eventData)
+                else { throw BluetoothHostControllerError.garbageResponse(Data(eventData)) }
+                        
+            assert(eventHeader?.event.rawValue == EP.event.rawValue)
             
-            try eventCallback(event)
+            try eventCallback(eventParameter)
         }
     }
 }
