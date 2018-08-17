@@ -92,7 +92,7 @@ final class GATTTests: XCTestCase {
                 else { XCTFail("Could not parse"); return }
             
             XCTAssertEqual(manufacturerData.companyIdentifier, .savantSystems)
-            XCTAssertEqual(manufacturerData.additionalData, Data([0xd9, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00, 0x1a, 0xae, 0x06, 0xef, 0x9d, 0x00, 0x60]))
+            XCTAssertEqual(manufacturerData.additionalData, Data([0x01, 0x02, 0x00, 0x00, 0x00, 0x1a, 0xae, 0x06, 0xef, 0x9d, 0x00, 0x60]))
         }
     }
     
