@@ -18,9 +18,6 @@ public protocol AdvertisementDataProtocol: Equatable {
     /// The Manufacturer data of a peripheral.
     var manufacturerData: GAPManufacturerSpecificData? { get }
     
-    /// A Boolean value that indicates whether the advertising event type is connectable.
-    var isConnectable: Bool? { get }
-    
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
     var txPowerLevel: Double? { get }
@@ -91,12 +88,6 @@ public extension AdvertisementData {
     public var txPowerLevel: Double? {
         
         return advertisement.txPowerLevel ?? scanResponse?.txPowerLevel
-    }
-    
-    /// A Boolean value that indicates whether the advertising event type is connectable.
-    public var isConnectable: Bool? {
-        
-        return advertisement.isConnectable ?? scanResponse?.isConnectable
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
@@ -215,14 +206,6 @@ internal extension LowEnergyAdvertisingData {
         guard let gapData = (try? GAPDataDecoder.decode(data, types: [GAPTxPowerLevel.self], ignoreUnknownType: true))?.first as? GAPTxPowerLevel else { return nil }
         
         return Double(gapData.powerLevel)
-    }
-    
-    /// A Boolean value that indicates whether the advertising event type is connectable.
-    internal var isConnectable: Bool? {
-        
-        return (try? GAPDataDecoder.decode(data, types: [GAPFlags.self], ignoreUnknownType: true))?
-            .flatMap { $0 as? GAPFlags }
-            .first?.flags.contains(.lowEnergyGeneralDiscoverableMode)
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.

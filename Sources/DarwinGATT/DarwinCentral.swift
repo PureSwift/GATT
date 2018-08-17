@@ -437,10 +437,13 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         let identifier = Peripheral(peripheral)
         
+        let advertisement = Advertisement(advertisementData)
+        
         let scanResult = ScanData(peripheral: identifier,
                                   date: Date(),
                                   rssi: rssi.doubleValue,
-                                  advertisementData: Advertisement(advertisementData))
+                                  advertisementData: Advertisement(advertisementData),
+                                  isConnectable: advertisement.isConnectable ?? false)
         
         accessQueue.sync { [unowned self] in
             

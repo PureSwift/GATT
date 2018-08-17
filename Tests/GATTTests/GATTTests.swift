@@ -49,14 +49,15 @@ final class GATTTests: XCTestCase {
                 let report = advertisingReports.reports.first
                 else { XCTFail("Could not parse HCI event"); return }
             
-            XCTAssertEqual(report.responseData.isConnectable, true)
+            XCTAssertEqual(report.event.isConnectable, true)
             
             let peripheral = Peripheral(identifier: report.address)
             
             let scanData = ScanData(peripheral: peripheral,
                                     date: Date(),
                                     rssi: -65.0,
-                                    advertisementData: AdvertisementData(advertisement: report.responseData))
+                                    advertisementData: AdvertisementData(advertisement: report.responseData),
+                                    isConnectable: report.event.isConnectable)
             
             XCTAssertEqual(scanData.peripheral.identifier.rawValue, "94:E3:6D:62:1E:01")
         }
@@ -77,8 +78,21 @@ final class GATTTests: XCTestCase {
             guard let advertisementData = AdvertisementData(android: data)
                 else { XCTFail("Could not parse"); return }
             
-            XCTAssertEqual(advertisementData.localName ?? "", "CLI-W200")
-            XCTAssertEqual(advertisementData.serviceUUIDs ?? [], [.savantSystems2])
+            guard let localName = advertisementData.localName
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssertEqual(localName, "CLI-W200")
+            
+            guard let serviceUUIDs = advertisementData.serviceUUIDs
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssertEqual(serviceUUIDs, [.savantSystems2])
+            
+            guard let manufacturerData = advertisementData.manufacturerData
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssertEqual(manufacturerData.companyIdentifier, .savantSystems)
+            XCTAssertEqual(manufacturerData.additionalData, Data([0xd9, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00, 0x1a, 0xae, 0x06, 0xef, 0x9d, 0x00, 0x60]))
         }
     }
     

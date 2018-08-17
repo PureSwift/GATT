@@ -92,16 +92,18 @@ public extension DarwinAdvertisementData {
         return (data[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.doubleValue
     }
     
-    /// A Boolean value that indicates whether the advertising event type is connectable.
-    public var isConnectable: Bool? {
-        
-        return (data[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
-    }
-    
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
     public var solicitedServiceUUIDs: [BluetoothUUID]? {
         
         return (data[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+    }
+    
+    // MARK: - CoreBluetooth Specific Values
+    
+    /// A Boolean value that indicates whether the advertising event type is connectable.
+    internal var isConnectable: Bool? {
+        
+        return (data[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found

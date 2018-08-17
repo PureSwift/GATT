@@ -52,10 +52,15 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             
             let peripheral = Peripheral(identifier: report.address)
             
+            let isConnectable = report.event.isConnectable
+            
             switch report.event {
                 
             // advertisement
-            case .scannable, .directed, .undirected, .nonConnectable:
+            case .scannable,
+                 .directed,
+                 .undirected,
+                 .nonConnectable:
                 
                 let advertisementData = AdvertisementData(advertisement: report.responseData)
                 
@@ -74,7 +79,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                     let scanData = ScanData(peripheral: peripheral,
                                             date: Date(),
                                             rssi: Double(report.rssi.rawValue),
-                                            advertisementData: advertisementData)
+                                            advertisementData: advertisementData,
+                                            isConnectable: isConnectable)
                     
                     // store found device
                     self.scanData[peripheral] = scanData
@@ -96,7 +102,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                 let scanData = ScanData(peripheral: peripheral,
                                         date: Date(),
                                         rssi: Double(report.rssi.rawValue),
-                                        advertisementData: advertisementData)
+                                        advertisementData: advertisementData,
+                                        isConnectable: isConnectable)
                 
                 // store found device
                 self.scanData[peripheral] = scanData
