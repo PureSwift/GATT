@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6E0FC45F20F873B1009269B4 /* GATT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EE84D841CAF419D00A40C4D /* GATT.framework */; };
 		6E49B23520532A94002EA5DC /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6E80C73D213158D10071EB30 /* Android.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECB2D0E2124C04D00633F80 /* Android.swift */; };
 		6EA5D1512107DE66009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EA5D1682107DE6A009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EA5D17F2107DE6D009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -844,6 +845,7 @@
 				6EA5D20D2107E271009998FD /* PeripheralProtocol.swift in Sources */,
 				6EA5D20C2107E271009998FD /* CentralError.swift in Sources */,
 				6EA5D20B2107E271009998FD /* GATTPeripheral.swift in Sources */,
+				6E80C73D213158D10071EB30 /* Android.swift in Sources */,
 				6EA5D2112107E271009998FD /* AdvertisementData.swift in Sources */,
 				6EA5D20E2107E271009998FD /* Peripheral.swift in Sources */,
 				6EA5D2122107E271009998FD /* GATTCentral.swift in Sources */,
