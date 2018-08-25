@@ -32,6 +32,8 @@ public protocol AdvertisementDataProtocol: Equatable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
+#if os(macOS) || os(Linux)
+
 public struct AdvertisementData: AdvertisementDataProtocol {
     
     public let advertisement: LowEnergyAdvertisingData
@@ -236,3 +238,5 @@ internal extension LowEnergyAdvertisingData {
         return uuids
     }
 }
+
+#endif
