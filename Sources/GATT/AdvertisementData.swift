@@ -32,7 +32,7 @@ public protocol AdvertisementDataProtocol: Equatable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
-#if os(macOS) || os(Linux)
+#if os(macOS) || os(Linux) || os(Android)
 
 public struct AdvertisementData: AdvertisementDataProtocol {
     
