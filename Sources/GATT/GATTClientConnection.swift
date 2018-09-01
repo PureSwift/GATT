@@ -228,7 +228,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     // IO error
     private func error(_ error: Error) {
         
-        self.callback.log?("Disconnected \(error)")
+        self.callback.log?("[\(self.peripheral)]: Disconnected (\(error))")
         self.isRunning = false
         self.callback.didDisconnect?(error)
     }

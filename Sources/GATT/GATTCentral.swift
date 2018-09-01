@@ -21,11 +21,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public let options: GATTCentralOptions
     
-    public var newConnection: ((ScanData<Peripheral, AdvertisementData>) throws -> (L2CAPSocket))?
+    public var newConnection: ((ScanData<Peripheral, AdvertisementData>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
     
     internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
     
-    internal private(set) var scanData = [Peripheral: ScanData<Peripheral, AdvertisementData>](minimumCapacity: 1)
+    internal private(set) var scanData: [Peripheral: (ScanData<Peripheral, AdvertisementData>, HCILEAdvertisingReport.Report)] = [:]
     
     internal private(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
     
@@ -83,7 +83,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                                             isConnectable: isConnectable)
                     
                     // store found device
-                    self.scanData[peripheral] = scanData
+                    self.scanData[peripheral] = (scanData, report)
                     foundDevice(scanData)
                 }
                 
@@ -106,7 +106,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                                         isConnectable: isConnectable)
                 
                 // store found device
-                self.scanData[peripheral] = scanData
+                self.scanData[peripheral] = (scanData, report)
                 foundDevice(scanData)
             }
         }
@@ -116,21 +116,13 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        guard let scanData = scanData[peripheral]
+        guard let (scanData, report) = scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         
         guard let newConnection = self.newConnection
             else { return }
         
-        let socket = try async(timeout: timeout) { try newConnection(scanData) }
-        
-        /**
-        try L2CAPSocket.lowEnergyClient(
-            destination: (address: advertisementData.address,
-                          type: AddressType(lowEnergy: advertisementData.addressType)
-            )
-        )
-         */
+        let socket = try async(timeout: timeout) { try newConnection(scanData, report) }
         
         // keep connection open and store for future use
         let connection = GATTClientConnection(peripheral: peripheral,
@@ -145,6 +137,9 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         // store connection
         self.connections[peripheral] = connection
+        
+        // log
+        self.log?("[\(scanData.peripheral)]: New \(report.addressType) connection")
     }
     
     public func disconnect(peripheral: Peripheral) {
