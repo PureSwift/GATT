@@ -202,12 +202,39 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             }
         }
         
+        let notify: GATTClient.Notification?
+        let indicate: GATTClient.Notification?
+        
+        /**
+         If the specified characteristic is configured to allow both notifications and indications, calling this method enables notifications only. You can disable notifications and indications for a characteristic’s value by calling this method with the enabled parameter set to false.
+         */
+        
+        if gattCharacteristic.attribute.properties.contains(.notify) {
+            
+            notify = notification
+            indicate = nil
+            
+        } else if gattCharacteristic.attribute.properties.contains(.indicate) {
+            
+            notify = nil
+            indicate = notification
+            
+        } else {
+            
+            notify = nil
+            indicate = nil
+            
+            assertionFailure("Cannot enable notification or indication for characteristic \(characteristic.uuid)")
+            return
+        }
+        
         // GATT request
         try async(timeout: timeout) {
-            client.registerNotification(notification,
-                                        for: gattCharacteristic.attribute,
-                                        descriptors: descriptors,
-                                        completion: $0)
+            client.clientCharacteristicConfiguration(notification: notify,
+                                                     indication: indicate,
+                                                     for: gattCharacteristic.attribute,
+                                                     descriptors: descriptors,
+                                                     completion: $0)
         }
     }
     
