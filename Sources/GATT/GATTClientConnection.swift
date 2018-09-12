@@ -16,7 +16,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public let peripheral: Peripheral
     
-    public var callback = GATTClientConnectionCallback()
+    public let callback: GATTClientConnectionCallback
     
     internal let client: GATTClient
     
@@ -51,16 +51,28 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Initialization
     
+    deinit {
+        
+        self.callback.log?("[\(self.peripheral)]: Disconnected")
+    }
+    
     public init(peripheral: Peripheral,
                 socket: L2CAPSocket,
-                maximumTransmissionUnit: ATTMaximumTransmissionUnit) {
+                maximumTransmissionUnit: ATTMaximumTransmissionUnit,
+                callback: GATTClientConnectionCallback) {
         
         self.peripheral = peripheral
+        self.callback = callback
         self.client = GATTClient(socket: socket,
-                                 maximumTransmissionUnit: maximumTransmissionUnit)
+                                 maximumTransmissionUnit: maximumTransmissionUnit,
+                                 log: { callback.log?("[\(peripheral)]: " + $0) },
+                                 writePending: nil)
         
-        // configure GATT client
-        self.configureClient()
+        // wakeup ATT writer
+        client.writePending = { [unowned self] in self.write() }
+        
+        // send MTU request
+        self.write()
         
         // run read thread
         self.readThread.start()
@@ -247,24 +259,12 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Private Methods
     
-    private func configureClient() {
-        
-        // log
-        client.log = { [unowned self] in self.callback.log?("[\(self.peripheral)]: " + $0) }
-        
-        // wakeup ATT writer
-        client.writePending = { [unowned self] in self.write() }
-        
-        // send MTU request
-        self.write()
-    }
-    
     // IO error
     private func error(_ error: Error) {
         
-        self.callback.log?("[\(self.peripheral)]: Disconnected (\(error))")
+        self.callback.log?("[\(self.peripheral)]: Error (\(error))")
         self.isRunning = false
-        self.callback.didDisconnect?(error)
+        self.callback.didDisconnect(error)
     }
     
     private func readMain() -> Bool {
@@ -332,11 +332,16 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
 
 public struct GATTClientConnectionCallback {
     
-    public var log: ((String) -> ())?
+    public let log: ((String) -> ())?
     
-    public var didDisconnect: ((Error) -> ())?
+    public let didDisconnect: ((Error) -> ())
     
-    fileprivate init() { }
+    public init(log: ((String) -> ())? = nil,
+                didDisconnect: @escaping ((Error) -> ())) {
+        
+        self.log = log
+        self.didDisconnect = didDisconnect
+    }
 }
 
 struct GATTClientConnectionCache {

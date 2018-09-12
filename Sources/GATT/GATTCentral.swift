@@ -122,18 +122,25 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         guard let newConnection = self.newConnection
             else { return }
         
+        // log
+        self.log?("[\(scanData.peripheral)]: Open connection")
+        
+        // open socket
         let socket = try async(timeout: timeout) { try newConnection(scanData, report) }
+        
+        // configure connection object
+        let callback = GATTClientConnectionCallback(
+            log: self.log,
+            didDisconnect: { [weak self] _ in
+                self?.disconnect(peripheral: peripheral)
+            }
+        )
         
         // keep connection open and store for future use
         let connection = GATTClientConnection(peripheral: peripheral,
                                               socket: socket,
-                                              maximumTransmissionUnit: options.maximumTransmissionUnit)
-        
-        connection.callback.log = { [weak self] in self?.log?($0) }
-        
-        connection.callback.didDisconnect = { [weak self] _ in
-            self?.disconnect(peripheral: peripheral)
-        }
+                                              maximumTransmissionUnit: options.maximumTransmissionUnit,
+                                              callback: callback)
         
         // store connection
         self.connections[peripheral] = connection
