@@ -24,11 +24,18 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     private lazy var readThread: Thread = Thread { [weak self] in
         
+        var didRead = true
+        
         // run until object is released
-        while let connection = self {
+        while self != nil {
+            
+            // sleep if we did not previously read to save energy
+            if didRead == false {
+                usleep(10) // to save energy
+            }
             
             // run the main loop exactly once.
-            self?.readMain()
+            didRead = self?.readMain() ?? false // don't retain
         }
     }
     
@@ -260,14 +267,20 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         self.callback.didDisconnect?(error)
     }
     
-    private func readMain() {
+    private func readMain() -> Bool {
         
         guard self.isRunning
-            else { sleep(1); return }
+            else { return false }
         
         // read incoming PDUs / response
-        do { try self.client.read() }
-        catch { self.error(error) }
+        do {
+            let didRead = try self.client.read()
+            return didRead
+        }
+        catch {
+            self.error(error)
+            return false
+        }
     }
     
     private func write() {
