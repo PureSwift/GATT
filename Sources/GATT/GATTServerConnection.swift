@@ -152,8 +152,16 @@ public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
             })
             
             // read incoming PDUs and may modify internal database
-            do { try self?.server.read() }
-            catch { self?.error(error) }
+            do {
+                
+                guard let server = self?.server,
+                    try server.read()
+                    else { return }
+            }
+            catch {
+                self?.error(error)
+                return
+            }
             
             // write GATT DB serially
             writeDatabase({ [weak self] (database) in
