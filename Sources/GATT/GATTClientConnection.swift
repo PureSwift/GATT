@@ -35,9 +35,9 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             while self != nil, self?.error == nil {
                 
                 // sleep if we did not previously read / write to save energy
-                if (self?.writePending ?? false) == false,
-                    didRead == false,
-                    didWrite == false {
+                if didRead == false,
+                    didWrite == false,
+                    (self?.writePending ?? false) == false {
                     
                     // did not previously read or write, no pending writes
                     // sleep thread to save energy
