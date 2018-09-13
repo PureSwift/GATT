@@ -26,40 +26,37 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     private lazy var connectionThread: Thread = Thread { [weak self] in
         
-        var didWrite = true
-        var didRead = true
-        
-        // run until object is released
-        while self != nil, self?.error == nil {
+        do {
             
-            // sleep if we did not previously read / write to save energy
-            if let connection = self,
-                connection.writePending == false,
-                didRead == false,
-                didWrite == false {
+            var didWrite = true
+            var didRead = true
+            
+            // run until object is released
+            while self != nil, self?.error == nil {
                 
-                // did not previously read or write, and dont expect to
-                // sleep thread to save energy
-                usleep(100)
-            }
-            
-            do {
+                // sleep if we did not previously read / write to save energy
+                if (self?.writePending ?? false) == false,
+                    didRead == false,
+                    didWrite == false {
+                    
+                    // did not previously read or write, no pending writes
+                    // sleep thread to save energy
+                    usleep(100)
+                }
+                
                 // attempt write
                 didWrite = try self?.client.write() ?? false
                 
-                if didWrite == false {
+                if didWrite {
                     self?.writePending = false
                 }
                 
                 // attempt read
                 didRead = try self?.client.read() ?? false
             }
-            
-            catch {
-                self?.disconnect(error)
-                return // break loop
-            }
         }
+        
+        catch { self?.disconnect(error) }
     }
     
     internal private(set) var cache = GATTClientConnectionCache()
@@ -90,7 +87,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                                  writePending: nil)
         
         // wakeup ATT writer
-        self.client.writePending = { [unowned self] in self.writePending = true }
+        self.client.writePending = { [weak self] in self?.writePending = true }
         
         // run read thread
         self.connectionThread.start()
