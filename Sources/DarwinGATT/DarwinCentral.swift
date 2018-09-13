@@ -318,17 +318,36 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         let writeType: CBCharacteristicWriteType = withResponse ? .withResponse : .withoutResponse
         
-        corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
-        
-        // calls `peripheral:didWriteValueForCharacteristic:error:` only
-        // if you specified the write type as `.withResponse`.
-        if writeType == .withResponse {
+        switch writeType {
+            
+        case .withResponse:
+            
+            // write request
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+            
+            // calls `peripheral:didWriteValueForCharacteristic:error:` only
+            // if you specified the write type as `.withResponse`.
             
             let semaphore = Semaphore(timeout: timeout, operation: .writeCharacteristic(characteristic))
             accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = semaphore }
             defer { accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = nil } }
             
             try semaphore.wait()
+            
+        case .withoutResponse:
+            
+            #if swift(>=3.2)
+            // wait until internal buffer is ready
+            if #available(iOS 11.0, macOS 10.13, *) {
+                
+                while corePeripheral.canSendWriteWithoutResponse == false {
+                    sleep(1)
+                }
+            }
+            #endif
+            
+            // write command (if not long)
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
         }
     }
     
