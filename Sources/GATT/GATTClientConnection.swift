@@ -170,11 +170,20 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
-        try async(timeout: timeout) {
+        try async(timeout: timeout) { (response: @escaping (GATTClientResponse<()>) -> ()) in
+            
+            let completion: ((GATTClientResponse<()>) -> ())? = withResponse ? response : nil
+            
             client.writeCharacteristic(gattCharacteristic.attribute,
                                        data: data,
                                        reliableWrites: withResponse,
-                                       completion: $0)
+                                       completion: completion)
+            
+            if completion == nil {
+                
+                sleep(1)
+                response(.value()) // success
+            }
         }
     }
     
