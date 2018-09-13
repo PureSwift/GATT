@@ -123,7 +123,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             else { return }
         
         // log
-        self.log?("[\(scanData.peripheral)]: Open connection")
+        self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
         
         // open socket
         let socket = try async(timeout: timeout) { try newConnection(scanData, report) }
@@ -144,9 +144,6 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         // store connection
         self.connections[peripheral] = connection
-        
-        // log
-        self.log?("[\(scanData.peripheral)]: New \(report.addressType) connection")
     }
     
     public func disconnect(peripheral: Peripheral) {

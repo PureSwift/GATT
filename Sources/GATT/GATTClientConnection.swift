@@ -20,26 +20,41 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     internal let client: GATTClient
     
-    internal private(set) var isRunning: Bool = true
+    private var error: Error?
     
-    private lazy var readThread: Thread = Thread { [weak self] in
+    private var writePending: Bool = true
+    
+    private lazy var connectionThread: Thread = Thread { [weak self] in
         
+        var didWrite = true
         var didRead = true
         
         // run until object is released
-        while self != nil {
+        while self != nil, self?.error == nil {
             
-            // sleep if we did not previously read to save energy
-            if didRead == false {
+            // sleep if we did not previously read / write to save energy
+            if didRead == false, didWrite == false, (self?.writePending ?? false) == false {
                 usleep(10) // to save energy
             }
             
-            // run the main loop exactly once.
-            didRead = self?.readMain() ?? false // don't retain
+            do {
+                // attempt write
+                didWrite = try self?.client.write() ?? false
+                
+                if didWrite == false {
+                    self?.writePending = false
+                }
+                
+                // attempt read
+                didRead = try self?.client.read() ?? false
+            }
+            
+            catch {
+                self?.disconnect(error)
+                return // break loop
+            }
         }
     }
-    
-    internal lazy var writeQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) \(self.peripheral) Write Queue")
     
     internal private(set) var cache = GATTClientConnectionCache()
     
@@ -69,13 +84,10 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                                  writePending: nil)
         
         // wakeup ATT writer
-        client.writePending = { [unowned self] in self.write() }
-        
-        // send MTU request
-        self.write()
+        self.client.writePending = { [unowned self] in self.writePending = true }
         
         // run read thread
-        self.readThread.start()
+        self.connectionThread.start()
     }
     
     // MARK: - Methods
@@ -260,46 +272,14 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     // MARK: - Private Methods
     
     // IO error
-    private func error(_ error: Error) {
+    private func disconnect(_ error: Error) {
+        
+        guard self.error == nil
+            else { return }
         
         self.callback.log?("[\(self.peripheral)]: Error (\(error))")
-        self.isRunning = false
+        self.error = error
         self.callback.didDisconnect(error)
-    }
-    
-    private func readMain() -> Bool {
-        
-        guard self.isRunning
-            else { return false }
-        
-        // read incoming PDUs / response
-        do {
-            let didRead = try self.client.read()
-            return didRead
-        }
-        catch {
-            self.error(error)
-            return false
-        }
-    }
-    
-    private func write() {
-        
-        // write outgoing PDU in the background.
-        writeQueue.async { [weak self] in
-            
-            guard (self?.isRunning ?? false) else { sleep(1); return }
-            
-            do {
-                
-                /// write outgoing pending ATT PDUs
-                var didWrite = false
-                repeat { didWrite = try (self?.client.write() ?? false) }
-                    while didWrite && (self?.isRunning ?? false)
-            }
-                
-            catch { self?.error(error) }
-        }
     }
     
     private func async <T> (timeout: TimeInterval,
@@ -313,8 +293,14 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         
         while Date() < endDate {
             
-            guard let response = result
-                else { usleep(100); continue }
+            if let error = self.error {
+                throw error
+            }
+            
+            guard let response = result else {
+                usleep(100)
+                continue
+            }
             
             switch response {
             case let .error(error):
