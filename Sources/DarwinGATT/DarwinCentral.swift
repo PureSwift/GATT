@@ -340,13 +340,16 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             // wait until internal buffer is ready
             if #available(iOS 11.0, macOS 10.13, *) {
                 
-                while corePeripheral.canSendWriteWithoutResponse == false {
+                if corePeripheral.canSendWriteWithoutResponse == false {
                     sleep(1)
                 }
             }
             #endif
             
-            // write command (if not long)
+            guard corePeripheral.state == .connected
+                else { throw CentralError.disconnected }
+            
+            // write command (if not blob)
             corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
         }
     }
