@@ -325,6 +325,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             // write request
             corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
             
+            guard coreCharacteristic.properties.contains(.writeWithoutResponse) == false
+                else { return }
+            
             // calls `peripheral:didWriteValueForCharacteristic:error:` only
             // if you specified the write type as `.withResponse`.
             

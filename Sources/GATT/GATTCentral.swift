@@ -149,11 +149,16 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func disconnect(peripheral: Peripheral) {
         
         self.connections[peripheral] = nil
+        
+        // L2CAP socket may be retained by background thread
+        sleep(1)
     }
     
     public func disconnectAll() {
         
         self.connections.removeAll(keepingCapacity: true)
+        
+        sleep(1)
     }
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
