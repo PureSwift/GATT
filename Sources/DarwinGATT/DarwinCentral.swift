@@ -801,9 +801,9 @@ internal extension DarwinCentral {
         
         mutating func update(_ newValues: [CBService]) {
             
-            newValues.forEach {
-                let identifier = UInt(bitPattern: $0.hashValue)
-                services.values[identifier] = $0
+            newValues.enumerated().forEach {
+                let identifier = UInt($0.offset)
+                services.values[identifier] = $0.element
             }
         }
         
@@ -824,9 +824,9 @@ internal extension DarwinCentral {
             }
             
             // insert new characteristics
-            newValues.forEach {
-                let identifier = UInt(bitPattern: $0.hashValue)
-                characteristics.values[identifier] = (attribute: $0, notification: nil)
+            newValues.enumerated().forEach {
+                let identifier = UInt($0.offset)
+                characteristics.values[identifier] = (attribute: $0.element, notification: nil)
             }
         }
     }
