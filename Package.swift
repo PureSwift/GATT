@@ -1,16 +1,23 @@
+// swift-tools-version:4.1
 import PackageDescription
 
-let package = Package(
-    name: "GATT",
-    targets: [
-        Target(name: "GATT"),
-        Target(
-          name: "DarwinGATT",
-          dependencies: [.Target(name: "GATT")]
-        )
-    ],
-    dependencies: [
-        .Package(url: "https://github.com/PureSwift/BluetoothLinux.git", majorVersion: 3)
-    ],
-    exclude: ["Xcode", "Carthage"]
-)
+_ = Package(name: "GATT",
+            products: [
+                .library(
+                    name: "GATT",
+                    targets: ["GATT"]
+                ),
+                .library(
+                    name: "DarwinGATT",
+                    targets: ["DarwinGATT"]
+                )
+            ],
+            dependencies: [
+                .package(url: "https://github.com/PureSwift/Bluetooth.git", .branch("master"))
+            ],
+            targets: [
+                .target(name: "GATT", dependencies: ["Bluetooth"]),
+                .target(name: "DarwinGATT", dependencies: ["GATT"]),
+                .testTarget(name: "GATTTests", dependencies: ["GATT"])
+            ],
+            swiftLanguageVersions: [4])

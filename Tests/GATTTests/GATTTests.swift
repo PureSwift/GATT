@@ -161,7 +161,7 @@ final class GATTTests: XCTestCase {
         let central = TestCentral(hostController: clientHostController,
                                   options: GATTCentralOptions(maximumTransmissionUnit: clientMTU))
         central.log = { print("Central:", $0) }
-        central.newConnection = { (report) in
+        central.newConnection = { (scanData, report) in
             return clientSocket
         }
         central.hostController.advertisingReports = [
@@ -312,7 +312,7 @@ final class GATTTests: XCTestCase {
         let central = TestCentral(hostController: clientHostController,
                                   options: GATTCentralOptions(maximumTransmissionUnit: clientMTU))
         central.log = { print("Central:", $0) }
-        central.newConnection = { (report) in
+        central.newConnection = { (scanData, report) in
             return clientSocket
         }
         central.hostController.advertisingReports = [
@@ -409,7 +409,7 @@ final class GATTTests: XCTestCase {
         typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
         let central = TestCentral(hostController: clientHostController)
         central.log = { print("Central:", $0) }
-        central.newConnection = { (report) in
+        central.newConnection = { (scanData, report) in
             return clientSocket
         }
         central.hostController.advertisingReports = [
@@ -546,7 +546,7 @@ final class GATTTests: XCTestCase {
         typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
         let central = TestCentral(hostController: clientHostController)
         central.log = { print("Central:", $0) }
-        central.newConnection = { (report) in
+        central.newConnection = { (scanData, report) in
             return clientSocket
         }
         central.hostController.advertisingReports = [
@@ -667,7 +667,7 @@ final class GATTTests: XCTestCase {
         typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
         let central = TestCentral(hostController: clientHostController)
         central.log = { print("Central:", $0) }
-        central.newConnection = { (report) in
+        central.newConnection = { (scanData, report) in
             return clientSocket
         }
         central.hostController.advertisingReports = [

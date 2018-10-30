@@ -179,10 +179,9 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                                        reliableWrites: withResponse,
                                        completion: completion)
             
+            // immediately call completion handler
             if completion == nil {
-                
-                sleep(1)
-                response(.value()) // success
+                response(.value(())) // success
             }
         }
     }

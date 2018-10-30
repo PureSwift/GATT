@@ -261,23 +261,29 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
 
 public struct GATTCentralOptions {
     
-    internal static let defaultScanParameters = HCILESetScanParameters(
-        type: .active,
-        interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
-        window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
-        addressType: .public,
-        filterPolicy: .accept
-    )
-    
     public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
     
     public let scanParameters: HCILESetScanParameters
     
     public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
-                scanParameters: HCILESetScanParameters = GATTCentralOptions.defaultScanParameters) {
+                scanParameters: HCILESetScanParameters = .gattCentralDefault) {
         
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.scanParameters = scanParameters
+    }
+}
+
+public extension HCILESetScanParameters {
+    
+    static var gattCentralDefault: HCILESetScanParameters {
+        
+        return HCILESetScanParameters(
+            type: .active,
+            interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
+            window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
+            addressType: .public,
+            filterPolicy: .accept
+        )
     }
 }
 
