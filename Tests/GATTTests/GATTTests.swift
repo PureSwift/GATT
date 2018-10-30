@@ -11,7 +11,7 @@ import XCTest
 import Bluetooth
 @testable import GATT
 
-@available(OSX 10.12, *)
+@available(macOS 10.12, *)
 final class GATTTests: XCTestCase {
     
     static var allTests = [

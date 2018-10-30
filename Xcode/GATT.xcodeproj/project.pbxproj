@@ -15,7 +15,6 @@
 		6EA5D17F2107DE6D009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EA5D1962107DE70009998FD /* GATT.h in Headers */ = {isa = PBXBuildFile; fileRef = 6EE84D871CAF419D00A40C4D /* GATT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6EA5D1BF2107E25F009998FD /* GATTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A22107E259009998FD /* GATTTests.swift */; };
-		6EA5D1C02107E25F009998FD /* XCTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A32107E259009998FD /* XCTest.swift */; };
 		6EA5D1C12107E25F009998FD /* TestHostController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A42107E259009998FD /* TestHostController.swift */; };
 		6EA5D1C22107E25F009998FD /* XCTestManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A52107E259009998FD /* XCTestManifests.swift */; };
 		6EA5D1C32107E25F009998FD /* TestL2CAPSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */; };
@@ -151,7 +150,6 @@
 		6EA5D19E2107DEE5009998FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6EA5D1A02107E259009998FD /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		6EA5D1A22107E259009998FD /* GATTTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GATTTests.swift; sourceTree = "<group>"; };
-		6EA5D1A32107E259009998FD /* XCTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTest.swift; sourceTree = "<group>"; };
 		6EA5D1A42107E259009998FD /* TestHostController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHostController.swift; sourceTree = "<group>"; };
 		6EA5D1A52107E259009998FD /* XCTestManifests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
 		6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestL2CAPSocket.swift; sourceTree = "<group>"; };
@@ -283,7 +281,6 @@
 			isa = PBXGroup;
 			children = (
 				6EA5D1A22107E259009998FD /* GATTTests.swift */,
-				6EA5D1A32107E259009998FD /* XCTest.swift */,
 				6EA5D1A42107E259009998FD /* TestHostController.swift */,
 				6EA5D1A52107E259009998FD /* XCTestManifests.swift */,
 				6EA5D1A62107E259009998FD /* TestL2CAPSocket.swift */,
@@ -752,7 +749,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6EA5D1C02107E25F009998FD /* XCTest.swift in Sources */,
 				6EA5D1C22107E25F009998FD /* XCTestManifests.swift in Sources */,
 				6EA5D1C12107E25F009998FD /* TestHostController.swift in Sources */,
 				6EA5D1BF2107E25F009998FD /* GATTTests.swift in Sources */,
@@ -1258,7 +1254,7 @@
 				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SDKROOT = macosx;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -1319,7 +1315,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.pureswift.GATT;
 				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SDKROOT = macosx;
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
