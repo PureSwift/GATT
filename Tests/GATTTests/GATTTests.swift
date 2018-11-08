@@ -16,7 +16,6 @@ final class GATTTests: XCTestCase {
     
     static var allTests = [
         ("testScanData", testScanData),
-        ("testAndroidAdvertisementData", testAndroidAdvertisementData),
         ("testMTUExchange", testMTUExchange),
         ("testServiceDiscovery", testServiceDiscovery),
         ("testCharacteristicValue", testCharacteristicValue),
@@ -61,39 +60,6 @@ final class GATTTests: XCTestCase {
                                     isConnectable: report.event.isConnectable)
             
             XCTAssertEqual(scanData.peripheral.identifier.rawValue, "94:E3:6D:62:1E:01")
-        }
-    }
-    
-    func testAndroidAdvertisementData() {
-        
-        do {
-            
-            /**
-             08-15 17:25:04.814 28642-28642/com.jmarkstar.swiftdemo W/Swift: AndroidCentral: ScanCallback onScanResult(callbackType:result:) name: CLI-W200 address: 00:1A:AE:06:EF:9E
-             08-15 17:25:04.816 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record device name: Optional("CLI-W200")
-             08-15 17:25:04.817 28642-28642/com.jmarkstar.swiftdemo W/Swift: Record bytes: [3, 3, 169, 254, 15, 255, 217, 1, 1, 2, 0, 0, 0, 26, 174, 6, 239, 157, 0, 96, 9, 9, 67, 76, 73, 45, 87, 50, 48, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-             */
-            
-            let data = Data([3, 3, 169, 254, 15, 255, 217, 1, 1, 2, 0, 0, 0, 26, 174, 6, 239, 157, 0, 96, 9, 9, 67, 76, 73, 45, 87, 50, 48, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-            
-            guard let advertisementData = AdvertisementData(android: data)
-                else { XCTFail("Could not parse"); return }
-            
-            guard let localName = advertisementData.localName
-                else { XCTFail("Could not parse"); return }
-            
-            XCTAssertEqual(localName, "CLI-W200")
-            
-            guard let serviceUUIDs = advertisementData.serviceUUIDs
-                else { XCTFail("Could not parse"); return }
-            
-            XCTAssertEqual(serviceUUIDs, [.savantSystems2])
-            
-            guard let manufacturerData = advertisementData.manufacturerData
-                else { XCTFail("Could not parse"); return }
-            
-            XCTAssertEqual(manufacturerData.companyIdentifier, .savantSystems)
-            XCTAssertEqual(manufacturerData.additionalData, Data([0x01, 0x02, 0x00, 0x00, 0x00, 0x1a, 0xae, 0x06, 0xef, 0x9d, 0x00, 0x60]))
         }
     }
     
