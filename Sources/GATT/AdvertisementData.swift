@@ -34,7 +34,7 @@ public protocol AdvertisementDataProtocol: Equatable {
 
 #if os(macOS) || os(Linux)
 
-public struct AdvertisementData: AdvertisementDataProtocol {
+public struct AdvertisementData: Equatable {
     
     public let advertisement: LowEnergyAdvertisingData
     
@@ -48,18 +48,9 @@ public struct AdvertisementData: AdvertisementDataProtocol {
     }
 }
 
-extension AdvertisementData: Equatable {
-    
-    public static func == (lhs: AdvertisementData, rhs: AdvertisementData) -> Bool {
-        
-        return lhs.advertisement == rhs.advertisement
-            && lhs.scanResponse == rhs.scanResponse
-    }
-}
-
 // MARK: - Accessors
 
-public extension AdvertisementData {
+extension AdvertisementData: AdvertisementDataProtocol {
     
     /// The local name of a peripheral.
     public var localName: String? {
