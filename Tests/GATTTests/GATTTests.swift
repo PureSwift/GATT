@@ -111,8 +111,8 @@ final class GATTTests: XCTestCase {
         peripheral.newConnection = {
             
             repeat {
-                if let newConnecion = incomingConnections.popFirst() {
-                    return newConnecion
+                if let newConnection = incomingConnections.popFirst() {
+                    return newConnection
                 } else {
                     sleep(1)
                 }
