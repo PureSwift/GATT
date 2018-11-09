@@ -10,7 +10,7 @@ import Foundation
 import Bluetooth
 
 /// The data for a scan result.
-public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementDataProtocol> {
+public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementDataProtocol>: Equatable {
     
     /// The discovered peripheral.
     public let peripheral: Peripheral
@@ -38,18 +38,5 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementDataProtoc
         self.rssi = rssi
         self.advertisementData = advertisementData
         self.isConnectable = isConnectable
-    }
-}
-
-// MARK: - Equatable
-
-extension ScanData: Equatable {
-    
-    public static func == (lhs: ScanData, rhs: ScanData) -> Bool {
-        
-        return lhs.date == rhs.date
-            && lhs.peripheral == rhs.peripheral
-            && lhs.rssi == rhs.rssi
-            && lhs.advertisementData == rhs.advertisementData
     }
 }
