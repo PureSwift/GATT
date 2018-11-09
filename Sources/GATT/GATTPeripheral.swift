@@ -9,7 +9,9 @@ import Foundation
 import Dispatch
 import Bluetooth
 
-@available(OSX 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *)
+#if os(macOS) || os(Linux)
+
+@available(macOS 10.12, *)
 public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
     
     // MARK: - Properties
@@ -204,7 +206,6 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
 }
 
-@available(OSX 10.12, *)
 public struct GATTPeripheralOptions {
     
     public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
@@ -218,3 +219,5 @@ public struct GATTPeripheralOptions {
         self.maximumPreparedWrites = maximumPreparedWrites
     }
 }
+
+#endif

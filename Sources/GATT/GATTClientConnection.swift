@@ -9,7 +9,9 @@ import Foundation
 import Dispatch
 import Bluetooth
 
-@available(OSX 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *)
+#if os(macOS) || os(Linux)
+
+@available(macOS 10.12, *)
 public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
@@ -442,3 +444,5 @@ struct GATTClientConnectionDescriptorCache {
     
     let attribute: GATTClient.Descriptor
 }
+
+#endif
