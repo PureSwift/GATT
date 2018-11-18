@@ -12,7 +12,7 @@ import Bluetooth
 final class PeripheralHostController: BluetoothHostControllerInterface {
     
     /// All controllers on the host.
-    static var controllers: [PeripheralHostController] { return [PeripheralHostController()] }
+    static var controllers: [PeripheralHostController] { return [PeripheralHostController(address: .min)] }
     
     private(set) var isAdvertising: Bool = false {
         
@@ -22,9 +22,9 @@ final class PeripheralHostController: BluetoothHostControllerInterface {
     var log: ((String) -> ())?
     
     /// The Bluetooth Address of the controller.
-    let address: Address
+    let address: BluetoothAddress
     
-    init(address: Address = .any) {
+    init(address: BluetoothAddress) {
         
         self.address = address
         self.log = { print("\(type(of: self)):", $0) }
@@ -93,16 +93,16 @@ final class PeripheralHostController: BluetoothHostControllerInterface {
 final class CentralHostController: BluetoothHostControllerInterface {
     
     /// All controllers on the host.
-    static var controllers: [CentralHostController] { return [CentralHostController()] }
+    static var controllers: [CentralHostController] { return [CentralHostController(address: .max)] }
     
     /// The Bluetooth Address of the controller.
-    let address: Address
+    let address: BluetoothAddress
     
     var log: ((String) -> ())?
     
     var advertisingReports = [Data]() //[HCILEAdvertisingReport]()
     
-    init(address: Address = .any) {
+    init(address: BluetoothAddress) {
         
         self.address = address
         self.log = { print("\(type(of: self)):", $0) }

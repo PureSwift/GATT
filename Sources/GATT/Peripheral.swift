@@ -13,9 +13,9 @@ import Bluetooth
 /// Represents a remote peripheral device that has been discovered.
 public struct Peripheral: Peer {
     
-    public let identifier: Bluetooth.Address
+    public let identifier: BluetoothAddress
     
-    public init(identifier: Bluetooth.Address) {
+    public init(identifier: BluetoothAddress) {
         
         self.identifier = identifier
     }

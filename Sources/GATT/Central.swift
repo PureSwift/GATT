@@ -13,9 +13,9 @@ import Bluetooth
 /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
 public struct Central: Peer {
     
-    public let identifier: Bluetooth.Address
+    public let identifier: BluetoothAddress
     
-    public init(identifier: Bluetooth.Address) {
+    public init(identifier: BluetoothAddress) {
         
         self.identifier = identifier
     }

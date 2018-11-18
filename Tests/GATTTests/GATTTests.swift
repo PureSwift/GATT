@@ -97,8 +97,8 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = PeripheralHostController(address: .any)
-        let clientHostController = CentralHostController(address: .any)
+        let serverHostController = PeripheralHostController(address: .max)
+        let clientHostController = CentralHostController(address: .min)
         
         // peripheral
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
@@ -229,8 +229,8 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = PeripheralHostController(address: .any)
-        let clientHostController = CentralHostController(address: .any)
+        let serverHostController = PeripheralHostController(address: .max)
+        let clientHostController = CentralHostController(address: .min)
         
         // peripheral
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
@@ -325,8 +325,8 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = PeripheralHostController(address: .any)
-        let clientHostController = CentralHostController(address: .any)
+        let serverHostController = PeripheralHostController(address: .max)
+        let clientHostController = CentralHostController(address: .min)
         
         // peripheral
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
@@ -462,8 +462,8 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = PeripheralHostController(address: .any)
-        let clientHostController = CentralHostController(address: .any)
+        let serverHostController = PeripheralHostController(address: .max)
+        let clientHostController = CentralHostController(address: .min)
         
         // peripheral
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
@@ -583,8 +583,8 @@ final class GATTTests: XCTestCase {
         serverSocket.target = clientSocket
         
         // host controller
-        let serverHostController = PeripheralHostController(address: .any)
-        let clientHostController = CentralHostController(address: .any)
+        let serverHostController = PeripheralHostController(address: .max)
+        let clientHostController = CentralHostController(address: .min)
         
         // peripheral
         typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>

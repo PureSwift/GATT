@@ -16,7 +16,7 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     
     let name: String
     
-    let address: Address
+    let address: BluetoothAddress
     
     /// Protocol/Service Multiplexer (PSM)
     let protocolServiceMultiplexer: UInt16
@@ -46,7 +46,7 @@ internal final class TestL2CAPSocket: L2CAPSocketProtocol {
     
     private(set) var cache = [Data]()
     
-    init(address: Address = .any,
+    init(address: BluetoothAddress = .zero,
          name: String = "",
          protocolServiceMultiplexer: UInt16 = UInt16(ATT.PSM.rawValue),
          channelIdentifier: UInt16 = ATT.CID) {
