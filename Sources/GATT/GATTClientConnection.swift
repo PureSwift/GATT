@@ -110,10 +110,12 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         cache.insert(foundServices)
         
         return cache.services.map {
-            Service(identifier: $0.key,
-                    uuid: $0.value.attribute.uuid,
-                    peripheral: peripheral,
-                    isPrimary: $0.value.attribute.type == .primaryService)
+            Service(
+                identifier: $0.key,
+                uuid: $0.value.attribute.uuid,
+                peripheral: peripheral,
+                isPrimary: $0.value.attribute.isPrimary
+            )
         }
     }
     
