@@ -92,16 +92,18 @@ extension AdvertisementData: AdvertisementDataProtocol {
 
 internal extension LowEnergyAdvertisingData {
     
+    /// Decode GAP data types.
+    private func decode() -> [GAPData] {
+        
+        var decoder = GAPDataDecoder()
+        decoder.ignoreUnknownType = true
+        return (try? decoder.decode(self)) ?? []
+    }
+    
     /// The local name of a peripheral.
     internal var localName: String? {
         
-        let types: [GAPData.Type] = [
-            GAPCompleteLocalName.self,
-            GAPShortLocalName.self
-        ]
-        
-        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true)
-            else { return nil }
+        let decoded = decode()
         
         guard let name = decoded.compactMap({ $0 as? GAPCompleteLocalName }).first?.name
             ?? decoded.compactMap({ $0 as? GAPShortLocalName }).first?.name
@@ -113,7 +115,9 @@ internal extension LowEnergyAdvertisingData {
     /// The Manufacturer data of a peripheral.
     internal var manufacturerData: GAPManufacturerSpecificData? {
         
-        guard let value = (try? GAPDataDecoder.decode(data, types: [GAPManufacturerSpecificData.self], ignoreUnknownType: true))?.compactMap({ $0 as? GAPManufacturerSpecificData }).first
+        let decoded = decode()
+        
+        guard let value = decoded.compactMap({ $0 as? GAPManufacturerSpecificData }).first
             else { return nil }
         
         return value
@@ -122,14 +126,9 @@ internal extension LowEnergyAdvertisingData {
     /// Service-specific advertisement data.
     internal var serviceData: [BluetoothUUID: Data]? {
         
-        let types: [GAPData.Type] = [
-            GAPServiceData16BitUUID.self,
-            GAPServiceData32BitUUID.self,
-            GAPServiceData128BitUUID.self
-        ]
+        let decoded = decode()
         
-        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true),
-            decoded.isEmpty == false
+        guard decoded.isEmpty == false
             else { return nil }
         
         var serviceData = [BluetoothUUID: Data](minimumCapacity: decoded.count)
@@ -149,17 +148,9 @@ internal extension LowEnergyAdvertisingData {
     /// An array of service UUIDs
     internal var serviceUUIDs: [BluetoothUUID]? {
         
-        let types: [GAPData.Type] = [
-            GAPCompleteListOf16BitServiceClassUUIDs.self,
-            GAPIncompleteListOf16BitServiceClassUUIDs.self,
-            GAPCompleteListOf32BitServiceClassUUIDs.self,
-            GAPIncompleteListOf32BitServiceClassUUIDs.self,
-            GAPCompleteListOf128BitServiceClassUUIDs.self,
-            GAPIncompleteListOf128BitServiceClassUUIDs.self
-        ]
+        let decoded = decode()
         
-        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true),
-            decoded.isEmpty == false
+        guard decoded.isEmpty == false
             else { return nil }
         
         var uuids = [BluetoothUUID]()
@@ -196,7 +187,10 @@ internal extension LowEnergyAdvertisingData {
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
     internal var txPowerLevel: Double? {
         
-        guard let gapData = (try? GAPDataDecoder.decode(data, types: [GAPTxPowerLevel.self], ignoreUnknownType: true))?.first as? GAPTxPowerLevel else { return nil }
+        let decoded = decode()
+        
+        guard let gapData = decoded.compactMap({ $0 as? GAPTxPowerLevel }).first
+            else { return nil }
         
         return Double(gapData.powerLevel)
     }
@@ -204,14 +198,9 @@ internal extension LowEnergyAdvertisingData {
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
     internal var solicitedServiceUUIDs: [BluetoothUUID]? {
         
-        let types: [GAPData.Type] = [
-            GAPListOf16BitServiceSolicitationUUIDs.self,
-            GAPListOf32BitServiceSolicitationUUIDs.self,
-            GAPListOf128BitServiceSolicitationUUIDs.self
-        ]
+        let decoded = decode()
         
-        guard let decoded = try? GAPDataDecoder.decode(data, types: types, ignoreUnknownType: true),
-            decoded.isEmpty == false
+        guard decoded.isEmpty == false
             else { return nil }
         
         var uuids = [BluetoothUUID]()
