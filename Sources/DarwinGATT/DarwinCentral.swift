@@ -339,16 +339,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             
         case .withoutResponse:
             
-            #if swift(>=3.2)
-            // wait until internal buffer is ready
-            if #available(iOS 11.0, macOS 10.13, *) {
-                
-                if corePeripheral.canSendWriteWithoutResponse == false {
-                    sleep(1)
-                }
-            }
-            #endif
-            
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
