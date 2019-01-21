@@ -153,7 +153,19 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
                                                       maximumPreparedWrites: options.maximumPreparedWrites)
                 
                 connection.callback.log = { [unowned self] in self.log?("[\(connection.central)]: " + $0) }
-                connection.callback.didWrite = { [unowned self] in self.didWrite?($0) }
+                connection.callback.didWrite = { [unowned self] (write) in
+                    
+                    // notify other connected centrals
+                    self.connectionsQueue.sync { [unowned self] in
+                        self.connections.values.forEach {
+                            if $0.central != write.central {
+                                $0.writeValue(write.value, forCharacteristic: write.handle)
+                            }
+                        }
+                    }
+                    
+                    self.didWrite?(write) // notify delegate
+                }
                 connection.callback.willWrite = { [unowned self] in self.willWrite?($0) }
                 connection.callback.willRead = { [unowned self] in self.willRead?($0) }
                 connection.callback.writeDatabase = { [unowned self] in self.writeDatabase($0) }
