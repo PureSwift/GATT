@@ -806,6 +806,10 @@ internal extension DarwinCentral {
         
         mutating func insert(_ newValues: [CBCharacteristic],
                              for service: CBService) {
+            guard let serviceIdentifier = services.values.first(where: { $0.value === service })?.key else {
+                assertionFailure("Attempted to insert characteristics into cache for unknown service: \(service)")
+                return
+            }
             
             // remove old characteristics for service
             while let key = characteristics.values
@@ -815,8 +819,14 @@ internal extension DarwinCentral {
             
             // insert new characteristics
             newValues.enumerated().forEach {
-                let identifier = UInt($0.offset)
-                characteristics.values[identifier] = (attribute: $0.element, notification: nil)
+                // Characteristic identifier must be namespaced to service identifier to avoid collisions.
+                // A simple solution is to combine the service identifier with the characteristic identifier.
+                // To do this, we'll pad the service identifier and then add the characteristic identifier.
+                let serviceIdentifierPadding = UInt(10000)
+                assert($0.offset < serviceIdentifierPadding)
+                
+                let characteristicIdentifier = (serviceIdentifier * serviceIdentifierPadding) + UInt($0.offset)
+                characteristics.values[characteristicIdentifier] = (attribute: $0.element, notification: nil)
             }
         }
     }
