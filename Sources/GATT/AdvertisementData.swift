@@ -67,7 +67,20 @@ extension AdvertisementData: AdvertisementDataProtocol {
     /// Service-specific advertisement data.
     public var serviceData: [BluetoothUUID: Data]? {
         
-        return advertisement.serviceData ?? scanResponse?.serviceData
+        var serviceData = [BluetoothUUID: Data]()
+        
+        if let data = advertisement.serviceData {
+            data.forEach { serviceData[$0.key] = $0.value }
+        }
+        
+        if let data = scanResponse?.serviceData {
+            data.forEach { serviceData[$0.key] = $0.value }
+        }
+        
+        guard serviceData.isEmpty == false
+            else { return nil }
+        
+        return serviceData
     }
     
     /// An array of service UUIDs
@@ -141,6 +154,9 @@ internal extension LowEnergyAdvertisingData {
         
         decoded.compactMap { $0 as? GAPServiceData128BitUUID }
             .forEach { serviceData[.bit128(UInt128(uuid: $0.uuid))] = $0.serviceData }
+        
+        guard serviceData.isEmpty == false
+            else { return nil }
         
         return serviceData
     }
