@@ -86,7 +86,12 @@ extension AdvertisementData: AdvertisementDataProtocol {
     /// An array of service UUIDs
     public var serviceUUIDs: [BluetoothUUID]? {
         
-        return advertisement.serviceUUIDs ?? scanResponse?.serviceUUIDs
+        let serviceUUIDs = (advertisement.serviceUUIDs ?? []) + (scanResponse?.serviceUUIDs ?? [])
+        
+        guard serviceUUIDs.isEmpty == false
+            else { return nil }
+        
+        return serviceUUIDs
     }
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
