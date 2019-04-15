@@ -27,7 +27,7 @@ extension GATT.Service: CoreBluetoothAttributeConvertible {
     
     func toCoreBluetooth() -> CBMutableService {
         
-        let service = CBMutableService(type: uuid.toCoreBluetooth(), primary: primary)
+        let service = CBMutableService(type: CBUUID(uuid), primary: primary)
         
         service.characteristics = characteristics.map { $0.toCoreBluetooth() }
         
@@ -51,7 +51,7 @@ extension GATT.Characteristic: CoreBluetoothAttributeConvertible {
         // Characteristics with cached values must be read-only
         // Must set nil as value.
         
-        let characteristic = CBMutableCharacteristic(type: uuid.toCoreBluetooth(), properties: propertiesMask, value: nil, permissions: permissionsMask)
+        let characteristic = CBMutableCharacteristic(type: CBUUID(uuid), properties: propertiesMask, value: nil, permissions: permissionsMask)
         
         characteristic.descriptors = descriptors.map { $0.toCoreBluetooth() }
         

@@ -10,5 +10,5 @@ import Foundation
 public extension TimeInterval {
     
     /// GATT default timeout. 
-    public static var gattDefaultTimeout: TimeInterval { return 30.0 }
+    static var gattDefaultTimeout: TimeInterval { return 30.0 }
 }

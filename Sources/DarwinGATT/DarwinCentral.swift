@@ -194,7 +194,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         accessQueue.sync { [unowned self] in self.internalState.discoverServices.semaphore = semaphore }
         defer { accessQueue.sync { [unowned self] in self.internalState.discoverServices.semaphore = nil } }
         
-        let coreServices = services.isEmpty ? nil : services.map { $0.toCoreBluetooth() }
+        let coreServices = services.isEmpty ? nil : services.map { CBUUID($0) }
         
         // start discovery
         corePeripheral.discoverServices(coreServices)
@@ -205,7 +205,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         return accessQueue.sync { [unowned self] in
             self.internalState.cache[peripheral]?.services.values.map {
                 Service(identifier: $0.key,
-                        uuid: BluetoothUUID(coreBluetooth: $0.value.uuid),
+                        uuid: BluetoothUUID($0.value.uuid),
                         peripheral: peripheral,
                         isPrimary: $0.value.isPrimary)
             } ?? []
@@ -239,7 +239,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         accessQueue.sync { [unowned self] in self.internalState.discoverCharacteristics.semaphore = semaphore }
         defer { accessQueue.sync { [unowned self] in self.internalState.discoverCharacteristics.semaphore = nil } }
         
-        let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { $0.toCoreBluetooth() }
+        let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         
         corePeripheral.discoverCharacteristics(coreCharacteristics, for: coreService)
         
@@ -253,7 +253,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         return charachertisticCache.map {
             Characteristic(identifier: $0.key,
-                           uuid: BluetoothUUID(coreBluetooth: $0.value.attribute.uuid),
+                           uuid: BluetoothUUID($0.value.attribute.uuid),
                            peripheral: service.peripheral,
                            properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.attribute.properties))
         }
@@ -316,14 +316,10 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             return coreCharacteristic
         }
         
-        let writeType: CBCharacteristicWriteType = withResponse ? .withResponse : .withoutResponse
-        
-        switch writeType {
-            
-        case .withResponse:
+        if withResponse {
             
             // write request
-            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withResponse)
             
             guard coreCharacteristic.properties.contains(.writeWithoutResponse) == false
                 else { return }
@@ -337,13 +333,13 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             
             try semaphore.wait()
             
-        case .withoutResponse:
+        } else {
             
             guard corePeripheral.state == .connected
                 else { throw CentralError.disconnected }
             
             // write command (if not blob)
-            corePeripheral.writeValue(data, for: coreCharacteristic, type: writeType)
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
         }
     }
     
@@ -659,7 +655,7 @@ public extension DarwinCentral {
     /// Central Peer
     ///
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-    public struct Peripheral: Peer {
+    struct Peripheral: Peer {
         
         public let identifier: UUID
         
@@ -672,12 +668,12 @@ public extension DarwinCentral {
 
 public extension DarwinCentral {
     
-    public typealias Error = DarwinCentralError
+    typealias Error = DarwinCentralError
 }
 
 public extension DarwinCentral {
     
-    public struct Options {
+    struct Options {
         
         public let showPowerAlert: Bool
         

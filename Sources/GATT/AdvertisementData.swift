@@ -119,7 +119,7 @@ internal extension LowEnergyAdvertisingData {
     }
     
     /// The local name of a peripheral.
-    internal var localName: String? {
+    var localName: String? {
         
         let decoded = decode()
         
@@ -131,7 +131,7 @@ internal extension LowEnergyAdvertisingData {
     }
     
     /// The Manufacturer data of a peripheral.
-    internal var manufacturerData: GAPManufacturerSpecificData? {
+    var manufacturerData: GAPManufacturerSpecificData? {
         
         let decoded = decode()
         
@@ -142,7 +142,7 @@ internal extension LowEnergyAdvertisingData {
     }
     
     /// Service-specific advertisement data.
-    internal var serviceData: [BluetoothUUID: Data]? {
+    var serviceData: [BluetoothUUID: Data]? {
         
         let decoded = decode()
         
@@ -167,7 +167,7 @@ internal extension LowEnergyAdvertisingData {
     }
     
     /// An array of service UUIDs
-    internal var serviceUUIDs: [BluetoothUUID]? {
+    var serviceUUIDs: [BluetoothUUID]? {
         
         let decoded = decode()
         
@@ -206,7 +206,7 @@ internal extension LowEnergyAdvertisingData {
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
-    internal var txPowerLevel: Double? {
+    var txPowerLevel: Double? {
         
         let decoded = decode()
         
@@ -217,7 +217,7 @@ internal extension LowEnergyAdvertisingData {
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    internal var solicitedServiceUUIDs: [BluetoothUUID]? {
+    var solicitedServiceUUIDs: [BluetoothUUID]? {
         
         let decoded = decode()
         

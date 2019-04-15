@@ -46,13 +46,13 @@ extension DarwinAdvertisementData: Equatable {
 public extension DarwinAdvertisementData {
     
     /// The local name of a peripheral.
-    public var localName: String? {
+    var localName: String? {
         
         return data[CBAdvertisementDataLocalNameKey] as? String
     }
     
     /// The Manufacturer data of a peripheral.
-    public var manufacturerData: GAPManufacturerSpecificData? {
+    var manufacturerData: GAPManufacturerSpecificData? {
         
         guard let manufacturerDataBytes = data[CBAdvertisementDataManufacturerDataKey] as? Data,
             let manufacturerData = GAPManufacturerSpecificData(data: manufacturerDataBytes)
@@ -62,7 +62,7 @@ public extension DarwinAdvertisementData {
     }
     
     /// Service-specific advertisement data.
-    public var serviceData: [BluetoothUUID: Data]? {
+    var serviceData: [BluetoothUUID: Data]? {
         
         guard let coreBluetoothServiceData = data[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data]
             else { return nil }
@@ -71,7 +71,7 @@ public extension DarwinAdvertisementData {
             
         for (key, value) in coreBluetoothServiceData {
                 
-            let uuid = BluetoothUUID(coreBluetooth: key)
+            let uuid = BluetoothUUID(key)
                 
             serviceData[uuid] = value
         }
@@ -80,22 +80,22 @@ public extension DarwinAdvertisementData {
     }
     
     /// An array of service UUIDs
-    public var serviceUUIDs: [BluetoothUUID]? {
+    var serviceUUIDs: [BluetoothUUID]? {
         
-        return (data[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+        return (data[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID($0) }
     }
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
-    public var txPowerLevel: Double? {
+    var txPowerLevel: Double? {
         
         return (data[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.doubleValue
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    public var solicitedServiceUUIDs: [BluetoothUUID]? {
+    var solicitedServiceUUIDs: [BluetoothUUID]? {
         
-        return (data[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+        return (data[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID($0) }
     }
     
     // MARK: - CoreBluetooth Specific Values
@@ -108,9 +108,9 @@ public extension DarwinAdvertisementData {
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs that were found
     /// in the “overflow” area of the advertisement data.
-    public var overflowServiceUUIDs: [BluetoothUUID]? {
+    var overflowServiceUUIDs: [BluetoothUUID]? {
         
-        return (data[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID(coreBluetooth: $0) }
+        return (data[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID($0) }
     }
 }
 

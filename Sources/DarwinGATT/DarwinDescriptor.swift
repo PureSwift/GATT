@@ -90,7 +90,7 @@ internal extension CBMutableDescriptor {
     
     convenience init(_ descriptor: DarwinDescriptor) {
         
-        self.init(type: descriptor.uuid.toCoreBluetooth(), value: descriptor.value)
+        self.init(type: CBUUID(descriptor.uuid), value: descriptor.value)
     }
 }
 

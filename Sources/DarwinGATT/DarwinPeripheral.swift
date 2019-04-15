@@ -266,7 +266,7 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
         
         let characteristic = database[characteristic: request.characteristic]
         
-        let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
+        let uuid = BluetoothUUID(request.characteristic.uuid)
         
         let value = characteristic.value
         
@@ -312,7 +312,7 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
             
             let value = characteristic.value
             
-            let uuid = BluetoothUUID(coreBluetooth: request.characteristic.uuid)
+            let uuid = BluetoothUUID(request.characteristic.uuid)
             
             let newValue = request.value ?? Data()
             
@@ -390,7 +390,7 @@ public extension DarwinPeripheral {
     /// Peripheral Peer
     ///
     /// Represents a remote peripheral device that has been discovered.
-    public struct Central: Peer {
+    struct Central: Peer {
         
         public let identifier: UUID
         
@@ -403,7 +403,7 @@ public extension DarwinPeripheral {
 
 public extension DarwinPeripheral {
     
-    public struct Options {
+    struct Options {
         
         public let showPowerAlert: Bool
         
@@ -433,7 +433,7 @@ public extension DarwinPeripheral {
         }
     }
     
-    public struct AdvertisingOptions {
+    struct AdvertisingOptions {
         
         /// The local name of the peripheral.
         public let localName: String?
@@ -474,7 +474,7 @@ public extension DarwinPeripheral {
             
             if serviceUUIDs.isEmpty == false {
                 
-                options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { $0.toCoreBluetooth() }
+                options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID($0) }
             }
             
             #if os(iOS)
@@ -588,7 +588,7 @@ private extension DarwinPeripheral {
         /// Return the handles of the characteristics matching the specified UUID.
         func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
             
-            let characteristicUUID = uuid.toCoreBluetooth()
+            let characteristicUUID = CBUUID(uuid)
             
             return characteristics
                 .filter { $0.key.uuid == characteristicUUID }
@@ -626,7 +626,7 @@ private extension DarwinPeripheral {
             
             get {
                 
-                let characteristicUUID = uuid.toCoreBluetooth()
+                let characteristicUUID = CBUUID(uuid)
                 
                 guard let characteristic = characteristics.first(where: { $0.key.uuid == characteristicUUID })?.value
                     else { fatalError("Invalid UUID \(uuid)") }
@@ -636,7 +636,7 @@ private extension DarwinPeripheral {
             
             set {
                 
-                let characteristicUUID = uuid.toCoreBluetooth()
+                let characteristicUUID = CBUUID(uuid)
                 
                 guard let key = characteristics.keys.first(where: { $0.uuid == characteristicUUID })
                     else { fatalError("Invalid UUID \(uuid)") }
