@@ -14,6 +14,10 @@ matrix:
       # Test Xcode 10 / Swift 4.2
        - os: osx
          osx_image: xcode10
+      # Test Xcode 10.2 / Swift 5
+       - os: osx
+         osx_image: xcode10.2
+
 addons:
   apt:
     packages:
@@ -31,7 +35,7 @@ env:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$(pwd)/tests/$SWIFT_VERSION-ubuntu14.04/usr/bin:"${PATH}" ; fi
   # Compile with SPM
-  - swift test
+  - swift build
   # Compile with Xcode
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then carthage bootstrap ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cd Xcode ; fi
