@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 48;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -621,7 +621,7 @@
 				TargetAttributes = {
 					6E0FC45920F873B1009269B4 = {
 						CreatedOnToolsVersion = 9.4.1;
-						LastSwiftMigration = 0940;
+						LastSwiftMigration = 1020;
 						ProvisioningStyle = Automatic;
 					};
 					6E49B22520532A94002EA5DC = {
@@ -632,7 +632,7 @@
 					};
 					6EE84D831CAF419D00A40C4D = {
 						CreatedOnToolsVersion = 7.3;
-						LastSwiftMigration = 0920;
+						LastSwiftMigration = 1020;
 					};
 					6EE9102A1FDE5C17007AD3EA = {
 						LastSwiftMigration = 0940;
@@ -644,11 +644,10 @@
 				};
 			};
 			buildConfigurationList = 6EE84D7E1CAF419D00A40C4D /* Build configuration list for PBXProject "GATT" */;
-			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
 				Base,
 			);
