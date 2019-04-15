@@ -38,6 +38,7 @@ Packages/
 Package.pins
 .build/
 GATT.xcodeproj/*
+*.resolved
 
 # CocoaPods
 #
