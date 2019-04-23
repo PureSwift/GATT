@@ -15,7 +15,7 @@ import Bluetooth
 @available(macOS 10.12, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
-    public typealias Advertisement = AdvertisementData
+    public typealias Advertisement = LowEnergyAdvertisingData
     
     public var log: ((String) -> ())?
     
@@ -23,11 +23,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public let options: GATTCentralOptions
     
-    public var newConnection: ((ScanData<Peripheral, AdvertisementData>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
+    public var newConnection: ((ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
     
     internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
     
-    internal private(set) var scanData: [Peripheral: (ScanData<Peripheral, AdvertisementData>, HCILEAdvertisingReport.Report)] = [:]
+    internal private(set) var scanData: [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)] = [:]
     
     internal private(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
     
@@ -42,13 +42,9 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func scan(filterDuplicates: Bool = true,
                      shouldContinueScanning: () -> (Bool),
-                     foundDevice: @escaping (ScanData<Peripheral, AdvertisementData>) -> ()) throws {
+                     foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         self.log?("Scanning...")
-        
-        let scanType = options.scanParameters.type
-        
-        var scanResults = [Peripheral: AdvertisementData]()
         
         try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
             
@@ -56,61 +52,15 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             
             let isConnectable = report.event.isConnectable
             
-            switch report.event {
-                
-            // advertisement
-            case .scannable,
-                 .directed,
-                 .undirected,
-                 .nonConnectable:
-                
-                let advertisementData = AdvertisementData(advertisement: report.responseData)
-                
-                scanResults[peripheral] = advertisementData
-                
-                switch scanType {
-                    
-                case .active:
-                    
-                    // wait for scan response
-                    break
-                    
-                case .passive:
-                    
-                    // dont wait for scan response, report immediatly
-                    let scanData = ScanData(peripheral: peripheral,
-                                            date: Date(),
-                                            rssi: Double(report.rssi.rawValue),
-                                            advertisementData: advertisementData,
-                                            isConnectable: isConnectable)
-                    
-                    // store found device
-                    self.scanData[peripheral] = (scanData, report)
-                    foundDevice(scanData)
-                }
-                
-            // scan response
-            case .scanResponse:
-                
-                assert(scanType == .active, "Cannot recieve scan response in \(scanType) scanning mode")
-                
-                // get previous advertisement
-                guard let advertisement = scanResults[peripheral]?.advertisement
-                    else { self.log?("[\(peripheral)]: Missing previous advertisement for scan response"); return }
-                
-                let advertisementData = AdvertisementData(advertisement: advertisement,
-                                                          scanResponse: report.responseData)
-                
-                let scanData = ScanData(peripheral: peripheral,
-                                        date: Date(),
-                                        rssi: Double(report.rssi.rawValue),
-                                        advertisementData: advertisementData,
-                                        isConnectable: isConnectable)
-                
-                // store found device
-                self.scanData[peripheral] = (scanData, report)
-                foundDevice(scanData)
-            }
+            let scanData = ScanData(peripheral: peripheral,
+                                    date: Date(),
+                                    rssi: Double(report.rssi.rawValue),
+                                    advertisementData: report.responseData,
+                                    isConnectable: isConnectable)
+            
+            self.scanData[peripheral] = (scanData, report)
+            
+            foundDevice(scanData)
         }
         
         self.log?("Did discover \(self.scanData.count) peripherals")

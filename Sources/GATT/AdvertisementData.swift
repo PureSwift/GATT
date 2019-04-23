@@ -32,83 +32,14 @@ public protocol AdvertisementDataProtocol: Equatable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
-#if os(macOS) || os(Linux)
-
-public struct AdvertisementData: Equatable {
-    
-    public let advertisement: LowEnergyAdvertisingData
-    
-    public let scanResponse: LowEnergyAdvertisingData?
-    
-    public init(advertisement: LowEnergyAdvertisingData,
-                scanResponse: LowEnergyAdvertisingData? = nil) {
-        
-        self.advertisement = advertisement
-        self.scanResponse = scanResponse
-    }
-}
+@available(*, deprecated, message: "Use Bluetooth.LowEnergyAdvertisingData instead")
+public typealias AdvertisementData = Bluetooth.LowEnergyAdvertisingData
 
 // MARK: - Accessors
 
-extension AdvertisementData: AdvertisementDataProtocol {
-    
-    /// The local name of a peripheral.
-    public var localName: String? {
-        
-        return advertisement.localName ?? scanResponse?.localName
-    }
-    
-    /// The Manufacturer data of a peripheral.
-    public var manufacturerData: GAPManufacturerSpecificData? {
-        
-        return advertisement.manufacturerData ?? scanResponse?.manufacturerData
-    }
-    
-    /// Service-specific advertisement data.
-    public var serviceData: [BluetoothUUID: Data]? {
-        
-        var serviceData = [BluetoothUUID: Data]()
-        
-        if let data = advertisement.serviceData {
-            data.forEach { serviceData[$0.key] = $0.value }
-        }
-        
-        if let data = scanResponse?.serviceData {
-            data.forEach { serviceData[$0.key] = $0.value }
-        }
-        
-        guard serviceData.isEmpty == false
-            else { return nil }
-        
-        return serviceData
-    }
-    
-    /// An array of service UUIDs
-    public var serviceUUIDs: [BluetoothUUID]? {
-        
-        let serviceUUIDs = (advertisement.serviceUUIDs ?? []) + (scanResponse?.serviceUUIDs ?? [])
-        
-        guard serviceUUIDs.isEmpty == false
-            else { return nil }
-        
-        return serviceUUIDs
-    }
-    
-    /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
-    /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
-    public var txPowerLevel: Double? {
-        
-        return advertisement.txPowerLevel ?? scanResponse?.txPowerLevel
-    }
-    
-    /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    public var solicitedServiceUUIDs: [BluetoothUUID]? {
-        
-        return advertisement.solicitedServiceUUIDs ?? scanResponse?.solicitedServiceUUIDs
-    }
-}
+extension LowEnergyAdvertisingData: AdvertisementDataProtocol { }
 
-internal extension LowEnergyAdvertisingData {
+public extension LowEnergyAdvertisingData {
     
     /// Decode GAP data types.
     private func decode() -> [GAPData] {
@@ -123,11 +54,9 @@ internal extension LowEnergyAdvertisingData {
         
         let decoded = decode()
         
-        guard let name = decoded.compactMap({ $0 as? GAPCompleteLocalName }).first?.name
-            ?? decoded.compactMap({ $0 as? GAPShortLocalName }).first?.name
-            else { return nil }
-        
-        return name
+        return decoded
+            .compactMap({ ($0 as? GAPCompleteLocalName)?.name ?? ($0 as? GAPShortLocalName)?.name })
+            .first
     }
     
     /// The Manufacturer data of a peripheral.
@@ -201,6 +130,9 @@ internal extension LowEnergyAdvertisingData {
             .compactMap { $0 as? GAPIncompleteListOf128BitServiceClassUUIDs }
             .reduce([BluetoothUUID](), { $0 + $1.uuids.map { BluetoothUUID(uuid: $0) } })
         
+        guard uuids.isEmpty == false
+            else { return nil }
+        
         return uuids
     }
     
@@ -236,8 +168,9 @@ internal extension LowEnergyAdvertisingData {
         decoded.compactMap { $0 as? GAPListOf128BitServiceSolicitationUUIDs }
             .forEach { $0.uuids.forEach { uuids.append(.bit128(UInt128(uuid: $0))) } }
         
+        guard uuids.isEmpty == false
+            else { return nil }
+        
         return uuids
     }
 }
-
-#endif
