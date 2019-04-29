@@ -23,6 +23,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public let options: GATTCentralOptions
     
+    public private(set) var isScanning: Bool = false
+    
     public var newConnection: ((ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
     
     internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
@@ -41,12 +43,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     }
     
     public func scan(filterDuplicates: Bool = true,
-                     shouldContinueScanning: () -> (Bool),
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         self.log?("Scanning...")
         
-        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: shouldContinueScanning) { [unowned self] (report) in
+        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
             
             let peripheral = Peripheral(identifier: report.address)
             
@@ -64,6 +65,13 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         }
         
         self.log?("Did discover \(self.scanData.count) peripherals")
+    }
+    
+    public func stopScan() {
+        
+        precondition(isScanning, "Not scanning")
+        
+        self.isScanning = false
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {

@@ -211,13 +211,11 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
         stateChanged(state)
     }
     
-    #if swift(>=3.2) // Only with Xcode 9 SDK
     @objc(peripheralManager:willRestoreState:)
     public func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState state: [String : Any]) {
         
         log?("Will restore state \(state)")
     }
-    #endif
     
     @objc(peripheralManagerDidStartAdvertising:error:)
     public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
@@ -425,9 +423,7 @@ public extension DarwinPeripheral {
                 options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
             }
             
-            #if swift(>=3.2) // Only with Xcode 9 SDK
             options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
-            #endif
             
             return options
         }

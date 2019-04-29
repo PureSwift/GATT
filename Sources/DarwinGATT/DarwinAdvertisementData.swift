@@ -9,7 +9,7 @@ import Foundation
 import Bluetooth
 import GATT
 
-#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+#if canImport(CoreBluetooth)
 
 import CoreBluetooth
 

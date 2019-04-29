@@ -18,7 +18,6 @@ public protocol Peer: Hashable, CustomStringConvertible {
 public extension Peer {
     
     static func == (lhs: Self, rhs: Self) -> Bool {
-        
         return lhs.identifier == rhs.identifier
     }
     
@@ -33,7 +32,6 @@ public extension Peer {
     #endif
     
     var description: String {
-        
         return identifier.description
     }
 }

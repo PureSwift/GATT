@@ -10,7 +10,7 @@ import Foundation
 import Bluetooth
 import GATT
 
-#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+#if canImport(CoreBluetooth)
     
 import CoreBluetooth
 
@@ -36,15 +36,11 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     public var isScanning: Bool {
         
-        #if swift(>=3.2)
         if #available(OSX 10.13, iOS 9.0, *) {
             return internalManager.isScanning
         } else {
             return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
         }
-        #else
-        return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
-        #endif
     }
     
     public var didDisconnect: (Peripheral) -> () = { _ in }
@@ -82,7 +78,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     // MARK: - Methods
     
     public func scan(filterDuplicates: Bool = true,
-                     shouldContinueScanning: () -> (Bool),
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         guard state == .poweredOn
@@ -102,17 +97,19 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.internalManager.scanForPeripherals(withServices: nil, options: options)
         
-        // sleep until scan finishes
-        while shouldContinueScanning() { usleep(100) }
-        
-        self.internalManager.stopScan()
-        
         accessQueue.sync { [unowned self] in
-            
             self.internalState.scan.foundDevice = nil
         }
         
         self.log?("Did discover \(self.internalState.scan.peripherals.count) peripherals")
+    }
+    
+    public func stopScan() {
+        
+        precondition(isScanning, "Not scanning")
+        
+        self.log?("Stop scanning")
+        self.internalManager.stopScan()
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
@@ -695,9 +692,7 @@ public extension DarwinCentral {
                 options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
             }
             
-            #if swift(>=3.2) // Only with Xcode 9 SDK
             options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
-            #endif
             
             return options
         }

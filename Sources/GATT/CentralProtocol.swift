@@ -22,8 +22,12 @@ public protocol CentralProtocol: class {
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
-              shouldContinueScanning: () -> (Bool),
               foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws
+    
+    /// Stops scanning for peripherals.
+    func stopScan()
+    
+    var isScanning: Bool { get }
     
     func connect(to peripheral: Peripheral, timeout: TimeInterval) throws
     
@@ -56,14 +60,32 @@ public protocol CentralProtocol: class {
 
 public extension CentralProtocol {
     
+    /// Scans for peripherals that are advertising services.
+    @available(*, deprecated, message: "Use `stopScan()` instead")
+    func scan(filterDuplicates: Bool = true,
+              shouldContinueScanning: @escaping () -> (Bool),
+              foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
+        
+        DispatchQueue.global().async { [weak self] in
+            while shouldContinueScanning() {
+                usleep(10_000)
+            }
+            self?.stopScan()
+        }
+        
+        try self.scan(filterDuplicates: filterDuplicates, foundDevice: foundDevice)
+    }
+    
+    /// Scans for peripherals that are advertising services for the specified time interval.
     func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
         
-        let endDate = Date() + duration
+        DispatchQueue.global().asyncAfter(deadline: .now() + duration) { [weak self] in
+            self?.stopScan()
+        }
         
         var results = [Peripheral: ScanData<Peripheral, Advertisement>](minimumCapacity: 1)
         
         try scan(filterDuplicates: filterDuplicates,
-                  shouldContinueScanning: { Date() < endDate },
                   foundDevice: { results[$0.peripheral] = $0 })
         
         return results.values.sorted(by: { $0.date < $1.date })

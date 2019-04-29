@@ -8,7 +8,7 @@
 import Foundation
 import Bluetooth
 
-#if os(macOS) || os(iOS) || os(tvOS) || (os(watchOS) && swift(>=3.2))
+#if canImport(CoreBluetooth)
 
 /// Errors for GATT Central Manager
 public enum DarwinCentralError: Error {
