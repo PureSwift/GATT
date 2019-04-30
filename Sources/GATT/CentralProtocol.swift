@@ -96,9 +96,7 @@ public extension CentralProtocol {
             }
         }
         
-        var results = [Peripheral: ScanData<Peripheral, Advertisement>](minimumCapacity: 1)
-        
-        do { try scan(filterDuplicates: filterDuplicates, foundDevice: { results[$0.peripheral] = $0 }) }
+        do { try scan(filterDuplicates: filterDuplicates, foundDevice: foundDevice) }
         catch {
             didThrow = true
             throw error
