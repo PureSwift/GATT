@@ -35,7 +35,9 @@ public protocol AdvertisementDataProtocol: Equatable {
 @available(*, deprecated, message: "Use Bluetooth.LowEnergyAdvertisingData instead")
 public typealias AdvertisementData = Bluetooth.LowEnergyAdvertisingData
 
-// MARK: - Accessors
+#if os(macOS) || os(Linux)
+
+// MARK: - LowEnergyAdvertisingData
 
 extension LowEnergyAdvertisingData: AdvertisementDataProtocol { }
 
@@ -174,3 +176,5 @@ public extension LowEnergyAdvertisingData {
         return uuids
     }
 }
+
+#endif
