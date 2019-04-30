@@ -707,18 +707,7 @@ extension GATTTests {
             guard let decodedPDU = type(of: testPDU).init(data: Data(testData))
                 else { XCTFail("Could not decode \(type(of: testPDU))"); return }
             
-            //dump(decodedPDU)
-            
             XCTAssertEqual(decodedPDU.data, Data(testData))
-            
-            var decodedDump = ""
-            dump(decodedPDU, to: &decodedDump)
-            var testDump = ""
-            dump(testPDU, to: &testDump)
-            
-            // FIXME: Compare with Equatable
-            // Data has different pointers, so dumps will always be different
-            //XCTAssertEqual(decodedDump, testDump)
         }
     }
     
