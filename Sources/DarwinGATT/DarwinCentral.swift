@@ -669,10 +669,26 @@ public extension DarwinCentral {
         
         public let identifier: UUID
         
-        init(_ peripheral: CBPeripheral) {
+        #if os(macOS)
+        public let address: BluetoothAddress
+        #endif
+        
+        internal init(_ peripheral: CBPeripheral) {
             
             self.identifier = peripheral.gattIdentifier
+            
+            #if os(macOS)
+            guard let address = peripheral.address
+                else { fatalError("No Bluetooth address") }
+            self.address = address
+            #endif
         }
+        
+        #if os(macOS)
+        public var description: String {
+            return "\(identifier) (\(address))"
+        }
+        #endif
     }
 }
 
