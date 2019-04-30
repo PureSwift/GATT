@@ -99,7 +99,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.log?("Scanning...")
         
-        self.internalManager.scanForPeripherals(withServices: nil, options: options)
+        accessQueue.sync { [unowned self] in
+            self.internalManager.scanForPeripherals(withServices: nil, options: options)
+        }
         
         // wait
         try semaphore.wait()
@@ -120,9 +122,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         accessQueue.sync { [unowned self] in
             self.internalState.scan.semaphore?.stopWaiting()
             self.internalState.scan.semaphore = nil
+            self.internalManager.stopScan()
         }
-        
-        self.internalManager.stopScan()
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
@@ -466,11 +467,12 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
                                   advertisementData: Advertisement(advertisementData),
                                   isConnectable: advertisement.isConnectable ?? false)
         
+        var foundDevice: ((ScanData<Peripheral, Advertisement>) -> ())?
         accessQueue.sync { [unowned self] in
-            
             self.internalState.scan.peripherals[identifier] = (peripheral, scanResult)
-            self.internalState.scan.foundDevice?(scanResult)
+            foundDevice = self.internalState.scan.foundDevice
         }
+        foundDevice?(scanResult)
     }
     
     @objc(centralManager:didConnectPeripheral:)
@@ -665,30 +667,23 @@ public extension DarwinCentral {
     /// Central Peer
     ///
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-    struct Peripheral: Peer {
+    final class Peripheral: Peer {
         
-        public let identifier: UUID
+        public var identifier: UUID {
+            return peripheral.gattIdentifier
+        }
+        
+        internal let peripheral: CBPeripheral
         
         #if os(macOS)
-        public let address: BluetoothAddress
+        public var address: BluetoothAddress? {
+            return peripheral.address
+        }
         #endif
         
         internal init(_ peripheral: CBPeripheral) {
-            
-            self.identifier = peripheral.gattIdentifier
-            
-            #if os(macOS)
-            guard let address = peripheral.address
-                else { fatalError("No Bluetooth address") }
-            self.address = address
-            #endif
+            self.peripheral = peripheral
         }
-        
-        #if os(macOS)
-        public var description: String {
-            return "\(identifier) (\(address))"
-        }
-        #endif
     }
 }
 
