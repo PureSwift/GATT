@@ -34,17 +34,6 @@ internal extension CBPeripheral {
             return self.value(forKey: "identifier") as! UUID
         }
     }
-    
-    #if os(macOS)
-    var address: BluetoothAddress? {
-        
-        guard let addressString = self.value(forKey: "BDAddress") as? String,
-            let address = BluetoothAddress(rawValue: addressString)
-            else { return nil }
-        
-        return address
-    }
-    #endif
 }
 
 #endif

@@ -49,9 +49,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     private lazy var internalManager: CBCentralManager = CBCentralManager(delegate: self, queue: self.managerQueue, options: self.options.optionsDictionary)
     
-    internal lazy var managerQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue", attributes: [])
+    internal lazy var managerQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue")
     
-    internal lazy var accessQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Access Queue", attributes: [])
+    internal lazy var accessQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Access Queue")
     
     internal private(set) var internalState = InternalState()
     
@@ -99,9 +99,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.log?("Scanning...")
         
-        accessQueue.sync { [unowned self] in
-            self.internalManager.scanForPeripherals(withServices: nil, options: options)
-        }
+        self.internalManager.scanForPeripherals(withServices: nil, options: options)
         
         // wait
         try semaphore.wait()
@@ -119,11 +117,12 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.log?("Stop scanning")
         
-        accessQueue.sync { [unowned self] in
+        accessQueue.async { [unowned self] in
             self.internalState.scan.semaphore?.stopWaiting()
             self.internalState.scan.semaphore = nil
-            self.internalManager.stopScan()
         }
+        
+        self.internalManager.stopScan()
     }
     
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
@@ -467,12 +466,11 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
                                   advertisementData: Advertisement(advertisementData),
                                   isConnectable: advertisement.isConnectable ?? false)
         
-        var foundDevice: ((ScanData<Peripheral, Advertisement>) -> ())?
         accessQueue.sync { [unowned self] in
+            
             self.internalState.scan.peripherals[identifier] = (peripheral, scanResult)
-            foundDevice = self.internalState.scan.foundDevice
+            self.internalState.scan.foundDevice?(scanResult)
         }
-        foundDevice?(scanResult)
     }
     
     @objc(centralManager:didConnectPeripheral:)
@@ -667,22 +665,13 @@ public extension DarwinCentral {
     /// Central Peer
     ///
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-    final class Peripheral: Peer {
+    struct Peripheral: Peer {
         
-        public var identifier: UUID {
-            return peripheral.gattIdentifier
-        }
+        public let identifier: UUID
         
-        internal let peripheral: CBPeripheral
-        
-        #if os(macOS)
-        public var address: BluetoothAddress? {
-            return peripheral.address
-        }
-        #endif
-        
-        internal init(_ peripheral: CBPeripheral) {
-            self.peripheral = peripheral
+        init(_ peripheral: CBPeripheral) {
+            
+            self.identifier = peripheral.gattIdentifier
         }
     }
 }
