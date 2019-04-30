@@ -415,6 +415,22 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         }
     }
     
+    #if os(iOS)
+    public func address(for peripheral: Peripheral) throws -> BluetoothAddress {
+        
+        guard let corePeripheral = accessQueue.sync(execute: { [unowned self] in self.peripheral(peripheral) })
+            else { throw CentralError.unknownPeripheral }
+        
+        guard let addressString = corePeripheral.value(forKey: "BDAddress") as? String
+            else { fatalError("No address string for \(peripheral)") }
+        
+        guard let address = BluetoothAddress(rawValue: addressString)
+            else { fatalError("Invalid address string \(addressString)") }
+        
+        return address
+    }
+    #endif
+    
     // MARK: - Private Methods
     
     private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
