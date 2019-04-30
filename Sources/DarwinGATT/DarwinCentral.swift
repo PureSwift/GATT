@@ -88,14 +88,21 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         ]
         
         accessQueue.sync { [unowned self] in
-            
             self.internalState.scan.peripherals = [:]
             self.internalState.scan.foundDevice = foundDevice
         }
         
+        // store semaphore
+        let semaphore = Semaphore(timeout: 60 * 10, operation: .scan)
+        accessQueue.sync { [unowned self] in self.internalState.scan.semaphore = semaphore }
+        defer { accessQueue.sync { [unowned self] in self.internalState.scan.semaphore = nil } }
+        
         self.log?("Scanning...")
         
         self.internalManager.scanForPeripherals(withServices: nil, options: options)
+        
+        // wait
+        try semaphore.wait()
         
         accessQueue.sync { [unowned self] in
             self.internalState.scan.foundDevice = nil
@@ -109,6 +116,12 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         precondition(isScanning, "Not scanning")
         
         self.log?("Stop scanning")
+        
+        accessQueue.sync { [unowned self] in
+            self.internalState.scan.semaphore?.stopWaiting()
+            self.internalState.scan.semaphore = nil
+        }
+        
         self.internalManager.stopScan()
     }
     
@@ -711,6 +724,8 @@ internal extension DarwinCentral {
         
         struct Scan {
             
+            var semaphore: Semaphore?
+            
             var peripherals = [Peripheral: (peripheral: CBPeripheral, scanResult: ScanData<Peripheral, Advertisement>)]()
             
             var foundDevice: ((ScanData<Peripheral, Advertisement>) -> ())?
@@ -761,6 +776,7 @@ internal extension DarwinCentral {
     
     enum Operation {
         
+        case scan
         case connect(Peripheral)
         case discoverServices(Peripheral)
         case discoverCharacteristics(Service<Peripheral>)
