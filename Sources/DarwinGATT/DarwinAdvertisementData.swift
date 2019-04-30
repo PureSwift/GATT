@@ -40,6 +40,15 @@ extension DarwinAdvertisementData: Equatable {
         return lhs.data == rhs.data
     }
 }
+
+// MARK: - CustomStringConvertible
+
+extension DarwinAdvertisementData: CustomStringConvertible {
+    
+    public var description: String {
+        return (data as NSDictionary).description
+    }
+}
     
 // MARK: - AdvertisementDataProtocol
     
