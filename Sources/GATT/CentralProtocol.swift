@@ -90,6 +90,31 @@ public extension CentralProtocol {
         
         return results.values.sorted(by: { $0.date < $1.date })
     }
+    
+    /// Scans until a matching device is found or timeout.
+    func scanFirst(timeout: TimeInterval = .gattDefaultTimeout,
+                   filterDuplicates: Bool = true,
+                   where filter: @escaping (ScanData<Peripheral, Advertisement>) -> Bool) throws -> ScanData<Peripheral, Advertisement> {
+        
+        var foundDevice: ScanData<Peripheral, Advertisement>?
+        
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { [weak self] in
+            if foundDevice == nil {
+                self?.stopScan()
+            }
+        }
+        
+        try self.scan(filterDuplicates: filterDuplicates) { [unowned self] (scanData) in
+            guard filter(scanData) else { return }
+            foundDevice = scanData
+            self.stopScan()
+        }
+        
+        guard let scanData = foundDevice
+            else { throw CentralError.timeout }
+        
+        return scanData
+    }
 }
     
 // MARK: - Supporting Types
