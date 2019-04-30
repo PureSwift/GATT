@@ -45,7 +45,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func scan(filterDuplicates: Bool = true,
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
+        precondition(isScanning == false, "Already scanning")
+        
         self.log?("Scanning...")
+        
+        self.isScanning = true
         
         try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
             
