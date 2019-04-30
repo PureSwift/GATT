@@ -63,32 +63,46 @@ public extension CentralProtocol {
     /// Scans for peripherals that are advertising services.
     @available(*, deprecated, message: "Use `stopScan()` instead")
     func scan(filterDuplicates: Bool = true,
+              sleepDuration: TimeInterval = 1.0,
               shouldContinueScanning: @escaping () -> (Bool),
               foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
+        var didThrow = false
         DispatchQueue.global().async { [weak self] in
             while shouldContinueScanning() {
-                usleep(10_000)
+                Thread.sleep(forTimeInterval: sleepDuration)
             }
-            self?.stopScan()
+            if didThrow == false {
+                self?.stopScan()
+            }
         }
         
-        try self.scan(filterDuplicates: filterDuplicates, foundDevice: foundDevice)
+        do { try self.scan(filterDuplicates: filterDuplicates, foundDevice: foundDevice) }
+        catch {
+            didThrow = true
+            throw error
+        }
     }
     
     /// Scans for peripherals that are advertising services for the specified time interval.
-    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
+    func scan(duration: TimeInterval,
+              filterDuplicates: Bool = true,
+              foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
+        var didThrow = false
         DispatchQueue.global().asyncAfter(deadline: .now() + duration) { [weak self] in
-            self?.stopScan()
+            if didThrow == false {
+                self?.stopScan()
+            }
         }
         
         var results = [Peripheral: ScanData<Peripheral, Advertisement>](minimumCapacity: 1)
         
-        try scan(filterDuplicates: filterDuplicates,
-                  foundDevice: { results[$0.peripheral] = $0 })
-        
-        return results.values.sorted(by: { $0.date < $1.date })
+        do { try scan(filterDuplicates: filterDuplicates, foundDevice: { results[$0.peripheral] = $0 }) }
+        catch {
+            didThrow = true
+            throw error
+        }
     }
     
     /// Scans until a matching device is found or timeout.
@@ -98,16 +112,24 @@ public extension CentralProtocol {
         
         var foundDevice: ScanData<Peripheral, Advertisement>?
         
+        var didThrow = false
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { [weak self] in
-            if foundDevice == nil {
+            if foundDevice == nil,
+                didThrow == false {
                 self?.stopScan()
             }
         }
         
-        try self.scan(filterDuplicates: filterDuplicates) { [unowned self] (scanData) in
-            guard filter(scanData) else { return }
-            foundDevice = scanData
-            self.stopScan()
+        do {
+            try self.scan(filterDuplicates: filterDuplicates) { [unowned self] (scanData) in
+                guard filter(scanData) else { return }
+                foundDevice = scanData
+                self.stopScan()
+            }
+        }
+        catch {
+            didThrow = true
+            throw error
         }
         
         guard let scanData = foundDevice
