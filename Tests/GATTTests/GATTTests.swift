@@ -56,7 +56,7 @@ final class GATTTests: XCTestCase {
             let scanData = ScanData(peripheral: peripheral,
                                     date: Date(),
                                     rssi: -65.0,
-                                    advertisementData: AdvertisementData(advertisement: report.responseData),
+                                    advertisementData: report.responseData,
                                     isConnectable: report.event.isConnectable)
             
             XCTAssertEqual(scanData.peripheral.identifier.rawValue, "94:E3:6D:62:1E:01")
