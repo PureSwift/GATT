@@ -135,6 +135,16 @@ public extension CentralProtocol {
         
         return result
     }
+    
+    /// Scans until a matching device is found or timeout.
+    func scanFirst(timeout: TimeInterval = .gattDefaultTimeout,
+                   filterDuplicates: Bool = true,
+                   where filter: @escaping (ScanData<Peripheral, Advertisement>) -> Bool) throws -> ScanData<Peripheral, Advertisement> {
+        
+        return try scanFirst(timeout: timeout, filterDuplicates: filterDuplicates) {
+            filter($0) ? $0 : nil
+        }
+    }
 }
     
 // MARK: - Supporting Types
