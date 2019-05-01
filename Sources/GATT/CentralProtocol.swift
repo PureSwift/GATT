@@ -104,15 +104,15 @@ public extension CentralProtocol {
     }
     
     /// Scans until a matching device is found or timeout.
-    func scanFirst(timeout: TimeInterval = .gattDefaultTimeout,
-                   filterDuplicates: Bool = true,
-                   where filter: @escaping (ScanData<Peripheral, Advertisement>) -> Bool) throws -> ScanData<Peripheral, Advertisement> {
+    func scanFirst <Result> (timeout: TimeInterval = .gattDefaultTimeout,
+                             filterDuplicates: Bool = true,
+                             where filter: @escaping (ScanData<Peripheral, Advertisement>) -> Result?) throws -> Result {
         
-        var foundDevice: ScanData<Peripheral, Advertisement>?
+        var value: Result?
         
         var didThrow = false
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { [weak self] in
-            if foundDevice == nil,
+            if value == nil,
                 didThrow == false {
                 self?.stopScan()
             }
@@ -120,8 +120,8 @@ public extension CentralProtocol {
         
         do {
             try self.scan(filterDuplicates: filterDuplicates) { [unowned self] (scanData) in
-                guard filter(scanData) else { return }
-                foundDevice = scanData
+                guard let result = filter(scanData) else { return }
+                value = result
                 self.stopScan()
             }
         }
@@ -130,10 +130,10 @@ public extension CentralProtocol {
             throw error
         }
         
-        guard let scanData = foundDevice
+        guard let result = value
             else { throw CentralError.timeout }
         
-        return scanData
+        return result
     }
 }
     
