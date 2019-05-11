@@ -51,30 +51,36 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         self.isScanning = true
         
-        try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
+        do {
             
-            let peripheral = Peripheral(identifier: report.address)
-            
-            let isConnectable = report.event.isConnectable
-            
-            let scanData = ScanData(peripheral: peripheral,
-                                    date: Date(),
-                                    rssi: Double(report.rssi.rawValue),
-                                    advertisementData: report.responseData,
-                                    isConnectable: isConnectable)
-            
-            self.scanData[peripheral] = (scanData, report)
-            
-            foundDevice(scanData)
+            try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
+                
+                let peripheral = Peripheral(identifier: report.address)
+                
+                let isConnectable = report.event.isConnectable
+                
+                let scanData = ScanData(peripheral: peripheral,
+                                        date: Date(),
+                                        rssi: Double(report.rssi.rawValue),
+                                        advertisementData: report.responseData,
+                                        isConnectable: isConnectable)
+                
+                self.scanData[peripheral] = (scanData, report)
+                
+                foundDevice(scanData)
+            }
+        } catch {
+            self.isScanning = false
+            throw error
         }
         
         self.log?("Did discover \(self.scanData.count) peripherals")
+        assert(isScanning == false, "Invalid scanning state: \(isScanning)")
     }
     
     public func stopScan() {
         
         precondition(isScanning, "Not scanning")
-        
         self.isScanning = false
     }
     
