@@ -101,6 +101,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.internalManager.scanForPeripherals(withServices: nil, options: options)
         
+        assert(self.isScanning, "Should be in scanning state")
+        
         // wait
         try semaphore.wait()
         
@@ -112,8 +114,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     }
     
     public func stopScan() {
-        
-        precondition(isScanning, "Not scanning")
         
         self.log?("Stop scanning")
         
