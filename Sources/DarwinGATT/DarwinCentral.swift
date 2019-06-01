@@ -340,16 +340,20 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             let semaphore = Semaphore(timeout: timeout, operation: .writeCharacteristic(characteristic))
             accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = semaphore }
             defer { accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = nil } }
-            
             try semaphore.wait()
             
         } else {
             
-            guard corePeripheral.state == .connected
-                else { throw CentralError.disconnected }
-            
             // write command (if not blob)
             corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
+            
+            // flush write messages
+            if corePeripheral.canSendWriteWithoutResponse == false {
+                let semaphore = Semaphore(timeout: timeout, operation: .flushWriteWithoutResponse(characteristic.peripheral))
+                accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = semaphore }
+                defer { accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = nil } }
+                try semaphore.wait()
+            }
         }
     }
     
@@ -656,6 +660,17 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         // TODO: Read Descriptor Value
     }
+    
+    @objc
+    public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        
+        log?("Peripheral \(peripheral.gattIdentifier.uuidString) is ready to send write without response")
+        
+        accessQueue.sync { [unowned self] in
+            self.internalState.flushWriteWithoutResponse.semaphore?.stopWaiting()
+            self.internalState.flushWriteWithoutResponse.semaphore = nil
+        }
+    }
 }
 
 // MARK: - Supporting Types
@@ -766,6 +781,13 @@ internal extension DarwinCentral {
             var semaphore: Semaphore?
         }
         
+        var flushWriteWithoutResponse = FlushWriteWithoutResponse()
+        
+        struct FlushWriteWithoutResponse {
+            
+            var semaphore: Semaphore?
+        }
+        
         var notify = Notify()
         
         struct Notify {
@@ -782,6 +804,7 @@ internal extension DarwinCentral {
         case discoverCharacteristics(Service<Peripheral>)
         case readCharacteristic(Characteristic<Peripheral>)
         case writeCharacteristic(Characteristic<Peripheral>)
+        case flushWriteWithoutResponse(Peripheral)
         case updateCharacteristicNotificationState(Characteristic<Peripheral>)
     }
     
