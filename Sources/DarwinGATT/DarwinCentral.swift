@@ -331,12 +331,8 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             // write request
             corePeripheral.writeValue(data, for: coreCharacteristic, type: .withResponse)
             
-            guard coreCharacteristic.properties.contains(.writeWithoutResponse) == false
-                else { return }
-            
             // calls `peripheral:didWriteValueForCharacteristic:error:` only
             // if you specified the write type as `.withResponse`.
-            
             let semaphore = Semaphore(timeout: timeout, operation: .writeCharacteristic(characteristic))
             accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = semaphore }
             defer { accessQueue.sync { [unowned self] in self.internalState.writeCharacteristic.semaphore = nil } }
