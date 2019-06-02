@@ -34,14 +34,14 @@ extension DarwinDescriptor {
         
         switch uuid {
         
-        case BluetoothUUID.characteristicUserDescription:
+        case .characteristicUserDescription:
             
             guard let descriptor = GATTUserDescription(data: data)
                 else { return nil }
             
             self = .userDescription(descriptor.userDescription as NSString)
             
-        case BluetoothUUID.characteristicFormat:
+        case .characteristicFormat:
             
             self = .format(data as NSData)
             
@@ -91,6 +91,15 @@ internal extension CBMutableDescriptor {
     convenience init(_ descriptor: DarwinDescriptor) {
         
         self.init(type: CBUUID(descriptor.uuid), value: descriptor.value)
+    }
+}
+
+internal extension CBDescriptor {
+    
+    /// Only the characteristic user description descriptor and the characteristic format descriptor
+    /// are supported for descriptors for use in local Peripherals.
+    static var supportedUUID: Set<BluetoothUUID> {
+        return [.characteristicUserDescription, .characteristicFormat]
     }
 }
 

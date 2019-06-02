@@ -39,21 +39,20 @@ extension GATT.Characteristic: CoreBluetoothAttributeConvertible {
     
     func toCoreBluetooth() -> CBMutableCharacteristic {
         
-        let propertyRawValue = CBCharacteristicProperties.RawValue.self
-        
-        let propertiesMask = CBCharacteristicProperties(rawValue: propertyRawValue.init(properties.rawValue))
-        
-        let permissionRawValue = CBAttributePermissions.RawValue.self
-        
-        let permissionsMask = CBAttributePermissions(rawValue: permissionRawValue.init(permissions.rawValue))
-        
         // http://stackoverflow.com/questions/29228244/issues-in-creating-writable-characteristic-in-core-bluetooth-framework#29229075
         // Characteristics with cached values must be read-only
         // Must set nil as value.
         
-        let characteristic = CBMutableCharacteristic(type: CBUUID(uuid), properties: propertiesMask, value: nil, permissions: permissionsMask)
+        let characteristic = CBMutableCharacteristic(
+            type: CBUUID(uuid),
+            properties: CBCharacteristicProperties(rawValue: .init(properties.rawValue)),
+            value: nil,
+            permissions: CBAttributePermissions(rawValue: .init(permissions.rawValue))
+        )
         
-        characteristic.descriptors = descriptors.map { $0.toCoreBluetooth() }
+        characteristic.descriptors = descriptors
+            .filter { CBMutableDescriptor.supportedUUID.contains($0.uuid) }
+            .map { $0.toCoreBluetooth() }
         
         return characteristic
     }
