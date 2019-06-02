@@ -348,11 +348,15 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
             
             // flush write messages
-            if corePeripheral.canSendWriteWithoutResponse == false {
-                let semaphore = Semaphore(timeout: timeout, operation: .flushWriteWithoutResponse(characteristic.peripheral))
-                accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = semaphore }
-                defer { accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = nil } }
-                try semaphore.wait()
+            if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *) {
+                if corePeripheral.canSendWriteWithoutResponse == false {
+                    let semaphore = Semaphore(timeout: timeout, operation: .flushWriteWithoutResponse(characteristic.peripheral))
+                    accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = semaphore }
+                    defer { accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = nil } }
+                    try semaphore.wait()
+                }
+            } else {
+                sleep(1)
             }
         }
     }
