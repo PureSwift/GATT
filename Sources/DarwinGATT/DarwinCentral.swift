@@ -43,7 +43,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         }
     }
     
-    public var didDisconnect: (Peripheral) -> () = { _ in }
+    public var didDisconnect: ((Peripheral) -> ())?
     
     // MARK: - Private Properties
     
@@ -514,7 +514,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             log?("Did disconnect peripheral \(peripheral.gattIdentifier.uuidString)")
         }
         
-        self.didDisconnect(Peripheral(peripheral))
+        self.didDisconnect?(Peripheral(peripheral))
     }
     
     // MARK: - CBPeripheralDelegate

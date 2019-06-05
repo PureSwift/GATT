@@ -15,6 +15,8 @@ import Bluetooth
 @available(macOS 10.12, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
+    // MARK: - Properties
+    
     public typealias Advertisement = LowEnergyAdvertisingData
     
     public var log: ((String) -> ())?
@@ -24,6 +26,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public let options: GATTCentralOptions
     
     public private(set) var isScanning: Bool = false
+    
+    public var didDisconnect: ((Peripheral) -> ())?
     
     public var newConnection: ((ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
     
@@ -35,12 +39,16 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     private var lastConnectionID = 0
     
+    // MARK: - Initialization
+    
     public init(hostController: HostController,
                 options: GATTCentralOptions = GATTCentralOptions()) {
         
         self.hostController = hostController
         self.options = options
     }
+    
+    // MARK: - Methods
     
     public func scan(filterDuplicates: Bool = true,
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
@@ -122,13 +130,21 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         
         // L2CAP socket may be retained by background thread
         sleep(1)
+        
+        didDisconnect?(peripheral)
     }
     
     public func disconnectAll() {
         
+        let peripherals = self.didDisconnect != nil ? Array(self.connections.keys) : []
+        
         self.connections.removeAll(keepingCapacity: true)
         
         sleep(1)
+        
+        if let didDisconnect = self.didDisconnect {
+            peripherals.forEach { didDisconnect($0) }
+        }
     }
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
