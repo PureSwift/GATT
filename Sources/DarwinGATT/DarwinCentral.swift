@@ -503,18 +503,32 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     }
     
     @objc(centralManager:didDisconnectPeripheral:error:)
-    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Swift.Error?) {
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral corePeripheral: CBPeripheral, error: Swift.Error?) {
+        
+        let peripheral = Peripheral(corePeripheral)
         
         if let error = error {
-            
-            log?("Did disconnect peripheral \(peripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
-            
+            log?("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
         } else {
-            
-            log?("Did disconnect peripheral \(peripheral.gattIdentifier.uuidString)")
+            log?("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString)")
         }
         
-        self.didDisconnect?(Peripheral(peripheral))
+        self.didDisconnect?(peripheral)
+        
+        // cancel all actions that require an active connection
+        let semaphores = [
+            internalState.discoverServices.semaphore,
+            internalState.discoverCharacteristics.semaphore,
+            internalState.writeCharacteristic.semaphore,
+            internalState.flushWriteWithoutResponse.semaphore,
+            internalState.readCharacteristic.semaphore,
+            internalState.notify.semaphore
+        ]
+        
+        semaphores
+            .filter { $0?.operation.peripheral == peripheral }
+            .compactMap { $0 }
+            .forEach { $0.stopWaiting(CentralError.disconnected) }
     }
     
     // MARK: - CBPeripheralDelegate
@@ -806,6 +820,27 @@ internal extension DarwinCentral {
         case writeCharacteristic(Characteristic<Peripheral>)
         case flushWriteWithoutResponse(Peripheral)
         case updateCharacteristicNotificationState(Characteristic<Peripheral>)
+        
+        var peripheral: Peripheral? {
+            switch self {
+            case .scan:
+                return nil
+            case let .connect(peripheral):
+                return peripheral
+            case let .discoverServices(peripheral):
+                return peripheral
+            case let .discoverCharacteristics(service):
+                return service.peripheral
+            case let .readCharacteristic(characteristic):
+                return characteristic.peripheral
+            case let .writeCharacteristic(characteristic):
+                return characteristic.peripheral
+            case let .flushWriteWithoutResponse(peripheral):
+                return peripheral
+            case let .updateCharacteristicNotificationState(characteristic):
+                return characteristic.peripheral
+            }
+        }
     }
     
     struct Cache {
