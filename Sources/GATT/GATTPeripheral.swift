@@ -117,7 +117,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     /// Return the handles of the characteristics matching the specified UUID.
     public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
         
-        return self.writeDatabase { $0.filter { $0.uuid == uuid }.map { $0.handle } }
+        return writeDatabase { $0.filter { $0.uuid == uuid }.map { $0.handle } }
     }
     
     // MARK: - Subscript
@@ -127,6 +127,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         get { return writeDatabase { $0[handle: handle].value } }
         
         set {
+            writeDatabase { $0.write(newValue, forAttribute: handle) }
             connectionsQueue
                 .sync { [unowned self] in self.connections.values }
                 .forEach { $0.writeValue(newValue, forCharacteristic: handle) }
