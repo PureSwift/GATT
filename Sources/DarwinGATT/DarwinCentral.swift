@@ -340,9 +340,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             
         } else {
             
-            // write command (if not blob)
-            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
-            
             // flush write messages
             if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *) {
                 if corePeripheral.canSendWriteWithoutResponse == false {
@@ -354,6 +351,9 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             } else {
                 sleep(1)
             }
+            
+            // write command (if not blob)
+            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
         }
     }
     
