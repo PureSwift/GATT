@@ -30,13 +30,15 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
     
     public var state: DarwinBluetoothState {
-        
         return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
     }
     
+    /// How long to wait for write without response to be ready.
+    public var writeWithoutResponseTimeout: TimeInterval = 5.0
+    
     public var isScanning: Bool {
         
-        if #available(OSX 10.13, iOS 9.0, *) {
+        if #available(macOS 10.13, iOS 9.0, *) {
             return internalManager.isScanning
         } else {
             return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
@@ -343,10 +345,19 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             // flush write messages
             if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *) {
                 if corePeripheral.canSendWriteWithoutResponse == false {
-                    let semaphore = Semaphore(timeout: timeout, operation: .flushWriteWithoutResponse(characteristic.peripheral))
-                    accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = semaphore }
-                    defer { accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = nil } }
-                    try semaphore.wait()
+                    let semaphore = Semaphore(
+                        timeout: writeWithoutResponseTimeout,
+                        operation: .flushWriteWithoutResponse(characteristic.peripheral)
+                    )
+                    accessQueue.sync { [unowned self] in
+                        self.internalState.flushWriteWithoutResponse.semaphore = semaphore
+                    }
+                    defer {
+                        accessQueue.sync { [unowned self] in self.internalState.flushWriteWithoutResponse.semaphore = nil
+                        }
+                    }
+                    do { try semaphore.wait() }
+                    catch { log?("Timeout waiting for write without response availability") }
                 }
             } else {
                 sleep(1)
