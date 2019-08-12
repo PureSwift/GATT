@@ -25,16 +25,13 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     public var log: ((String) -> ())?
     
-    public let options: Options
+    public var options: Options
     
     public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
     
     public var state: DarwinBluetoothState {
         return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
     }
-    
-    /// How long to wait for write without response to be ready.
-    public var writeWithoutResponseTimeout: TimeInterval = 5.0
     
     public var isScanning: Bool {
         
@@ -723,28 +720,45 @@ public extension DarwinCentral {
 
 public extension DarwinCentral {
     
+    /**
+     Darwin GATT Central Options
+     */
     struct Options {
         
+        /**
+         A Boolean value that specifies whether the system should display a warning dialog to the user if Bluetooth is powered off when the peripheral manager is instantiated.
+         */
         public let showPowerAlert: Bool
         
+        /**
+         A string (an instance of NSString) containing a unique identifier (UID) for the peripheral manager that is being instantiated.
+         The system uses this UID to identify a specific peripheral manager. As a result, the UID must remain the same for subsequent executions of the app in order for the peripheral manager to be successfully restored.
+         */
         public let restoreIdentifier: String?
         
+        /**
+         How long to wait for write without response to be ready.
+         */
+        public var writeWithoutResponseTimeout: TimeInterval
+        
+        /**
+         Initialize options.
+         */
         public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String? = nil) {
+                    restoreIdentifier: String? = nil,
+                    writeWithoutResponseTimeout: TimeInterval = 3.0) {
             
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
+            self.writeWithoutResponseTimeout = writeWithoutResponseTimeout
         }
         
         internal var optionsDictionary: [String: Any] {
             
             var options = [String: Any](minimumCapacity: 2)
-            
             if showPowerAlert {
-                
                 options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
             }
-            
             options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
             
             return options
@@ -929,14 +943,10 @@ internal extension DarwinCentral {
         func wait() throws {
             
             let dispatchTime: DispatchTime = .now() + timeout
-            
             let success = semaphore.wait(timeout: dispatchTime) == .success
-            
             if let error = self.error {
-                
                 throw error
             }
-            
             guard success else { throw CentralError.timeout }
         }
         
