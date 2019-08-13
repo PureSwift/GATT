@@ -343,7 +343,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *) {
                 if corePeripheral.canSendWriteWithoutResponse == false {
                     let semaphore = Semaphore(
-                        timeout: writeWithoutResponseTimeout,
+                        timeout: options.writeWithoutResponseTimeout,
                         operation: .flushWriteWithoutResponse(characteristic.peripheral)
                     )
                     accessQueue.sync { [unowned self] in
