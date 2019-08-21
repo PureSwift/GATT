@@ -79,8 +79,17 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     public func scan(filterDuplicates: Bool = true,
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
+        try scan(filterDuplicates: filterDuplicates, with: [], foundDevice: foundDevice)
+    }
+    
+    public func scan(filterDuplicates: Bool = true,
+                     with services: Set<BluetoothUUID>,
+                     foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
+        
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
+        
+        let serviceUUIDs: [CBUUID]? = services.isEmpty ? nil : services.map { CBUUID($0) }
         
         let options: [String: Any] = [
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
@@ -98,7 +107,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         
         self.log?("Scanning...")
         
-        self.internalManager.scanForPeripherals(withServices: nil, options: options)
+        self.internalManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
         
         assert(self.isScanning, "Should be in scanning state")
         
