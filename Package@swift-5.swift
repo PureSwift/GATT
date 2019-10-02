@@ -5,15 +5,20 @@ _ = Package(name: "GATT",
             products: [
                 .library(
                     name: "GATT",
+                    type: .dynamic,
                     targets: ["GATT"]
                 ),
                 .library(
                     name: "DarwinGATT",
+                    type: .dynamic,
                     targets: ["DarwinGATT"]
                 )
             ],
             dependencies: [
-                .package(url: "https://github.com/PureSwift/Bluetooth.git", .branch("master"))
+                .package(
+                    url: "https://github.com/PureSwift/Bluetooth.git",
+                    .branch("master")
+                )
             ],
             targets: [
                 .target(name: "GATT", dependencies: ["Bluetooth"]),
