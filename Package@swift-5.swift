@@ -1,16 +1,22 @@
 // swift-tools-version:5.0
 import PackageDescription
 
+#if os(Linux)
+let libraryType: PackageDescription.Product.Library.LibraryType = .dynamic
+#else
+let libraryType: PackageDescription.Product.Library.LibraryType = .static
+#endif
+
 _ = Package(name: "GATT",
             products: [
                 .library(
                     name: "GATT",
-                    type: .dynamic,
+                    type: libraryType,
                     targets: ["GATT"]
                 ),
                 .library(
                     name: "DarwinGATT",
-                    type: .dynamic,
+                    type: libraryType,
                     targets: ["DarwinGATT"]
                 )
             ],
