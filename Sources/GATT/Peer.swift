@@ -21,15 +21,9 @@ public extension Peer {
         return lhs.identifier == rhs.identifier
     }
     
-    #if swift(>=4.2)
     func hash(into hasher: inout Hasher) {
         identifier.hash(into: &hasher)
     }
-    #else
-    var hashValue: Int {
-        return identifier.hashValue
-    }
-    #endif
     
     var description: String {
         return identifier.description

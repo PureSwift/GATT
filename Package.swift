@@ -1,23 +1,35 @@
-// swift-tools-version:4.1
+// swift-tools-version:5.0
 import PackageDescription
 
-_ = Package(name: "GATT",
-            products: [
-                .library(
-                    name: "GATT",
-                    targets: ["GATT"]
-                ),
-                .library(
-                    name: "DarwinGATT",
-                    targets: ["DarwinGATT"]
-                )
-            ],
-            dependencies: [
-                .package(url: "https://github.com/PureSwift/Bluetooth.git", .branch("master"))
-            ],
-            targets: [
-                .target(name: "GATT", dependencies: ["Bluetooth"]),
-                .target(name: "DarwinGATT", dependencies: ["GATT"]),
-                .testTarget(name: "GATTTests", dependencies: ["GATT"])
-            ],
-            swiftLanguageVersions: [4])
+#if os(Linux)
+let libraryType: PackageDescription.Product.Library.LibraryType = .dynamic
+#else
+let libraryType: PackageDescription.Product.Library.LibraryType = .static
+#endif
+
+let package = Package(
+    name: "GATT",
+    products: [
+        .library(
+            name: "GATT",
+            type: libraryType,
+            targets: ["GATT"]
+        ),
+        .library(
+            name: "DarwinGATT",
+            type: libraryType,
+            targets: ["DarwinGATT"]
+        )
+    ],
+    dependencies: [
+        .package(
+            url: "https://github.com/PureSwift/Bluetooth.git",
+            .branch("master")
+        )
+    ],
+    targets: [
+        .target(name: "GATT", dependencies: ["Bluetooth"]),
+        .target(name: "DarwinGATT", dependencies: ["GATT"]),
+        .testTarget(name: "GATTTests", dependencies: ["GATT"])
+    ]
+)
