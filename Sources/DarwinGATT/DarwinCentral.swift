@@ -22,14 +22,6 @@ public typealias DarwinCentral = DarwinSynchronousCentral
 @objc(DarwinCentral)
 public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
     
-    public typealias Advertisement = DarwinAdvertisementData
-    
-    public typealias Peripheral = DarwinPeer
-    
-    public typealias Error = DarwinCentralError
-    
-    public typealias State = DarwinBluetoothState
-    
     // MARK: - Properties
     
     public var log: ((String) -> ())?
@@ -715,19 +707,25 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
 
 // MARK: - Supporting Types
 
-/// Central Peer
-///
-/// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-public struct DarwinPeer: Peer {
-    
-    public let identifier: UUID
-    
-    internal init(_ peripheral: CBPeripheral) {
-        self.identifier = peripheral.gattIdentifier
-    }
-}
-
 public extension DarwinSynchronousCentral {
+    
+    typealias Advertisement = DarwinAdvertisementData
+        
+    typealias Error = DarwinCentralError
+    
+    typealias State = DarwinBluetoothState
+    
+    /// Central Peer
+    ///
+    /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+    struct Peripheral: Peer {
+        
+        public let identifier: UUID
+        
+        internal init(_ peripheral: CBPeripheral) {
+            self.identifier = peripheral.gattIdentifier
+        }
+    }
     
     /**
      Darwin GATT Central Options
