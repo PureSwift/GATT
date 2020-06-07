@@ -40,3 +40,13 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementDataProtoc
         self.isConnectable = isConnectable
     }
 }
+
+// MARK: - Codable
+
+extension ScanData: Encodable where Peripheral: Encodable, Advertisement: Encodable { }
+
+extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decodable { }
+
+// MARK: - Hashable
+
+extension ScanData: Hashable where Peripheral: Hashable, Advertisement: Hashable { }

@@ -13,7 +13,7 @@ import Bluetooth
 #if os(macOS) || os(Linux)
 
 @available(macOS 10.12, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: SynchronousCentral {
     
     // MARK: - Properties
     

@@ -11,15 +11,24 @@ import Bluetooth
 import GATT
 
 #if canImport(CoreBluetooth)
-    
+
 import CoreBluetooth
 
-/// The platform specific peripheral.
+/// CoreBluetooth GATT Central manager.
+@available(*, deprecated, message: "Please migrate to 'DarwinCombineCentral'")
+public typealias DarwinCentral = DarwinSynchronousCentral
 
-@objc
-public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDelegate, CBPeripheralDelegate {
+/// CoreBluetooth GATT Central manager.
+@objc(DarwinCentral)
+public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
     
     public typealias Advertisement = DarwinAdvertisementData
+    
+    public typealias Peripheral = DarwinPeer
+    
+    public typealias Error = DarwinCentralError
+    
+    public typealias State = DarwinBluetoothState
     
     // MARK: - Properties
     
@@ -27,10 +36,10 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     
     public var options: Options
     
-    public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
+    public var stateChanged: (State) -> () = { _ in }
     
-    public var state: DarwinBluetoothState {
-        return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
+    public var state: State {
+        return unsafeBitCast(internalManager.state, to: State.self)
     }
     
     public var isScanning: Bool {
@@ -706,28 +715,19 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
 
 // MARK: - Supporting Types
 
-public extension DarwinCentral {
+/// Central Peer
+///
+/// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+public struct DarwinPeer: Peer {
     
-    /// Central Peer
-    ///
-    /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-    struct Peripheral: Peer {
-        
-        public let identifier: UUID
-        
-        init(_ peripheral: CBPeripheral) {
-            
-            self.identifier = peripheral.gattIdentifier
-        }
+    public let identifier: UUID
+    
+    internal init(_ peripheral: CBPeripheral) {
+        self.identifier = peripheral.gattIdentifier
     }
 }
 
-public extension DarwinCentral {
-    
-    typealias Error = DarwinCentralError
-}
-
-public extension DarwinCentral {
+public extension DarwinSynchronousCentral {
     
     /**
      Darwin GATT Central Options
@@ -775,7 +775,7 @@ public extension DarwinCentral {
     }
 }
 
-internal extension DarwinCentral {
+internal extension DarwinSynchronousCentral {
     
     struct InternalState {
         
@@ -931,7 +931,7 @@ internal extension DarwinCentral {
     }
 }
 
-internal extension DarwinCentral {
+internal extension DarwinSynchronousCentral {
     
     final class Semaphore {
         
@@ -969,5 +969,5 @@ internal extension DarwinCentral {
         }
     }
 }
-    
+
 #endif

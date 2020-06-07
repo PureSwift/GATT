@@ -9,6 +9,7 @@
 import Foundation
 import XCTest
 import Bluetooth
+import Dispatch
 @testable import GATT
 
 @available(macOS 10.12, *)

@@ -6,18 +6,39 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if canImport(Foundation)
 import Foundation
+#elseif canImport(SwiftFoundation)
+import SwiftFoundation
+#endif
+
+#if canImport(Combine)
+import Combine
+#elseif canImport(OpenCombine)
+import OpenCombine
+#endif
+
+#if canImport(Dispatch)
+import Dispatch
+#endif
+
 import Bluetooth
 
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
-public protocol CentralProtocol: class {
+@available(*, deprecated, message: "Please migrate to 'CombineCentral'")
+public typealias CentralProtocol = SynchronousCentral
+
+/// GATT Central Manager
+///
+/// Implementation varies by operating system.
+public protocol SynchronousCentral: class {
     
     associatedtype Peripheral: Peer
     
     associatedtype Advertisement: AdvertisementDataProtocol
-    
+        
     var log: ((String) -> ())? { get set }
     
     /// Scans for peripherals that are advertising services.
@@ -60,7 +81,95 @@ public protocol CentralProtocol: class {
     func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit 
 }
 
-public extension CentralProtocol {
+// MARK: - Combine Support
+
+#if canImport(Combine) || canImport(OpenCombine)
+
+/// Asyncronous GATT Central manager.
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public protocol CombineCentral: class {
+    
+    associatedtype Peripheral: Peer
+    
+    associatedtype Advertisement: AdvertisementDataProtocol
+    
+    /// TODO: Improve logging API, use Logger?
+    var log: PassthroughSubject<String, Error> { get set }
+    
+    var isScanning: CurrentValueSubject<Bool, Error> { get }
+    
+    var isAvailable: CurrentValueSubject<Bool, Error> { get }
+    
+    /// Scans for peripherals that are advertising services.
+    func scan(filterDuplicates: Bool) -> PassthroughSubject<ScanData<Peripheral, Advertisement>, Error>
+    
+    /// Stops scanning for peripherals.
+    func stopScan()
+    
+    /// Connect to the specifed peripheral.
+    func connect(to peripheral: Peripheral, timeout: TimeInterval) -> PassthroughSubject<Void, Error>
+    
+    /// Disconnect from the speciffied peripheral.
+    func disconnect(peripheral: Peripheral)
+    
+    /// Disconnect from all connected peripherals.
+    func disconnectAll()
+    
+    /// Notifies that a peripheral has been disconnected.
+    var didDisconnect: PassthroughSubject<Peripheral, Error> { get }
+    
+    /// Discover the specified services.
+    func discoverServices(_ services: [BluetoothUUID],
+                          for peripheral: Peripheral,
+                          timeout: TimeInterval) -> PassthroughSubject<Service<Peripheral>, Error>
+    
+    /// Discover characteristics for the specified service.
+    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
+                                for service: Service<Peripheral>,
+                                timeout: TimeInterval) -> PassthroughSubject<[Characteristic<Peripheral>], Error>
+    
+    /// Read characteristic value.
+    func readValue(for characteristic: Characteristic<Peripheral>,
+                   timeout: TimeInterval) -> PassthroughSubject<Data, Error>
+    
+    /// Write characteristic value.
+    func writeValue(_ data: Data,
+                    for characteristic: Characteristic<Peripheral>,
+                    withResponse: Bool,
+                    timeout: TimeInterval) -> PassthroughSubject<Void, Error>
+    
+    /// Subscribe to notifications for the specified characteristic.
+    func notify(for characteristic: Characteristic<Peripheral>,
+                timeout: TimeInterval) -> PassthroughSubject<Data, Error>
+    
+    /// Stop subcribing to notifications.
+    func stopNotification(for characteristic: Characteristic<Peripheral>,
+                          timeout: TimeInterval) -> PassthroughSubject<Void, Error>
+    
+    /// Get the maximum transmission unit for the specified peripheral.
+    func maximumTransmissionUnit(for peripheral: Peripheral) -> PassthroughSubject<ATTMaximumTransmissionUnit, Error>
+}
+
+#endif
+
+// MARK: - Deprecated
+
+#if !arch(wasm32) // && canImport(Dispatch)
+
+public extension SynchronousCentral {
+    
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
+        
+        let endDate = Date() + duration
+        
+        var results = [Peripheral: ScanData<Peripheral, Advertisement>](minimumCapacity: 1)
+        
+        try _scan(filterDuplicates: filterDuplicates,
+                  shouldContinueScanning: { Date() < endDate },
+                  foundDevice: { results[$0.peripheral] = $0 })
+        
+        return results.values.sorted(by: { $0.date < $1.date })
+    }
     
     /// Scans for peripherals that are advertising services.
     @available(*, deprecated, message: "Use `stopScan()` instead")
@@ -68,6 +177,17 @@ public extension CentralProtocol {
               sleepDuration: TimeInterval = 1.0,
               shouldContinueScanning: @escaping () -> (Bool),
               foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
+        
+        try _scan(filterDuplicates: filterDuplicates,
+                  sleepDuration: sleepDuration,
+                  shouldContinueScanning: shouldContinueScanning,
+                  foundDevice: foundDevice)
+    }
+    
+    internal func _scan(filterDuplicates: Bool = true,
+                        sleepDuration: TimeInterval = 1.0,
+                        shouldContinueScanning: @escaping () -> (Bool),
+                        foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         var didThrow = false
         DispatchQueue.global().async { [weak self] in
@@ -148,7 +268,9 @@ public extension CentralProtocol {
         }
     }
 }
-    
+
+#endif
+
 // MARK: - Supporting Types
 
 public protocol GATTAttribute {

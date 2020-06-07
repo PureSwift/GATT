@@ -560,8 +560,7 @@ private extension DarwinPeripheral {
             (coreService.characteristics as? [CBMutableCharacteristic])?.forEach { characteristics[$0] = nil }
             
             // remove characteristics
-            while let index = characteristics.index(where: { $0.value.serviceHandle == handle }) {
-                
+            while let index = characteristics.firstIndex(where: { $0.value.serviceHandle == handle }) {
                 characteristics.remove(at: index)
             }
         }
