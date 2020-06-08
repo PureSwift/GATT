@@ -474,18 +474,15 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
                                rssi: NSNumber) {
         
         if peripheral.delegate == nil {
-            
             peripheral.delegate = self
         }
         
         let identifier = Peripheral(peripheral)
-        
         let advertisement = Advertisement(advertisementData)
-        
         let scanResult = ScanData(peripheral: identifier,
                                   date: Date(),
                                   rssi: rssi.doubleValue,
-                                  advertisementData: Advertisement(advertisementData),
+                                  advertisementData: advertisement,
                                   isConnectable: advertisement.isConnectable ?? false)
         
         accessQueue.sync { [unowned self] in
@@ -805,7 +802,7 @@ internal extension DarwinSynchronousCentral {
             
             var semaphore: Semaphore?
         }
-        
+         
         var discoverCharacteristics = DiscoverCharacteristics()
         
         struct DiscoverCharacteristics {

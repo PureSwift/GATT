@@ -273,12 +273,10 @@ public extension SynchronousCentral {
 
 // MARK: - Supporting Types
 
-public protocol GATTAttribute {
+public protocol GATTAttribute: Hashable, Identifiable {
     
     associatedtype Peripheral: Peer
-    
-    var identifier: UInt { get }
-    
+        
     var uuid: BluetoothUUID { get }
     
     var peripheral: Peripheral { get }
