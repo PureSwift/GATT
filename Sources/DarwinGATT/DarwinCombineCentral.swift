@@ -38,23 +38,23 @@ public final class DarwinCombineCentral { //: CombineCentral {
     /// CoreBluetooth Central Manager Options
     public let options: Options
     
-    internal lazy var internalManager = CBCentralManager(
+    private lazy var internalManager = CBCentralManager(
         delegate: self.delegate,
         queue: self.managerQueue,
         options: self.options.optionsDictionary
     )
     
-    internal lazy var managerQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue")
+    private lazy var managerQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue")
     
-    internal lazy var queue = DispatchQueue(label: "\(type(of: self)) Queue")
+    private lazy var queue = DispatchQueue(label: "\(type(of: self)) Queue")
     
-    internal private(set) var peripheralQueue = [Peripheral: DispatchQueue]()
+    private var peripheralQueue = [Peripheral: DispatchQueue]()
     
-    internal lazy var delegate = Delegate(self)
+    private lazy var delegate = Delegate(self)
 
-    internal private(set) var cache = Cache()
+    private var cache = Cache()
     
-    internal private(set) var combine = Combine()
+    private var combine = Combine()
     
     // MARK: - Initialization
     
@@ -85,37 +85,27 @@ public final class DarwinCombineCentral { //: CombineCentral {
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
         ]
         
-        let subject: PassthroughSubject<ScanData<Peripheral, Advertisement>, Error> = self.queue.sync { [unowned self] in
+        return self.centralManager.tryMap { [unowned self] (central) in
             self.combine = .init()
             self.peripheralQueue.removeAll(keepingCapacity: true)
             self.peripherals.removeAll(keepingCapacity: true)
-            return self.combine.scan
-        }
-        
-        centralManager { [unowned self] (central) in
             precondition(central.isScanning == false)
-            do {
-                let state = self.state
-                guard state == .poweredOn
-                    else { throw DarwinCentralError.invalidState(state) }
-                self.log.send("Scanning...")
-                // start scanning
-                self.internalManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
-                assert(self.internalManager.isScanning)
-            } catch {
-                self.combine.scan.send(completion: .failure(error))
-            }
+            guard self.state == .poweredOn
+                else { throw DarwinCentralError.invalidState(self.state) }
+            self.log.send("Scanning...")
+            central.scanForPeripherals(withServices: serviceUUIDs, options: options)
+            assert(central.isScanning)
         }
-        
-        return subject.eraseToAnyPublisher()
+        .flatMap { self.combine.scan }
+        .eraseToAnyPublisher()
     }
     
     /// Stops scanning for peripherals.
     public func stopScan() {
-        self.queue.async { [unowned self] in
-            assert(self.internalManager.isScanning)
-            defer { assert(self.internalManager.isScanning == false) }
-            self.internalManager.stopScan()
+        let _ = self.centralManager.sink {
+            assert($0.isScanning)
+            $0.stopScan()
+            assert($0.isScanning == false)
             self.combine.scan.send(completion: .finished)
             self.log.send("Discovered \(self.cache.peripherals.count) peripherals")
         }
@@ -128,33 +118,20 @@ public final class DarwinCombineCentral { //: CombineCentral {
     public func connect(to peripheral: Peripheral,
                         options: [String: Any]) -> AnyPublisher<ConnectionState, Error> {
         
-        let subject = CurrentValueSubject<ConnectionState, Error>(.connecting)
-        
-        self.queue.async { [unowned self] in
-            
+        let subject = CurrentValueSubject<ConnectionState, Error>(.disconnected)
+        return self.centralManager.tryMap { [unowned self] (central) -> CBCentralManager in
+            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
             self.combine.connect[peripheral] = subject
-            
-            do {
-                let state = self.state
-                guard state == .poweredOn
-                    else { throw DarwinCentralError.invalidState(state) }
-                let corePeripheral = try self.peripheral(for: peripheral)
-                assert(corePeripheral.state != .connected)
-                // attempt to connect (does not timeout)
-                self.internalManager.connect(corePeripheral, options: options)
-            }
-            catch {
-                subject.send(completion: .failure(error))
-            }
+            return central
         }
-        
-        return subject.eraseToAnyPublisher()
-    }
-    
-    enum ConnectionState {
-        case connecting
-        case connected
-        case disconnected
+        .combineLatest(self.peripheral(for: peripheral))
+        .tryMap { (central, peripheral) in
+            assert(peripheral.state != .connected)
+            // attempt to connect (does not timeout)
+            central.connect(peripheral, options: options)
+        }
+        .flatMap { subject }
+        .eraseToAnyPublisher()
     }
     
     /// Cancels an active or pending local connection to a peripheral.
@@ -162,7 +139,7 @@ public final class DarwinCombineCentral { //: CombineCentral {
     /// - Parameter The peripheral to which the central manager is either trying to connect or has already connected.
     internal func cancelConnection(for peripheral: Peripheral) {
         self.queue.async {
-            (try? self.peripheral(for: peripheral)).flatMap {
+            self.cache.peripherals[peripheral].flatMap {
                 self.internalManager.cancelPeripheralConnection($0)
             }
         }
@@ -183,12 +160,27 @@ public final class DarwinCombineCentral { //: CombineCentral {
     }
     
     /// Discover the specified services.
-    func discoverServices(_ services: [BluetoothUUID],
+    public func discoverServices(_ services: [BluetoothUUID],
                           for peripheral: Peripheral) -> AnyPublisher<[Service<Peripheral, AttributeID>], Error> {
         
         let subject = PassthroughSubject<[Service<Peripheral, AttributeID>], Error>()
         let coreServices = services.isEmpty ? nil : services.map { CBUUID($0) }
         
+        return self.centralManager.tryMap { [unowned self] (central) -> CBCentralManager in
+            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
+            self.combine.services[peripheral] = subject
+            return central
+        }
+        .combineLatest(self.peripheral(for: peripheral))
+        .tryMap { (central, peripheral) in
+            guard peripheral.state == .connected
+                else { throw CentralError.disconnected }
+            
+            // attempt to connect (does not timeout)
+            central.connect(peripheral, options: options)
+        }.eraseToAnyPublisher()
+        
+        self.centralManager.
         centralManager { [unowned self] (central) in
             do {
                 // store subject for completion
@@ -257,63 +249,41 @@ public final class DarwinCombineCentral { //: CombineCentral {
     /// Get the maximum transmission unit for the specified peripheral.
     func maximumTransmissionUnit(for peripheral: Peripheral) -> AnyPublisher<ATTMaximumTransmissionUnit, Error> {
         
-        let future = Future<ATTMaximumTransmissionUnit, Error> { [unowned self] (completion) in
-            self.centralManager { (central) in
-                self.peripheral(for: peripheral) { (corePeripheral) in
-                    let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
-                    
-                }
-            }
+        return self.centralManager.tryMap { _ in
+            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
         }
-        
-        
-        
-        let future = Future<ATTMaximumTransmissionUnit, Error>()
-        self.accessQueue.async {
-            do {
-                guard state == .poweredOn
-                    else { throw DarwinCentralError.invalidState(state) }
-                
-            }
-            catch {
-                
-            }
+        .flatMap { _ in
+            self.peripheral(for: peripheral)
         }
-        return subject
-        
-        
-        
-        let corePeripheral = try accessQueue.sync { [unowned self] in
-            try self.connectedPeripheral(peripheral)
+        .tryMap {
+            let mtu = $0.maximumWriteValueLength(for: .withoutResponse) + 3
+            assert(($0.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
+            return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
         }
-        
-        let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
-        assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
-        return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
+        .eraseToAnyPublisher()
     }
     
     // MARK: - Private Methods
     
-    private func centralManager(_ block: (CBCentralManager) -> ()) {
-        self.queue.async { [unowned self] in
-            block(self.internalManager)
-        }
-    }
+    private lazy var centralManager: AnyPublisher<CBCentralManager, Never> = Just(self.internalManager)
+            .receive(on: self.queue)
+            .eraseToAnyPublisher()
     
-    private func peripheral(for peripheral: Peripheral, block: (CBPeripheral) -> ()) throws {
-        // should only call from `self.queue`
-        guard let corePeripheral = self.cache.peripherals[peripheral]
-            else { throw CentralError.unknownPeripheral }
-        self.queue(for: peripheral).async {
-            block(corePeripheral)
+    private func peripheral(for peripheral: Peripheral) -> AnyPublisher<CBPeripheral, Error> {
+        return self.centralManager.tryMap { _ in
+            if let corePeripheral = self.cache.peripherals[peripheral] {
+                return corePeripheral
+            } else {
+                throw CentralError.unknownPeripheral
+            }
         }
+        .receive(on: queue(for: peripheral))
+        .eraseToAnyPublisher()
     }
     
     private func queue(for peripheral: Peripheral) -> DispatchQueue {
         return self.peripheralQueue[peripheral, default: DispatchQueue(label: "Peripheral \(peripheral) Queue")]
     }
-    
-    
 }
 
 // MARK: - Supporting Types
@@ -326,6 +296,12 @@ public extension DarwinCombineCentral {
     typealias State = DarwinBluetoothState
     
     typealias AttributeID = ObjectIdentifier
+    
+    enum ConnectionState {
+        case connecting
+        case connected
+        case disconnected
+    }
     
     /// Central Peer
     ///
