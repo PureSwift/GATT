@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Combine.swift
 //  
 //
 //  Created by Alsey Coleman Miller on 6/9/20.
@@ -95,30 +95,62 @@ public final class CombineCentral <Central: AsynchronousCentral> {
     }
     
     /// Discover characteristics for the specified service.
-    func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
-                                for service: Service<Peripheral, AttributeID>,
-                                timeout: TimeInterval = .gattDefaultTimeout) -> PassthroughSubject<[Characteristic<Peripheral, AttributeID>], Error> { }
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
+                                        for service: Service<Peripheral, AttributeID>,
+                                        timeout: TimeInterval = .gattDefaultTimeout) -> DiscoverCharacteristicsPublisher {
+        
+        return DiscoverCharacteristicsPublisher(
+            central: central,
+            timeout: timeout,
+            characteristics: characteristics,
+            service: service
+        )
+    }
     
     /// Read characteristic value.
-    func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
-                   timeout: TimeInterval = .gattDefaultTimeout) -> PassthroughSubject<Data, Error> { }
+    public func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
+                          timeout: TimeInterval = .gattDefaultTimeout) -> ReadCharacteristicValuePublisher {
+        
+        return ReadCharacteristicValuePublisher(
+            central: central,
+            timeout: timeout,
+            characteristic: characteristic
+        )
+    }
     
     /// Write characteristic value.
-    func writeValue(_ data: Data,
-                    for characteristic: Characteristic<Peripheral, AttributeID>,
-                    withResponse: Bool,
-                    timeout: TimeInterval = .gattDefaultTimeout) -> PassthroughSubject<Void, Error> { }
+    public func writeValue(_ data: Data,
+                           for characteristic: Characteristic<Peripheral, AttributeID>,
+                           withResponse: Bool,
+                           timeout: TimeInterval = .gattDefaultTimeout) -> WriteCharacteristicValuePublisher {
+        
+        return WriteCharacteristicValuePublisher(
+            central: central,
+            timeout: timeout,
+            characteristic: characteristic,
+            value: data,
+            withResponse: withResponse
+        )
+    }
     
     /// Subscribe to notifications for the specified characteristic.
-    func notify(for characteristic: Characteristic<Peripheral, AttributeID>,
-                timeout: TimeInterval = .gattDefaultTimeout) -> PassthroughSubject<Data, Error> { }
-    
-    /// Stop subcribing to notifications.
-    func stopNotification(for characteristic: Characteristic<Peripheral, AttributeID>,
-                          timeout: TimeInterval = .gattDefaultTimeout) -> PassthroughSubject<Void, Error> { }
+    public func notify(for characteristic: Characteristic<Peripheral, AttributeID>,
+                       timeout: TimeInterval = .gattDefaultTimeout) -> NotificationPublisher {
+        
+        return NotificationPublisher(
+            central: central,
+            timeout: timeout,
+            characteristic: characteristic
+        )
+    }
     
     /// Get the maximum transmission unit for the specified peripheral.
-    func maximumTransmissionUnit(for peripheral: Peripheral) -> PassthroughSubject<ATTMaximumTransmissionUnit, Error> { }
+    public func maximumTransmissionUnit(for peripheral: Peripheral) -> Future<ATTMaximumTransmissionUnit, Error> {
+        
+        return Future { [weak self] in
+            self?.central.maximumTransmissionUnit(for: peripheral, completion: $0)
+        }
+    }
 }
 
 // MARK: - Supporting Types
@@ -131,7 +163,7 @@ public extension CombineCentral {
         
         public typealias Output = ScanData<Peripheral, Advertisement>
         
-        public typealias Failure = Never
+        public typealias Failure = Error
         
         public let central: Central
         
@@ -146,8 +178,7 @@ public extension CombineCentral {
         public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
             
             let subscription = ScanSubscription(
-                central: central,
-                filterDuplicates: filterDuplicates,
+                parent: self,
                 downstream: subscriber
             )
             subscriber.receive(subscription: subscription)
@@ -155,30 +186,39 @@ public extension CombineCentral {
         
         private final class ScanSubscription <Downstream: Subscriber>: Subscription, CustomStringConvertible where Downstream.Input == Output, Downstream.Failure == Failure {
             
-            private var central: Central?
+            private var parent: ScanPublisher?
+            
+            private var downstream: Downstream?
             
             private var demand = Subscribers.Demand.none
             
-            fileprivate init(central: Central,
-                             filterDuplicates: Bool,
+            fileprivate init(parent: ScanPublisher,
                              downstream: Downstream) {
                 
-                self.central = central
-                central.scan(filterDuplicates: filterDuplicates) { [weak self] in
+                self.parent = parent
+                self.downstream = downstream
+                
+                // start scanning
+                parent.central.scan(filterDuplicates: parent.filterDuplicates) { [weak self] in
                     self?.didRecieve($0, downstream: downstream)
                 }
             }
             
             var description: String { return "ScanPublisher" }
             
-            private func didRecieve(_ value: Output, downstream: Downstream) {
+            private func didRecieve(_ result: Result<Output, Failure>, downstream: Downstream) {
                 
                 guard demand > 0 else {
                     return
                 }
-                demand -= 1
-                let newDemand = downstream.receive(value)
-                demand += newDemand
+                switch result {
+                case let .success(value):
+                    demand -= 1
+                    let newDemand = downstream.receive(value)
+                    demand += newDemand
+                case let .failure(error):
+                    downstream.receive(completion: .failure(error))
+                }
             }
             
             func request(_ demand: Subscribers.Demand) {
@@ -187,10 +227,10 @@ public extension CombineCentral {
             
             func cancel() {
                 
-                guard let central = self.central
+                guard let central = self.parent?.central
                     else { return }
                 central.stopScan()
-                self.central = nil
+                self.parent = nil
             }
         }
     }
@@ -283,6 +323,7 @@ public extension CombineCentral {
         }
     }
     
+    /// GATT Discover Services Publisher
     struct DiscoverServicesPublisher: Publisher {
         
         public typealias Output = Service<Peripheral, AttributeID>
@@ -368,6 +409,368 @@ public extension CombineCentral {
                 parent = nil
                 downstream = nil
                 demand = .none
+            }
+        }
+    }
+    
+    /// GATT Discover Characteristics Publisher
+    struct DiscoverCharacteristicsPublisher: Publisher {
+        
+        public typealias Output = Characteristic<Peripheral, AttributeID>
+        
+        public typealias Failure = Error
+        
+        public let central: Central
+        
+        public let timeout: TimeInterval
+        
+        public let characteristics: [BluetoothUUID]
+        
+        public let service: Service<Peripheral, AttributeID>
+        
+        /// This function is called to attach the specified `Subscriber` to this `Publisher` by `subscribe(_:)`
+        ///
+        /// - SeeAlso: `subscribe(_:)`
+        /// - Parameters:
+        ///     - subscriber: The subscriber to attach to this `Publisher`.
+        ///                   once attached it can begin to receive values.
+        public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
+            
+            let subscription = DiscoverCharacteristicsSubscription(
+                parent: self,
+                downstream: subscriber
+            )
+            subscriber.receive(subscription: subscription)
+        }
+        
+        private final class DiscoverCharacteristicsSubscription <Downstream: Subscriber>: Subscription, CustomStringConvertible where Downstream.Input == Output, Downstream.Failure == Failure {
+            
+            private var parent: DiscoverCharacteristicsPublisher?
+            
+            private var downstream: Downstream?
+            
+            private var demand = Subscribers.Demand.none
+            
+            fileprivate init(parent: DiscoverCharacteristicsPublisher,
+                             downstream: Downstream) {
+                
+                self.parent = parent
+                self.downstream = downstream
+            }
+            
+            var description: String { return "DiscoverCharacteristicsPublisher" }
+            
+            func request(_ demand: Subscribers.Demand) {
+                
+                demand.assertNonZero()
+                guard let parent = self.parent else {
+                    return
+                }
+                self.demand += demand
+                parent.central.discoverCharacteristics(parent.characteristics, for: parent.service, timeout: parent.timeout) { [weak self] in
+                    self?.didComplete($0)
+                }
+            }
+            
+            func cancel() {
+                guard let _ = self.parent else {
+                    return
+                }
+                terminate()
+            }
+            
+            private func didComplete(_ result: Result<[Output], Error>) {
+                guard demand > 0,
+                    let _ = self.parent,
+                    let downstream = self.downstream else {
+                    return
+                }
+                terminate()
+                switch result {
+                case let .success(value):
+                    value.forEach { _ = downstream.receive($0) }
+                    downstream.receive(completion: .finished)
+                case let .failure(error):
+                    downstream.receive(completion: .failure(error))
+                }
+            }
+            
+            private func terminate() {
+                parent = nil
+                downstream = nil
+                demand = .none
+            }
+        }
+    }
+    
+    /// GATT Read Characteristic Value Publisher
+    struct ReadCharacteristicValuePublisher: Publisher {
+        
+        public typealias Output = Data
+        
+        public typealias Failure = Error
+        
+        public let central: Central
+        
+        public let timeout: TimeInterval
+        
+        public let characteristic: Characteristic<Peripheral, AttributeID>
+        
+        /// This function is called to attach the specified `Subscriber` to this `Publisher` by `subscribe(_:)`
+        ///
+        /// - SeeAlso: `subscribe(_:)`
+        /// - Parameters:
+        ///     - subscriber: The subscriber to attach to this `Publisher`.
+        ///                   once attached it can begin to receive values.
+        public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
+            
+            let subscription = ReadCharacteristicValueSubscription(
+                parent: self,
+                downstream: subscriber
+            )
+            subscriber.receive(subscription: subscription)
+        }
+        
+        private final class ReadCharacteristicValueSubscription <Downstream: Subscriber>: Subscription, CustomStringConvertible where Downstream.Input == Output, Downstream.Failure == Failure {
+            
+            private var parent: ReadCharacteristicValuePublisher?
+            
+            private var downstream: Downstream?
+            
+            private var demand = Subscribers.Demand.none
+            
+            fileprivate init(parent: ReadCharacteristicValuePublisher,
+                             downstream: Downstream) {
+                
+                self.parent = parent
+                self.downstream = downstream
+            }
+            
+            var description: String { return "ReadCharacteristicValuePublisher" }
+            
+            func request(_ demand: Subscribers.Demand) {
+                
+                demand.assertNonZero()
+                guard let parent = self.parent else {
+                    return
+                }
+                self.demand += demand
+                parent.central.readValue(for: parent.characteristic, timeout: parent.timeout) { [weak self] in
+                    self?.didComplete($0)
+                }
+            }
+            
+            func cancel() {
+                guard let _ = self.parent else {
+                    return
+                }
+                terminate()
+            }
+            
+            private func didComplete(_ result: Result<Output, Error>) {
+                guard demand > 0,
+                    let _ = self.parent,
+                    let downstream = self.downstream else {
+                    return
+                }
+                terminate()
+                switch result {
+                case let .success(value):
+                    _ = downstream.receive(value)
+                    downstream.receive(completion: .finished)
+                case let .failure(error):
+                    downstream.receive(completion: .failure(error))
+                }
+            }
+            
+            private func terminate() {
+                parent = nil
+                downstream = nil
+                demand = .none
+            }
+        }
+    }
+    
+    /// GATT Write Characteristic Value Publisher
+    struct WriteCharacteristicValuePublisher: Publisher {
+        
+        public typealias Output = Void
+        
+        public typealias Failure = Error
+        
+        public let central: Central
+        
+        public let timeout: TimeInterval
+        
+        public let characteristic: Characteristic<Peripheral, AttributeID>
+        
+        public let value: Data
+        
+        public let withResponse: Bool
+        
+        /// This function is called to attach the specified `Subscriber` to this `Publisher` by `subscribe(_:)`
+        ///
+        /// - SeeAlso: `subscribe(_:)`
+        /// - Parameters:
+        ///     - subscriber: The subscriber to attach to this `Publisher`.
+        ///                   once attached it can begin to receive values.
+        public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
+            
+            let subscription = WriteCharacteristicValueSubscription(
+                parent: self,
+                downstream: subscriber
+            )
+            subscriber.receive(subscription: subscription)
+        }
+        
+        private final class WriteCharacteristicValueSubscription <Downstream: Subscriber>: Subscription, CustomStringConvertible where Downstream.Input == Output, Downstream.Failure == Failure {
+            
+            private var parent: WriteCharacteristicValuePublisher?
+            
+            private var downstream: Downstream?
+            
+            private var demand = Subscribers.Demand.none
+            
+            fileprivate init(parent: WriteCharacteristicValuePublisher,
+                             downstream: Downstream) {
+                
+                self.parent = parent
+                self.downstream = downstream
+            }
+            
+            var description: String { return "WriteCharacteristicValuePublisher" }
+            
+            func request(_ demand: Subscribers.Demand) {
+                
+                demand.assertNonZero()
+                guard let parent = self.parent else {
+                    return
+                }
+                self.demand += demand
+                parent.central.writeValue(parent.value, for: parent.characteristic, withResponse: parent.withResponse, timeout: parent.timeout) { [weak self] in
+                    self?.didComplete($0)
+                }
+            }
+            
+            func cancel() {
+                guard let _ = self.parent else {
+                    return
+                }
+                terminate()
+            }
+            
+            private func didComplete(_ result: Result<Output, Error>) {
+                guard demand > 0,
+                    let _ = self.parent,
+                    let downstream = self.downstream else {
+                    return
+                }
+                terminate()
+                switch result {
+                case .success:
+                    downstream.receive(completion: .finished)
+                case let .failure(error):
+                    downstream.receive(completion: .failure(error))
+                }
+            }
+            
+            private func terminate() {
+                parent = nil
+                downstream = nil
+                demand = .none
+            }
+        }
+    }
+    
+    /// GATT Notification Publisher
+    struct NotificationPublisher: Publisher {
+        
+        public typealias Output = Data
+        
+        public typealias Failure = Error
+        
+        public let central: Central
+        
+        public let timeout: TimeInterval
+        
+        public let characteristic: Characteristic<Peripheral, AttributeID>
+        
+        /// This function is called to attach the specified `Subscriber` to this `Publisher` by `subscribe(_:)`
+        ///
+        /// - SeeAlso: `subscribe(_:)`
+        /// - Parameters:
+        ///     - subscriber: The subscriber to attach to this `Publisher`.
+        ///                   once attached it can begin to receive values.
+        public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
+            
+            let subscription = NotificationSubscription(
+                parent: self,
+                downstream: subscriber
+            )
+            subscriber.receive(subscription: subscription)
+        }
+        
+        private final class NotificationSubscription <Downstream: Subscriber>: Subscription, CustomStringConvertible where Downstream.Input == Output, Downstream.Failure == Failure {
+            
+            private var parent: NotificationPublisher?
+            
+            private var downstream: Downstream?
+            
+            private var demand = Subscribers.Demand.none
+            
+            fileprivate init(parent: NotificationPublisher,
+                             downstream: Downstream) {
+                
+                self.parent = parent
+                self.downstream = downstream
+                
+                // start observing notifications
+                parent.central.notify({ [weak self] in
+                    self?.didRecieve($0)
+                    }, for: parent.characteristic, timeout: parent.timeout, completion: { [weak self] in
+                        self?.registered($0)
+                })
+            }
+            
+            var description: String { return "NotificationPublisher" }
+            
+            private func registered(_ result: Result<Void, Error>) {
+                
+                guard demand > 0,
+                    let _ = self.parent,
+                    let downstream = self.downstream else {
+                    return
+                }
+                switch result {
+                case .success:
+                    break // do nothing
+                case let .failure(error):
+                    downstream.receive(completion: .failure(error))
+                    self.parent = nil // terminate
+                }
+            }
+            
+            private func didRecieve(_ value: Output) {
+                
+                guard demand > 0,
+                    let downstream = self.downstream else {
+                    return
+                }
+                demand -= 1
+                let newDemand = downstream.receive(value)
+                demand += newDemand
+            }
+            
+            func request(_ demand: Subscribers.Demand) {
+                self.demand += demand
+            }
+            
+            func cancel() {
+                
+                guard let parent = self.parent
+                    else { return }
+                parent.central.notify(nil, for: parent.characteristic, timeout: parent.timeout, completion: { _ in })
+                self.parent = nil
             }
         }
     }
