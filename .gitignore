@@ -39,6 +39,7 @@ Package.pins
 .build/
 GATT.xcodeproj/*
 *.resolved
+.swiftpm
 
 # CocoaPods
 #
