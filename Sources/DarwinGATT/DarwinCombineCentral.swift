@@ -13,7 +13,31 @@ import GATT
 import CoreBluetooth
 
 /// CoreBluetooth GATT Central Manager
-public final class DarwinCentral: AsynchronousCentral {
+public final class DarwinCentral: CentralProtocol {
+    public func connect(to peripheral: Peripheral, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
+        <#code#>
+    }
+    
+    public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval, completion: (Result<[Service<Peripheral, ObjectIdentifier>], Error>) -> ()) {
+        <#code#>
+    }
+    
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: Service<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<[Characteristic<Peripheral, ObjectIdentifier>], Error>) -> ()) {
+        <#code#>
+    }
+    
+    public func readValue(for characteristic: Characteristic<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<Data, Error>) -> ()) {
+        <#code#>
+    }
+    
+    public func writeValue(_ data: Data, for characteristic: Characteristic<Peripheral, ObjectIdentifier>, withResponse: Bool, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
+        <#code#>
+    }
+    
+    public func maximumTransmissionUnit(for peripheral: Peripheral, completion: (Result<ATTMaximumTransmissionUnit, Error>) -> ()) {
+        <#code#>
+    }
+    
     
     // MARK: - Properties
     
@@ -28,6 +52,7 @@ public final class DarwinCentral: AsynchronousCentral {
     
     public var stateChanged: ((State) -> ())?
     
+    /// The current state of the manager.
     public var state: State {
         return unsafeBitCast(internalManager.state, to: State.self)
     }
@@ -313,14 +338,24 @@ public final class DarwinCentral: AsynchronousCentral {
     /// Subscribe to notifications for the specified characteristic.
     public func notify(_ notification: ((Data) -> ())?, for characteristic: Characteristic<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
         
-        
-    }
-    
-    /// Stop subcribing to notifications.
-    func stopNotification(for characteristic: Characteristic<Peripheral, AttributeID>,
-                          timeout: TimeInterval) {
-        
-        
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: characteristic.peripheral)
+                guard corePeripheral.state == .connected
+                    else { throw CentralError.disconnected }
+                let coreCharacteristic = try self.characteristic(for: characteristic)
+                self.delegate.readCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                // read value
+                corePeripheral.setNotifyValue(notification != nil, for: coreCharacteristic)
+            }
+            catch {
+                self.delegate.readCharacteristicValue[characteristic.peripheral] = nil
+                completion(.failure(error))
+            }
+        }
     }
     
     /// Get the maximum transmission unit for the specified peripheral.
@@ -438,7 +473,7 @@ public extension DarwinCentral {
 
 internal extension DarwinCentral {
     
-    @objc(DarwinCombineCentralDelegate)
+    @objc(GATTCentralManagerDelegate)
     final class Delegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         private(set) weak var central: DarwinCentral!
@@ -453,6 +488,8 @@ internal extension DarwinCentral {
         var discoverCharacteristics = [Peripheral: Completion<[Characteristic<Peripheral, AttributeID>]>]()
         var readCharacteristicValue = [Peripheral: Completion<Data>]()
         var writeCharacteristicValue = [Peripheral: Completion<Void>]()
+        var setNotification = [Peripheral: Completion<Void>]()
+        var notifications = [Peripheral: (Data) -> ()]()
         
         fileprivate init(_ central: DarwinCentral) {
             super.init()
@@ -553,7 +590,13 @@ internal extension DarwinCentral {
                 .didComplete(.failure(CentralError.disconnected))
             self.discoverCharacteristics[peripheral]?
                 .didComplete(.failure(CentralError.disconnected))
-            
+            self.readCharacteristicValue[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
+            self.writeCharacteristicValue[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
+            self.setNotification[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
+            self.notifications[peripheral] = nil
             
             /*
             let semaphores = [
