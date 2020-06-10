@@ -9,52 +9,53 @@ import Foundation
 import Bluetooth
 import GATT
 
-#if canImport(CoreBluetooth) && (canImport(Combine) || canImport(OpenComine))
+#if canImport(CoreBluetooth)
 import CoreBluetooth
-#if canImport(Combine)
-import Combine
-#elseif canImport(OpenCombine)
-import OpenCombine
-#endif
 
 /// CoreBluetooth GATT Central Manager
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class DarwinCombineCentral { //: CombineCentral {
+public final class DarwinCentral: AsynchronousCentral {
     
     // MARK: - Properties
     
-    /// TODO: Improve logging API, use Logger?
-    public let log = PassthroughSubject<String, Error>()
-    
-    @Published
-    public private(set) var isScanning = false
-    
-    @Published
-    public private(set) var state: DarwinBluetoothState = .unknown
-    
-    @Published
-    public private(set) var peripherals = Set<Peripheral>()
+    public var log: ((String) -> ())?
     
     /// CoreBluetooth Central Manager Options
-    public let options: Options
+    public var options: Options
+    
+    public var peripherals: Set<Peripheral> {
+        return Set(cache.peripherals.keys)
+    }
+    
+    public var stateChanged: ((State) -> ())?
+    
+    public var state: State {
+        return unsafeBitCast(internalManager.state, to: State.self)
+    }
+    
+    public var isScanning: Bool {
+         
+        if #available(macOS 10.13, iOS 9.0, *) {
+            return internalManager.isScanning
+        } else {
+            return queue.sync { [unowned self] in self.delegate.scan != nil }
+        }
+    }
+    
+    public var scanningChanged: ((Bool) -> ())?
+    
+    public var didDisconnect: ((Peripheral) -> ())?
     
     private lazy var internalManager = CBCentralManager(
         delegate: self.delegate,
-        queue: self.managerQueue,
+        queue: self.queue,
         options: self.options.optionsDictionary
     )
     
-    private lazy var managerQueue = DispatchQueue(label: "\(type(of: self)) Manager Queue")
-    
     private lazy var queue = DispatchQueue(label: "\(type(of: self)) Queue")
-    
-    private var peripheralQueue = [Peripheral: DispatchQueue]()
-    
+        
     private lazy var delegate = Delegate(self)
 
     private var cache = Cache()
-    
-    private var combine = Combine()
     
     // MARK: - Initialization
     
@@ -70,14 +71,15 @@ public final class DarwinCombineCentral { //: CombineCentral {
     // MARK: - Methods
     
     /// Scans for peripherals that are advertising services.
-    public func scan(filterDuplicates: Bool) -> AnyPublisher<ScanData<Peripheral, Advertisement>, Error> {
-        
-        return self.scan(filterDuplicates: filterDuplicates, with: [])
+    public func scan(filterDuplicates: Bool = true,
+                     _ foundDevice: @escaping (Result<ScanData<Peripheral, DarwinAdvertisementData>, Error>) -> ()) {
+        return self.scan(filterDuplicates: filterDuplicates, with: [], foundDevice: foundDevice)
     }
     
     /// Scans for peripherals that are advertising services.
-    public func scan(filterDuplicates: Bool,
-                     with services: Set<BluetoothUUID>) -> AnyPublisher<ScanData<Peripheral, Advertisement>, Error> {
+    public func scan(filterDuplicates: Bool = true,
+                     with services: Set<BluetoothUUID>,
+                     _ foundDevice: @escaping (Result<ScanData<Peripheral, DarwinAdvertisementData>, Error>) -> ()) {
                         
         let serviceUUIDs: [CBUUID]? = services.isEmpty ? nil : services.map { CBUUID($0) }
         
@@ -85,30 +87,43 @@ public final class DarwinCombineCentral { //: CombineCentral {
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
         ]
         
-        return self.centralManager.tryMap { [unowned self] (central) in
-            self.combine = .init()
-            self.peripheralQueue.removeAll(keepingCapacity: true)
-            self.peripherals.removeAll(keepingCapacity: true)
-            precondition(central.isScanning == false)
-            guard self.state == .poweredOn
-                else { throw DarwinCentralError.invalidState(self.state) }
-            self.log.send("Scanning...")
-            central.scanForPeripherals(withServices: serviceUUIDs, options: options)
-            assert(central.isScanning)
+        assert(isScanning == false)
+        
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                self.cache.peripherals.removeAll(keepingCapacity: true)
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                self.log?("Scanning...")
+                self.delegate.scan = foundDevice
+                self.internalManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
+                assert(self.isScanning)
+            } catch {
+                self.delegate.scan = nil
+                foundDevice(.failure(error))
+            }
         }
-        .flatMap { self.combine.scan }
-        .eraseToAnyPublisher()
     }
     
     /// Stops scanning for peripherals.
     public func stopScan() {
-        let _ = self.centralManager.sink {
-            assert($0.isScanning)
-            $0.stopScan()
-            assert($0.isScanning == false)
-            self.combine.scan.send(completion: .finished)
-            self.log.send("Discovered \(self.cache.peripherals.count) peripherals")
+        queue.async {
+            assert(self.isScanning)
+            self.internalManager.stopScan()
+            self.delegate.scan = nil
+            assert(self.isScanning == false)
+            self.log?("Discovered \(self.cache.peripherals.count) peripherals")
         }
+    }
+    
+    /// Connect to the specifed peripheral.
+    /// - Parameter peripheral: The peripheral to which the central is attempting to connect.
+    public func connect(to peripheral: Peripheral,
+                        timeout: TimeInterval = .gattDefaultTimeout,
+                        completion: @escaping (Result<Void, Error>) -> ()) {
+        
+        connect(to: peripheral, timeout: timeout, options: [:], completion: completion)
     }
     
     /// Connect to the specifed peripheral.
@@ -116,22 +131,26 @@ public final class DarwinCombineCentral { //: CombineCentral {
     /// - Parameter options: A dictionary to customize the behavior of the connection.
     /// For available options, see [Peripheral Connection Options](apple-reference-documentation://ts1667676).
     public func connect(to peripheral: Peripheral,
-                        options: [String: Any]) -> AnyPublisher<ConnectionState, Error> {
+                        timeout: TimeInterval = .gattDefaultTimeout,
+                        options: [String: Any],
+                        completion: @escaping (Result<Void, Error>) -> ()) {
         
-        let subject = CurrentValueSubject<ConnectionState, Error>(.disconnected)
-        return self.centralManager.tryMap { [unowned self] (central) -> CBCentralManager in
-            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
-            self.combine.connect[peripheral] = subject
-            return central
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: peripheral)
+                self.delegate.connect[peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                assert(corePeripheral.state != .connected)
+                // attempt to connect (does not timeout)
+                self.internalManager.connect(corePeripheral, options: options)
+            }
+            catch {
+                self.delegate.connect[peripheral] = nil
+                completion(.failure(error))
+            }
         }
-        .combineLatest(self.peripheral(for: peripheral))
-        .tryMap { (central, peripheral) in
-            assert(peripheral.state != .connected)
-            // attempt to connect (does not timeout)
-            central.connect(peripheral, options: options)
-        }
-        .flatMap { subject }
-        .eraseToAnyPublisher()
     }
     
     /// Cancels an active or pending local connection to a peripheral.
@@ -146,7 +165,7 @@ public final class DarwinCombineCentral { //: CombineCentral {
     }
     
     /// Disconnect from the speciffied peripheral.
-    public func disconnect(peripheral: Peripheral) {
+    public func disconnect(_ peripheral: Peripheral) {
         cancelConnection(for: peripheral)
     }
     
@@ -160,69 +179,66 @@ public final class DarwinCombineCentral { //: CombineCentral {
     }
     
     /// Discover the specified services.
-    public func discoverServices(_ services: [BluetoothUUID],
-                          for peripheral: Peripheral) -> AnyPublisher<[Service<Peripheral, AttributeID>], Error> {
+    public func discoverServices(_ services: [BluetoothUUID] = [],
+                                 for peripheral: Peripheral,
+                                 timeout: TimeInterval = .gattDefaultTimeout,
+                                 completion: (Result<[Service<Peripheral, AttributeID>], Error>) -> ()) {
         
-        let subject = PassthroughSubject<[Service<Peripheral, AttributeID>], Error>()
         let coreServices = services.isEmpty ? nil : services.map { CBUUID($0) }
         
-        return self.centralManager.tryMap { [unowned self] (central) -> CBCentralManager in
-            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
-            self.combine.services[peripheral] = subject
-            return central
-        }
-        .combineLatest(self.peripheral(for: peripheral))
-        .tryMap { (central, peripheral) in
-            guard peripheral.state == .connected
-                else { throw CentralError.disconnected }
-            
-            // attempt to connect (does not timeout)
-            central.connect(peripheral, options: options)
-        }.eraseToAnyPublisher()
-        
-        self.centralManager.
-        centralManager { [unowned self] (central) in
+        queue.async { [weak self] in
+            guard let self = self else { return }
             do {
-                // store subject for completion
-                self.combine.services[peripheral] = subject
-                // validate state
-                let state = self.state
-                guard state == .poweredOn
-                    else { throw DarwinCentralError.invalidState(state) }
-                self.peripheral(for: peripheral) { (corePeripheral) in
-                    corePeripheral.discoverServices(coreServices)
-                }
-                
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
                 let corePeripheral = try self.peripheral(for: peripheral)
                 guard corePeripheral.state == .connected
                     else { throw CentralError.disconnected }
-                // store subject for completion
-                self.combine.services[peripheral] = subject
-                // interact with peripheral on separate queue
-                self.queue(for: peripheral).async {
-                    // start discovery
-                    
-                }
+                // store completion block
+                self.delegate.discoverServices[peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                // discover services
+                corePeripheral.discoverServices(coreServices)
             }
             catch {
-                subject.send(completion: .failure(error))
+                self.delegate.discoverServices[peripheral] = nil
+                completion(.failure(error))
             }
         }
-        
-        return subject.eraseToAnyPublisher()
     }
     
     /// Discover characteristics for the specified service.
-    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                for service: Service<Peripheral, AttributeID>,
-                                timeout: TimeInterval) -> PassthroughSubject<[Characteristic<Peripheral, AttributeID>], Error> {
+    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
+                                        for service: Service<Peripheral, ObjectIdentifier>,
+                                        timeout: TimeInterval = .gattDefaultTimeout,
+                                        completion: (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ()) {
         
+        let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: service.peripheral)
+                guard corePeripheral.state == .connected
+                    else { throw CentralError.disconnected }
+                let coreService = try self.service(for: service)
+                self.delegate.discoverCharacteristics[service.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                // discover characteristics
+                corePeripheral.discoverCharacteristics(coreCharacteristics, for: coreService)
+            }
+            catch {
+                self.delegate.discoverCharacteristics[service.peripheral] = nil
+                completion(.failure(error))
+            }
+        }
     }
     
     /// Read characteristic value.
-    func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
-                   timeout: TimeInterval) -> PassthroughSubject<Data, Error> {
+    public func readValue(for characteristic: Characteristic<Peripheral, ObjectIdentifier>,
+                          timeout: TimeInterval = .gattDefaultTimeout,
+                          completion: (Result<Data, Error>) -> ()) {
+        
         
     }
     
@@ -265,43 +281,38 @@ public final class DarwinCombineCentral { //: CombineCentral {
     
     // MARK: - Private Methods
     
-    private lazy var centralManager: AnyPublisher<CBCentralManager, Never> = Just(self.internalManager)
-            .receive(on: self.queue)
-            .eraseToAnyPublisher()
-    
-    private func peripheral(for peripheral: Peripheral) -> AnyPublisher<CBPeripheral, Error> {
-        return self.centralManager.tryMap { _ in
-            if let corePeripheral = self.cache.peripherals[peripheral] {
-                return corePeripheral
-            } else {
-                throw CentralError.unknownPeripheral
-            }
-        }
-        .receive(on: queue(for: peripheral))
-        .eraseToAnyPublisher()
+    internal func peripheral(for peripheral: Peripheral) throws -> CBPeripheral {
+        guard let corePeripheral = self.cache.peripherals[peripheral]
+            else { throw CentralError.unknownPeripheral }
+        return corePeripheral
     }
     
-    private func queue(for peripheral: Peripheral) -> DispatchQueue {
-        return self.peripheralQueue[peripheral, default: DispatchQueue(label: "Peripheral \(peripheral) Queue")]
+    internal func service(for service: Service<Peripheral, AttributeID>) throws -> CBService {
+        let corePeripheral = try peripheral(for: service.peripheral)
+        guard let coreServices = corePeripheral.services,
+            let coreService = coreServices.first(where: { ObjectIdentifier($0) == service.id })
+            else { throw CentralError.invalidAttribute(service.uuid) }
+        return coreService
+    }
+    
+    internal func characteristics(for characteristic: Characteristic<Peripheral, AttributeID>) throws -> CBCharacteristic {
+        let corePeripheral = try peripheral(for: characteristic.peripheral)
+        let coreCharacteristics = (corePeripheral.services ?? []).reduce([], { $0 + ($1.characteristics ?? []) })
+        guard let coreCharacteristic = coreCharacteristics.first(where: { ObjectIdentifier($0) == characteristic.id })
+            else { throw CentralError.invalidAttribute(characteristic.uuid) }
+        return coreCharacteristic
     }
 }
 
 // MARK: - Supporting Types
 
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension DarwinCombineCentral {
+public extension DarwinCentral {
     
     typealias Advertisement = DarwinAdvertisementData
     
     typealias State = DarwinBluetoothState
     
     typealias AttributeID = ObjectIdentifier
-    
-    enum ConnectionState {
-        case connecting
-        case connected
-        case disconnected
-    }
     
     /// Central Peer
     ///
@@ -353,15 +364,23 @@ public extension DarwinCombineCentral {
     }
 }
 
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-internal extension DarwinCombineCentral {
+internal extension DarwinCentral {
     
     @objc(DarwinCombineCentralDelegate)
     final class Delegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         
-        private(set) weak var central: DarwinCombineCentral!
+        private(set) weak var central: DarwinCentral!
         
-        fileprivate init(_ central: DarwinCombineCentral) {
+        var log: ((String) -> ())? {
+            return central?.log
+        }
+        
+        var scan: ((Result<ScanData<Peripheral, Advertisement>, Error>) -> ())?
+        var connect = [Peripheral: Completion<Void>]()
+        var discoverServices = [Peripheral: Completion<[Service<Peripheral, AttributeID>]>]()
+        var discoverCharacteristics = [Peripheral: Completion<[Characteristic<Peripheral, AttributeID>]>]()
+        
+        fileprivate init(_ central: DarwinCentral) {
             super.init()
             self.central = central
         }
@@ -372,15 +391,23 @@ internal extension DarwinCombineCentral {
             assert(self.central != nil)
             assert(self.central?.internalManager === centralManager)
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
-            self.central?.log.send("Did update state \(state)")
-            self.central?.state = state
+            log?("Did update state \(state)")
+            self.central?.stateChanged?(state)
+            assert(self.central.state == state)
         }
         
-        func centralManager(_ centralManager: CBCentralManager, willRestoreState dict: [String : Any]) {
+        func centralManager(_ centralManager: CBCentralManager, willRestoreState state: [String : Any]) {
             assert(self.central != nil)
             assert(self.central?.internalManager === centralManager)
-            // TODO: Restore state
-            //let peripherals = centralManager.retrievePeripherals(withIdentifiers: )
+            // An array of peripherals for use when restoring the state of a central manager.
+            if #available(macOS 10.13, *) {
+                if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+                    peripherals.forEach {
+                        let peripheral = Peripheral($0)
+                        self.central.cache.peripherals[peripheral] = $0
+                    }
+                }
+            }
         }
         
         func centralManager(_ centralManager: CBCentralManager,
@@ -398,69 +425,62 @@ internal extension DarwinCombineCentral {
                                       advertisementData: advertisement,
                                       isConnectable: advertisement.isConnectable ?? false)
             
-            self.central.queue.async {
-                self.central.cache.peripherals[identifier] = peripheral
-                self.central.peripherals.insert(identifier)
-                self.central.combine.scan.send(scanResult)
-            }
+            self.central.cache.peripherals[identifier] = peripheral
+            self.scan?.didComplete(.success(scanResult))
         }
         
         @objc(centralManager:didConnectPeripheral:)
         public func centralManager(_ centralManager: CBCentralManager, didConnect corePeripheral: CBPeripheral) {
             
-            self.central?.log.send("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
+            log?("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
             
             assert(corePeripheral.state != .disconnected, "Should be connected")
             assert(self.central != nil)
             assert(self.central?.internalManager === centralManager)
             
-            self.central.queue.sync { [unowned self] in
-                let peripheral = Peripheral(corePeripheral)
-                guard let subject = self.central.combine.connect[peripheral]
-                    else { assertionFailure("Missing subject"); return }
-                subject.send(true)
-            }
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.connect[peripheral]
+                else { assertionFailure("Missing subject"); return }
+            callback.didComplete(.success(()))
+            self.connect[peripheral] = nil
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
         public func centralManager(_ centralManager: CBCentralManager, didFailToConnect corePeripheral: CBPeripheral, error: Swift.Error?) {
             
-            self.central?.log.send("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
+            log?("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
             
             assert(corePeripheral.state != .disconnected, "Should be connected")
             assert(self.central != nil)
             assert(self.central?.internalManager === centralManager)
             assert(error != nil)
             
-            self.central.queue.sync { [unowned self] in
-                let peripheral = Peripheral(corePeripheral)
-                guard let subject = self.central.combine.connect[peripheral]
-                    else { assertionFailure("Missing subject"); return }
-                subject.send(completion: .failure(error!))
-            }
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.connect[peripheral]
+                else { assertionFailure("Missing callback"); return }
+            callback.didComplete(.failure(error!))
+            self.connect[peripheral] = nil
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
         public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral corePeripheral: CBPeripheral, error: Swift.Error?) {
                         
             if let error = error {
-                self.central?.log.send("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
+                log?("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
             } else {
-                self.central?.log.send("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString)")
+                log?("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString)")
             }
             
-            self.central.queue.sync { [unowned self] in
-                let peripheral = Peripheral(corePeripheral)
-                guard let subject = self.central.combine.connect[peripheral]
-                    else { assertionFailure("Missing subject"); return }
-                if let error = error {
-                    subject.send(completion: .failure(error))
-                } else {
-                    subject.send(false)
-                }
-            }
+            let peripheral = Peripheral(corePeripheral)
+            self.central.didDisconnect?(peripheral)
             
             // cancel all actions that require an active connection
+            self.discoverServices[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
+            self.discoverCharacteristics[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
+            
+            
             /*
             let semaphores = [
                 internalState.discoverServices.semaphore,
@@ -480,25 +500,99 @@ internal extension DarwinCombineCentral {
         
         // MARK: - CBPeripheralDelegate
         
-        func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        func peripheral(_ corePeripheral: CBPeripheral, didDiscoverServices error: Error?) {
             
+            if let error = error {
+                log?("Error discovering services (\(error))")
+            } else {
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
+            }
             
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.discoverServices[peripheral]
+                else { assertionFailure("Missing callback"); return }
+            
+            if let error = error {
+                callback.didComplete(.failure(error))
+            } else {
+                let services = (corePeripheral.services ?? []).map {
+                    Service(id: ObjectIdentifier($0),
+                            uuid: BluetoothUUID($0.uuid),
+                            peripheral: peripheral,
+                            isPrimary: $0.isPrimary)
+                }
+                callback.didComplete(.success(services))
+            }
+            
+            // remove callback
+            self.discoverServices[peripheral] = nil
+        }
+        
+        func peripheral(_ corePeripheral: CBPeripheral, didDiscoverCharacteristicsFor coreService: CBService, error: Error?) {
+            
+            if let error = error {
+                log?("Error discovering characteristics (\(error))")
+                
+            } else {
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
+            }
+            
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.discoverCharacteristics[peripheral]
+                else { assertionFailure("Missing callback"); return }
+            
+            if let error = error {
+                callback.didComplete(.failure(error))
+            } else {
+                let characteristics = (coreService.characteristics ?? []).map {
+                    Characteristic(id: ObjectIdentifier($0),
+                                   uuid: BluetoothUUID($0.uuid),
+                                   peripheral: peripheral,
+                                   properties: .init(rawValue: numericCast($0.properties.rawValue)))
+                }
+                callback.didComplete(.success(characteristics))
+            }
+            
+            // remove callback
+            self.discoverCharacteristics[peripheral] = nil
         }
     }
 }
 
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-internal extension DarwinCombineCentral {
+internal extension DarwinCentral {
     
     struct Cache {
         var peripherals = [Peripheral: CBPeripheral]()
     }
     
-    struct Combine {
+    fileprivate final class Completion <Output> {
+                
+        let timeout: TimeInterval
+                
+        private let block: (Result<Output, Error>) -> ()
         
-        let scan = PassthroughSubject<ScanData<Peripheral, Advertisement>, Error>()
-        var connect = [Peripheral: CurrentValueSubject<ConnectionState, Error>]()
-        var services = [Peripheral: PassthroughSubject<[Service<Peripheral, AttributeID>], Error>]()
+        private(set) var didComplete: Bool = false
+        
+        fileprivate init(timeout: TimeInterval, queue: DispatchQueue = .global(), _ block: @escaping (Result<Output, Error>) -> ()) {
+            self.timeout = timeout
+            self.block = block
+            // call timeout after interval
+            queue.asyncAfter(deadline: .now() + timeout) { [weak self] in
+                self?.didTimeout()
+            }
+        }
+        
+        func didComplete(_ result: Result<Output, Error>) {
+            precondition(didComplete == false)
+            didComplete = true
+            block(result)
+        }
+        
+        private func didTimeout() {
+            guard didComplete == false
+                else { return }
+            didComplete(.failure(CentralError.timeout))
+        }
     }
 }
 
