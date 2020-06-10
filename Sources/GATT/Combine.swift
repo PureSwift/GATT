@@ -23,7 +23,7 @@ import Bluetooth
 
 /// GATT Central manager with Combine support.
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class CombineCentral <Central: AsynchronousCentral> {
+open class CombineCentral <Central: AsynchronousCentral> {
     
     public typealias Peripheral = Central.Peripheral
     

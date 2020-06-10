@@ -23,36 +23,31 @@ import GATT
 #if canImport(Combine) || canImport(OpenCombine)
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension CombineCentral where Central == DarwinCentral {
+public final class DarwinCombineCentral: CombineCentral<DarwinCentral> {
     
-    internal enum UserInfoKey: String {
-        case state
+    @Published
+    public var state: DarwinBluetoothState = .unknown
+    
+    public convenience init(options: DarwinCentral.Options = .init()) {
+        let central = DarwinCentral(options: options)
+        self.init(central: central)
+        central.stateChanged = { [weak self] in self?.state = $0 }
+        self.state = central.state
     }
-    /*
-    var state: Published<DarwinBluetoothState> {
-        if let stateProperty = self.userInfo[UserInfoKey.state.rawValue] as? Published<DarwinBluetoothState> {
-            return stateProperty
-        } else {
-            let published = Published(initialValue: self.central.state)
-            self.central.stateChanged = { published. }
-            self.userInfo[UserInfoKey.state.rawValue] = published
-            return published
-        }
-    }*/
-    /*
+    
     /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool, with services: Set<BluetoothUUID>) -> DarwinScanPublisher {
+    public func scan(filterDuplicates: Bool, with services: Set<BluetoothUUID>) -> DarwinScanPublisher {
         return DarwinScanPublisher(central: central, filterDuplicates: filterDuplicates, services: services)
     }
     
     /// GATT Scan Publisher
-    struct DarwinScanPublisher: Publisher {
+    public struct DarwinScanPublisher: Publisher {
         
         public typealias Output = ScanData<Peripheral, Advertisement>
         
         public typealias Failure = Error
         
-        public let central: Central
+        public let central: DarwinCentral
         
         public let filterDuplicates: Bool
         
@@ -122,7 +117,7 @@ public extension CombineCentral where Central == DarwinCentral {
                 self.parent = nil
             }
         }
-    }*/
+    }
 }
 
 #endif
