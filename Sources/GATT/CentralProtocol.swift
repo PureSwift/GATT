@@ -100,7 +100,7 @@ public protocol AsynchronousCentral: class {
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
-              foundDevice: @escaping (Result<ScanData<Peripheral, Advertisement>, Error>) -> ())
+              _ foundDevice: @escaping (Result<ScanData<Peripheral, Advertisement>, Error>) -> ())
     
     /// Stops scanning for peripherals.
     func stopScan()

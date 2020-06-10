@@ -73,7 +73,7 @@ public final class DarwinCentral: AsynchronousCentral {
     /// Scans for peripherals that are advertising services.
     public func scan(filterDuplicates: Bool = true,
                      _ foundDevice: @escaping (Result<ScanData<Peripheral, DarwinAdvertisementData>, Error>) -> ()) {
-        return self.scan(filterDuplicates: filterDuplicates, with: [], foundDevice: foundDevice)
+        return self.scan(filterDuplicates: filterDuplicates, with: [], foundDevice)
     }
     
     /// Scans for peripherals that are advertising services.
@@ -157,7 +157,7 @@ public final class DarwinCentral: AsynchronousCentral {
     ///
     /// - Parameter The peripheral to which the central manager is either trying to connect or has already connected.
     internal func cancelConnection(for peripheral: Peripheral) {
-        self.queue.async {
+        queue.async {
             self.cache.peripherals[peripheral].flatMap {
                 self.internalManager.cancelPeripheralConnection($0)
             }
@@ -171,7 +171,7 @@ public final class DarwinCentral: AsynchronousCentral {
     
     /// Disconnect from all connected peripherals.
     public func disconnectAll() {
-        self.queue.async { [unowned self] in
+        queue.async { [unowned self] in
             self.cache.peripherals
                 .values
                 .forEach { self.internalManager.cancelPeripheralConnection($0) }
@@ -182,7 +182,7 @@ public final class DarwinCentral: AsynchronousCentral {
     public func discoverServices(_ services: [BluetoothUUID] = [],
                                  for peripheral: Peripheral,
                                  timeout: TimeInterval = .gattDefaultTimeout,
-                                 completion: (Result<[Service<Peripheral, AttributeID>], Error>) -> ()) {
+                                 completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ()) {
         
         let coreServices = services.isEmpty ? nil : services.map { CBUUID($0) }
         
@@ -210,7 +210,7 @@ public final class DarwinCentral: AsynchronousCentral {
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
                                         for service: Service<Peripheral, ObjectIdentifier>,
                                         timeout: TimeInterval = .gattDefaultTimeout,
-                                        completion: (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ()) {
+                                        completion: @escaping (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ()) {
         
         let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         
@@ -237,46 +237,118 @@ public final class DarwinCentral: AsynchronousCentral {
     /// Read characteristic value.
     public func readValue(for characteristic: Characteristic<Peripheral, ObjectIdentifier>,
                           timeout: TimeInterval = .gattDefaultTimeout,
-                          completion: (Result<Data, Error>) -> ()) {
-        
-        
+                          completion: @escaping (Result<Data, Error>) -> ()) {
+                
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: characteristic.peripheral)
+                guard corePeripheral.state == .connected
+                    else { throw CentralError.disconnected }
+                let coreCharacteristic = try self.characteristic(for: characteristic)
+                self.delegate.readCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                // read value
+                corePeripheral.readValue(for: coreCharacteristic)
+            }
+            catch {
+                self.delegate.readCharacteristicValue[characteristic.peripheral] = nil
+                completion(.failure(error))
+            }
+        }
     }
     
     /// Write characteristic value.
-    func writeValue(_ data: Data,
-                    for characteristic: Characteristic<Peripheral, AttributeID>,
-                    withResponse: Bool,
-                    timeout: TimeInterval) -> PassthroughSubject<Void, Error> {
+    public func writeValue(_ data: Data,
+                           for characteristic: Characteristic<Peripheral, ObjectIdentifier>,
+                           withResponse: Bool = true,
+                           timeout: TimeInterval = .gattDefaultTimeout,
+                           completion: @escaping (Result<Void, Error>) -> ()) {
         
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: characteristic.peripheral)
+                guard corePeripheral.state == .connected
+                    else { throw CentralError.disconnected }
+                let coreCharacteristic = try self.characteristic(for: characteristic)
+                
+                // write value with response
+                if withResponse {
+                    
+                    // calls `peripheral:didWriteValueForCharacteristic:error:` only
+                    // if you specified the write type as `.withResponse`.
+                    self.delegate.writeCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                    
+                    // write request
+                    corePeripheral.writeValue(data, for: coreCharacteristic, type: .withResponse)
+                } else {
+                    
+                    // flush write messages if supported
+                    if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *),
+                        corePeripheral.canSendWriteWithoutResponse == false {
+                        self.delegate.writeCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                        
+                    } else {
+                        // lets hope for the best?
+                        self.queue.asyncAfter(deadline: .now() + 1.5) {
+                            completion(.success(()))
+                        }
+                    }
+                    
+                    // write command (if not blob)
+                    corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
+                }
+            }
+            catch {
+                self.delegate.writeCharacteristicValue[characteristic.peripheral] = nil
+                completion(.failure(error))
+            }
+        }
     }
     
     /// Subscribe to notifications for the specified characteristic.
-    func notify(for characteristic: Characteristic<Peripheral, AttributeID>,
-                timeout: TimeInterval) -> PassthroughSubject<Data, Error> {
+    public func notify(_ notification: ((Data) -> ())?, for characteristic: Characteristic<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
+        
         
     }
     
     /// Stop subcribing to notifications.
     func stopNotification(for characteristic: Characteristic<Peripheral, AttributeID>,
-                          timeout: TimeInterval) -> PassthroughSubject<Void, Error> {
+                          timeout: TimeInterval) {
+        
         
     }
     
     /// Get the maximum transmission unit for the specified peripheral.
-    func maximumTransmissionUnit(for peripheral: Peripheral) -> AnyPublisher<ATTMaximumTransmissionUnit, Error> {
+    public func maximumTransmissionUnit(for peripheral: Peripheral, completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ()) {
         
-        return self.centralManager.tryMap { _ in
-            guard self.state == .poweredOn else { throw DarwinCentralError.invalidState(self.state) }
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                guard self.state == .poweredOn
+                    else { throw DarwinCentralError.invalidState(self.state) }
+                let corePeripheral = try self.peripheral(for: peripheral)
+                guard corePeripheral.state == .connected
+                    else { throw CentralError.disconnected }
+                // get MTU
+                let mtu: ATTMaximumTransmissionUnit
+                if #available(macOS 10.12, iOS 9.0, tvOS 9.0, watchOS 4.0, *) {
+                    let rawValue = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
+                    assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == rawValue)
+                    mtu = ATTMaximumTransmissionUnit(rawValue: UInt16(rawValue)) ?? .default
+                } else {
+                    mtu = .default
+                }
+                completion(.success(mtu))
+            }
+            catch {
+                completion(.failure(error))
+            }
         }
-        .flatMap { _ in
-            self.peripheral(for: peripheral)
-        }
-        .tryMap {
-            let mtu = $0.maximumWriteValueLength(for: .withoutResponse) + 3
-            assert(($0.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
-            return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
-        }
-        .eraseToAnyPublisher()
     }
     
     // MARK: - Private Methods
@@ -295,7 +367,7 @@ public final class DarwinCentral: AsynchronousCentral {
         return coreService
     }
     
-    internal func characteristics(for characteristic: Characteristic<Peripheral, AttributeID>) throws -> CBCharacteristic {
+    internal func characteristic(for characteristic: Characteristic<Peripheral, AttributeID>) throws -> CBCharacteristic {
         let corePeripheral = try peripheral(for: characteristic.peripheral)
         let coreCharacteristics = (corePeripheral.services ?? []).reduce([], { $0 + ($1.characteristics ?? []) })
         guard let coreCharacteristic = coreCharacteristics.first(where: { ObjectIdentifier($0) == characteristic.id })
@@ -379,6 +451,8 @@ internal extension DarwinCentral {
         var connect = [Peripheral: Completion<Void>]()
         var discoverServices = [Peripheral: Completion<[Service<Peripheral, AttributeID>]>]()
         var discoverCharacteristics = [Peripheral: Completion<[Characteristic<Peripheral, AttributeID>]>]()
+        var readCharacteristicValue = [Peripheral: Completion<Data>]()
+        var writeCharacteristicValue = [Peripheral: Completion<Void>]()
         
         fileprivate init(_ central: DarwinCentral) {
             super.init()
@@ -555,6 +629,11 @@ internal extension DarwinCentral {
             
             // remove callback
             self.discoverCharacteristics[peripheral] = nil
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+            
+            
         }
     }
 }
