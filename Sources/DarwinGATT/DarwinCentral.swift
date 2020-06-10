@@ -15,13 +15,13 @@ import GATT
 import CoreBluetooth
 
 /// CoreBluetooth GATT Central manager.
-@available(*, deprecated, message: "Please migrate to 'DarwinCombineCentral'")
-public typealias DarwinCentral = DarwinSynchronousCentral
+//@available(*, deprecated, message: "Please migrate to 'DarwinCombineCentral'")
+//public typealias DarwinCentral = DarwinSynchronousCentral
 
 /// CoreBluetooth GATT Central manager.
 @objc(DarwinCentral)
-public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCentralManagerDelegate, CBPeripheralDelegate {
-    
+public final class _DarwinSynchronousCentral: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+        
     // MARK: - Properties
     
     public var log: ((String) -> ())?
@@ -35,13 +35,15 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     }
     
     public var isScanning: Bool {
-        
+         
         if #available(macOS 10.13, iOS 9.0, *) {
             return internalManager.isScanning
         } else {
             return accessQueue.sync { [unowned self] in self.internalState.scan.foundDevice != nil }
         }
     }
+    
+    public var scanningChanged: ((Bool) -> ())?
     
     public var didDisconnect: ((Peripheral) -> ())?
     
@@ -64,14 +66,11 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     public init(options: Options) {
         
         self.options = options
-        
         super.init()
-        
         let _ = self.internalManager // initialize manager
     }
     
     public override convenience init() {
-        
         self.init(options: Options())
     }
     
@@ -196,7 +195,7 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
                                  for peripheral: Peripheral,
-                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral>] {
+                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral, AttributeID>] {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -218,12 +217,12 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
         // start discovery
         corePeripheral.discoverServices(coreServices)
         
-        // wait
+        // waitsq
         try semaphore.wait()
         
         return accessQueue.sync { [unowned self] in
             self.internalState.cache[peripheral]?.services.values.map {
-                Service(identifier: $0.key,
+                Service(id: $0.key,
                         uuid: BluetoothUUID($0.value.uuid),
                         peripheral: peripheral,
                         isPrimary: $0.value.isPrimary)
@@ -232,8 +231,8 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     }
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
-                                        for service: Service<Peripheral>,
-                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral>] {
+                                        for service: Service<Peripheral, AttributeID>,
+                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral, AttributeID>] {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -247,7 +246,7 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
         
         let coreService: CBService = try self.accessQueue.sync { [unowned self] in
             
-            guard let coreService = self.internalState.cache[service.peripheral]?.services.values[service.identifier]
+            guard let coreService = self.internalState.cache[service.peripheral]?.services.values[service.id]
                 else { throw CentralError.invalidAttribute(service.uuid) }
             
             return coreService
@@ -271,14 +270,14 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
         }
         
         return charachertisticCache.map {
-            Characteristic(identifier: $0.key,
+            Characteristic(id: $0.key,
                            uuid: BluetoothUUID($0.value.attribute.uuid),
                            peripheral: service.peripheral,
-                           properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.attribute.properties))
+                           properties: Characteristic<Peripheral, AttributeID>.Property.from(coreBluetooth: $0.value.attribute.properties))
         }
     }
     
-    public func readValue(for characteristic: Characteristic<Peripheral>,
+    public func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
                           timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
         
         guard state == .poweredOn
@@ -293,7 +292,7 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
         
         let coreCharacteristic: CBCharacteristic = try self.accessQueue.sync { [unowned self] in
             
-            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.identifier]?.attribute
+            guard let coreCharacteristic = self.internalState.cache[characteristic.peripheral]?.characteristics.values[characteristic.id]?.attribute
                 else { throw CentralError.invalidAttribute(characteristic.uuid) }
             
             return coreCharacteristic
@@ -313,7 +312,7 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     }
     
     public func writeValue(_ data: Data,
-                           for characteristic: Characteristic<Peripheral>,
+                           for characteristic: Characteristic<Peripheral, AttributeID>,
                            withResponse: Bool = true,
                            timeout: TimeInterval = .gattDefaultTimeout) throws {
         
@@ -376,7 +375,7 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
     }
     
     public func notify(_ notification: ((Data) -> ())?,
-                       for characteristic: Characteristic<Peripheral>,
+                       for characteristic: Characteristic<Peripheral, AttributeID>,
                        timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         guard state == .poweredOn
@@ -704,13 +703,15 @@ public final class DarwinSynchronousCentral: NSObject, SynchronousCentral, CBCen
 
 // MARK: - Supporting Types
 
-public extension DarwinSynchronousCentral {
+public extension _DarwinSynchronousCentral {
     
     typealias Advertisement = DarwinAdvertisementData
         
     typealias Error = DarwinCentralError
     
     typealias State = DarwinBluetoothState
+    
+    typealias AttributeID = ObjectIdentifier
     
     /// Central Peer
     ///
@@ -770,7 +771,7 @@ public extension DarwinSynchronousCentral {
     }
 }
 
-internal extension DarwinSynchronousCentral {
+internal extension _DarwinSynchronousCentral {
     
     struct InternalState {
         
@@ -844,11 +845,11 @@ internal extension DarwinSynchronousCentral {
         case scan
         case connect(Peripheral)
         case discoverServices(Peripheral)
-        case discoverCharacteristics(Service<Peripheral>)
-        case readCharacteristic(Characteristic<Peripheral>)
-        case writeCharacteristic(Characteristic<Peripheral>)
+        case discoverCharacteristics(Service<Peripheral, AttributeID>)
+        case readCharacteristic(Characteristic<Peripheral, AttributeID>)
+        case writeCharacteristic(Characteristic<Peripheral, AttributeID>)
         case flushWriteWithoutResponse(Peripheral)
-        case updateCharacteristicNotificationState(Characteristic<Peripheral>)
+        case updateCharacteristicNotificationState(Characteristic<Peripheral, AttributeID>)
         
         var peripheral: Peripheral? {
             switch self {
@@ -876,57 +877,13 @@ internal extension DarwinSynchronousCentral {
         
         fileprivate init() { }
         
-        var services = Services()
+        var services = [ObjectIdentifier: CBService]()
         
-        struct Services {
-            
-            fileprivate(set) var values: [UInt: CBService] = [:]
-        }
-        
-        mutating func update(_ newValues: [CBService]) {
-            
-            newValues.enumerated().forEach {
-                let identifier = UInt($0.offset)
-                services.values[identifier] = $0.element
-            }
-        }
-        
-        var characteristics = Characteristics()
-        
-        struct Characteristics {
-            
-            fileprivate(set) var values: [UInt: (attribute: CBCharacteristic, notification: ((Data) -> ())?)] = [:]
-        }
-        
-        mutating func insert(_ newValues: [CBCharacteristic],
-                             for service: CBService) {
-            guard let serviceIdentifier = services.values.first(where: { $0.value === service })?.key else {
-                assertionFailure("Attempted to insert characteristics into cache for unknown service: \(service)")
-                return
-            }
-            
-            // remove old characteristics for service
-            while let key = characteristics.values
-                .first(where: { $0.value.attribute.service === service })?.key {
-                characteristics.values[key] = nil
-            }
-            
-            // insert new characteristics
-            newValues.enumerated().forEach {
-                // Characteristic identifier must be namespaced to service identifier to avoid collisions.
-                // A simple solution is to combine the service identifier with the characteristic identifier.
-                // To do this, we'll pad the service identifier and then add the characteristic identifier.
-                let serviceIdentifierPadding = UInt(10000)
-                assert($0.offset < serviceIdentifierPadding)
-                
-                let characteristicIdentifier = (serviceIdentifier * serviceIdentifierPadding) + UInt($0.offset)
-                characteristics.values[characteristicIdentifier] = (attribute: $0.element, notification: nil)
-            }
-        }
+        var characteristics = [ObjectIdentifier: CBCharacteristic]()
     }
 }
 
-internal extension DarwinSynchronousCentral {
+internal extension _DarwinSynchronousCentral {
     
     final class Semaphore {
         
@@ -966,3 +923,4 @@ internal extension DarwinSynchronousCentral {
 }
 
 #endif
+
