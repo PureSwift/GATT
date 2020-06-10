@@ -297,7 +297,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnect(peripheral: device) }
         
-        var services = [Service<Peripheral>]()
+        var services = [Service<Peripheral, UInt16>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
         
         guard let foundService = services.first,
@@ -394,7 +394,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnect(peripheral: device) }
         
-        var services = [Service<Peripheral>]()
+        var services = [Service<Peripheral, UInt16>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
         
         guard let foundService = services.first,
@@ -404,7 +404,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(foundService.uuid, .batteryService)
         XCTAssertEqual(foundService.isPrimary, true)
         
-        var foundCharacteristics = [Characteristic<Peripheral>]()
+        var foundCharacteristics = [Characteristic<Peripheral, UInt16>]()
         XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService))
         
         guard let foundCharacteristic = foundCharacteristics.first,
@@ -531,7 +531,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnect(peripheral: device) }
         
-        var services = [Service<Peripheral>]()
+        var services = [Service<Peripheral, UInt16>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
         
         guard let foundService = services.first,
@@ -541,7 +541,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(foundService.uuid, .batteryService)
         XCTAssertEqual(foundService.isPrimary, true)
         
-        var foundCharacteristics = [Characteristic<Peripheral>]()
+        var foundCharacteristics = [Characteristic<Peripheral, UInt16>]()
         XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService))
         
         guard let foundCharacteristic = foundCharacteristics.first,
@@ -652,7 +652,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.connect(to: device))
         defer { central.disconnect(peripheral: device) }
         
-        var services = [Service<Peripheral>]()
+        var services = [Service<Peripheral, UInt16>]()
         XCTAssertNoThrow(services = try central.discoverServices(for: device))
         
         guard let foundService = services.first,
@@ -662,7 +662,7 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(foundService.uuid, .batteryService)
         XCTAssertEqual(foundService.isPrimary, true)
         
-        var foundCharacteristics = [Characteristic<Peripheral>]()
+        var foundCharacteristics = [Characteristic<Peripheral, UInt16>]()
         XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService))
         
         guard let foundCharacteristic = foundCharacteristics.first,

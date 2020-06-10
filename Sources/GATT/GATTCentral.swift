@@ -13,11 +13,13 @@ import Bluetooth
 #if os(macOS) || os(Linux)
 
 @available(macOS 10.12, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: SynchronousCentral {
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol> /* : CentralProtocol */ {
     
     // MARK: - Properties
     
     public typealias Advertisement = LowEnergyAdvertisingData
+    
+    public typealias AttributeID = UInt16
     
     public var log: ((String) -> ())?
     
@@ -25,7 +27,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public let options: GATTCentralOptions
     
-    public private(set) var isScanning: Bool = false
+    public private(set) var isScanning: Bool = false {
+        didSet { scanningChanged?(isScanning) }
+    }
+    
+    public var scanningChanged: ((Bool) -> ())?
     
     public var didDisconnect: ((Peripheral) -> ())?
     
@@ -149,21 +155,21 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func discoverServices(_ services: [BluetoothUUID] = [],
                                  for peripheral: Peripheral,
-                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral>] {
+                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral, AttributeID>] {
         
         return try connection(for: peripheral)
             .discoverServices(services, for: peripheral, timeout: timeout)
     }
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
-                                        for service: Service<Peripheral>,
-                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral>] {
+                                        for service: Service<Peripheral, AttributeID>,
+                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral, AttributeID>] {
         
         return try connection(for: service.peripheral)
             .discoverCharacteristics(characteristics, for: service, timeout: timeout)
     }
     
-    public func readValue(for characteristic: Characteristic<Peripheral>,
+    public func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
                           timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
         
         return try connection(for: characteristic.peripheral)
@@ -171,7 +177,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     }
     
     public func writeValue(_ data: Data,
-                           for characteristic: Characteristic<Peripheral>,
+                           for characteristic: Characteristic<Peripheral, AttributeID>,
                            withResponse: Bool = true,
                            timeout: TimeInterval = .gattDefaultTimeout) throws {
         
@@ -180,7 +186,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     }
     
     public func notify(_ notification: ((Data) -> ())?,
-                       for characteristic: Characteristic<Peripheral>,
+                       for characteristic: Characteristic<Peripheral, AttributeID>,
                        timeout: TimeInterval = .gattDefaultTimeout) throws {
         
         return try connection(for: characteristic.peripheral)
