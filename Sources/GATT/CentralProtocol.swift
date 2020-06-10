@@ -12,12 +12,6 @@ import Foundation
 import SwiftFoundation
 #endif
 
-#if canImport(Combine)
-import Combine
-#elseif canImport(OpenCombine)
-import OpenCombine
-#endif
-
 #if canImport(Dispatch)
 import Dispatch
 #endif
@@ -106,7 +100,7 @@ public protocol AsynchronousCentral: class {
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
-              foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ())
+              foundDevice: @escaping (Result<ScanData<Peripheral, Advertisement>, Error>) -> ())
     
     /// Stops scanning for peripherals.
     func stopScan()
@@ -123,7 +117,7 @@ public protocol AsynchronousCentral: class {
                  completion: (Result<Void, Error>) -> ())
     
     ///
-    func disconnect(peripheral: Peripheral)
+    func disconnect(_ peripheral: Peripheral)
     
     ///
     func disconnectAll()
@@ -165,104 +159,7 @@ public protocol AsynchronousCentral: class {
     func maximumTransmissionUnit(for peripheral: Peripheral,
                                  completion: (Result<ATTMaximumTransmissionUnit, Error>) -> ())
 }
-/*
-// MARK: - Combine Support
 
-#if canImport(Combine) || canImport(OpenCombine)
-
-/// Asyncronous GATT Central manager.
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class CombineCentral <Central: SynchronousCentral> {
-    
-    public typealias Peripheral = Central.Peripheral
-    
-    public typealias Advertisement = Central.Advertisement
-        
-    public typealias AttributeID = Central.AttributeID
-    
-    public let central: Central
-    
-    public var userInfo = [String: Any]()
-    
-    public var queue = DispatchQueue(label: "\(Central.self) Combine Queue")
-    
-    public init(central: Central) {
-        self.central = central
-        self.isScanning = central.isScanning
-        central.log = { [weak self] in self?.log.send($0) }
-        central.scanningChanged = { [weak self] in self?.isScanning = $0 }
-    }
-    
-    /// TODO: Improve logging API, use Logger?
-    public let log = PassthroughSubject<String, Error>()
-    
-    @Published
-    public private(set) var isScanning = false
-    
-    /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool) -> PassthroughSubject<ScanData<Peripheral, Advertisement>, Error> {
-        let subject = PassthroughSubject<ScanData<Peripheral, Advertisement>, Error>()
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            do {
-                try self.central.scan(filterDuplicates: filterDuplicates, foundDevice)
-            }
-            catch {
-                
-            }
-        }
-        return subject
-    }
-    
-    /// Stops scanning for peripherals.
-    func stopScan()
-    
-    /// Connect to the specifed peripheral.
-    func connect(to peripheral: Peripheral, timeout: TimeInterval) -> PassthroughSubject<Void, Error>
-    
-    /// Disconnect from the speciffied peripheral.
-    func disconnect(peripheral: Peripheral)
-    
-    /// Disconnect from all connected peripherals.
-    func disconnectAll()
-    
-    /// Notifies that a peripheral has been disconnected.
-    var didDisconnect: PassthroughSubject<Peripheral, Error> { get }
-    
-    /// Discover the specified services.
-    func discoverServices(_ services: [BluetoothUUID],
-                          for peripheral: Peripheral,
-                          timeout: TimeInterval) -> PassthroughSubject<Service<Peripheral>, Error>
-    
-    /// Discover characteristics for the specified service.
-    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                for service: Service<Peripheral>,
-                                timeout: TimeInterval) -> PassthroughSubject<[Characteristic<Peripheral>], Error>
-    
-    /// Read characteristic value.
-    func readValue(for characteristic: Characteristic<Peripheral>,
-                   timeout: TimeInterval) -> PassthroughSubject<Data, Error>
-    
-    /// Write characteristic value.
-    func writeValue(_ data: Data,
-                    for characteristic: Characteristic<Peripheral>,
-                    withResponse: Bool,
-                    timeout: TimeInterval) -> PassthroughSubject<Void, Error>
-    
-    /// Subscribe to notifications for the specified characteristic.
-    func notify(for characteristic: Characteristic<Peripheral>,
-                timeout: TimeInterval) -> PassthroughSubject<Data, Error>
-    
-    /// Stop subcribing to notifications.
-    func stopNotification(for characteristic: Characteristic<Peripheral>,
-                          timeout: TimeInterval) -> PassthroughSubject<Void, Error>
-    
-    /// Get the maximum transmission unit for the specified peripheral.
-    func maximumTransmissionUnit(for peripheral: Peripheral) -> PassthroughSubject<ATTMaximumTransmissionUnit, Error>
-}
-
-#endif
-*/
 // MARK: - Deprecated
 
 #if !arch(wasm32) // && canImport(Dispatch)
@@ -401,6 +298,7 @@ public struct Service <Peripheral: Peer, ID: Hashable> : GATTAttribute {
     
     public let peripheral: Peripheral
     
+    /// A Boolean value that indicates whether the type of service is primary or secondary.
     public let isPrimary: Bool
     
     public init(id: ID,
