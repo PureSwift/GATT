@@ -5,7 +5,8 @@
 //  Created by Alsey Coleman Miller on 6/10/20.
 //
 
-#if canImport(Foundation) || canImport(Dispatch)
+#if !arch(wasm32) && (canImport(Foundation) || canImport(Dispatch))
+
 import Foundation
 import Dispatch
 import Bluetooth
@@ -50,13 +51,13 @@ public struct SynchronousCentral <Central: CentralProtocol> {
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         
         // block while scanning
-        let semaphore = Semaphore(timeout: Date.distantFuture.timeIntervalSinceNow)
+        let semaphore = Semaphore<Void>(timeout: Date.distantFuture.timeIntervalSinceNow)
         let oldScanningChanged = central.scanningChanged
-        central.scanningChanged = { if $0 { semaphore.stopWaiting() } }
+        central.scanningChanged = { if $0 == false { semaphore.stopWaiting(.success(())) } }
         central.scan(filterDuplicates: filterDuplicates) { (result) in
             switch result {
             case let .failure(error):
-                semaphore.stopWaiting(error)
+                semaphore.stopWaiting(.failure(error))
             case let .success(scanData):
                 foundDevice(scanData)
             }
@@ -74,15 +75,8 @@ public struct SynchronousCentral <Central: CentralProtocol> {
     ///
     /// - Note: Do not call on main thread, this method blocks until `stopScan()` is called.
     public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
-        let semaphore = Semaphore(timeout: timeout)
-        central.connect(to: peripheral, timeout: timeout) { (result) in
-            switch result {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case .success:
-                semaphore.stopWaiting()
-            }
-        }
+        let semaphore = Semaphore<Void>(timeout: timeout)
+        central.connect(to: peripheral, timeout: timeout, completion: semaphore.stopWaiting)
         try semaphore.wait()
     }
     
@@ -103,56 +97,26 @@ public struct SynchronousCentral <Central: CentralProtocol> {
                           for peripheral: Peripheral,
                           timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral, AttributeID>] {
         
-        let semaphore = Semaphore(timeout: timeout)
-        var result: [Service<Peripheral, AttributeID>]?
-        central.discoverServices(services, for: peripheral, timeout: timeout) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case let .success(value):
-                result = value
-                semaphore.stopWaiting()
-            }
-        }
-        try semaphore.wait()
-        return result.unsafelyUnwrapped
+        let semaphore = Semaphore<[Service<Peripheral, AttributeID>]>(timeout: timeout)
+        central.discoverServices(services, for: peripheral, timeout: timeout, completion: semaphore.stopWaiting)
+        return try semaphore.wait()
     }
     
     public func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                for service: Service<Peripheral, AttributeID>,
-                                timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral, AttributeID>] {
+                                        for service: Service<Peripheral, AttributeID>,
+                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral, AttributeID>] {
         
-        let semaphore = Semaphore(timeout: timeout)
-        var result: [Characteristic<Peripheral, AttributeID>]?
-        central.discoverCharacteristics(characteristics, for: service, timeout: timeout) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case let .success(value):
-                result = value
-                semaphore.stopWaiting()
-            }
-        }
-        try semaphore.wait()
-        return result.unsafelyUnwrapped
+        let semaphore = Semaphore<[Characteristic<Peripheral, AttributeID>]>(timeout: timeout)
+        central.discoverCharacteristics(characteristics, for: service, timeout: timeout, completion: semaphore.stopWaiting)
+        return try semaphore.wait()
     }
     
     public func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
                           timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
         
-        let semaphore = Semaphore(timeout: timeout)
-        var result: Data?
-        central.readValue(for: characteristic, timeout: timeout) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case let .success(value):
-                result = value
-                semaphore.stopWaiting()
-            }
-        }
-        try semaphore.wait()
-        return result.unsafelyUnwrapped
+        let semaphore = Semaphore<Data>(timeout: timeout)
+        central.readValue(for: characteristic, timeout: timeout, completion: semaphore.stopWaiting)
+        return try semaphore.wait()
     }
     
     public func writeValue(_ data: Data,
@@ -160,15 +124,8 @@ public struct SynchronousCentral <Central: CentralProtocol> {
                            withResponse: Bool = true,
                            timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        let semaphore = Semaphore(timeout: timeout)
-        central.writeValue(data, for: characteristic, withResponse: withResponse, timeout: timeout) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case .success:
-                semaphore.stopWaiting()
-            }
-        }
+        let semaphore = Semaphore<Void>(timeout: timeout)
+        central.writeValue(data, for: characteristic, withResponse: withResponse, timeout: timeout, completion: semaphore.stopWaiting)
         try semaphore.wait()
     }
     
@@ -176,33 +133,16 @@ public struct SynchronousCentral <Central: CentralProtocol> {
                        for characteristic: Characteristic<Peripheral, AttributeID>,
                        timeout: TimeInterval = .gattDefaultTimeout) throws {
         
-        let semaphore = Semaphore(timeout: timeout)
-        central.notify(notification, for: characteristic, timeout: timeout) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case .success:
-                semaphore.stopWaiting()
-            }
-        }
+        let semaphore = Semaphore<Void>(timeout: timeout)
+        central.notify(notification, for: characteristic, timeout: timeout, completion: semaphore.stopWaiting)
         try semaphore.wait()
     }
     
     public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
         
-        let semaphore = Semaphore(timeout: Date.distantFuture.timeIntervalSinceNow)
-        var result: ATTMaximumTransmissionUnit?
-        central.maximumTransmissionUnit(for: peripheral) {
-            switch $0 {
-            case let .failure(error):
-                semaphore.stopWaiting(error)
-            case let .success(value):
-                result = value
-                semaphore.stopWaiting()
-            }
-        }
-        try semaphore.wait()
-        return result.unsafelyUnwrapped
+        let semaphore = Semaphore<ATTMaximumTransmissionUnit>(timeout: Date.distantFuture.timeIntervalSinceNow)
+        central.maximumTransmissionUnit(for: peripheral, completion: semaphore.stopWaiting)
+        return try semaphore.wait()
     }
 }
 
@@ -260,6 +200,10 @@ public extension CentralProtocol {
     
     func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
         try sync.maximumTransmissionUnit(for: peripheral)
+    }
+    
+    func disconnect(peripheral: Peripheral) {
+        disconnect(peripheral)
     }
 }
 
@@ -380,30 +324,34 @@ public extension SynchronousCentral {
 
 internal extension SynchronousCentral {
     
-    final class Semaphore {
+    final class Semaphore <Success> {
         
-        let semaphore: DispatchSemaphore
         let timeout: TimeInterval
-        private(set) var error: Swift.Error?
+        private let semaphore: DispatchSemaphore
+        private(set) var result: Result<Success, Error>?
         
         init(timeout: TimeInterval) {
             self.timeout = timeout
             self.semaphore = DispatchSemaphore(value: 0)
-            self.error = nil
         }
         
-        func wait() throws {
-            
+        func wait() throws -> Success {
+            precondition(result == nil)
             let dispatchTime: DispatchTime = .now() + timeout
             let success = semaphore.wait(timeout: dispatchTime) == .success
-            if let error = self.error {
+            guard let result = self.result, success
+                else { throw CentralError.timeout }
+            switch result {
+            case let .failure(error):
                 throw error
+            case let .success(value):
+                return value
             }
-            guard success else { throw CentralError.timeout }
         }
         
-        func stopWaiting(_ error: Swift.Error? = nil) {
-            self.error = error
+        func stopWaiting(_ result: Result<Success, Error>) {
+            precondition(self.result == nil)
+            self.result = result
             semaphore.signal()
         }
     }

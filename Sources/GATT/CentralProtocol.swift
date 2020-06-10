@@ -19,13 +19,13 @@ import Bluetooth
 /// Implementation varies by operating system.
 public protocol CentralProtocol: class {
     
-    ///
+    /// Central Peripheral Type
     associatedtype Peripheral: Peer
     
-    ///
+    /// Central Advertisement Type
     associatedtype Advertisement: AdvertisementDataProtocol
     
-    ///
+    /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
     /// 
@@ -47,7 +47,7 @@ public protocol CentralProtocol: class {
     ///
     func connect(to peripheral: Peripheral,
                  timeout: TimeInterval,
-                 completion: (Result<Void, Error>) -> ())
+                 completion: @escaping (Result<Void, Error>) -> ())
     
     ///
     func disconnect(_ peripheral: Peripheral)
@@ -62,35 +62,35 @@ public protocol CentralProtocol: class {
     func discoverServices(_ services: [BluetoothUUID],
                           for peripheral: Peripheral,
                           timeout: TimeInterval,
-                          completion: (Result<[Service<Peripheral, AttributeID>], Error>) -> ())
+                          completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ())
     
     ///
     func discoverCharacteristics(_ characteristics: [BluetoothUUID],
                                 for service: Service<Peripheral, AttributeID>,
                                 timeout: TimeInterval,
-                                completion: (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ())
+                                completion: @escaping (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ())
     
     ///
     func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
                    timeout: TimeInterval,
-                   completion: (Result<Data, Error>) -> ())
+                   completion: @escaping (Result<Data, Error>) -> ())
     
     ///
     func writeValue(_ data: Data,
                     for characteristic: Characteristic<Peripheral, AttributeID>,
                     withResponse: Bool,
                     timeout: TimeInterval,
-                    completion: (Result<Void, Error>) -> ())
+                    completion: @escaping (Result<Void, Error>) -> ())
     
     ///
     func notify(_ notification: ((Data) -> ())?,
                 for characteristic: Characteristic<Peripheral, AttributeID>,
                 timeout: TimeInterval,
-                completion: (Result<Void, Error>) -> ())
+                completion: @escaping (Result<Void, Error>) -> ())
     
     ///
     func maximumTransmissionUnit(for peripheral: Peripheral,
-                                 completion: (Result<ATTMaximumTransmissionUnit, Error>) -> ())
+                                 completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ())
 }
 
 // MARK: - Supporting Types
