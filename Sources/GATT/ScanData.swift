@@ -50,3 +50,12 @@ extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decoda
 // MARK: - Hashable
 
 extension ScanData: Hashable where Peripheral: Hashable, Advertisement: Hashable { }
+
+// MARK: - Identifiable
+
+extension ScanData: Identifiable {
+    
+    public var id: Peripheral.Identifier {
+        return peripheral.identifier
+    }
+}
