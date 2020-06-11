@@ -5,22 +5,12 @@
 //  Created by Alsey Coleman Miller on 6/9/20.
 //
 
-#if canImport(Foundation)
-import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#endif
-
 #if canImport(Combine)
-import Combine
-#elseif canImport(OpenCombine)
-import OpenCombine
-#endif
 
+import Foundation
+import Combine
 import Bluetooth
 import GATT
-
-#if canImport(Combine) || canImport(OpenCombine)
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public final class DarwinCombineCentral: CombineCentral<DarwinCentral> {

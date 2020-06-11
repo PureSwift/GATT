@@ -158,6 +158,17 @@ public extension CentralProtocol {
 @available(*, deprecated, message: "Migrate to `SynchronousCentral`, completion blocks, or Combine")
 public extension CentralProtocol {
     
+    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
+        return try sync.scan(duration: duration, filterDuplicates: filterDuplicates)
+    }
+    
+    /// Scans for peripherals that are advertising services for the specified time interval.
+    func scan(duration: TimeInterval,
+              filterDuplicates: Bool = true,
+              foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
+        try sync.scan(duration: duration, filterDuplicates: filterDuplicates, foundDevice: foundDevice)
+    }
+    
     func scan(filterDuplicates: Bool = true,
               foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         

@@ -14,30 +14,6 @@ import CoreBluetooth
 
 /// CoreBluetooth GATT Central Manager
 public final class DarwinCentral: CentralProtocol {
-    public func connect(to peripheral: Peripheral, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
-        <#code#>
-    }
-    
-    public func discoverServices(_ services: [BluetoothUUID], for peripheral: Peripheral, timeout: TimeInterval, completion: (Result<[Service<Peripheral, ObjectIdentifier>], Error>) -> ()) {
-        <#code#>
-    }
-    
-    public func discoverCharacteristics(_ characteristics: [BluetoothUUID], for service: Service<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<[Characteristic<Peripheral, ObjectIdentifier>], Error>) -> ()) {
-        <#code#>
-    }
-    
-    public func readValue(for characteristic: Characteristic<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<Data, Error>) -> ()) {
-        <#code#>
-    }
-    
-    public func writeValue(_ data: Data, for characteristic: Characteristic<Peripheral, ObjectIdentifier>, withResponse: Bool, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
-        <#code#>
-    }
-    
-    public func maximumTransmissionUnit(for peripheral: Peripheral, completion: (Result<ATTMaximumTransmissionUnit, Error>) -> ()) {
-        <#code#>
-    }
-    
     
     // MARK: - Properties
     
@@ -98,6 +74,7 @@ public final class DarwinCentral: CentralProtocol {
     /// Scans for peripherals that are advertising services.
     public func scan(filterDuplicates: Bool = true,
                      _ foundDevice: @escaping (Result<ScanData<Peripheral, DarwinAdvertisementData>, Error>) -> ()) {
+        
         return self.scan(filterDuplicates: filterDuplicates, with: [], foundDevice)
     }
     
@@ -308,24 +285,28 @@ public final class DarwinCentral: CentralProtocol {
                     // if you specified the write type as `.withResponse`.
                     self.delegate.writeCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
                     
-                    // write request
+                    // write request (will call delegate method)
                     corePeripheral.writeValue(data, for: coreCharacteristic, type: .withResponse)
                 } else {
                     
                     // flush write messages if supported
                     if #available(macOS 13, iOS 11, tvOS 11, watchOS 4, *),
                         corePeripheral.canSendWriteWithoutResponse == false {
-                        self.delegate.writeCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
-                        
+                        // wait until write queue is flushed
+                        self.delegate.flushWriteWithoutResponse[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue) { _ in
+                            // write command (if not blob)
+                            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
+                            completion(.success(()))
+                        }
                     } else {
-                        // lets hope for the best?
+                        // have no idea if write will be queued or executed immediately
+                        // try after a small delay
                         self.queue.asyncAfter(deadline: .now() + 1.5) {
+                            // write command (if not blob)
+                            corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
                             completion(.success(()))
                         }
                     }
-                    
-                    // write command (if not blob)
-                    corePeripheral.writeValue(data, for: coreCharacteristic, type: .withoutResponse)
                 }
             }
             catch {
@@ -336,7 +317,10 @@ public final class DarwinCentral: CentralProtocol {
     }
     
     /// Subscribe to notifications for the specified characteristic.
-    public func notify(_ notification: ((Data) -> ())?, for characteristic: Characteristic<Peripheral, ObjectIdentifier>, timeout: TimeInterval, completion: (Result<Void, Error>) -> ()) {
+    public func notify(_ notification: ((Data) -> ())?,
+                       for characteristic: Characteristic<Peripheral, ObjectIdentifier>,
+                       timeout: TimeInterval = .gattDefaultTimeout,
+                       completion: @escaping (Result<Void, Error>) -> ()) {
         
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -347,7 +331,7 @@ public final class DarwinCentral: CentralProtocol {
                 guard corePeripheral.state == .connected
                     else { throw CentralError.disconnected }
                 let coreCharacteristic = try self.characteristic(for: characteristic)
-                self.delegate.readCharacteristicValue[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
+                self.delegate.setNotification[characteristic.peripheral] = Completion(timeout: timeout, queue: self.queue, completion)
                 // read value
                 corePeripheral.setNotifyValue(notification != nil, for: coreCharacteristic)
             }
@@ -488,6 +472,7 @@ internal extension DarwinCentral {
         var discoverCharacteristics = [Peripheral: Completion<[Characteristic<Peripheral, AttributeID>]>]()
         var readCharacteristicValue = [Peripheral: Completion<Data>]()
         var writeCharacteristicValue = [Peripheral: Completion<Void>]()
+        var flushWriteWithoutResponse = [Peripheral: Completion<Void>]()
         var setNotification = [Peripheral: Completion<Void>]()
         var notifications = [Peripheral: (Data) -> ()]()
         
@@ -523,7 +508,8 @@ internal extension DarwinCentral {
         
         func centralManager(_ centralManager: CBCentralManager,
                             didDiscover peripheral: CBPeripheral,
-                            advertisementData: [String : Any], rssi: NSNumber) {
+                            advertisementData: [String : Any],
+                            rssi: NSNumber) {
             
             assert(self.central != nil)
             assert(self.central?.internalManager === centralManager)
@@ -537,11 +523,12 @@ internal extension DarwinCentral {
                                       isConnectable: advertisement.isConnectable ?? false)
             
             self.central.cache.peripherals[identifier] = peripheral
-            self.scan?.didComplete(.success(scanResult))
+            guard let scan = self.scan
+                else { assertionFailure(); return }
+            scan(.success(scanResult))
         }
         
-        @objc(centralManager:didConnectPeripheral:)
-        public func centralManager(_ centralManager: CBCentralManager, didConnect corePeripheral: CBPeripheral) {
+        func centralManager(_ centralManager: CBCentralManager, didConnect corePeripheral: CBPeripheral) {
             
             log?("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
             
@@ -556,8 +543,7 @@ internal extension DarwinCentral {
             self.connect[peripheral] = nil
         }
         
-        @objc(centralManager:didFailToConnectPeripheral:error:)
-        public func centralManager(_ centralManager: CBCentralManager, didFailToConnect corePeripheral: CBPeripheral, error: Swift.Error?) {
+        func centralManager(_ centralManager: CBCentralManager, didFailToConnect corePeripheral: CBPeripheral, error: Swift.Error?) {
             
             log?("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
             
@@ -573,8 +559,7 @@ internal extension DarwinCentral {
             self.connect[peripheral] = nil
         }
         
-        @objc(centralManager:didDisconnectPeripheral:error:)
-        public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral corePeripheral: CBPeripheral, error: Swift.Error?) {
+        func centralManager(_ central: CBCentralManager, didDisconnectPeripheral corePeripheral: CBPeripheral, error: Swift.Error?) {
                         
             if let error = error {
                 log?("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
@@ -594,25 +579,11 @@ internal extension DarwinCentral {
                 .didComplete(.failure(CentralError.disconnected))
             self.writeCharacteristicValue[peripheral]?
                 .didComplete(.failure(CentralError.disconnected))
+            self.flushWriteWithoutResponse[peripheral]?
+                .didComplete(.failure(CentralError.disconnected))
             self.setNotification[peripheral]?
                 .didComplete(.failure(CentralError.disconnected))
             self.notifications[peripheral] = nil
-            
-            /*
-            let semaphores = [
-                internalState.discoverServices.semaphore,
-                internalState.discoverCharacteristics.semaphore,
-                internalState.writeCharacteristic.semaphore,
-                internalState.flushWriteWithoutResponse.semaphore,
-                internalState.readCharacteristic.semaphore,
-                internalState.notify.semaphore
-            ]
-            
-            semaphores
-                .filter { $0?.operation.peripheral == peripheral }
-                .compactMap { $0 }
-                .forEach { $0.stopWaiting(CentralError.disconnected) }
-            */
         }
         
         // MARK: - CBPeripheralDelegate
@@ -674,9 +645,93 @@ internal extension DarwinCentral {
             self.discoverCharacteristics[peripheral] = nil
         }
         
-        func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        func peripheral(_ corePeripheral: CBPeripheral, didUpdateValueFor coreCharacteristic: CBCharacteristic, error: Error?) {
+            
+            let data = coreCharacteristic.value ?? Data()
+            
+            if let error = error {
+                log?("Error reading characteristic (\(error))")
+            } else {
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update value for characteristic \(coreCharacteristic.uuid.uuidString)")
+            }
+            
+            let peripheral = Peripheral(corePeripheral)
+            
+            // write with response
+            if let completion = self.readCharacteristicValue[peripheral] {
+                if let error = error {
+                    completion.didComplete(.failure(error))
+                } else {
+                    completion.didComplete(.success(data))
+                }
+                self.readCharacteristicValue[peripheral] = nil
+            } else if let notification = self.notifications[peripheral] {
+                assert(error == nil, "Notifications should never fail")
+                notification(data)
+                self.notifications[peripheral] = nil
+            }
+        }
+        
+        func peripheral(_ corePeripheral: CBPeripheral, didWriteValueFor coreCharacteristic: CBCharacteristic, error: Swift.Error?) {
+            
+            if let error = error {
+                log?("Error writing characteristic (\(error))")
+            } else {
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did write value for characteristic \(coreCharacteristic.uuid.uuidString)")
+            }
+            
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.writeCharacteristicValue[peripheral]
+                else { assertionFailure("Missing callback"); return }
+            
+            if let error = error {
+                callback.didComplete(.failure(error))
+            } else {
+                callback.didComplete(.success(()))
+            }
+            
+            // remove callback
+            self.writeCharacteristicValue[peripheral] = nil
+        }
+        
+        func peripheral(_ corePeripheral: CBPeripheral,
+                           didUpdateNotificationStateFor coreCharacteristic: CBCharacteristic,
+                           error: Swift.Error?) {
+            
+            if let error = error {
+                log?("Error setting notifications for characteristic (\(error))")
+            } else {
+                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update notification state for characteristic \(coreCharacteristic.uuid.uuidString)")
+            }
+            
+            let peripheral = Peripheral(corePeripheral)
+            guard let callback = self.setNotification[peripheral]
+                else { assertionFailure("Missing callback"); return }
+            
+            if let error = error {
+                callback.didComplete(.failure(error))
+            } else {
+                callback.didComplete(.success(()))
+            }
+            
+            // remove callback
+            self.setNotification[peripheral] = nil
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral,
+                        didUpdateValueFor descriptor: CBDescriptor,
+                        error: Swift.Error?) {
             
             
+        }
+        
+        func peripheralIsReady(toSendWriteWithoutResponse corePeripheral: CBPeripheral) {
+            
+            log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) is ready to send write without response")
+            
+            let peripheral = Peripheral(corePeripheral)
+            self.flushWriteWithoutResponse[peripheral]?.didComplete(.success(()))
+            self.flushWriteWithoutResponse[peripheral] = nil
         }
     }
 }
@@ -687,7 +742,7 @@ internal extension DarwinCentral {
         var peripherals = [Peripheral: CBPeripheral]()
     }
     
-    fileprivate final class Completion <Output> {
+    final class Completion <Output> {
                 
         let timeout: TimeInterval
                 
@@ -695,7 +750,9 @@ internal extension DarwinCentral {
         
         private(set) var didComplete: Bool = false
         
-        fileprivate init(timeout: TimeInterval, queue: DispatchQueue = .global(), _ block: @escaping (Result<Output, Error>) -> ()) {
+        fileprivate init(timeout: TimeInterval,
+                         queue: DispatchQueue = .global(),
+                         _ block: @escaping (Result<Output, Error>) -> ()) {
             self.timeout = timeout
             self.block = block
             // call timeout after interval
