@@ -32,22 +32,6 @@ public protocol AdvertisementData: Hashable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
-/// GATT Manufacturer Specific Data
-public struct ManufacturerSpecificData: Equatable, Hashable {
-    
-    /// Company Identifier
-    public var companyIdentifier: CompanyIdentifier
-    
-    public var additionalData: Data
-    
-    public init(companyIdentifier: CompanyIdentifier,
-                additionalData: Data = Data()) {
-        
-        self.companyIdentifier = companyIdentifier
-        self.additionalData = additionalData
-    }
-}
-
 #if canImport(BluetoothGAP)
 import BluetoothGAP
 

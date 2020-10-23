@@ -60,24 +60,6 @@ extension DarwinAdvertisementData: CustomStringConvertible {
     
 // MARK: - AdvertisementData
 
-internal extension ManufacturerSpecificData {
-    
-    init?(data: Data) {
-        
-        guard data.count >= 2
-            else { return nil }
-        
-        let companyIdentifier = CompanyIdentifier(rawValue: UInt16(littleEndian: unsafeBitCast((data[0], data[1]), to: UInt16.self)))
-        let additionalData: Data
-        if data.count > 2 {
-            additionalData =  Data(data.suffix(from: 2))
-        } else {
-            additionalData = Data()
-        }
-        self.init(companyIdentifier: companyIdentifier, additionalData: additionalData)
-    }
-}
-
 public extension DarwinAdvertisementData {
     
     /// The local name of a peripheral.
