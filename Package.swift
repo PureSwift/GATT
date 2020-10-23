@@ -24,7 +24,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            .upToNextMajor(from: "4.2.0")
+            .branch("master")
         )
     ],
     targets: [
