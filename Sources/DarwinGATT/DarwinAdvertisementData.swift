@@ -14,7 +14,7 @@ import GATT
 import CoreBluetooth
 
 /// CoreBluetooth Adverisement Data
-public struct DarwinAdvertisementData: AdvertisementDataProtocol {
+public struct DarwinAdvertisementData: AdvertisementData {
     
     // MARK: - Properties
     
@@ -36,8 +36,16 @@ public struct DarwinAdvertisementData: AdvertisementDataProtocol {
 extension DarwinAdvertisementData: Equatable {
     
     public static func == (lhs: DarwinAdvertisementData, rhs: DarwinAdvertisementData) -> Bool {
-        
         return lhs.data == rhs.data
+    }
+}
+
+// MARK: - Hashable
+
+extension DarwinAdvertisementData: Hashable {
+    
+    public func hash(into hasher: inout Hasher) {
+        data.hash(into: &hasher)
     }
 }
 
@@ -50,8 +58,26 @@ extension DarwinAdvertisementData: CustomStringConvertible {
     }
 }
     
-// MARK: - AdvertisementDataProtocol
+// MARK: - AdvertisementData
+
+internal extension ManufacturerSpecificData {
     
+    init?(data: Data) {
+        
+        guard data.count >= 2
+            else { return nil }
+        
+        let companyIdentifier = CompanyIdentifier(rawValue: UInt16(littleEndian: unsafeBitCast((data[0], data[1]), to: UInt16.self)))
+        let additionalData: Data
+        if data.count > 2 {
+            additionalData =  Data(data.suffix(from: 2))
+        } else {
+            additionalData = Data()
+        }
+        self.init(companyIdentifier: companyIdentifier, additionalData: additionalData)
+    }
+}
+
 public extension DarwinAdvertisementData {
     
     /// The local name of a peripheral.
@@ -61,10 +87,10 @@ public extension DarwinAdvertisementData {
     }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: GAPManufacturerSpecificData? {
+    var manufacturerData: ManufacturerSpecificData? {
         
         guard let manufacturerDataBytes = data[CBAdvertisementDataManufacturerDataKey] as? Data,
-            let manufacturerData = GAPManufacturerSpecificData(data: manufacturerDataBytes)
+            let manufacturerData = ManufacturerSpecificData(data: manufacturerDataBytes)
             else { return nil }
         
         return manufacturerData
