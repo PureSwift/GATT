@@ -319,6 +319,9 @@ final class GATTTests: XCTestCase {
         
         XCTAssertEqual(serverSocket.cache, mockData.server)
         XCTAssertEqual(clientSocket.cache, mockData.client)
+        
+        // FIXME: ARC crash
+        withExtendedLifetime(clientSocket.cache, { let _ = $0 })
     }
     
     func testCharacteristicValue() {
