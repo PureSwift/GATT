@@ -14,7 +14,7 @@ public typealias ManufacturerSpecificData = GAPManufacturerSpecificData
 /// GATT Manufacturer Specific Data
 public struct ManufacturerSpecificData: Equatable, Hashable {
     
-    public let data: Data // Optimize for CoreBluetooth / iOS
+    internal let data: Data // Optimize for CoreBluetooth / iOS
     
     public init?(data: Data) {
         guard data.count >= 2
