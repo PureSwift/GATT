@@ -14,34 +14,49 @@ public typealias ManufacturerSpecificData = GAPManufacturerSpecificData
 /// GATT Manufacturer Specific Data
 public struct ManufacturerSpecificData: Equatable, Hashable {
     
-    /// Company Identifier
-    public var companyIdentifier: CompanyIdentifier
+    public let data: Data // Optimize for CoreBluetooth / iOS
     
-    public var additionalData: Data
-    
-    public init(companyIdentifier: CompanyIdentifier,
-                additionalData: Data = Data()) {
-        
-        self.companyIdentifier = companyIdentifier
-        self.additionalData = additionalData
+    public init?(data: Data) {
+        guard data.count >= 2
+            else { return nil }
+        self.data = data
     }
 }
 
-internal extension ManufacturerSpecificData {
-    
-    init?(data: Data) {
+public extension ManufacturerSpecificData {
         
-        guard data.count >= 2
-            else { return nil }
+    /// Company Identifier
+    var companyIdentifier: CompanyIdentifier {
         
-        let companyIdentifier = CompanyIdentifier(rawValue: UInt16(littleEndian: unsafeBitCast((data[0], data[1]), to: UInt16.self)))
-        let additionalData: Data
-        if data.count > 2 {
-            additionalData =  Data(data.suffix(from: 2))
-        } else {
-            additionalData = Data()
+        get {
+            assert(data.count >= 2, "Invalid manufacturer data")
+            return CompanyIdentifier(rawValue: UInt16(littleEndian: unsafeBitCast((data[0], data[1]), to: UInt16.self)))
         }
-        self.init(companyIdentifier: companyIdentifier, additionalData: additionalData)
+        
+        set { self = ManufacturerSpecificData(companyIdentifier: newValue, additionalData: additionalData) }
+    }
+    
+    var additionalData: Data {
+        
+        get {
+            if data.count > 2 {
+                return Data(data.suffix(from: 2))
+            } else {
+                return Data()
+            }
+        }
+        
+        set { self = ManufacturerSpecificData(companyIdentifier: companyIdentifier, additionalData: newValue) }
+    }
+    
+    init(companyIdentifier: CompanyIdentifier,
+         additionalData: Data = Data()) {
+        
+        var data = Data(capacity: 2 + additionalData.count)
+        withUnsafeBytes(of: companyIdentifier.rawValue.littleEndian) { data.append(contentsOf: $0) }
+        data.append(additionalData)
+        self.data = data
     }
 }
+
 #endif
