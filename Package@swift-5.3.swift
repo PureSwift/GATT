@@ -31,27 +31,58 @@ let package = Package(
         .target(
             name: "GATT",
             dependencies: [
-                "Bluetooth",
-                "BluetoothGATT",
-                "BluetoothGAP",
-                "BluetoothHCI"
+                .product(
+                    name: "Bluetooth",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
+                .product(
+                    name: "BluetoothGAP",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
+                .product(
+                    name: "BluetoothHCI",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
             ]
         ),
         .target(
             name: "DarwinGATT",
             dependencies: [
                 "GATT",
-                "BluetoothGATT"
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS])
+                )
             ]
         ),
         .testTarget(
             name: "GATTTests",
             dependencies: [
                 "GATT",
-                "Bluetooth",
-                "BluetoothGATT",
-                "BluetoothGAP",
-                "BluetoothHCI"
+                .product(
+                    name: "Bluetooth",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGAP",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothHCI",
+                    package: "Bluetooth"
+                )
             ]
         )
     ]
