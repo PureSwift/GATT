@@ -8,6 +8,7 @@
 
 import Foundation
 import Bluetooth
+import BluetoothHCI
 
 final class PeripheralHostController: BluetoothHostControllerInterface {
     

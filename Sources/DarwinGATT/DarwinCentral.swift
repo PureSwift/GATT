@@ -6,12 +6,10 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if canImport(CoreBluetooth)
 import Foundation
 import Bluetooth
 import GATT
-
-#if canImport(CoreBluetooth)
-    
 import CoreBluetooth
 
 /// The platform specific peripheral.
@@ -273,7 +271,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
             Characteristic(identifier: $0.key,
                            uuid: BluetoothUUID($0.value.attribute.uuid),
                            peripheral: service.peripheral,
-                           properties: Characteristic<Peripheral>.Property.from(coreBluetooth: $0.value.attribute.properties))
+                           properties: .init(rawValue: numericCast($0.value.attribute.properties.rawValue)))
         }
     }
     
@@ -413,7 +411,7 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         }
     }
     
-    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
         
         guard state == .poweredOn
             else { throw DarwinCentralError.invalidState(state) }
@@ -423,15 +421,10 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
         }
         
         if #available(iOS 9.0, macOS 10.12, *) {
-            
             let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
-            
             assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
-            
-            return ATTMaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
-            
+            return MaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
         } else {
-            
             return .default
         }
     }
@@ -439,7 +432,6 @@ public final class DarwinCentral: NSObject, CentralProtocol, CBCentralManagerDel
     // MARK: - Private Methods
     
     private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
-        
         return self.internalState.scan.peripherals[peripheral]?.peripheral
     }
     

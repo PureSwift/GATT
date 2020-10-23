@@ -5,11 +5,12 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
+#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
 import Dispatch
-import Bluetooth
-
-#if os(macOS) || os(Linux)
+@_exported import Bluetooth
+@_exported import BluetoothGATT
+@_exported import BluetoothHCI
 
 @available(macOS 10.12, *)
 public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
@@ -22,9 +23,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public let controller: HostController
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
+    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
@@ -99,18 +100,15 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         self.serverThread = nil
     }
     
-    public func add(service: GATT.Service) throws -> UInt16 {
-        
+    public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
         return database.add(service: service)
     }
     
     public func remove(service handle: UInt16) {
-        
         database.remove(service: handle)
     }
     
     public func removeAllServices() {
-        
         database.removeAll()
     }
     

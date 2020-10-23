@@ -36,10 +36,10 @@ extension DarwinDescriptor {
         
         case .characteristicUserDescription:
             
-            guard let descriptor = GATTUserDescription(data: data)
+            guard let userDescription = String(data: data, encoding: .utf8)
                 else { return nil }
             
-            self = .userDescription(descriptor.userDescription as NSString)
+            self = .userDescription(userDescription as NSString)
             
         case .characteristicFormat:
             
