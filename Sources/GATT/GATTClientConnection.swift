@@ -5,11 +5,11 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
+#if canImport(BluetoothGATT)
 import Foundation
 import Dispatch
 import Bluetooth
-
-#if os(macOS) || os(Linux)
+import BluetoothGATT
 
 @available(macOS 10.12, *)
 public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
@@ -445,6 +445,40 @@ struct GATTClientConnectionCharacteristicCache {
 struct GATTClientConnectionDescriptorCache {
     
     let attribute: GATTClient.Descriptor
+}
+
+internal extension CharacteristicProperty {
+    
+    init?(_ property: GATTCharacteristicProperty) {
+        switch property {
+        case .broadcast:
+            self = .broadcast
+        case .read:
+            self = .read
+        case .writeWithoutResponse:
+            self = .writeWithoutResponse
+        case .write:
+            self = .write
+        case .notify:
+            self = .notify
+        case .indicate:
+            self = .indicate
+        default:
+            return nil
+        }
+    }
+    
+    static func from(_ properties: BitMaskOptionSet<GATTCharacteristicProperty>) -> Set<CharacteristicProperty> {
+        
+        var propertiesSet = Set<CharacteristicProperty>()
+        propertiesSet.reserveCapacity(properties.count)
+        properties
+            .lazy
+            .compactMap { CharacteristicProperty($0) }
+            .forEach { propertiesSet.insert($0) }
+        assert(propertiesSet.count == properties.count)
+        return propertiesSet
+    }
 }
 
 #endif

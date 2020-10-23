@@ -6,12 +6,11 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if (os(macOS) || os(iOS)) && canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
+import BluetoothGATT
 import GATT
-
-#if os(macOS) || os(iOS)
-    
 import CoreBluetooth
 import CoreLocation
 
@@ -26,13 +25,12 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
     public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
     
     public var state: DarwinBluetoothState {
-        
         return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
     }
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
+    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
@@ -101,7 +99,7 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
         internalManager.stopAdvertising()
     }
     
-    public func add(service: GATT.Service) throws -> UInt16 {
+    public func add(service: GATTAttribute.Service) throws -> UInt16 {
         
         assert(addServiceState == nil, "Already adding another Service")
         
@@ -531,7 +529,7 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        func add(service: GATT.Service, _ coreService: CBMutableService) -> UInt16 {
+        func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> UInt16 {
             
             let serviceHandle = newHandle()
             
@@ -560,8 +558,7 @@ private extension DarwinPeripheral {
             (coreService.characteristics as? [CBMutableCharacteristic])?.forEach { characteristics[$0] = nil }
             
             // remove characteristics
-            while let index = characteristics.index(where: { $0.value.serviceHandle == handle }) {
-                
+            while let index = characteristics.firstIndex(where: { $0.value.serviceHandle == handle }) {
                 characteristics.remove(at: index)
             }
         }

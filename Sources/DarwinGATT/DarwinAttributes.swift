@@ -6,36 +6,31 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+// watchOS and tvOS only support Central mode
+#if (os(macOS) || os(iOS)) && canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
-
-#if canImport(CoreBluetooth)
-
+import BluetoothGATT
 import CoreBluetooth
 
 internal protocol CoreBluetoothAttributeConvertible {
     
-    //associatedtype CoreBluetoothCentralType
     associatedtype CoreBluetoothPeripheralType
     
-    //init(_ CoreBluetooth: CoreBluetoothCentralType)
     func toCoreBluetooth() -> CoreBluetoothPeripheralType
 }
 
-#if os(macOS) || os(iOS) // watchOS and tvOS only support Central mode
-extension GATT.Service: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Service: CoreBluetoothAttributeConvertible {
     
     func toCoreBluetooth() -> CBMutableService {
         
         let service = CBMutableService(type: CBUUID(uuid), primary: primary)
-        
         service.characteristics = characteristics.map { $0.toCoreBluetooth() }
-        
         return service
     }
 }
 
-extension GATT.Characteristic: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Characteristic: CoreBluetoothAttributeConvertible {
     
     func toCoreBluetooth() -> CBMutableCharacteristic {
         
@@ -58,7 +53,7 @@ extension GATT.Characteristic: CoreBluetoothAttributeConvertible {
     }
 }
 
-extension GATT.Descriptor: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Descriptor: CoreBluetoothAttributeConvertible {
     
     func toCoreBluetooth() -> CBDescriptor {
         
@@ -75,80 +70,6 @@ extension GATT.Descriptor: CoreBluetoothAttributeConvertible {
             else { fatalError("Unsupported \(CBDescriptor.self) \(uuid)") }
         
         return CBMutableDescriptor(descriptor)
-    }
-}
-
-#endif
-
-internal protocol CoreBluetoothBitmaskConvertible: BitMaskOption {
-    
-    associatedtype CoreBluetoothBitmaskType: OptionSet
-    
-    /// Values that are supported in CoreBluetooth
-    static var coreBluetoothValues: [Self] { get }
-    
-    /// Convert from CoreBluetooth bitmask.
-    static func from(coreBluetooth: CoreBluetoothBitmaskType) -> BitMaskOptionSet<Self>
-}
-
-extension GATT.CharacteristicProperty: CoreBluetoothBitmaskConvertible {
-    
-    typealias CoreBluetoothBitmaskType = CBCharacteristicProperties
-    
-    static let coreBluetoothValues: [GATT.CharacteristicProperty] = [
-        .broadcast,
-        .read,
-        .writeWithoutResponse,
-        .write,
-        .notify,
-        .indicate,
-        .signedWrite,
-        .extendedProperties
-    ]
-    
-    static func from(coreBluetooth: CoreBluetoothBitmaskType) -> BitMaskOptionSet<GATT.CharacteristicProperty> {
-        
-        let bitmask = coreBluetooth.rawValue
-        
-        var convertedValues = BitMaskOptionSet<GATT.CharacteristicProperty>()
-        
-        for possibleValue in GATT.CharacteristicProperty.coreBluetoothValues {
-            
-            let rawValue = CoreBluetoothBitmaskType.RawValue(possibleValue.rawValue)
-            
-            if rawValue & bitmask == rawValue {
-                
-                convertedValues.insert(possibleValue)
-            }
-        }
-        
-        return convertedValues
-    }
-}
-
-extension ATT.AttributePermission: CoreBluetoothBitmaskConvertible {
-    
-    typealias CoreBluetoothBitmaskType = CBAttributePermissions
-    
-    static let coreBluetoothValues: [ATT.AttributePermission] = [.read, .write] + ATT.AttributePermission.encrypt
-    
-    static func from(coreBluetooth: CoreBluetoothBitmaskType) -> BitMaskOptionSet<ATT.AttributePermission> {
-        
-        let bitmask = coreBluetooth.rawValue
-        
-        var convertedValues = BitMaskOptionSet<ATT.AttributePermission>()
-        
-        for possibleValue in ATT.AttributePermission.coreBluetoothValues {
-            
-            let rawValue = CoreBluetoothBitmaskType.RawValue(possibleValue.rawValue)
-            
-            if rawValue & bitmask == rawValue {
-                
-                convertedValues.insert(possibleValue)
-            }
-        }
-        
-        return convertedValues
     }
 }
 

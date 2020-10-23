@@ -10,7 +10,7 @@ import Foundation
 import Bluetooth
 
 /// The data for a scan result.
-public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementDataProtocol>: Equatable {
+public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equatable, Hashable {
     
     /// The discovered peripheral.
     public let peripheral: Peripheral

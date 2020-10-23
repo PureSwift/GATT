@@ -7,16 +7,16 @@
 //
 
 import Foundation
-import Bluetooth
+@_exported import Bluetooth
 
 /// GATT Advertisement Data.
-public protocol AdvertisementDataProtocol: Equatable {
+public protocol AdvertisementData: Hashable {
     
     /// The local name of a peripheral.
     var localName: String? { get }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: GAPManufacturerSpecificData? { get }
+    var manufacturerData: ManufacturerSpecificData? { get }
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
@@ -32,14 +32,28 @@ public protocol AdvertisementDataProtocol: Equatable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
-@available(*, deprecated, message: "Use Bluetooth.LowEnergyAdvertisingData instead")
-public typealias AdvertisementData = Bluetooth.LowEnergyAdvertisingData
+/// GATT Manufacturer Specific Data
+public struct ManufacturerSpecificData: Equatable, Hashable {
+    
+    /// Company Identifier
+    public var companyIdentifier: CompanyIdentifier
+    
+    public var additionalData: Data
+    
+    public init(companyIdentifier: CompanyIdentifier,
+                additionalData: Data = Data()) {
+        
+        self.companyIdentifier = companyIdentifier
+        self.additionalData = additionalData
+    }
+}
 
-#if os(macOS) || os(Linux)
+#if canImport(BluetoothGAP)
+import BluetoothGAP
 
 // MARK: - LowEnergyAdvertisingData
 
-extension LowEnergyAdvertisingData: AdvertisementDataProtocol { }
+extension LowEnergyAdvertisingData: AdvertisementData { }
 
 public extension LowEnergyAdvertisingData {
     
@@ -62,14 +76,19 @@ public extension LowEnergyAdvertisingData {
     }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: GAPManufacturerSpecificData? {
+    var manufacturerData: ManufacturerSpecificData? {
         
         let decoded = decode()
         
-        guard let value = decoded.compactMap({ $0 as? GAPManufacturerSpecificData }).first
+        guard let value = decoded
+            .compactMap({ $0 as? GAPManufacturerSpecificData })
+            .first
             else { return nil }
         
-        return value
+        return ManufacturerSpecificData(
+            companyIdentifier: value.companyIdentifier,
+            additionalData: value.additionalData
+        )
     }
     
     /// Service-specific advertisement data.

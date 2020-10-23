@@ -24,12 +24,35 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            .upToNextMajor(from: "4.2.0")
+            .branch("master")
         )
     ],
     targets: [
-        .target(name: "GATT", dependencies: ["Bluetooth"]),
-        .target(name: "DarwinGATT", dependencies: ["GATT"]),
-        .testTarget(name: "GATTTests", dependencies: ["GATT"])
+        .target(
+            name: "GATT",
+            dependencies: [
+                "Bluetooth",
+                "BluetoothGATT",
+                "BluetoothGAP",
+                "BluetoothHCI"
+            ]
+        ),
+        .target(
+            name: "DarwinGATT",
+            dependencies: [
+                "GATT",
+                "BluetoothGATT"
+            ]
+        ),
+        .testTarget(
+            name: "GATTTests",
+            dependencies: [
+                "GATT",
+                "Bluetooth",
+                "BluetoothGATT",
+                "BluetoothGAP",
+                "BluetoothHCI"
+            ]
+        )
     ]
 )
