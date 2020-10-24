@@ -474,10 +474,12 @@ public extension DarwinPeripheral {
             #if os(iOS)
             if let beacon = self.beacon {
                 
-                let beaconRegion = CLBeaconRegion(proximityUUID: beacon.uuid,
-                                                  major: beacon.major,
-                                                  minor: beacon.minor,
-                                                  identifier: beacon.uuid.rawValue)
+                let beaconRegion = CLBeaconRegion(
+                    proximityUUID: beacon.uuid,
+                    major: beacon.major,
+                    minor: beacon.minor,
+                    identifier: beacon.uuid.uuidString
+                )
                 
                 let peripheralData = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi))
                 

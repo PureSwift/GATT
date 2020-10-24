@@ -12,7 +12,7 @@ import Dispatch
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.12, *)
+@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
     // MARK: - Properties
