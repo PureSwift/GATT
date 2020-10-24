@@ -6,9 +6,9 @@
 //
 
 import Foundation
-
+@_exported import Bluetooth
 #if canImport(BluetoothGAP)
-import BluetoothGAP
+@_exported import BluetoothGAP
 public typealias ManufacturerSpecificData = GAPManufacturerSpecificData
 #else
 /// GATT Manufacturer Specific Data
