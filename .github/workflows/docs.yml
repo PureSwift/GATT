@@ -1,8 +1,6 @@
 name: Documentation
 
 on:
-  push:
-    tags:
   workflow_dispatch:
   release:
 

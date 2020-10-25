@@ -1,8 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
   release:
 
 jobs:
@@ -20,11 +18,11 @@ jobs:
            swift --version
       - name: Swift Version
         run: swift --version
-      # Install swift-create-xcframework
+      # Create a release
+      - name: Install Mint
+        run: brew install mint
       - name: Install swift-create-xcframework
-        run: |
-          brew install mint
-           mint install unsignedapps/swift-create-xcframework
+        run: mint install unsignedapps/swift-create-xcframework
       - name: Build XCFramework
         run: swift-create-xcframework
       # Upload build artifacts
@@ -43,7 +41,7 @@ jobs:
         - name: Swift Version
           run: swift --version
         - name: Build (Release)
-          run: swift build -c release -j 1
+          run: swift build -j 1 -c release
         # Upload build artifacts
         - name: Upload build artifacts
           uses: actions/upload-artifact@v2
