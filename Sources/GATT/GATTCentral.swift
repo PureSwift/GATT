@@ -52,9 +52,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func scan(filterDuplicates: Bool = true,
                      foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
-        
-        precondition(isScanning == false, "Already scanning")
-        
+                
         self.log?("Scanning...")
         
         self.isScanning = true
@@ -88,7 +86,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func stopScan() {
         
-        precondition(isScanning, "Not scanning")
+        self.log?("Stop scanning")
         self.isScanning = false
     }
     
