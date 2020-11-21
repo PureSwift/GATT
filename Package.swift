@@ -31,27 +31,20 @@ let package = Package(
         .target(
             name: "GATT",
             dependencies: [
-                "Bluetooth",
-                "BluetoothGATT",
-                "BluetoothGAP",
-                "BluetoothHCI"
+                "Bluetooth"
             ]
         ),
         .target(
             name: "DarwinGATT",
             dependencies: [
-                "GATT",
-                "BluetoothGATT"
+                "GATT"
             ]
         ),
         .testTarget(
             name: "GATTTests",
             dependencies: [
                 "GATT",
-                "Bluetooth",
-                "BluetoothGATT",
-                "BluetoothGAP",
-                "BluetoothHCI"
+                "Bluetooth"
             ]
         )
     ]
