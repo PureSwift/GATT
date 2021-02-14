@@ -76,17 +76,17 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         // set up advertising data
         do {
             let encoder = GAPDataEncoder()
-            let gapServiceUUIDs: [GAPData] = serviceHandles.map { database[handle: $0].uuid }.map {
-                switch $0 {
-                case .bit16(let uuid):
-                    return GAPServiceData16BitUUID(uuid: uuid, serviceData: Data())
-                case .bit32(let uuid):
-                    return GAPServiceData32BitUUID(uuid: uuid, serviceData: Data())
-                case .bit128(let uuid):
-                    return GAPServiceData128BitUUID(uuid: UUID(uuid))
-                }
-            }
-            let advertisingData = try encoder.encodeAdvertisingData(gapServiceUUIDs)
+            let serviceUUIDs = serviceHandles.map { database[handle: $0].uuid }
+            let gap16BitUUIDs: [UInt16] = serviceUUIDs.compactMap { if case .bit16(let uuid) = $0 { return uuid } else { return nil } }
+            let gap32BitUUIDs: [UInt32] = serviceUUIDs.compactMap { if case .bit32(let uuid) = $0 { return uuid } else { return nil } }
+            let gap128BitUUIDs: [UUID] = serviceUUIDs.compactMap { if case .bit128(let uuid) = $0 { return UUID(uuid) } else { return nil } }
+            var gapData = [GAPData]()
+
+            if !gap16BitUUIDs.isEmpty { gapData.append(GAPIncompleteListOf16BitServiceClassUUIDs(uuids: gap16BitUUIDs)) }
+            if !gap32BitUUIDs.isEmpty { gapData.append(GAPIncompleteListOf32BitServiceClassUUIDs(uuids: gap32BitUUIDs)) }
+            if !gap128BitUUIDs.isEmpty { gapData.append(GAPIncompleteListOf128BitServiceClassUUIDs(uuids: gap128BitUUIDs)) }
+
+            let advertisingData = try encoder.encodeAdvertisingData(gapData)
             try controller.setLowEnergyAdvertisingData(advertisingData)
         } catch {
             log?("Could not set up advertising data: \(error)")
