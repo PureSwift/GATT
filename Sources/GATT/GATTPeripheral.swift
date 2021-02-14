@@ -48,7 +48,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     internal private(set) var database = GATTDatabase()
 
-    private(set) var serviceHandles = Set<UInt16>()
+    private(set) var serviceUUIDs = [UInt16: BluetoothUUID]()
 
     internal private(set) var isServerRunning = false
     
@@ -76,10 +76,10 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         // set up advertising data
         do {
             let encoder = GAPDataEncoder()
-            let serviceUUIDs = serviceHandles.map { database[handle: $0].uuid }
-            let gap16BitUUIDs: [UInt16] = serviceUUIDs.compactMap { if case .bit16(let uuid) = $0 { return uuid } else { return nil } }
-            let gap32BitUUIDs: [UInt32] = serviceUUIDs.compactMap { if case .bit32(let uuid) = $0 { return uuid } else { return nil } }
-            let gap128BitUUIDs: [UUID] = serviceUUIDs.compactMap { if case .bit128(let uuid) = $0 { return UUID(uuid) } else { return nil } }
+            let uuids = serviceUUIDs.values
+            let gap16BitUUIDs: [UInt16] = uuids.compactMap { if case .bit16(let uuid) = $0 { return uuid } else { return nil } }
+            let gap32BitUUIDs: [UInt32] = uuids.compactMap { if case .bit32(let uuid) = $0 { return uuid } else { return nil } }
+            let gap128BitUUIDs: [UUID] = uuids.compactMap { if case .bit128(let uuid) = $0 { return UUID(uuid) } else { return nil } }
             var gapData = [GAPData]()
 
             if !gap16BitUUIDs.isEmpty { gapData.append(GAPIncompleteListOf16BitServiceClassUUIDs(uuids: gap16BitUUIDs)) }
@@ -123,17 +123,17 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
         let handle = database.add(service: service)
-        serviceHandles.insert(handle)
+        serviceUUIDs[handle] = service.uuid
         return handle
     }
     
     public func remove(service handle: UInt16) {
-        serviceHandles.remove(handle)
+        serviceUUIDs[handle] = nil
         database.remove(service: handle)
     }
     
     public func removeAllServices() {
-        serviceHandles.removeAll()
+        serviceUUIDs.removeAll()
         database.removeAll()
     }
     
