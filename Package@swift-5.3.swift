@@ -12,7 +12,7 @@ let package = Package(
     products: [
         .library(
             name: "GATT",
-            type: libraryType,
+            type: .static,
             targets: ["GATT"]
         ),
         .library(
