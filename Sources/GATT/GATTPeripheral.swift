@@ -47,7 +47,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     internal lazy var connectionsQueue: DispatchQueue = DispatchQueue(label: "\(self) Connections Queue")
     
     internal private(set) var database = GATTDatabase()
-    
+
+    private(set) var serviceHandles = Set<UInt16>()
+
     internal private(set) var isServerRunning = false
     
     internal private(set) var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
@@ -71,6 +73,25 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         
         guard isServerRunning == false else { return }
         
+        // set up advertising data
+        do {
+            let encoder = GAPDataEncoder()
+            let gapServiceUUIDs: [GAPData] = serviceHandles.map { database[handle: $0].uuid }.map {
+                switch $0 {
+                case .bit16(let uuid):
+                    return GAPServiceData16BitUUID(uuid: uuid, serviceData: Data())
+                case .bit32(let uuid):
+                    return GAPServiceData32BitUUID(uuid: uuid, serviceData: Data())
+                case .bit128(let uuid):
+                    return GAPServiceData128BitUUID(uuid: UUID(uuid))
+                }
+            }
+            let advertisingData = try encoder.encodeAdvertisingData(gapServiceUUIDs)
+            try controller.setLowEnergyAdvertisingData(advertisingData)
+        } catch {
+            log?("Could not set up advertising data: \(error)")
+        }
+
         // enable advertising
         do { try controller.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
@@ -101,14 +122,18 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
     
     public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
-        return database.add(service: service)
+        let handle = database.add(service: service)
+        serviceHandles.insert(handle)
+        return handle
     }
     
     public func remove(service handle: UInt16) {
+        serviceHandles.remove(handle)
         database.remove(service: handle)
     }
     
     public func removeAllServices() {
+        serviceHandles.removeAll()
         database.removeAll()
     }
     
