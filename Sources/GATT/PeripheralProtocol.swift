@@ -6,8 +6,10 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if canImport(BluetoothGATT)
 import Foundation
-import Bluetooth
+@_exported import Bluetooth
+@_exported import BluetoothGATT
 
 /// GATT Peripheral Manager
 ///
@@ -31,7 +33,7 @@ public protocol PeripheralProtocol: class {
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Attribute handle.
-    func add(service: GATT.Service) throws -> UInt16
+    func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16
     
     /// Removes the service with the specified handle.
     func remove(service: UInt16)
@@ -39,9 +41,9 @@ public protocol PeripheralProtocol: class {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)? { get set }
+    var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
     
-    var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
     
     var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
     
@@ -154,3 +156,5 @@ public struct GATTWriteConfirmation <Central: Peer> : GATTRequest {
         self.value = value
     }
 }
+
+#endif

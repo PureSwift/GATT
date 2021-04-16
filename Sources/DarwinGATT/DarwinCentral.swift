@@ -6,11 +6,10 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if canImport(CoreBluetooth)
 import Foundation
 import Bluetooth
 import GATT
-
-#if canImport(CoreBluetooth)
 import CoreBluetooth
 
 /// CoreBluetooth GATT Central Manager
@@ -217,6 +216,7 @@ public final class DarwinCentral: CentralProtocol {
         
         let coreCharacteristics = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         
+<<<<<<< HEAD
         queue.async { [weak self] in
             guard let self = self else { return }
             do {
@@ -234,6 +234,23 @@ public final class DarwinCentral: CentralProtocol {
                 self.delegate.discoverCharacteristics[service.peripheral] = nil
                 completion(.failure(error))
             }
+=======
+        corePeripheral.discoverCharacteristics(coreCharacteristics, for: coreService)
+        
+        // wait
+        try semaphore.wait()
+        
+        // get cached characteristics
+        let charachertisticCache = accessQueue.sync { [unowned self] in
+            self.internalState.cache[service.peripheral]?.characteristics.values ?? [:]
+        }
+        
+        return charachertisticCache.map {
+            Characteristic(identifier: $0.key,
+                           uuid: BluetoothUUID($0.value.attribute.uuid),
+                           peripheral: service.peripheral,
+                           properties: .init(rawValue: numericCast($0.value.attribute.properties.rawValue)))
+>>>>>>> master
         }
     }
     
@@ -343,6 +360,7 @@ public final class DarwinCentral: CentralProtocol {
         }
     }
     
+<<<<<<< HEAD
     /// Get the maximum transmission unit for the specified peripheral.
     public func maximumTransmissionUnit(for peripheral: Peripheral, completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ()) {
         
@@ -368,13 +386,40 @@ public final class DarwinCentral: CentralProtocol {
             catch {
                 completion(.failure(error))
             }
+=======
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
+        
+        guard state == .poweredOn
+            else { throw DarwinCentralError.invalidState(state) }
+        
+        let corePeripheral = try accessQueue.sync { [unowned self] in
+            try self.connectedPeripheral(peripheral)
+        }
+        
+        if #available(iOS 9.0, macOS 10.12, *) {
+            let mtu = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
+            assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == mtu)
+            return MaximumTransmissionUnit(rawValue: UInt16(mtu)) ?? .default
+        } else {
+            return .default
+>>>>>>> master
         }
     }
     
     // MARK: - Private Methods
     
+<<<<<<< HEAD
     internal func peripheral(for peripheral: Peripheral) throws -> CBPeripheral {
         guard let corePeripheral = self.cache.peripherals[peripheral]
+=======
+    private func peripheral(_ peripheral: Peripheral) -> CBPeripheral? {
+        return self.internalState.scan.peripherals[peripheral]?.peripheral
+    }
+    
+    private func connectedPeripheral(_ peripheral: Peripheral) throws -> CBPeripheral {
+        
+        guard let corePeripheral = self.peripheral(peripheral)
+>>>>>>> master
             else { throw CentralError.unknownPeripheral }
         return corePeripheral
     }

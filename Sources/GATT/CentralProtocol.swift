@@ -23,7 +23,7 @@ public protocol CentralProtocol: class {
     associatedtype Peripheral: Peer
     
     /// Central Advertisement Type
-    associatedtype Advertisement: AdvertisementDataProtocol
+    associatedtype Advertisement: AdvertisementData
     
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
@@ -88,14 +88,22 @@ public protocol CentralProtocol: class {
                 timeout: TimeInterval,
                 completion: @escaping (Result<Void, Error>) -> ())
     
+<<<<<<< HEAD
     ///
     func maximumTransmissionUnit(for peripheral: Peripheral,
                                  completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ())
+=======
+    func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit
+>>>>>>> master
 }
 
 // MARK: - Supporting Types
 
+<<<<<<< HEAD
 public protocol GATTAttribute: Hashable, Identifiable {
+=======
+public protocol GATTCentralAttribute {
+>>>>>>> master
     
     associatedtype Peripheral: Peer
         
@@ -104,7 +112,11 @@ public protocol GATTAttribute: Hashable, Identifiable {
     var peripheral: Peripheral { get }
 }
 
+<<<<<<< HEAD
 public struct Service <Peripheral: Peer, ID: Hashable> : GATTAttribute {
+=======
+public struct Service <Peripheral: Peer> : GATTCentralAttribute, Equatable, Hashable {
+>>>>>>> master
     
     public let id: ID
     
@@ -127,9 +139,13 @@ public struct Service <Peripheral: Peer, ID: Hashable> : GATTAttribute {
     }
 }
 
+<<<<<<< HEAD
 public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTAttribute {
+=======
+public struct Characteristic <Peripheral: Peer> : GATTCentralAttribute, Equatable, Hashable {
+>>>>>>> master
     
-    public typealias Property = GATT.CharacteristicProperty
+    public typealias Property = CharacteristicProperty
     
     public let id: ID
     
@@ -151,7 +167,11 @@ public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTAttribute {
     }
 }
 
+<<<<<<< HEAD
 public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTAttribute {
+=======
+public struct Descriptor <Peripheral: Peer>: GATTCentralAttribute, Equatable, Hashable {
+>>>>>>> master
     
     public let id: ID
     

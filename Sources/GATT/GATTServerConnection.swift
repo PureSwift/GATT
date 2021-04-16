@@ -5,13 +5,13 @@
 //  Created by Alsey Coleman Miller on 7/17/18.
 //
 
+#if canImport(BluetoothGATT)
 import Foundation
 import Dispatch
 import Bluetooth
+import BluetoothGATT
 
-#if os(macOS) || os(Linux)
-
-@available(macOS 10.12, *)
+@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
 public final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
@@ -202,9 +202,9 @@ public struct GATTServerConnectionCallback {
     
     public var log: ((String) -> ())?
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATT.Error?)?
+    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATT.Error?)?
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     

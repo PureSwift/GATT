@@ -5,11 +5,9 @@
 //  Created by Alsey Coleman Miller on 7/14/18.
 //
 
+#if canImport(CoreBluetooth)
 import Foundation
 import Bluetooth
-
-#if canImport(CoreBluetooth)
-
 import CoreBluetooth
 
 internal extension CBCentral {
@@ -35,5 +33,4 @@ internal extension CBPeripheral {
         }
     }
 }
-
 #endif

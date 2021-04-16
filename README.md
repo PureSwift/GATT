@@ -1,7 +1,5 @@
 # GATT
 
-[![Build Status](https://travis-ci.org/PureSwift/GATT.svg?branch=master)](https://travis-ci.org/PureSwift/GATT)
-
 Bluetooth Generic Attribute Profile (GATT) for Swift
 
 ## See Also

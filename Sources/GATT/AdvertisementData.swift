@@ -7,16 +7,16 @@
 //
 
 import Foundation
-import Bluetooth
+@_exported import Bluetooth
 
 /// GATT Advertisement Data.
-public protocol AdvertisementDataProtocol: Equatable {
+public protocol AdvertisementData: Hashable {
     
     /// The local name of a peripheral.
     var localName: String? { get }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: GAPManufacturerSpecificData? { get }
+    var manufacturerData: ManufacturerSpecificData? { get }
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
@@ -32,16 +32,12 @@ public protocol AdvertisementDataProtocol: Equatable {
     var solicitedServiceUUIDs: [BluetoothUUID]? { get }
 }
 
-@available(*, deprecated, message: "Use Bluetooth.LowEnergyAdvertisingData instead")
-public typealias AdvertisementData = Bluetooth.LowEnergyAdvertisingData
-
-#if os(macOS) || os(Linux)
+#if canImport(BluetoothGAP)
+import BluetoothGAP
 
 // MARK: - LowEnergyAdvertisingData
 
-extension LowEnergyAdvertisingData: AdvertisementDataProtocol { }
-
-public extension LowEnergyAdvertisingData {
+extension LowEnergyAdvertisingData: GATT.AdvertisementData {
     
     /// Decode GAP data types.
     private func decode() -> [GAPData] {
@@ -52,28 +48,31 @@ public extension LowEnergyAdvertisingData {
     }
     
     /// The local name of a peripheral.
-    var localName: String? {
+    public var localName: String? {
         
-        let decoded = decode()
-        
-        return decoded
-            .compactMap({ ($0 as? GAPCompleteLocalName)?.name ?? ($0 as? GAPShortLocalName)?.name })
-            .first
+        if let decoded = try? GAPDataDecoder.decode(GAPCompleteLocalName.self, from: self) {
+            return decoded.name
+        } else if let decoded = try? GAPDataDecoder.decode(GAPShortLocalName.self, from: self) {
+            return decoded.name
+        } else {
+            return nil
+        }
     }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: GAPManufacturerSpecificData? {
+    public var manufacturerData: ManufacturerSpecificData? {
         
-        let decoded = decode()
-        
-        guard let value = decoded.compactMap({ $0 as? GAPManufacturerSpecificData }).first
+        guard let value = try? GAPDataDecoder.decode(GAPManufacturerSpecificData.self, from: self)
             else { return nil }
         
-        return value
+        return ManufacturerSpecificData(
+            companyIdentifier: value.companyIdentifier,
+            additionalData: value.additionalData
+        )
     }
     
     /// Service-specific advertisement data.
-    var serviceData: [BluetoothUUID: Data]? {
+    public var serviceData: [BluetoothUUID: Data]? {
         
         let decoded = decode()
         
@@ -98,7 +97,7 @@ public extension LowEnergyAdvertisingData {
     }
     
     /// An array of service UUIDs
-    var serviceUUIDs: [BluetoothUUID]? {
+    public var serviceUUIDs: [BluetoothUUID]? {
         
         let decoded = decode()
         
@@ -140,18 +139,16 @@ public extension LowEnergyAdvertisingData {
     
     /// This value is available if the broadcaster (peripheral) provides its Tx power level in its advertising packet.
     /// Using the RSSI value and the Tx power level, it is possible to calculate path loss.
-    var txPowerLevel: Double? {
+    public var txPowerLevel: Double? {
         
-        let decoded = decode()
-        
-        guard let gapData = decoded.compactMap({ $0 as? GAPTxPowerLevel }).first
+        guard let value = try? GAPDataDecoder.decode(GAPTxPowerLevel.self, from: self)
             else { return nil }
         
-        return Double(gapData.powerLevel)
+        return Double(value.powerLevel)
     }
     
     /// An array of one or more `BluetoothUUID`, representing Service UUIDs.
-    var solicitedServiceUUIDs: [BluetoothUUID]? {
+    public var solicitedServiceUUIDs: [BluetoothUUID]? {
         
         let decoded = decode()
         

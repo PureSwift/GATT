@@ -8,6 +8,7 @@
 
 import Foundation
 import Bluetooth
+import BluetoothHCI
 
 final class PeripheralHostController: BluetoothHostControllerInterface {
     
@@ -160,7 +161,7 @@ final class CentralHostController: BluetoothHostControllerInterface {
         var events = self.advertisingReports
         
         while let eventBuffer = events.popFirst() {
-                        
+            
             let actualBytesRead = eventBuffer.count
             let eventHeader = HCIEventHeader(data: Data(eventBuffer[0 ..< HCIEventHeader.length]))
             let eventData = Data(eventBuffer[HCIEventHeader.length ..< actualBytesRead])
@@ -169,9 +170,11 @@ final class CentralHostController: BluetoothHostControllerInterface {
                 else { throw BluetoothHostControllerError.garbageResponse(Data(eventData)) }
                         
             assert(eventHeader?.event.rawValue == EP.event.rawValue)
-            
             try eventCallback(eventParameter)
         }
+        
+        /// sleep for scan duration
+        while shouldContinue() { sleep(1) }
     }
 }
 

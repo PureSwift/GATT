@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.1
 import PackageDescription
 
 #if os(Linux)
@@ -28,8 +28,24 @@ let package = Package(
         )
     ],
     targets: [
-        .target(name: "GATT", dependencies: ["Bluetooth"]),
-        .target(name: "DarwinGATT", dependencies: ["GATT"]),
-        .testTarget(name: "GATTTests", dependencies: ["GATT"])
+        .target(
+            name: "GATT",
+            dependencies: [
+                "Bluetooth"
+            ]
+        ),
+        .target(
+            name: "DarwinGATT",
+            dependencies: [
+                "GATT"
+            ]
+        ),
+        .testTarget(
+            name: "GATTTests",
+            dependencies: [
+                "GATT",
+                "Bluetooth"
+            ]
+        )
     ]
 )

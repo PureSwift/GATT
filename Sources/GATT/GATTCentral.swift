@@ -5,14 +5,14 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-
+#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
 import Dispatch
-import Bluetooth
+@_exported import Bluetooth
+@_exported import BluetoothGATT
+@_exported import BluetoothHCI
 
-#if os(macOS) || os(Linux)
-
-@available(macOS 10.12, *)
+@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
     
     // MARK: - Properties
@@ -99,7 +99,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func stopScan() {
         
-        precondition(isScanning, "Not scanning")
+        self.log?("Stop scanning")
         self.isScanning = false
     }
     
@@ -201,8 +201,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             .notify(notification, for: characteristic, timeout: timeout)
     }
     
-    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
-        
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
         return try connection(for: peripheral).client.maximumTransmissionUnit
     }
     
