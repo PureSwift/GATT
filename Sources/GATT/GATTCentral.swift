@@ -80,7 +80,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                     let scanData = ScanData(
                         peripheral: peripheral,
                         date: Date(),
-                        rssi: Double(report.rssi.rawValue),
+                        rssi: Double(report.rssi?.rawValue ?? 0),
                         advertisementData: report.responseData,
                         isConnectable: isConnectable
                     )
