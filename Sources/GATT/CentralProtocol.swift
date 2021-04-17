@@ -16,7 +16,7 @@ import Bluetooth
 
 /// GATT Central Manager
 ///
-/// Implementation varies by operating system.
+/// Implementation varies by operating system and framework.
 public protocol CentralProtocol: class {
     
     /// Central Peripheral Type
@@ -59,28 +59,36 @@ public protocol CentralProtocol: class {
     var didDisconnect: ((Peripheral) -> ())? { get set }
     
     ///
-    func discoverServices(_ services: [BluetoothUUID],
-                          for peripheral: Peripheral,
-                          timeout: TimeInterval,
-                          completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ())
+    func discoverServices(
+        _ services: [BluetoothUUID],
+        for peripheral: Peripheral,
+        timeout: TimeInterval,
+        completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ()
+    )
     
     ///
-    func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                for service: Service<Peripheral, AttributeID>,
-                                timeout: TimeInterval,
-                                completion: @escaping (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ())
+    func discoverCharacteristics(
+        _ characteristics: [BluetoothUUID],
+        for service: Service<Peripheral, AttributeID>,
+        timeout: TimeInterval,
+        completion: @escaping (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ()
+    )
     
     ///
-    func readValue(for characteristic: Characteristic<Peripheral, AttributeID>,
-                   timeout: TimeInterval,
-                   completion: @escaping (Result<Data, Error>) -> ())
+    func readValue(
+        for characteristic: Characteristic<Peripheral, AttributeID>,
+        timeout: TimeInterval,
+        completion: @escaping (Result<Data, Error>) -> ()
+    )
     
     ///
-    func writeValue(_ data: Data,
-                    for characteristic: Characteristic<Peripheral, AttributeID>,
-                    withResponse: Bool,
-                    timeout: TimeInterval,
-                    completion: @escaping (Result<Void, Error>) -> ())
+    func writeValue(
+        _ data: Data,
+        for characteristic: Characteristic<Peripheral, AttributeID>,
+        withResponse: Bool,
+        timeout: TimeInterval,
+        completion: @escaping (Result<Void, Error>) -> ()
+    )
     
     ///
     func notify(_ notification: ((Data) -> ())?,
@@ -88,22 +96,14 @@ public protocol CentralProtocol: class {
                 timeout: TimeInterval,
                 completion: @escaping (Result<Void, Error>) -> ())
     
-<<<<<<< HEAD
     ///
     func maximumTransmissionUnit(for peripheral: Peripheral,
                                  completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ())
-=======
-    func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit
->>>>>>> master
 }
 
 // MARK: - Supporting Types
 
-<<<<<<< HEAD
-public protocol GATTAttribute: Hashable, Identifiable {
-=======
-public protocol GATTCentralAttribute {
->>>>>>> master
+public protocol GATTCentralAttribute: Hashable, Identifiable {
     
     associatedtype Peripheral: Peer
         
@@ -112,11 +112,7 @@ public protocol GATTCentralAttribute {
     var peripheral: Peripheral { get }
 }
 
-<<<<<<< HEAD
-public struct Service <Peripheral: Peer, ID: Hashable> : GATTAttribute {
-=======
-public struct Service <Peripheral: Peer> : GATTCentralAttribute, Equatable, Hashable {
->>>>>>> master
+public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
     
     public let id: ID
     
@@ -139,11 +135,7 @@ public struct Service <Peripheral: Peer> : GATTCentralAttribute, Equatable, Hash
     }
 }
 
-<<<<<<< HEAD
-public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTAttribute {
-=======
-public struct Characteristic <Peripheral: Peer> : GATTCentralAttribute, Equatable, Hashable {
->>>>>>> master
+public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
     
     public typealias Property = CharacteristicProperty
     
@@ -167,11 +159,7 @@ public struct Characteristic <Peripheral: Peer> : GATTCentralAttribute, Equatabl
     }
 }
 
-<<<<<<< HEAD
-public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTAttribute {
-=======
-public struct Descriptor <Peripheral: Peer>: GATTCentralAttribute, Equatable, Hashable {
->>>>>>> master
+public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute {
     
     public let id: ID
     

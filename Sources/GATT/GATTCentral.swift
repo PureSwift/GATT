@@ -223,7 +223,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     private func async<T>(timeout: TimeInterval,
                           completion: @escaping (Result<T, Error>) -> (),
-                          _ block: @escaping (GATTCentral) throws -> (T),) {
+                          _ block: @escaping (GATTCentral) throws -> (T)) {
         
         queue.async { [weak self] in
             let semaphore = Semaphore<T>(timeout: timeout)

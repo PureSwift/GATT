@@ -47,10 +47,6 @@ extension ScanData: Encodable where Peripheral: Encodable, Advertisement: Encoda
 
 extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decodable { }
 
-// MARK: - Hashable
-
-extension ScanData: Hashable where Peripheral: Hashable, Advertisement: Hashable { }
-
 // MARK: - Identifiable
 
 extension ScanData: Identifiable {
