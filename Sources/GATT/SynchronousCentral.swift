@@ -13,7 +13,7 @@ import Bluetooth
 
 /// GATT Central Manager
 ///
-/// Implementation varies by operating system.
+/// Syncronous wrapper that blocks the current thread while performing operations.
 public struct SynchronousCentral <Central: CentralProtocol> {
     
     public typealias Peripheral = Central.Peripheral

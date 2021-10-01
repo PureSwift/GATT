@@ -6,18 +6,13 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if canImport(Foundation)
 import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#endif
-
 import Bluetooth
 
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system and framework.
-public protocol CentralProtocol: class {
+public protocol CentralProtocol: AnyObject {
     
     /// Central Peripheral Type
     associatedtype Peripheral: Peer
@@ -30,7 +25,7 @@ public protocol CentralProtocol: class {
     
     /// 
     var log: ((String) -> ())? { get set }
-    
+     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool,
               _ foundDevice: @escaping (Result<ScanData<Peripheral, Advertisement>, Error>) -> ())
@@ -103,14 +98,23 @@ public protocol CentralProtocol: class {
 
 // MARK: - Supporting Types
 
-public protocol GATTCentralAttribute: Hashable, Identifiable {
+public protocol GATTCentralAttribute {
     
     associatedtype Peripheral: Peer
-        
+    
+    associatedtype ID
+    
+    /// Attribute identifier, usually the ATT handle.
+    var id: ID { get }
+    
+    /// GATT Attribute UUID.
     var uuid: BluetoothUUID { get }
     
+    /// Peripheral this attribute was read from.
     var peripheral: Peripheral { get }
 }
+
+//extension GATTCentralAttribute: Identifiable where ID: Hashable { }
 
 public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
     

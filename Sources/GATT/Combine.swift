@@ -5,19 +5,14 @@
 //  Created by Alsey Coleman Miller on 6/9/20.
 //
 
-#if canImport(Foundation)
 import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#endif
+import Bluetooth
 
 #if canImport(Combine)
 import Combine
 #elseif canImport(OpenCombine)
 import OpenCombine
 #endif
-
-import Bluetooth
 
 #if canImport(Combine) || canImport(OpenCombine)
 

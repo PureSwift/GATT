@@ -5,6 +5,7 @@
 //  Created by Alsey Coleman Miller on 6/10/20.
 //
 
+#if canImport(Dispatch)
 import Foundation
 import Dispatch
 
@@ -39,3 +40,4 @@ internal final class Semaphore <Success> {
         semaphore.signal()
     }
 }
+#endif
