@@ -40,3 +40,18 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equ
         self.isConnectable = isConnectable
     }
 }
+
+// MARK: - Codable
+
+extension ScanData: Encodable where Peripheral: Encodable, Advertisement: Encodable { }
+
+extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decodable { }
+
+// MARK: - Identifiable
+
+extension ScanData: Identifiable {
+    
+    public var id: Peripheral.Identifier {
+        return peripheral.identifier
+    }
+}
