@@ -93,7 +93,7 @@ public protocol CentralProtocol: AnyObject {
     
     ///
     func maximumTransmissionUnit(for peripheral: Peripheral,
-                                 completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ())
+                                 completion: @escaping (Result<MaximumTransmissionUnit, Error>) -> ())
 }
 
 // MARK: - Supporting Types

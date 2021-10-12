@@ -6,6 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(BluetoothHCI)
 import Foundation
 import Bluetooth
 import BluetoothHCI
@@ -189,4 +190,4 @@ internal extension Array {
         return first
     }
 }
-
+#endif

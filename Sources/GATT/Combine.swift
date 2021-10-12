@@ -15,7 +15,6 @@ import OpenCombine
 #endif
 
 #if canImport(Combine) || canImport(OpenCombine)
-
 /// GATT Central manager with Combine support.
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 open class CombineCentral <Central: CentralProtocol> {
@@ -140,7 +139,7 @@ open class CombineCentral <Central: CentralProtocol> {
     }
     
     /// Get the maximum transmission unit for the specified peripheral.
-    public func maximumTransmissionUnit(for peripheral: Peripheral) -> Future<ATTMaximumTransmissionUnit, Error> {
+    public func maximumTransmissionUnit(for peripheral: Peripheral) -> Future<MaximumTransmissionUnit, Error> {
         
         return Future { [weak self] in
             self?.central.maximumTransmissionUnit(for: peripheral, completion: $0)

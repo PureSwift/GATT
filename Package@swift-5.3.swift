@@ -37,18 +37,15 @@ let package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    package: "Bluetooth"
                 ),
                 .product(
                     name: "BluetoothGAP",
-                    package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    package: "Bluetooth"
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    package: "Bluetooth"
                 ),
             ]
         ),

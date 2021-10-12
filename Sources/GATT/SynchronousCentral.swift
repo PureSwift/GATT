@@ -6,7 +6,6 @@
 //
 
 #if !arch(wasm32) && (canImport(Foundation) || canImport(Dispatch))
-
 import Foundation
 import Dispatch
 import Bluetooth
@@ -24,7 +23,7 @@ public struct SynchronousCentral <Central: CentralProtocol> {
     
     // MARK: - Properties
     
-    public let central: Central
+    internal let central: Central
     
     public var log: ((String) -> ())? {
         get { return central.log }
@@ -38,7 +37,7 @@ public struct SynchronousCentral <Central: CentralProtocol> {
     // MARK: - Initialization
     
     /// Initialize with the `CentralProtocol` object you want to wrap in a synchronous API.
-    public init(central: Central) {
+    public init(_ central: Central) {
         self.central = central
     }
     
@@ -138,32 +137,33 @@ public struct SynchronousCentral <Central: CentralProtocol> {
         try semaphore.wait()
     }
     
-    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
+    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
         
-        let semaphore = Semaphore<ATTMaximumTransmissionUnit>(timeout: Date.distantFuture.timeIntervalSinceNow)
+        let semaphore = Semaphore<MaximumTransmissionUnit>(timeout: Date.distantFuture.timeIntervalSinceNow)
         central.maximumTransmissionUnit(for: peripheral, completion: semaphore.stopWaiting)
         return try semaphore.wait()
     }
 }
 
-public extension CentralProtocol {
+internal extension CentralProtocol {
     
+    @_alwaysEmitIntoClient
     var sync: SynchronousCentral<Self> {
-        return SynchronousCentral(central: self)
+        return SynchronousCentral(self)
     }
 }
 
 // MARK: - Deprecated
 
-@available(*, deprecated, message: "Migrate to `SynchronousCentral`, completion blocks, or Combine")
+@available(*, deprecated, message: "Migrate to `SynchronousCentral`, completion blocks, await/async or Combine")
 public extension CentralProtocol {
     
-    func scan(duration: TimeInterval, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
+    func scan(duration: TimeInterval = .gattDefaultTimeout, filterDuplicates: Bool = true) throws -> [ScanData<Peripheral, Advertisement>] {
         return try sync.scan(duration: duration, filterDuplicates: filterDuplicates)
     }
     
     /// Scans for peripherals that are advertising services for the specified time interval.
-    func scan(duration: TimeInterval,
+    func scan(duration: TimeInterval = .gattDefaultTimeout,
               filterDuplicates: Bool = true,
               foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
         try sync.scan(duration: duration, filterDuplicates: filterDuplicates, foundDevice: foundDevice)
@@ -209,7 +209,7 @@ public extension CentralProtocol {
         try sync.notify(notification, for: characteristic, timeout: timeout)
     }
     
-    func maximumTransmissionUnit(for peripheral: Peripheral) throws -> ATTMaximumTransmissionUnit {
+    func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
         try sync.maximumTransmissionUnit(for: peripheral)
     }
     

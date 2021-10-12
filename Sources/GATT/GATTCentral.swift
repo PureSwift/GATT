@@ -4,16 +4,15 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-
+/*
 #if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
-import Dispatch
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
+@available(macOS 12, *)
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol> { //: CentralProtocol {
     
     // MARK: - Properties
     
@@ -37,12 +36,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public var didDisconnect: ((Peripheral) -> ())?
     
-    @available(*, deprecated, message: "Set value in `.init()`")
-    public var newConnection: NewConnection?
-    
-    private lazy var queue = DispatchQueue(label: "\(type(of: self)) Queue")
-    
-    private lazy var concurrentQueue = DispatchQueue(label: "\(type(of: self)) Async Queue", qos: .userInitiated, attributes: [.concurrent])
+    internal let newConnection: NewConnection
     
     internal private(set) var scanData: [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)] = [:]
     
@@ -50,11 +44,15 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     private var lastConnectionID = 0
     
+    private lazy var queue = DispatchQueue(label: "\(type(of: self)) Serial Queue")
+        
+    private lazy var concurrentQueue = DispatchQueue(label: "\(type(of: self)) Async Queue", qos: .userInitiated, attributes: [.concurrent])
+    
     // MARK: - Initialization
     
     public init(hostController: HostController,
                 options: GATTCentralOptions = GATTCentralOptions(),
-                newConnection: NewConnection? = nil) {
+                newConnection: @escaping NewConnection) {
         
         self.hostController = hostController
         self.options = options
@@ -73,7 +71,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             self.log?("Scanning...")
             self.isScanning = true
             do {
-                try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
+                try self.hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: self.options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
                     
                     let peripheral = Peripheral(identifier: report.address)
                     let isConnectable = report.event.isConnectable
@@ -93,7 +91,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             }
             
             self.log?("Did discover \(self.scanData.count) peripherals")
-            assert(isScanning == false, "Invalid scanning state: \(isScanning)")
+            assert(self.isScanning == false, "Invalid scanning state: \(self.isScanning)")
         }
     }
     
@@ -161,7 +159,12 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func discoverServices(_ services: [BluetoothUUID],
                                  for peripheral: Peripheral,
                                  timeout: TimeInterval,
-                                 completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ())
+                                 completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ()) {
+        
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            try central
+        }
         
         async(timeout: timeout, completion: completion) { (central) in
             try central.connection(for: peripheral)
@@ -223,7 +226,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     private func async<T>(timeout: TimeInterval,
                           completion: @escaping (Result<T, Error>) -> (),
-                          _ block: @escaping (GATTCentral) throws -> (T)) {
+                          _ block: @escaping (Self) throws -> (T)) {
         
         queue.async { [weak self] in
             let semaphore = Semaphore<T>(timeout: timeout)
@@ -272,3 +275,4 @@ public extension HCILESetScanParameters {
 }
 
 #endif
+*/

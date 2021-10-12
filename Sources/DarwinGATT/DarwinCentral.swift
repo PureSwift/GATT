@@ -20,7 +20,7 @@ public final class DarwinCentral: CentralProtocol {
     public var log: ((String) -> ())?
     
     /// CoreBluetooth Central Manager Options
-    public var options: Options
+    public let options: Options
     
     public var peripherals: Set<Peripheral> {
         return Set(cache.peripherals.keys)
@@ -343,7 +343,7 @@ public final class DarwinCentral: CentralProtocol {
     }
     
     /// Get the maximum transmission unit for the specified peripheral.
-    public func maximumTransmissionUnit(for peripheral: Peripheral, completion: @escaping (Result<ATTMaximumTransmissionUnit, Error>) -> ()) {
+    public func maximumTransmissionUnit(for peripheral: Peripheral, completion: @escaping (Result<MaximumTransmissionUnit, Error>) -> ()) {
         
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -354,11 +354,11 @@ public final class DarwinCentral: CentralProtocol {
                 guard corePeripheral.state == .connected
                     else { throw CentralError.disconnected }
                 // get MTU
-                let mtu: ATTMaximumTransmissionUnit
+                let mtu: MaximumTransmissionUnit
                 if #available(macOS 10.12, iOS 9.0, tvOS 9.0, watchOS 4.0, *) {
                     let rawValue = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
                     assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == rawValue)
-                    mtu = ATTMaximumTransmissionUnit(rawValue: UInt16(rawValue)) ?? .default
+                    mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) ?? .default
                 } else {
                     mtu = .default
                 }
@@ -772,6 +772,13 @@ internal extension DarwinCentral {
                 else { return }
             didComplete(.failure(CentralError.timeout))
         }
+    }
+}
+
+internal extension CBCentralManager {
+    
+    var mtuLength: NSNumber {
+        return corePeripheral.value(forKey: "mtuLength") as! NSNumber
     }
 }
 

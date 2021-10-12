@@ -1,6 +1,6 @@
 import XCTest
 
-#if !os(macOS)
+#if !canImport(Darwin)
 public func allTests() -> [XCTestCaseEntry] {
     return [
         testCase(GATTTests.allTests),
