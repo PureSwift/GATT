@@ -31,7 +31,7 @@ public protocol AsyncCentral {
     func stopScan() async
     
     ///
-    var isScanning: Bool { get }
+    var isScanning: AsyncStream<Bool> { get }
     
     ///
     func connect(to peripheral: Peripheral,
@@ -106,9 +106,17 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     
     ///
     public lazy var log = AsyncStream<String>.init { [weak self] continuation in
-        self?.central.log = { continuation.yield($0) }
+        self?.central.log = {
+            continuation.yield($0)
+        }
     }
-     
+    
+    public lazy var isScanning = AsyncStream<Bool>(Bool.self, bufferingPolicy: .bufferingNewest(10)) { [weak self] continuation in
+        self?.central.scanningChanged = { (isScanning) in
+            continuation.yield(isScanning)
+        }
+    }
+    
     /// Scans for peripherals that are advertising services.
     public func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
         // finish previous continuation
@@ -127,8 +135,9 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     
     /// Stops scanning for peripherals.
     public func stopScan() async {
-        self.central.stopScan()
-        self.scanContinuation?.finish(throwing: nil)
+        central.stopScan()
+        scanContinuation?.finish(throwing: nil)
+        scanContinuation = nil
     }
     
     ///
