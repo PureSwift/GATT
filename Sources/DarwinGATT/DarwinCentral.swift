@@ -357,7 +357,7 @@ public final class DarwinCentral: CentralProtocol {
                 let mtu: MaximumTransmissionUnit
                 if #available(macOS 10.12, iOS 9.0, tvOS 9.0, watchOS 4.0, *) {
                     let rawValue = corePeripheral.maximumWriteValueLength(for: .withoutResponse) + 3
-                    assert((corePeripheral.value(forKey: "mtuLength") as! NSNumber).intValue == rawValue)
+                    assert(corePeripheral.mtuLength.intValue == rawValue)
                     mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) ?? .default
                 } else {
                     mtu = .default
@@ -775,7 +775,7 @@ internal extension DarwinCentral {
     }
 }
 
-internal extension CBCentralManager {
+internal extension CBPeripheral {
     
     var mtuLength: NSNumber {
         return self.value(forKey: "mtuLength") as! NSNumber

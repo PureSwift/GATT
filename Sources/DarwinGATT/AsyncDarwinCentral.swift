@@ -287,7 +287,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
                     oldTask.resume(throwing: CancellationError())
                     self.continuation.readCharacteristic[characteristic] = nil
                 }
-                // discover
+                // read value
                 self.continuation.readCharacteristic[characteristic] = continuation
                 peripheralObject.readValue(for: characteristicObject)
             }
@@ -305,6 +305,112 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
             try await waitUntilCanSendWriteWithoutResponse(for: characteristic.peripheral)
             try await write(data, type: .withoutResponse, for: characteristic)
         }
+    }
+    
+    public func notify(
+        for characteristic: Characteristic<Peripheral, AttributeID>
+    ) -> AsyncThrowingStream<Data, Error> {
+        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
+            guard let self = self else { return }
+            self.queue.async {
+                let peripheral = characteristic.peripheral
+                // get peripheral
+                guard let peripheralObject = self.cache.peripherals[peripheral] else {
+                    continuation.finish(throwing: CentralError.unknownPeripheral)
+                    return
+                }
+                // get characteristic
+                guard let characteristicObject = self.cache.characteristics[characteristic] else {
+                    continuation.finish(throwing: CentralError.invalidAttribute(characteristic.uuid))
+                    return
+                }
+                // check power on
+                let state = self.centralManager._state
+                guard state == .poweredOn else {
+                    continuation.finish(throwing: DarwinCentralError.invalidState(state))
+                    return
+                }
+                // check connected
+                guard peripheralObject.state == .connected else {
+                    continuation.finish(throwing: CentralError.disconnected)
+                    return
+                }
+                // cancel old task
+                if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
+                    oldTask.finish(throwing: CancellationError())
+                    self.continuation.discoverCharacteristics[peripheral] = nil
+                }
+                // notify
+                self.continuation.notificationStream[characteristic] = continuation
+                peripheralObject.setNotifyValue(true, for: characteristicObject)
+            }
+        }
+    }
+    
+    public func stopNotifications(
+        for characteristic: Characteristic<Peripheral, AttributeID>
+    ) async throws {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.queue.async {
+                let peripheral = characteristic.peripheral
+                // get peripheral
+                guard let peripheralObject = self.cache.peripherals[peripheral] else {
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
+                    return
+                }
+                // get characteristic
+                guard let characteristicObject = self.cache.characteristics[characteristic] else {
+                    continuation.resume(throwing: CentralError.invalidAttribute(characteristic.uuid))
+                    return
+                }
+                // check power on
+                let state = self.centralManager._state
+                guard state == .poweredOn else {
+                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
+                    return
+                }
+                // check connected
+                guard peripheralObject.state == .connected else {
+                    continuation.resume(throwing: CentralError.disconnected)
+                    return
+                }
+                // cancel old task
+                if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
+                    oldTask.finish(throwing: CancellationError())
+                    self.continuation.discoverCharacteristics[peripheral] = nil
+                }
+                // notify
+                self.continuation.stopNotification[characteristic] = continuation
+                peripheralObject.setNotifyValue(false, for: characteristicObject)
+            }
+        }
+    }
+    
+    public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.queue.async {
+                // get peripheral
+                guard let peripheralObject = self.cache.peripherals[peripheral] else {
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
+                    return
+                }
+                // get MTU
+                let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
+                assert(peripheralObject.mtuLength.intValue == rawValue)
+                guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
+                    assertionFailure("Invalid MTU \(rawValue)")
+                    continuation.resume(returning: .default)
+                    return
+                }
+                continuation.resume(returning: mtu)
+            }
+        }
+    }
+    
+    private func log(_ message: String) {
+        continuation.log.yield(message)
     }
     
     private func write(
@@ -392,20 +498,6 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
             }
         }
     }
-    
-    public func notify(
-        for characteristic: Characteristic<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Data, Error> {
-        
-    }
-    
-    public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
-        
-    }
-    
-    private func log(_ message: String) {
-        continuation.log.yield(message)
-    }
 }
 
 // MARK: - Supporting Types
@@ -490,6 +582,8 @@ internal extension AsyncDarwinCentral {
         var readCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<Data, Error>]()
         var writeCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
         var isReadyToWriteWithoutResponse = [Peripheral: CheckedContinuation<(), Error>]()
+        var notificationStream = [Characteristic<Peripheral, AttributeID>: AsyncThrowingStream<Data, Error>.Continuation]()
+        var stopNotification = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
     }
 }
 
@@ -522,8 +616,8 @@ internal extension AsyncDarwinCentral {
             self.central.log("Will restore state \(NSDictionary(dictionary: state).description)")
             // An array of peripherals for use when restoring the state of a central manager.
             if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
-                for peripheral in peripherals {
-                    self.central.cache.peripherals[Peripheral(peripheral)] = peripheral
+                for peripheralObject in peripherals {
+                    self.central.cache.peripherals[Peripheral(peripheralObject)] = peripheralObject
                 }
             }
         }
@@ -606,22 +700,27 @@ internal extension AsyncDarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            self.central.didDisconnect?(peripheral)
+            self.central.continuation.didDisconnect.yield(peripheral)
             
             // cancel all actions that require an active connection
-            self.discoverServices[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.discoverCharacteristics[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.readCharacteristicValue[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.writeCharacteristicValue[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.flushWriteWithoutResponse[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.setNotification[peripheral]?
-                .didComplete(.failure(CentralError.disconnected))
-            self.notifications[peripheral] = nil
+            self.central.continuation.discoverServices[peripheral]?
+                .finish(throwing: CentralError.disconnected)
+            self.central.continuation.discoverCharacteristics[peripheral]?
+                .finish(throwing: CentralError.disconnected)
+            self.central.continuation.readCharacteristic
+                .filter { $0.key.peripheral == peripheral }
+                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
+            self.central.continuation.writeCharacteristic
+                .filter { $0.key.peripheral == peripheral }
+                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
+            self.central.continuation.isReadyToWriteWithoutResponse[peripheral]?
+                .resume(throwing: CentralError.disconnected)
+            self.central.continuation.notificationStream
+                .filter { $0.key.peripheral == peripheral }
+                .forEach { $0.value.finish(throwing: CentralError.disconnected) }
+            self.central.continuation.stopNotification
+                .filter { $0.key.peripheral == peripheral }
+                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
         }
         
         // MARK: - CBPeripheralDelegate
@@ -629,9 +728,9 @@ internal extension AsyncDarwinCentral {
         func peripheral(_ corePeripheral: CBPeripheral, didDiscoverServices error: Error?) {
             
             if let error = error {
-                log?("Error discovering services (\(error))")
+                self.central.log("Error discovering services (\(error))")
             } else {
-                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
+                self.central.log("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
             }
             
             let peripheral = Peripheral(corePeripheral)
