@@ -23,7 +23,7 @@ public protocol AsyncCentral {
     
     ///
     var log: AsyncStream<String> { get }
-     
+    
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>
     
@@ -49,41 +49,36 @@ public protocol AsyncCentral {
     ///
     func discoverServices(
         _ services: [BluetoothUUID],
-        for peripheral: Peripheral,
-        timeout: TimeInterval
+        for peripheral: Peripheral
     ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>
     
     ///
     func discoverCharacteristics(
         _ characteristics: [BluetoothUUID],
-        for service: Service<Peripheral, AttributeID>,
-        timeout: TimeInterval
+        for service: Service<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error>
     
     ///
     func readValue(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval
+        for characteristic: Characteristic<Peripheral, AttributeID>
     ) async throws -> Data
     
     ///
     func writeValue(
         _ data: Data,
         for characteristic: Characteristic<Peripheral, AttributeID>,
-        withResponse: Bool,
-        timeout: TimeInterval
+        withResponse: Bool
     ) async throws
     
     ///
     func notify(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval
+        for characteristic: Characteristic<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Data, Error>
     
     ///
     func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit
 }
-
+/*
 @available(macOS 12.0, iOS 15.0, *)
 public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     
@@ -141,15 +136,9 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     }
     
     ///
-    public var isScanning: Bool {
-        return central.isScanning
-    }
-    
-    ///
-    public func connect(to peripheral: Peripheral,
-                        timeout: TimeInterval = .gattDefaultTimeout) async throws {
+    public func connect(to peripheral: Peripheral) async throws {
         try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.connect(to: peripheral, timeout: timeout) { result in
+            self.central.connect(to: peripheral) { result in
                 continuation.resume(with: result)
             }
         }
@@ -175,11 +164,10 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     ///
     public func discoverServices(
         _ services: [BluetoothUUID] = [],
-        for peripheral: Peripheral,
-        timeout: TimeInterval = .gattDefaultTimeout
+        for peripheral: Peripheral
     ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> {
         return AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> { continuation in
-            self.central.discoverServices(services, for: peripheral, timeout: timeout) { result in
+            self.central.discoverServices(services, for: peripheral) { result in
                 switch result {
                 case let .success(values):
                     values.forEach {
@@ -196,11 +184,10 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     ///
     public func discoverCharacteristics(
         _ characteristics: [BluetoothUUID] = [],
-        for service: Service<Peripheral, AttributeID>,
-        timeout: TimeInterval = .gattDefaultTimeout
+        for service: Service<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error> {
         return AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error> { continuation in
-            self.central.discoverCharacteristics(characteristics, for: service, timeout: timeout) { result in
+            self.central.discoverCharacteristics(characteristics, for: service) { result in
                 switch result {
                 case let .success(values):
                     values.forEach {
@@ -216,11 +203,10 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     
     ///
     public func readValue(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval = .gattDefaultTimeout
+        for characteristic: Characteristic<Peripheral, AttributeID>
     ) async throws -> Data {
         return try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.readValue(for: characteristic, timeout: timeout) { result in
+            self.central.readValue(for: characteristic) { result in
                 continuation.resume(with: result)
             }
         }
@@ -230,11 +216,10 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     public func writeValue(
         _ data: Data,
         for characteristic: Characteristic<Peripheral, AttributeID>,
-        withResponse: Bool = true,
-        timeout: TimeInterval = .gattDefaultTimeout
+        withResponse: Bool = true
     ) async throws {
         try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.writeValue(data, for: characteristic, withResponse: withResponse, timeout: timeout) { result in
+            self.central.writeValue(data, for: characteristic, withResponse: withResponse) { result in
                 continuation.resume(with: result)
             }
         }
@@ -242,8 +227,7 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     
     ///
     public func notify(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval = .gattDefaultTimeout
+        for characteristic: Characteristic<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Data, Error> {
         // end previous stream
         if let continuation = self.notificationContinuation[characteristic.id] {
@@ -255,7 +239,7 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
             self.notificationContinuation[characteristic.id] = continuation
             self.central.notify({ data in
                 continuation.yield(data)
-            }, for: characteristic, timeout: timeout) { result in
+            }, for: characteristic) { result in
                 switch result {
                 case .success:
                     break
@@ -267,8 +251,7 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
     }
     
     public func stopNotifications(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval = .gattDefaultTimeout
+        for characteristic: Characteristic<Peripheral, AttributeID>
     ) async throws {
         // end previous stream
         if let continuation = self.notificationContinuation[characteristic.id] {
@@ -277,7 +260,7 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
         }
         // stop notifications
         try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.notify(nil, for: characteristic, timeout: timeout) { result in
+            self.central.notify(nil, for: characteristic) { result in
                 continuation.resume(with: result)
             }
         }
@@ -292,4 +275,5 @@ public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
         }
     }
 }
+*/
 #endif

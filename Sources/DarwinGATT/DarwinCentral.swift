@@ -778,7 +778,7 @@ internal extension DarwinCentral {
 internal extension CBCentralManager {
     
     var mtuLength: NSNumber {
-        return corePeripheral.value(forKey: "mtuLength") as! NSNumber
+        return self.value(forKey: "mtuLength") as! NSNumber
     }
 }
 

@@ -114,9 +114,7 @@ public protocol GATTCentralAttribute {
     var peripheral: Peripheral { get }
 }
 
-//extension GATTCentralAttribute: Identifiable where ID: Hashable { }
-
-public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
+public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
     
     public let id: ID
     
@@ -139,7 +137,7 @@ public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
     }
 }
 
-public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute {
+public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
     
     public typealias Property = CharacteristicProperty
     
@@ -163,7 +161,7 @@ public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttri
     }
 }
 
-public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute {
+public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute, Hashable {
     
     public let id: ID
     

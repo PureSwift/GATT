@@ -6,9 +6,8 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-#if canImport(CoreBluetooth)
-
 import Foundation
+import CoreBluetooth
 
 /// Darwin Bluetooth State
 ///
@@ -46,4 +45,16 @@ extension DarwinBluetoothState: CustomStringConvertible {
     }
 }
 
-#endif
+internal extension CBCentralManager {
+    
+    var _state: DarwinBluetoothState {
+        return unsafeBitCast(self.state, to: DarwinBluetoothState.self)
+    }
+}
+
+internal extension CBPeripheralManager {
+    
+    var _state: DarwinBluetoothState {
+        return unsafeBitCast(self.state, to: DarwinBluetoothState.self)
+    }
+}
