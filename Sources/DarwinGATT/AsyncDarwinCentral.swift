@@ -35,7 +35,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     
     internal fileprivate(set) var cache = Cache()
     
-    internal fileprivate(set) var continuation = Continuation()
+    internal fileprivate(set) var continuation: Continuation
     
     // MARK: - Initialization
     
@@ -44,18 +44,21 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     /// - Parameter options: An optional dictionary containing initialization options for a central manager.
     /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
     public init(options: Options = Options()) {
-        self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) { [unowned self] in
+        self.options = options
+        var continuation = Continuation()
+        self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) {
             continuation.log = $0
         }
-        self.isScanning = AsyncStream(Bool.self, bufferingPolicy: .bufferingNewest(1)) { [unowned self] in
+        self.isScanning = AsyncStream(Bool.self, bufferingPolicy: .bufferingNewest(1)) {
             continuation.isScanning = $0
         }
-        self.didDisconnect = AsyncStream(Peripheral.self, bufferingPolicy: .bufferingNewest(1)) { [unowned self] in
+        self.didDisconnect = AsyncStream(Peripheral.self, bufferingPolicy: .bufferingNewest(1)) {
             continuation.didDisconnect = $0
         }
-        self.state = AsyncStream(DarwinBluetoothState.self, bufferingPolicy: .bufferingNewest(1)) { [unowned self] in
+        self.state = AsyncStream(DarwinBluetoothState.self, bufferingPolicy: .bufferingNewest(1)) {
             continuation.state = $0
         }
+        self.continuation = continuation
         self.delegate = Delegate(self)
         self.centralManager = CBCentralManager(
             delegate: self.delegate,
@@ -645,6 +648,7 @@ internal extension AsyncDarwinCentral {
             self.central.continuation.scan?.yield(scanResult)
         }
         
+        #if os(iOS)
         func centralManager(
             _ central: CBCentralManager,
             connectionEventDidOccur event: CBConnectionEvent,
@@ -652,6 +656,7 @@ internal extension AsyncDarwinCentral {
         ) {
             self.central.log("Connect event \(event.rawValue) for \(corePeripheral.gattIdentifier.uuidString)")
         }
+        #endif
         
         func centralManager(
             _ centralManager: CBCentralManager,
@@ -725,7 +730,10 @@ internal extension AsyncDarwinCentral {
         
         // MARK: - CBPeripheralDelegate
         
-        func peripheral(_ corePeripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        func peripheral(
+            _ corePeripheral: CBPeripheral,
+            didDiscoverServices error: Error?
+        ) {
             
             if let error = error {
                 self.central.log("Error discovering services (\(error))")
@@ -734,130 +742,171 @@ internal extension AsyncDarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            guard let callback = self.discoverServices[peripheral]
-                else { assertionFailure("Missing callback"); return }
-            
-            if let error = error {
-                callback.didComplete(.failure(error))
-            } else {
-                let services = (corePeripheral.services ?? []).map {
-                    Service(id: ObjectIdentifier($0),
-                            uuid: BluetoothUUID($0.uuid),
-                            peripheral: peripheral,
-                            isPrimary: $0.isPrimary)
-                }
-                callback.didComplete(.success(services))
+            guard let continuation = self.central.continuation.discoverServices[peripheral] else {
+                assertionFailure("Missing continuation")
+                return
             }
-            
+            if let error = error {
+                continuation.finish(throwing: error)
+            } else {
+                for serviceObject in (corePeripheral.services ?? []) {
+                    let service = Service(
+                        id: ObjectIdentifier(serviceObject),
+                        uuid: BluetoothUUID(serviceObject.uuid),
+                        peripheral: peripheral,
+                        isPrimary: serviceObject.isPrimary
+                    )
+                    continuation.yield(service)
+                    continuation.finish(throwing: nil)
+                }
+            }
             // remove callback
-            self.discoverServices[peripheral] = nil
+            self.central.continuation.discoverServices[peripheral] = nil
         }
         
-        func peripheral(_ corePeripheral: CBPeripheral, didDiscoverCharacteristicsFor coreService: CBService, error: Error?) {
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didDiscoverCharacteristicsFor serviceObject: CBService,
+            error: Error?
+        ) {
             
             if let error = error {
-                log?("Error discovering characteristics (\(error))")
-                
+                self.central.log("Error discovering characteristics for service \(serviceObject.uuid.uuidString) (\(error))")
             } else {
-                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
             }
             
-            let peripheral = Peripheral(corePeripheral)
-            guard let callback = self.discoverCharacteristics[peripheral]
-                else { assertionFailure("Missing callback"); return }
-            
+            let peripheral = Peripheral(peripheralObject)
+            guard let continuation = self.central.continuation.discoverCharacteristics[peripheral] else {
+                assertionFailure("Missing continuation")
+                return
+            }
             if let error = error {
-                callback.didComplete(.failure(error))
+                continuation.finish(throwing: error)
             } else {
-                let characteristics = (coreService.characteristics ?? []).map {
-                    Characteristic(id: ObjectIdentifier($0),
-                                   uuid: BluetoothUUID($0.uuid),
-                                   peripheral: peripheral,
-                                   properties: .init(rawValue: numericCast($0.properties.rawValue)))
+                for characteristicObject in (serviceObject.characteristics ?? []) {
+                    let characteristic = Characteristic(
+                        characteristic: characteristicObject,
+                        peripheral: peripheralObject
+                    )
+                    continuation.yield(characteristic)
+                    continuation.finish(throwing: nil)
                 }
-                callback.didComplete(.success(characteristics))
             }
-            
             // remove callback
-            self.discoverCharacteristics[peripheral] = nil
+            self.central.continuation.discoverCharacteristics[peripheral] = nil
         }
         
-        func peripheral(_ corePeripheral: CBPeripheral, didUpdateValueFor coreCharacteristic: CBCharacteristic, error: Error?) {
-            
-            let data = coreCharacteristic.value ?? Data()
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didUpdateValueFor characteristicObject: CBCharacteristic,
+            error: Error?
+        ) {
             
             if let error = error {
-                log?("Error reading characteristic (\(error))")
+                self.central.log("Error reading characteristic (\(error))")
             } else {
-                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update value for characteristic \(coreCharacteristic.uuid.uuidString)")
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
-            let peripheral = Peripheral(corePeripheral)
+            let data = characteristicObject.value ?? Data()
+            let characteristic = Characteristic(
+                characteristic: characteristicObject,
+                peripheral: peripheralObject
+            )
             
-            // write with response
-            if let completion = self.readCharacteristicValue[peripheral] {
+            // read value
+            if let continuation = self.central.continuation.readCharacteristic[characteristic] {
                 if let error = error {
-                    completion.didComplete(.failure(error))
+                    continuation.resume(throwing: error)
                 } else {
-                    completion.didComplete(.success(data))
+                    continuation.resume(returning: data)
                 }
-                self.readCharacteristicValue[peripheral] = nil
-            } else if let notification = self.notifications[peripheral] {
+                self.central.continuation.readCharacteristic[characteristic] = nil
+            }
+            // notification
+            else if let stream = self.central.continuation.notificationStream[characteristic] {
                 assert(error == nil, "Notifications should never fail")
-                notification(data)
-                self.notifications[peripheral] = nil
+                stream.yield(data)
+                self.central.continuation.notificationStream[characteristic] = nil
+            } else {
+                assertionFailure("Missing continuation, not read or notification")
             }
         }
         
-        func peripheral(_ corePeripheral: CBPeripheral, didWriteValueFor coreCharacteristic: CBCharacteristic, error: Swift.Error?) {
-            
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didWriteValueFor characteristicObject: CBCharacteristic,
+            error: Swift.Error?
+        ) {
             if let error = error {
-                log?("Error writing characteristic (\(error))")
+                self.central.log("Error writing characteristic (\(error))")
             } else {
-                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did write value for characteristic \(coreCharacteristic.uuid.uuidString)")
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for characteristic \(characteristicObject.uuid.uuidString)")
             }
-            
-            let peripheral = Peripheral(corePeripheral)
-            guard let callback = self.writeCharacteristicValue[peripheral]
-                else { assertionFailure("Missing callback"); return }
-            
+            let characteristic = Characteristic(
+                characteristic: characteristicObject,
+                peripheral: peripheralObject
+            )
+            // should only be called for write with response
+            guard let continuation = self.central.continuation.writeCharacteristic[characteristic] else {
+                assertionFailure("Missing continuation")
+                return
+            }
             if let error = error {
-                callback.didComplete(.failure(error))
+                continuation.resume(throwing: error)
             } else {
-                callback.didComplete(.success(()))
+                continuation.resume()
             }
-            
-            // remove callback
-            self.writeCharacteristicValue[peripheral] = nil
+            self.central.continuation.writeCharacteristic[characteristic] = nil
         }
         
-        func peripheral(_ corePeripheral: CBPeripheral,
-                           didUpdateNotificationStateFor coreCharacteristic: CBCharacteristic,
-                           error: Swift.Error?) {
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didUpdateNotificationStateFor characteristicObject: CBCharacteristic,
+            error: Swift.Error?
+        ) {
             
             if let error = error {
-                log?("Error setting notifications for characteristic (\(error))")
+                self.central.log("Error setting notifications for characteristic (\(error))")
             } else {
-                log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did update notification state for characteristic \(coreCharacteristic.uuid.uuidString)")
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update notification state for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
-            let peripheral = Peripheral(corePeripheral)
-            guard let callback = self.setNotification[peripheral]
-                else { assertionFailure("Missing callback"); return }
-            
-            if let error = error {
-                callback.didComplete(.failure(error))
+            let characteristic = Characteristic(
+                characteristic: characteristicObject,
+                peripheral: peripheralObject
+            )
+            if characteristicObject.isNotifying {
+                guard let continuation = self.central.continuation.notificationStream[characteristic] else {
+                    assertionFailure("Missing continuation")
+                    return
+                }
+                if let error = error {
+                    continuation.finish(throwing: error)
+                    self.central.continuation.notificationStream[characteristic] = nil
+                } else {
+                    // do nothing until notification is recieved.
+                }
             } else {
-                callback.didComplete(.success(()))
+                guard let continuation = self.central.continuation.stopNotification[characteristic] else {
+                    assertionFailure("Missing continuation")
+                    return
+                }
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+                self.central.continuation.stopNotification[characteristic] = nil
             }
-            
-            // remove callback
-            self.setNotification[peripheral] = nil
         }
         
-        func peripheral(_ peripheral: CBPeripheral,
-                        didUpdateValueFor descriptor: CBDescriptor,
-                        error: Swift.Error?) {
+        func peripheral(
+            _ peripheral: CBPeripheral,
+            didUpdateValueFor descriptor: CBDescriptor,
+            error: Swift.Error?
+        ) {
             
             
         }
@@ -870,6 +919,22 @@ internal extension AsyncDarwinCentral {
                 self.central.continuation.isReadyToWriteWithoutResponse[peripheral] = nil
             }
         }
+    }
+}
+
+@available(macOS 12, iOS 15.0, *)
+internal extension Characteristic where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
+    
+    init(
+        characteristic characteristicOject: CBCharacteristic,
+        peripheral peripheralObject: CBPeripheral
+    ) {
+        self.init(
+            id: ObjectIdentifier(characteristicOject),
+            uuid: BluetoothUUID(characteristicOject.uuid),
+            peripheral: AsyncDarwinCentral.Peripheral(peripheralObject),
+            properties: .init(rawValue: numericCast(characteristicOject.properties.rawValue))
+        )
     }
 }
 

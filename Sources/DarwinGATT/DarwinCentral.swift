@@ -620,7 +620,6 @@ internal extension DarwinCentral {
             
             if let error = error {
                 log?("Error discovering characteristics (\(error))")
-                
             } else {
                 log?("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(coreService.characteristics?.count ?? 0) characteristics for service \(coreService.uuid.uuidString)")
             }

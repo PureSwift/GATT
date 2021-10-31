@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  SynchronousCentral.swift
 //  
 //
 //  Created by Alsey Coleman Miller on 6/10/20.
@@ -13,9 +13,9 @@ import GATT
 public extension SynchronousCentral where Central == DarwinCentral {
     
     /// The current state of the manager.
-    var state: DarwinBluetoothState {
-        return central.state
-    }
+    //var state: DarwinBluetoothState {
+    //    return central.state
+    //}
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool = true,
