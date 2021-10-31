@@ -412,6 +412,40 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
         }
     }
     
+    public func rssi(for peripheral: Peripheral) async throws -> RSSI {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.queue.async {
+                // get peripheral
+                guard let peripheralObject = self.cache.peripherals[peripheral] else {
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
+                    return
+                }
+                // check power on
+                let state = self.centralManager._state
+                guard state == .poweredOn else {
+                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
+                    return
+                }
+                // check connected
+                guard peripheralObject.state == .connected else {
+                    continuation.resume(throwing: CentralError.disconnected)
+                    return
+                }
+                // cancel old task
+                if let oldTask = self.continuation.readRSSI[peripheral] {
+                    oldTask.resume(throwing: CancellationError())
+                    self.continuation.readRSSI[peripheral] = nil
+                }
+                // read value
+                self.continuation.readRSSI[peripheral] = continuation
+                peripheralObject.readRSSI()
+            }
+        }
+    }
+    
+    // MARK - Private Methods
+    
     private func log(_ message: String) {
         continuation.log.yield(message)
     }
@@ -587,6 +621,7 @@ internal extension AsyncDarwinCentral {
         var isReadyToWriteWithoutResponse = [Peripheral: CheckedContinuation<(), Error>]()
         var notificationStream = [Characteristic<Peripheral, AttributeID>: AsyncThrowingStream<Data, Error>.Continuation]()
         var stopNotification = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
+        var readRSSI = [Peripheral: CheckedContinuation<RSSI, Error>]()
     }
 }
 
@@ -603,20 +638,28 @@ internal extension AsyncDarwinCentral {
             self.central = central
         }
         
+        private func log(_ function: String = #function, _ arguments: String?...) {
+            let message = arguments
+                .lazy
+                .compactMap { $0 }
+                .reduce(into: function) { $0 += " " + $1 }
+            self.central.log(message)
+        }
+        
         // MARK: - CBCentralManagerDelegate
         
         func centralManagerDidUpdateState(_ centralManager: CBCentralManager) {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
-            self.central.log("Did update state \(state)")
+            log(state.description)
             self.central.continuation.state.yield(state)
         }
         
         func centralManager(_ centralManager: CBCentralManager, willRestoreState state: [String : Any]) {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
-            self.central.log("Will restore state \(NSDictionary(dictionary: state).description)")
+            log("\(NSDictionary(dictionary: state).description)")
             // An array of peripherals for use when restoring the state of a central manager.
             if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
                 for peripheralObject in peripherals {
@@ -654,7 +697,7 @@ internal extension AsyncDarwinCentral {
             connectionEventDidOccur event: CBConnectionEvent,
             for corePeripheral: CBPeripheral
         ) {
-            self.central.log("Connect event \(event.rawValue) for \(corePeripheral.gattIdentifier.uuidString)")
+            log(event.rawValue.description, corePeripheral.gattIdentifier.uuidString)
         }
         #endif
         
@@ -662,7 +705,7 @@ internal extension AsyncDarwinCentral {
             _ centralManager: CBCentralManager,
             didConnect corePeripheral: CBPeripheral
         ) {
-            self.central.log("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
+            log(corePeripheral.gattIdentifier.uuidString)
             assert(corePeripheral.state != .disconnected, "Should be connected")
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
@@ -680,7 +723,7 @@ internal extension AsyncDarwinCentral {
             didFailToConnect corePeripheral: CBPeripheral,
             error: Swift.Error?
         ) {
-            self.central.log("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
+            log(corePeripheral.gattIdentifier.uuidString, error?.localizedDescription ?? "")
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             let peripheral = Peripheral(corePeripheral)
@@ -698,11 +741,7 @@ internal extension AsyncDarwinCentral {
             error: Swift.Error?
         ) {
                         
-            if let error = error {
-                self.central.log("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
-            } else {
-                self.central.log("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString)")
-            }
+            log(corePeripheral.gattIdentifier.uuidString, error?.localizedDescription)
             
             let peripheral = Peripheral(corePeripheral)
             self.central.continuation.didDisconnect.yield(peripheral)
@@ -735,11 +774,7 @@ internal extension AsyncDarwinCentral {
             didDiscoverServices error: Error?
         ) {
             
-            if let error = error {
-                self.central.log("Error discovering services for peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error))")
-            } else {
-                self.central.log("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
-            }
+            log(corePeripheral.gattIdentifier.uuidString, error?.localizedDescription)
             
             let peripheral = Peripheral(corePeripheral)
             guard let continuation = self.central.continuation.discoverServices[peripheral] else {
@@ -751,14 +786,12 @@ internal extension AsyncDarwinCentral {
             } else {
                 for serviceObject in (corePeripheral.services ?? []) {
                     let service = Service(
-                        id: ObjectIdentifier(serviceObject),
-                        uuid: BluetoothUUID(serviceObject.uuid),
-                        peripheral: peripheral,
-                        isPrimary: serviceObject.isPrimary
+                        service: serviceObject,
+                        peripheral: corePeripheral
                     )
                     continuation.yield(service)
-                    continuation.finish(throwing: nil)
                 }
+                continuation.finish(throwing: nil)
             }
             // remove callback
             self.central.continuation.discoverServices[peripheral] = nil
@@ -770,11 +803,7 @@ internal extension AsyncDarwinCentral {
             error: Error?
         ) {
             
-            if let error = error {
-                self.central.log("Error discovering characteristics for service \(serviceObject.uuid.uuidString) (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
-            }
+            log(peripheralObject.gattIdentifier.uuidString, serviceObject.uuid.uuidString, error?.localizedDescription)
             
             let peripheral = Peripheral(peripheralObject)
             guard let continuation = self.central.continuation.discoverCharacteristics[peripheral] else {
@@ -790,8 +819,8 @@ internal extension AsyncDarwinCentral {
                         peripheral: peripheralObject
                     )
                     continuation.yield(characteristic)
-                    continuation.finish(throwing: nil)
                 }
+                continuation.finish(throwing: nil)
             }
             // remove callback
             self.central.continuation.discoverCharacteristics[peripheral] = nil
@@ -803,11 +832,7 @@ internal extension AsyncDarwinCentral {
             error: Error?
         ) {
             
-            if let error = error {
-                self.central.log("Error reading characteristic (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for characteristic \(characteristicObject.uuid.uuidString)")
-            }
+            log(peripheralObject.gattIdentifier.uuidString, characteristicObject.uuid.uuidString, error?.localizedDescription)
             
             let data = characteristicObject.value ?? Data()
             let characteristic = Characteristic(
@@ -839,11 +864,8 @@ internal extension AsyncDarwinCentral {
             didWriteValueFor characteristicObject: CBCharacteristic,
             error: Swift.Error?
         ) {
-            if let error = error {
-                self.central.log("Error writing characteristic (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for characteristic \(characteristicObject.uuid.uuidString)")
-            }
+            log(peripheralObject.gattIdentifier.uuidString, characteristicObject.uuid.uuidString, error?.localizedDescription)
+            
             let characteristic = Characteristic(
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
@@ -867,11 +889,7 @@ internal extension AsyncDarwinCentral {
             error: Swift.Error?
         ) {
             
-            if let error = error {
-                self.central.log("Error setting notifications for characteristic (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update notification state for characteristic \(characteristicObject.uuid.uuidString)")
-            }
+            log(peripheralObject.gattIdentifier.uuidString, characteristicObject.uuid.uuidString, error?.localizedDescription)
             
             let characteristic = Characteristic(
                 characteristic: characteristicObject,
@@ -902,9 +920,11 @@ internal extension AsyncDarwinCentral {
             }
         }
         
-        func peripheralIsReady(toSendWriteWithoutResponse corePeripheral: CBPeripheral) {
-            self.central.log("Peripheral \(corePeripheral.gattIdentifier.uuidString) is ready to send write without response")
-            let peripheral = Peripheral(corePeripheral)
+        func peripheralIsReady(toSendWriteWithoutResponse peripheralObject: CBPeripheral) {
+            
+            log(peripheralObject.gattIdentifier.uuidString)
+            
+            let peripheral = Peripheral(peripheralObject)
             if let continuation = self.central.continuation.isReadyToWriteWithoutResponse[peripheral] {
                 continuation.resume()
                 self.central.continuation.isReadyToWriteWithoutResponse[peripheral] = nil
@@ -912,20 +932,29 @@ internal extension AsyncDarwinCentral {
         }
         
         func peripheralDidUpdateName(_ peripheralObject: CBPeripheral) {
-            
-            self.central.log("Peripheral \(peripheralObject) updated name: \(peripheralObject.name ?? "")")
-            
+            log(peripheralObject.gattIdentifier.uuidString, peripheralObject.name)
         }
         
-        func peripheral(_ peripheralObject: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
-            
-            if let error = error {
-                self.central.log("Error reading RSSI for peripheral \(peripheralObject.gattIdentifier.uuidString) (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did read RSSI \(RSSI)")
+        func peripheral(_ peripheralObject: CBPeripheral, didReadRSSI rssiObject: NSNumber, error: Error?) {
+            log(peripheralObject.gattIdentifier.uuidString, rssiObject.description, error?.localizedDescription)
+            let peripheral = Peripheral(peripheralObject)
+            // should only be called for write with response
+            guard let continuation = self.central.continuation.readRSSI[peripheral] else {
+                assertionFailure("Missing continuation")
+                return
             }
-            
-            
+            if let error = error {
+                continuation.resume(throwing: error)
+            } else {
+                guard let rssi = Bluetooth.RSSI(rawValue: rssiObject.int8Value) else {
+                    assertionFailure("Invalid RSSI \(rssiObject)")
+                    continuation.resume(returning: RSSI(rawValue: -127)!)
+                    self.central.continuation.readRSSI[peripheral] = nil
+                    return
+                }
+                continuation.resume(returning: rssi)
+            }
+            self.central.continuation.readRSSI[peripheral] = nil
         }
         
         func peripheral(
@@ -934,32 +963,44 @@ internal extension AsyncDarwinCentral {
             error: Error?
         ) {
             
-            if let error = error {
-                self.central.log("Error discovering included services for peripheral \(peripheralObject.gattIdentifier.uuidString) (\(error))")
-            } else {
-                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(peripheralObject.services?.count ?? 0) included services for service \(serviceObject.uuid.uuidString)")
-            }
+            log(peripheralObject.gattIdentifier.uuidString, serviceObject.uuid.uuidString, error?.localizedDescription)
         }
         
-        func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        func peripheral(_ peripheralObject: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
             
-            
+            log(peripheralObject.gattIdentifier.uuidString, invalidatedServices.map { $0.uuid.uuidString }.description)
         }
         
-        func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
+        func peripheral(_ peripheralObject: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
             
-            
+            log(peripheralObject.gattIdentifier.uuidString, characteristic.uuid.uuidString, error?.localizedDescription)
         }
         
-        func peripheral(_ peripheral: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?) {
+        func peripheral(_ peripheralObject: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?) {
             
-            
+            log(peripheralObject.gattIdentifier.uuidString, descriptor.uuid.uuidString, error?.localizedDescription)
         }
         
-        func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor descriptor: CBDescriptor, error: Error?) {
+        func peripheral(_ peripheralObject: CBPeripheral, didUpdateValueFor descriptor: CBDescriptor, error: Error?) {
             
-            
+            log(peripheralObject.gattIdentifier.uuidString, descriptor.uuid.uuidString, error?.localizedDescription)
         }
+    }
+}
+
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+internal extension Service where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
+    
+    init(
+        service serviceObject: CBService,
+        peripheral peripheralObject: CBPeripheral
+    ) {
+        self.init(
+            id: ObjectIdentifier(serviceObject),
+            uuid: BluetoothUUID(serviceObject.uuid),
+            peripheral: AsyncDarwinCentral.Peripheral(peripheralObject),
+            isPrimary: serviceObject.isPrimary
+        )
     }
 }
 
