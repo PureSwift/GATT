@@ -6,6 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(CoreBluetooth)
 import Foundation
 import CoreBluetooth
 
@@ -58,3 +59,4 @@ internal extension CBPeripheralManager {
         return unsafeBitCast(self.state, to: DarwinBluetoothState.self)
     }
 }
+#endif

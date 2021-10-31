@@ -9,7 +9,7 @@
 import Foundation
 import Bluetooth
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 public protocol AsyncCentral {
     
     /// Central Peripheral Type

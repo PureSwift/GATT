@@ -12,7 +12,7 @@ import CoreBluetooth
 import Bluetooth
 import GATT
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 public final class AsyncDarwinCentral { //: AsyncCentral {
     
     // MARK: - Properties
@@ -505,7 +505,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
 
 // MARK: - Supporting Types
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 public extension AsyncDarwinCentral {
     
     typealias Advertisement = DarwinAdvertisementData
@@ -563,7 +563,7 @@ public extension AsyncDarwinCentral {
     }
 }
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 internal extension AsyncDarwinCentral {
     
     struct Cache {
@@ -590,7 +590,7 @@ internal extension AsyncDarwinCentral {
     }
 }
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 internal extension AsyncDarwinCentral {
     
     @objc(GATTAsyncCentralManagerDelegate)
@@ -736,7 +736,7 @@ internal extension AsyncDarwinCentral {
         ) {
             
             if let error = error {
-                self.central.log("Error discovering services (\(error))")
+                self.central.log("Error discovering services for peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error))")
             } else {
                 self.central.log("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
             }
@@ -902,15 +902,6 @@ internal extension AsyncDarwinCentral {
             }
         }
         
-        func peripheral(
-            _ peripheral: CBPeripheral,
-            didUpdateValueFor descriptor: CBDescriptor,
-            error: Swift.Error?
-        ) {
-            
-            
-        }
-        
         func peripheralIsReady(toSendWriteWithoutResponse corePeripheral: CBPeripheral) {
             self.central.log("Peripheral \(corePeripheral.gattIdentifier.uuidString) is ready to send write without response")
             let peripheral = Peripheral(corePeripheral)
@@ -919,10 +910,60 @@ internal extension AsyncDarwinCentral {
                 self.central.continuation.isReadyToWriteWithoutResponse[peripheral] = nil
             }
         }
+        
+        func peripheralDidUpdateName(_ peripheralObject: CBPeripheral) {
+            
+            self.central.log("Peripheral \(peripheralObject) updated name: \(peripheralObject.name ?? "")")
+            
+        }
+        
+        func peripheral(_ peripheralObject: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+            
+            if let error = error {
+                self.central.log("Error reading RSSI for peripheral \(peripheralObject.gattIdentifier.uuidString) (\(error))")
+            } else {
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did read RSSI \(RSSI)")
+            }
+            
+            
+        }
+        
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didDiscoverIncludedServicesFor serviceObject: CBService,
+            error: Error?
+        ) {
+            
+            if let error = error {
+                self.central.log("Error discovering included services for peripheral \(peripheralObject.gattIdentifier.uuidString) (\(error))")
+            } else {
+                self.central.log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(peripheralObject.services?.count ?? 0) included services for service \(serviceObject.uuid.uuidString)")
+            }
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+            
+            
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
+            
+            
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?) {
+            
+            
+        }
+        
+        func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor descriptor: CBDescriptor, error: Error?) {
+            
+            
+        }
     }
 }
 
-@available(macOS 12, iOS 15.0, *)
+@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
 internal extension Characteristic where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
     
     init(

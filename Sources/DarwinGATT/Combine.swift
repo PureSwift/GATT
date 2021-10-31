@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 6/9/20.
 //
 
-#if canImport(Combine)
+#if canImport(Combine) && canImport(CoreBluetooth)
 
 import Foundation
 import Combine
