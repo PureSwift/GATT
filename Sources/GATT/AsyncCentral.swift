@@ -21,7 +21,7 @@ public protocol AsyncCentral {
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
-    ///
+    /// Log stream
     var log: AsyncStream<String> { get }
     
     /// Scans for peripherals that are advertising services.
@@ -30,250 +30,58 @@ public protocol AsyncCentral {
     /// Stops scanning for peripherals.
     func stopScan() async
     
-    ///
+    /// Scanning status
     var isScanning: AsyncStream<Bool> { get }
     
-    ///
-    func connect(to peripheral: Peripheral,
-                 timeout: TimeInterval) async throws
+    /// Connect to the specified device
+    func connect(to peripheral: Peripheral) async throws
     
-    ///
+    /// Disconnect the specified device.
     func disconnect(_ peripheral: Peripheral) async
     
-    ///
+    /// Disconnect all connected devices.
     func disconnectAll() async
     
-    ///
+    /// Disconnected peripheral callback
     var didDisconnect: AsyncStream<Peripheral> { get }
     
-    ///
+    /// Discover Services
     func discoverServices(
         _ services: [BluetoothUUID],
         for peripheral: Peripheral
     ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>
     
-    ///
+    /// Discover Characteristics for service
     func discoverCharacteristics(
         _ characteristics: [BluetoothUUID],
         for service: Service<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error>
     
-    ///
+    /// Read Characteristic Value
     func readValue(
         for characteristic: Characteristic<Peripheral, AttributeID>
     ) async throws -> Data
     
-    ///
+    /// Write Characteristic Value
     func writeValue(
         _ data: Data,
         for characteristic: Characteristic<Peripheral, AttributeID>,
         withResponse: Bool
     ) async throws
     
-    ///
+    /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Data, Error>
     
-    ///
+    // Stop Notifications
+    func stopNotifications(for characteristic: Characteristic<Peripheral, AttributeID>) async throws
+    
+    /// Read MTU
     func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit
+    
+    // Read RSSI
+    func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
-/*
-@available(macOS 12.0, iOS 15.0, *)
-public class AsyncCentralWrapper<Central: CentralProtocol>: AsyncCentral {
-    
-    public typealias Peripheral = Central.Peripheral
-    
-    public typealias Advertisement = Central.Advertisement
-    
-    public typealias AttributeID = Central.AttributeID
-    
-    internal let central: Central
-    
-    private var scanContinuation: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
-    
-    private var notificationContinuation = [AttributeID: AsyncThrowingStream<Data, Error>.Continuation]()
-    
-    @usableFromInline
-    internal init(_ central: Central) {
-        self.central = central
-    }
-    
-    ///
-    public lazy var log = AsyncStream<String>.init { [weak self] continuation in
-        self?.central.log = {
-            continuation.yield($0)
-        }
-    }
-    
-    public lazy var isScanning = AsyncStream<Bool>(Bool.self, bufferingPolicy: .bufferingNewest(10)) { [weak self] continuation in
-        self?.central.scanningChanged = { (isScanning) in
-            continuation.yield(isScanning)
-        }
-    }
-    
-    /// Scans for peripherals that are advertising services.
-    public func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
-        // finish previous continuation
-        if let continuation = scanContinuation {
-            continuation.finish(throwing: nil)
-            scanContinuation = nil
-        }
-        // return stream
-        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(200)) { [unowned self] continuation in
-            self.scanContinuation = continuation
-            self.central.scan(filterDuplicates: filterDuplicates) { result in
-                continuation.yield(with: result)
-            }
-        }
-    }
-    
-    /// Stops scanning for peripherals.
-    public func stopScan() async {
-        central.stopScan()
-        scanContinuation?.finish(throwing: nil)
-        scanContinuation = nil
-    }
-    
-    ///
-    public func connect(to peripheral: Peripheral) async throws {
-        try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.connect(to: peripheral) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-    
-    ///
-    public func disconnect(_ peripheral: Peripheral) async {
-        self.central.disconnect(peripheral)
-    }
-    
-    ///
-    public func disconnectAll() async {
-        central.disconnectAll()
-    }
-    
-    ///
-    public lazy var didDisconnect = AsyncStream<Peripheral>.init { [weak self] continuation in
-        self?.central.didDisconnect = {
-            continuation.yield($0)
-        }
-    }
-    
-    ///
-    public func discoverServices(
-        _ services: [BluetoothUUID] = [],
-        for peripheral: Peripheral
-    ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> {
-        return AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> { continuation in
-            self.central.discoverServices(services, for: peripheral) { result in
-                switch result {
-                case let .success(values):
-                    values.forEach {
-                        continuation.yield($0)
-                    }
-                    continuation.finish(throwing: nil)
-                case let .failure(error):
-                    continuation.finish(throwing: error)
-                }
-            }
-        }
-    }
-    
-    ///
-    public func discoverCharacteristics(
-        _ characteristics: [BluetoothUUID] = [],
-        for service: Service<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error> {
-        return AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error> { continuation in
-            self.central.discoverCharacteristics(characteristics, for: service) { result in
-                switch result {
-                case let .success(values):
-                    values.forEach {
-                        continuation.yield($0)
-                    }
-                    continuation.finish(throwing: nil)
-                case let .failure(error):
-                    continuation.finish(throwing: error)
-                }
-            }
-        }
-    }
-    
-    ///
-    public func readValue(
-        for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws -> Data {
-        return try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.readValue(for: characteristic) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-    
-    ///
-    public func writeValue(
-        _ data: Data,
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        withResponse: Bool = true
-    ) async throws {
-        try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.writeValue(data, for: characteristic, withResponse: withResponse) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-    
-    ///
-    public func notify(
-        for characteristic: Characteristic<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Data, Error> {
-        // end previous stream
-        if let continuation = self.notificationContinuation[characteristic.id] {
-            continuation.finish(throwing: nil)
-            self.notificationContinuation[characteristic.id] = nil
-        }
-        // return stream
-        return AsyncThrowingStream<Data, Error> { [unowned self] continuation in
-            self.notificationContinuation[characteristic.id] = continuation
-            self.central.notify({ data in
-                continuation.yield(data)
-            }, for: characteristic) { result in
-                switch result {
-                case .success:
-                    break
-                case let .failure(error):
-                    continuation.finish(throwing: error)
-                }
-            }
-        }
-    }
-    
-    public func stopNotifications(
-        for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws {
-        // end previous stream
-        if let continuation = self.notificationContinuation[characteristic.id] {
-            continuation.finish(throwing: nil)
-            self.notificationContinuation[characteristic.id] = nil
-        }
-        // stop notifications
-        try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.notify(nil, for: characteristic) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-    
-    ///
-    public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
-        return try await withCheckedThrowingContinuation { [unowned self] continuation in
-            self.central.maximumTransmissionUnit(for: peripheral) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-}
-*/
+
 #endif
