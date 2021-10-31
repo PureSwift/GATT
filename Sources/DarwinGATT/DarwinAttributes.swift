@@ -55,7 +55,7 @@ extension GATTAttribute.Characteristic: CoreBluetoothAttributeConvertible {
 
 extension GATTAttribute.Descriptor: CoreBluetoothAttributeConvertible {
     
-    func toCoreBluetooth() -> CBDescriptor {
+    func toCoreBluetooth() -> CBMutableDescriptor {
         
         /*
          Only the Characteristic User Description and Characteristic Presentation Format descriptors are currently supported. The Characteristic Extended Properties and Client Characteristic Configuration descriptors will be created automatically upon publication of the parent service, depending on the properties of the characteristic itself
