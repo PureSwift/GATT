@@ -66,10 +66,10 @@ extension GATTAttribute.Descriptor: CoreBluetoothAttributeConvertible {
          ```
          */
         
-        guard let descriptor = DarwinDescriptor(uuid: uuid, data: value)
+        guard let descriptor = CBMutableDescriptor(uuid: self.uuid, data: self.value)
             else { fatalError("Unsupported \(CBDescriptor.self) \(uuid)") }
         
-        return CBMutableDescriptor(descriptor)
+        return descriptor
     }
 }
 
