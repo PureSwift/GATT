@@ -114,6 +114,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
                 self.centralManager.stopScan()
                 self.log("Discovered \(self.cache.peripherals.count) peripherals")
                 scanContinuation.finish(throwing: nil) // end stream
+                continuation.resume()
                 self.continuation.scan = nil
             }
         }
