@@ -4,13 +4,13 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-/*
+
 #if canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
 import BluetoothGATT
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
@@ -78,55 +78,40 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         
         self.peripheral = peripheral
         self.callback = callback
-        self.client = GATTClient(socket: socket,
-                                 maximumTransmissionUnit: maximumTransmissionUnit,
-                                 log: { callback.log?("[\(peripheral)]: " + $0) },
-                                 writePending: nil)
+        self.client = GATTClient(
+            socket: socket,
+            maximumTransmissionUnit: maximumTransmissionUnit,
+            log: { callback.log?("[\(peripheral)]: " + $0) },
+            writePending: nil
+        )
         
-        // wakeup ATT writer
-        //self.client.writePending = { [weak self] in self?.writePending = true }
-        
-        // run read thread
-        //self.connectionThread.start()
-        
-        self.client.writePending = { [unowned self] in
-            Task {
-                do { try self.client.write() }
-                catch {
-                    tasks.forEach { $0(error) }
+        self.client.writePending = { [weak self] in
+            guard let self = self else { return }
+            Task(priority: .userInitiated) {
+                do {
+                    var didWrite = true
+                    repeat {
+                        didWrite = try self.client.write()
+                    } while didWrite
                 }
+                catch {  }
             }
-            
         }
     }
     
     // MARK: - Methods
     
-    private var tasks = [(Error) -> ()]()
-    
-    private func readSocket() {
-        
-    }
-    
-    public func discoverServices(_ services: [BluetoothUUID],
-                                 for peripheral: Peripheral,
-                                 timeout: TimeInterval) async throws -> [Service<Peripheral, UInt16>] {
-        
-        let foundServices = try await withCheckedThrowingContinuation { continuation in
-            // resume with completion handler
-            client.discoverAllPrimaryServices {
-                continuation.resume(with: $0)
+    public func discoverServices(
+        _ services: Set<BluetoothUUID>,
+        for peripheral: Peripheral
+    ) async throws -> [Service<Peripheral, UInt16>] {
+        let foundServices = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Service], Error>) in
+            guard let self = self else { return }
+            self.client.discoverAllPrimaryServices { clientResponse in
+                continuation.resume(with: clientResponse)
             }
-            tasks.append({
-                
-            })
-            // run socket
-            self.client
         }
-        
-        // store in cache
         cache.insert(foundServices)
-        
         return cache.services.map {
             Service(
                 id: $0.key,
@@ -137,9 +122,10 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         }
     }
     
-    public func discoverCharacteristics(_ characteristics: [BluetoothUUID],
-                                        for service: Service<Peripheral, UInt16>,
-                                        timeout: TimeInterval) throws -> [Characteristic<Peripheral, UInt16>] {
+    public func discoverCharacteristics(
+        _ characteristics: Set<BluetoothUUID>,
+        for service: Service<Peripheral, UInt16>,
+        timeout: TimeInterval) async throws -> [Characteristic<Peripheral, UInt16>] {
         
         assert(service.peripheral == peripheral)
         
@@ -148,23 +134,24 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(service.uuid) }
         
         // GATT request
-        let foundCharacteristics = try _async(timeout: timeout) {
-            client.discoverAllCharacteristics(of: gattService, completion: $0)
+        let foundCharacteristics = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Characteristic], Error>) in
+            guard let self = self else { return }
+            self.client.discoverAllCharacteristics(of: gattService) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
         }
         
         // store in cache
         cache.insert(foundCharacteristics, for: service.id)
-        
         return cache.service(for: service.id)?.characteristics.map {
             Characteristic(id: $0.key,
                            uuid: $0.value.attribute.uuid,
                            peripheral: peripheral,
                            properties: $0.value.attribute.properties)
-            } ?? []
+        } ?? []
     }
     
-    public func readValue(for characteristic: Characteristic<Peripheral, UInt16>,
-                          timeout: TimeInterval) throws -> Data {
+    public func readValue(for characteristic: Characteristic<Peripheral, UInt16>) async throws -> Data {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -173,42 +160,38 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
-        let value = try _async(timeout: timeout) {
-            client.readCharacteristic(gattCharacteristic.attribute, completion: $0)
-        }
-        
-        return value
-    }
-    
-    public func writeValue(_ data: Data,
-                           for characteristic: Characteristic<Peripheral, UInt16>,
-                           withResponse: Bool = true,
-                           timeout: TimeInterval) throws {
-        
-        assert(characteristic.peripheral == peripheral)
-        
-        // GATT characteristic
-        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
-            else { throw CentralError.invalidAttribute(characteristic.uuid) }
-        
-        // GATT request
-        try _async(timeout: timeout) { (response: @escaping (GATTClientResponse<()>) -> ()) in
-            
-            let completion: ((GATTClientResponse<()>) -> ())? = withResponse ? response : nil
-            
-            client.writeCharacteristic(gattCharacteristic.attribute,
-                                       data: data,
-                                       reliableWrites: withResponse,
-                                       completion: completion)
-            
-            // immediately call completion handler
-            if completion == nil {
-                response(.value(())) // success
+        return try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<Data, Error>) in
+            guard let self = self else { return }
+            self.client.readCharacteristic(gattCharacteristic.attribute) { clientResponse in
+                continuation.resume(with: clientResponse)
             }
         }
     }
     
-    public func discoverDescriptors(for characteristic: Characteristic<Peripheral, UInt16>, timeout: TimeInterval) throws -> [Descriptor<Peripheral, UInt16>] {
+    public func writeValue(
+        _ data: Data,
+        for characteristic: Characteristic<Peripheral, UInt16>,
+        withResponse: Bool
+    ) async throws {
+        
+        assert(characteristic.peripheral == peripheral)
+        
+        // GATT characteristic
+        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
+            else { throw CentralError.invalidAttribute(characteristic.uuid) }
+        
+        // GATT request
+        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
+            guard let self = self else { return }
+            self.client.writeCharacteristic(gattCharacteristic.attribute, data: data, reliableWrites: withResponse) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
+        }
+    }
+    
+    public func discoverDescriptors(
+        for characteristic: Characteristic<Peripheral, UInt16>
+    ) async throws -> [Descriptor<Peripheral, UInt16>] {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -220,48 +203,45 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                        characteristics: Array(gattService.characteristics.values.map { $0.attribute }))
         
         // GATT request
-        let foundDescriptors = try _async(timeout: timeout) {
-            client.discoverDescriptors(for: gattCharacteristic.attribute,
-                                       service: service,
-                                       completion: $0)
+        let foundDescriptors = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Descriptor], Error>) in
+            guard let self = self else { return }
+            self.client.discoverDescriptors(for: gattCharacteristic.attribute, service: service) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
         }
         
         cache.insert(foundDescriptors, for: characteristic.id)
-        
         return cache.characteristic(for: characteristic.id)?.1.descriptors.map {
-            Descriptor(id: $0.key, uuid: $0.value.attribute.uuid, peripheral: peripheral)
-            } ?? []
+            Descriptor(
+                id: $0.key,
+                uuid: $0.value.attribute.uuid,
+                peripheral: peripheral
+            )
+        } ?? []
     }
     
-    public func notify(_ notification: ((Data) -> ())?,
-                       for characteristic: Characteristic<Peripheral, UInt16>,
-                       timeout: TimeInterval) throws {
+    public func notify(
+        for characteristic: Characteristic<Peripheral, UInt16>
+    ) async throws -> AsyncThrowingStream<Data, Error> {
         
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
         guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
-            else { throw CentralError.invalidAttribute(characteristic.uuid) }
+            else { return AsyncThrowingStream(unfolding: { throw CentralError.invalidAttribute(characteristic.uuid) }) }
         
         // Gatt Descriptors
         let descriptors: [GATTClient.Descriptor]
-        
         if gattCharacteristic.descriptors.values.contains(where: { $0.attribute.uuid == .clientCharacteristicConfiguration }) {
-            
             descriptors = Array(gattCharacteristic.descriptors.values.map { $0.attribute })
-            
         } else {
-            
             // fetch descriptors
-            let _ = try discoverDescriptors(for: characteristic, timeout: timeout)
-            
+            do { let _ = try await self.discoverDescriptors(for: characteristic) }
+            catch { return AsyncThrowingStream(unfolding: { throw error }) }
             // get updated cache
             if let cache = self.cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
-                
                 descriptors = Array(cache)
-                
             } else {
-                
                 descriptors = []
             }
         }
@@ -274,32 +254,52 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
          */
         
         if gattCharacteristic.attribute.properties.contains(.notify) {
-            
             notify = notification
             indicate = nil
-            
         } else if gattCharacteristic.attribute.properties.contains(.indicate) {
-            
             notify = nil
             indicate = notification
-            
         } else {
-            
             notify = nil
             indicate = nil
-            
             assertionFailure("Cannot enable notification or indication for characteristic \(characteristic.uuid)")
             return
         }
         
         // GATT request
-        try _async(timeout: timeout) {
-            client.clientCharacteristicConfiguration(notification: notify,
-                                                     indication: indicate,
-                                                     for: gattCharacteristic.attribute,
-                                                     descriptors: descriptors,
-                                                     completion: $0)
+        try await clientCharacteristicConfiguration(
+            notification: notify,
+            indication: indicate,
+            for: gattCharacteristic.attribute,
+            descriptors: descriptors
+        )
+    }
+    
+    internal func clientCharacteristicConfiguration(
+        notification: Notification?,
+        indication: Notification?,
+        for characteristic: GATTClient.Characteristic,
+        descriptors: [GATTClient.Descriptor]
+    ) async throws {
+        
+        assert(characteristic.peripheral == peripheral)
+        
+        // GATT characteristic
+        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
+            else { throw CentralError.invalidAttribute(characteristic.uuid) }
+        
+        // GATT request
+        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
+            guard let self = self else { return }
+            client.clientCharacteristicConfiguration(
+                notification: notification,
+                indication: indication,
+                for: gattCharacteristic.attribute,
+                descriptors: descriptors) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
         }
+        
     }
 }
 
@@ -454,5 +454,16 @@ internal extension CharacteristicProperty {
     }
 }
 
+internal extension Result where Failure == Swift.Error {
+    
+    init(_ response: GATTClientResponse<Success>) {
+        switch response {
+        case let .success(value):
+            self = .success(value)
+        case let .failure(clientError):
+            self = .failure(clientError as Swift.Error)
+        }
+    }
+}
+
 #endif
-*/
