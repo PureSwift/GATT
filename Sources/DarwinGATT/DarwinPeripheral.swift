@@ -14,7 +14,7 @@ import GATT
 import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralManagerDelegate {
+public final class DarwinPeripheral: NSObject, PeripheralManager, CBPeripheralManagerDelegate {
     
     // MARK: - Properties
     

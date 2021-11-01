@@ -14,7 +14,7 @@ import Foundation
 /// GATT Peripheral Manager
 ///
 /// Implementation varies by operating system.
-public protocol PeripheralProtocol: AnyObject {
+public protocol PeripheralManager: AnyObject {
     
     /// Central Peer
     ///

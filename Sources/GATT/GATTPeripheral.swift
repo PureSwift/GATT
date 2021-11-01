@@ -13,7 +13,7 @@ import Dispatch
 @_exported import BluetoothHCI
 
 @available(macOS 10.12, iOS 10.0, *)
-public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
+public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralManager {
     
     // MARK: - Properties
     
