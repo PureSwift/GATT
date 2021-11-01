@@ -12,7 +12,7 @@ import CoreBluetooth
 import Bluetooth
 import GATT
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public final class AsyncDarwinCentral { //: AsyncCentral {
     
     // MARK: - Properties
@@ -27,11 +27,21 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     
     public let didDisconnect: AsyncStream<Peripheral>
     
+    public func peripherals() async -> Set<Peripheral> {
+        return await withUnsafeContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.queue.async {
+                let peripherals = Set(self.cache.peripherals.keys)
+                continuation.resume(returning: peripherals)
+            }
+        }
+    }
+    
     private var centralManager: CBCentralManager!
     
     private var delegate: Delegate!
     
-    fileprivate let queue = DispatchQueue(label: "AsyncDarwinCentral Queue")
+    fileprivate let queue: DispatchQueue
     
     internal fileprivate(set) var cache = Cache()
     
@@ -43,8 +53,10 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     ///
     /// - Parameter options: An optional dictionary containing initialization options for a central manager.
     /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
-    public init(options: Options = Options()) {
-        self.options = options
+    public init(
+        options: Options = Options(),
+        queue: DispatchQueue = .main
+    ) {
         var continuation = Continuation()
         self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) {
             continuation.log = $0
@@ -58,7 +70,9 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
         self.state = AsyncStream(DarwinBluetoothState.self, bufferingPolicy: .bufferingNewest(1)) {
             continuation.state = $0
         }
+        self.options = options
         self.continuation = continuation
+        self.queue = queue
         self.delegate = Delegate(self)
         self.centralManager = CBCentralManager(
             delegate: self.delegate,
@@ -79,7 +93,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     /// Scans for peripherals that are advertising services.
     public func scan(
         with services: Set<BluetoothUUID>,
-        filterDuplicates: Bool
+        filterDuplicates: Bool = true
     ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
         let serviceUUIDs: [CBUUID]? = services.isEmpty ? nil : services.map { CBUUID($0) }
         let options: [String: Any] = [
@@ -581,7 +595,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
 
 // MARK: - Supporting Types
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public extension AsyncDarwinCentral {
     
     typealias Advertisement = DarwinAdvertisementData
@@ -595,10 +609,10 @@ public extension AsyncDarwinCentral {
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
     struct Peripheral: Peer {
         
-        public let identifier: UUID
+        public let id: UUID
         
         internal init(_ peripheral: CBPeripheral) {
-            self.identifier = peripheral.gattIdentifier
+            self.id = peripheral.gattIdentifier
         }
     }
     
@@ -639,7 +653,7 @@ public extension AsyncDarwinCentral {
     }
 }
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal extension AsyncDarwinCentral {
     
     struct Cache {
@@ -671,7 +685,7 @@ internal extension AsyncDarwinCentral {
     }
 }
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal extension AsyncDarwinCentral {
     
     @objc(GATTAsyncCentralManagerDelegate)
@@ -1113,7 +1127,7 @@ internal extension AsyncDarwinCentral {
     }
 }
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal extension Service where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
     
     init(
@@ -1129,7 +1143,7 @@ internal extension Service where ID == ObjectIdentifier, Peripheral == AsyncDarw
     }
 }
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal extension Characteristic where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
     
     init(
@@ -1145,7 +1159,7 @@ internal extension Characteristic where ID == ObjectIdentifier, Peripheral == As
     }
 }
 
-@available(macOS 12, iOS 15.0, watchOS 8.0, tvOS 15, *)
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 internal extension Descriptor where ID == ObjectIdentifier, Peripheral == AsyncDarwinCentral.Peripheral {
     
     init(

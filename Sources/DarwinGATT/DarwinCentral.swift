@@ -410,10 +410,10 @@ public extension DarwinCentral {
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
     struct Peripheral: Peer {
         
-        public let identifier: UUID
+        public let id: UUID
         
         internal init(_ peripheral: CBPeripheral) {
-            self.identifier = peripheral.gattIdentifier
+            self.id = peripheral.gattIdentifier
         }
     }
     

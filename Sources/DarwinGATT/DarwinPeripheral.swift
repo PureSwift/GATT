@@ -58,38 +58,28 @@ public final class DarwinPeripheral: NSObject, PeripheralProtocol, CBPeripheralM
     }
     
     public override convenience init() {
-        
         self.init(options: Options())
     }
     
     // MARK: - Methods
     
     public func start() throws {
-        
         let options = AdvertisingOptions()
-        
         try start(options: options)
     }
     
     public func start(options: AdvertisingOptions) throws {
         
         assert(startAdvertisingState == nil, "Already started advertising")
-        
         let semaphore = DispatchSemaphore(value: 0)
-        
         startAdvertisingState = (semaphore, nil) // set semaphore
-        
         internalManager.startAdvertising(options.optionsDictionary)
-        
         let _ = semaphore.wait(timeout: .distantFuture)
-        
         let error = startAdvertisingState?.error
         
         // clear
         startAdvertisingState = nil
-        
         if let error = error {
-            
             throw error
         }
     }
@@ -388,11 +378,10 @@ public extension DarwinPeripheral {
     /// Represents a remote peripheral device that has been discovered.
     struct Central: Peer {
         
-        public let identifier: UUID
+        public let id: UUID
         
         init(_ central: CBCentral) {
-            
-            self.identifier = central.gattIdentifier
+            self.id = central.gattIdentifier
         }
     }
 }
@@ -453,16 +442,11 @@ public extension DarwinPeripheral {
         #endif
         
         internal var optionsDictionary: [String: Any] {
-            
             var options = [String: Any](minimumCapacity: 2)
-            
             if let localName = self.localName {
-                
                 options[CBAdvertisementDataLocalNameKey] = localName
             }
-            
             if serviceUUIDs.isEmpty == false {
-                
                 options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID($0) }
             }
             

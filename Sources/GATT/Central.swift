@@ -13,10 +13,11 @@ import Bluetooth
 /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
 public struct Central: Peer {
     
-    public let identifier: BluetoothAddress
+    public let id: BluetoothAddress
     
-    public init(identifier: BluetoothAddress) {
-        
-        self.identifier = identifier
+    public init(id: BluetoothAddress) {
+        self.id = id
     }
 }
+
+extension Central: Identifiable { }

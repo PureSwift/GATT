@@ -51,7 +51,7 @@ extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decoda
 
 extension ScanData: Identifiable {
     
-    public var id: Peripheral.Identifier {
-        return peripheral.identifier
+    public var id: Peripheral.ID {
+        return peripheral.id
     }
 }

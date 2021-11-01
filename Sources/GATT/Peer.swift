@@ -9,23 +9,23 @@
 /// Bluetooth LE Peer (Central, Peripheral)
 public protocol Peer: Hashable, CustomStringConvertible {
     
-    associatedtype Identifier: Hashable, CustomStringConvertible
+    associatedtype ID: Hashable, CustomStringConvertible
     
     /// Unique identifier of the peer.
-    var identifier: Identifier { get }
+    var id: ID { get }
 }
 
 public extension Peer {
     
     static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.identifier == rhs.identifier
+        return lhs.id == rhs.id
     }
     
     func hash(into hasher: inout Hasher) {
-        identifier.hash(into: &hasher)
+        id.hash(into: &hasher)
     }
     
     var description: String {
-        return identifier.description
+        return id.description
     }
 }
