@@ -413,16 +413,11 @@ public extension DarwinPeripheral {
         }
         
         internal var optionsDictionary: [String: Any] {
-            
             var options = [String: Any](minimumCapacity: 2)
-            
             if showPowerAlert {
-                
                 options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
             }
-            
             options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
-            
             return options
         }
     }

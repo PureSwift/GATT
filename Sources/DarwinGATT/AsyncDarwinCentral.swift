@@ -616,13 +616,13 @@ public extension AsyncDarwinCentral {
          A string (an instance of NSString) containing a unique identifier (UID) for the peripheral manager that is being instantiated.
          The system uses this UID to identify a specific peripheral manager. As a result, the UID must remain the same for subsequent executions of the app in order for the peripheral manager to be successfully restored.
          */
-        public let restoreIdentifier: String?
+        public let restoreIdentifier: String
         
         /**
          Initialize options.
          */
         public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String? = nil) {
+                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinCentral") {
             
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
