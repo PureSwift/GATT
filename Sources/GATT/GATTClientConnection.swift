@@ -21,6 +21,8 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     internal private(set) var client: GATTClient
     
+    public private(set) var error: Swift.Error?
+    
     /*
     private lazy var connectionThread: Thread = Thread { [weak self] in
         
@@ -85,7 +87,7 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             log: { callback.log?("[\(peripheral)]: " + $0) },
             writePending: nil
         )
-        
+        /*
         self.client.writePending = { [weak self] in
             guard let self = self else { return }
             Task(priority: .userInitiated) {
@@ -99,7 +101,7 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                     
                 }
             }
-        }
+        }*/
     }
     
     // MARK: - Methods
@@ -201,13 +203,31 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public func notify(
         for characteristic: Characteristic<Peripheral, UInt16>
-    ) -> AsyncThrowingStream<Data, Error> {
+    ) -> AsyncThrowingStream<Data, Swift.Error> {
+        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) { [weak self] continuation in
+            guard let self = self else { return }
+            Task {
+                do {
+                    try await self.notify(characteristic) { continuation.yield($0) }
+                    
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+    
+    private func notify(
+        _ characteristic: Characteristic<Peripheral, UInt16>,
+        notification: @escaping GATTClient.Notification
+    ) async throws {
         
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
         guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
-            else { return AsyncThrowingStream(unfolding: { throw CentralError.invalidAttribute(characteristic.uuid) }) }
+            else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // Gatt Descriptors
         let descriptors: [GATTClient.Descriptor]
@@ -215,8 +235,7 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             descriptors = Array(gattCharacteristic.descriptors.values.map { $0.attribute })
         } else {
             // fetch descriptors
-            do { let _ = try await self.discoverDescriptors(for: characteristic) }
-            catch { return AsyncThrowingStream(unfolding: { throw error }) }
+            let _ = try await self.discoverDescriptors(for: characteristic)
             // get updated cache
             if let cache = self.cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
                 descriptors = Array(cache)
@@ -231,7 +250,6 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         /**
          If the specified characteristic is configured to allow both notifications and indications, calling this method enables notifications only. You can disable notifications and indications for a characteristic’s value by calling this method with the enabled parameter set to false.
          */
-        
         if gattCharacteristic.attribute.properties.contains(.notify) {
             notify = notification
             indicate = nil
@@ -246,15 +264,13 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         }
         
         // GATT request
-        try await clientCharacteristicConfiguration(
+        try await client.clientCharacteristicConfiguration(
             notification: notify,
             indication: indicate,
             for: gattCharacteristic.attribute,
             descriptors: descriptors
         )
     }
-    
-    
 }
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
@@ -263,8 +279,8 @@ internal extension GATTClient {
     func discoverAllPrimaryServices() async throws -> [Service] {
         return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.discoverAllPrimaryServices { clientResponse in
-                continuation.resume(with: clientResponse)
+            self.discoverAllPrimaryServices {
+                continuation.resume(with: $0)
             }
         }
     }
@@ -274,8 +290,8 @@ internal extension GATTClient {
     ) async throws -> [Characteristic] {
         return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.discoverAllCharacteristics(of: service) { clientResponse in
-                continuation.resume(with: clientResponse)
+            self.discoverAllCharacteristics(of: service) {
+                continuation.resume(with: $0)
             }
         }
     }
@@ -283,8 +299,8 @@ internal extension GATTClient {
     func readCharacteristic(_ characteristic: Characteristic) async throws -> Data {
         return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.readCharacteristic(characteristic) { clientResponse in
-                continuation.resume(with: clientResponse)
+            self.readCharacteristic(characteristic) {
+                continuation.resume(with: $0)
             }
         }
     }
@@ -296,8 +312,8 @@ internal extension GATTClient {
     ) async throws {
         return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.writeCharacteristic(characteristic, data: data, reliableWrites: reliableWrites) { clientResponse in
-                continuation.resume(with: clientResponse)
+            self.writeCharacteristic(characteristic, data: data, reliableWrites: reliableWrites) {
+                continuation.resume(with: $0)
             }
         }
     }
@@ -308,8 +324,8 @@ internal extension GATTClient {
     ) async throws -> [Descriptor] {
         return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.discoverDescriptors(for: characteristic, service: service) { clientResponse in
-                continuation.resume(with: clientResponse)
+            self.discoverDescriptors(for: characteristic, service: service) {
+                continuation.resume(with: $0)
             }
         }
     }
