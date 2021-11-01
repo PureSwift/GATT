@@ -11,7 +11,7 @@ import Bluetooth
 import BluetoothGATT
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
+internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     // MARK: - Properties
     
@@ -19,7 +19,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public let callback: GATTClientConnectionCallback
     
-    internal let client: GATTClient
+    internal private(set) var client: GATTClient
     
     /*
     private lazy var connectionThread: Thread = Thread { [weak self] in
@@ -71,11 +71,12 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         self.callback.log?("[\(self.peripheral)]: Disconnected")
     }
     
-    public init(peripheral: Peripheral,
-                socket: L2CAPSocket,
-                maximumTransmissionUnit: ATTMaximumTransmissionUnit,
-                callback: GATTClientConnectionCallback) {
-        
+    public init(
+        peripheral: Peripheral,
+        socket: L2CAPSocket,
+        maximumTransmissionUnit: ATTMaximumTransmissionUnit,
+        callback: GATTClientConnectionCallback
+    ) {
         self.peripheral = peripheral
         self.callback = callback
         self.client = GATTClient(
@@ -91,10 +92,12 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                 do {
                     var didWrite = true
                     repeat {
-                        didWrite = try self.client.write()
+                        didWrite = try await self.client.write()
                     } while didWrite
                 }
-                catch {  }
+                catch {
+                    
+                }
             }
         }
     }
@@ -105,12 +108,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         _ services: Set<BluetoothUUID>,
         for peripheral: Peripheral
     ) async throws -> [Service<Peripheral, UInt16>] {
-        let foundServices = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Service], Error>) in
-            guard let self = self else { return }
-            self.client.discoverAllPrimaryServices { clientResponse in
-                continuation.resume(with: clientResponse)
-            }
-        }
+        let foundServices = try await client.discoverAllPrimaryServices()
         cache.insert(foundServices)
         return cache.services.map {
             Service(
@@ -124,8 +122,8 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public func discoverCharacteristics(
         _ characteristics: Set<BluetoothUUID>,
-        for service: Service<Peripheral, UInt16>,
-        timeout: TimeInterval) async throws -> [Characteristic<Peripheral, UInt16>] {
+        for service: Service<Peripheral, UInt16>
+    ) async throws -> [Characteristic<Peripheral, UInt16>] {
         
         assert(service.peripheral == peripheral)
         
@@ -134,12 +132,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(service.uuid) }
         
         // GATT request
-        let foundCharacteristics = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Characteristic], Error>) in
-            guard let self = self else { return }
-            self.client.discoverAllCharacteristics(of: gattService) { clientResponse in
-                continuation.resume(with: clientResponse)
-            }
-        }
+        let foundCharacteristics = try await self.client.discoverAllCharacteristics(of: gattService)
         
         // store in cache
         cache.insert(foundCharacteristics, for: service.id)
@@ -160,12 +153,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
-        return try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<Data, Error>) in
-            guard let self = self else { return }
-            self.client.readCharacteristic(gattCharacteristic.attribute) { clientResponse in
-                continuation.resume(with: clientResponse)
-            }
-        }
+        return try await client.readCharacteristic(gattCharacteristic.attribute)
     }
     
     public func writeValue(
@@ -181,12 +169,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
-        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
-            guard let self = self else { return }
-            self.client.writeCharacteristic(gattCharacteristic.attribute, data: data, reliableWrites: withResponse) { clientResponse in
-                continuation.resume(with: clientResponse)
-            }
-        }
+        try await client.writeCharacteristic(gattCharacteristic.attribute, data: data, reliableWrites: withResponse)
     }
     
     public func discoverDescriptors(
@@ -203,13 +186,9 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
                        characteristics: Array(gattService.characteristics.values.map { $0.attribute }))
         
         // GATT request
-        let foundDescriptors = try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<[GATTClient.Descriptor], Error>) in
-            guard let self = self else { return }
-            self.client.discoverDescriptors(for: gattCharacteristic.attribute, service: service) { clientResponse in
-                continuation.resume(with: clientResponse)
-            }
-        }
+        let foundDescriptors = try await client.discoverDescriptors(for: gattCharacteristic.attribute, service: service)
         
+        // update cache
         cache.insert(foundDescriptors, for: characteristic.id)
         return cache.characteristic(for: characteristic.id)?.1.descriptors.map {
             Descriptor(
@@ -222,7 +201,7 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public func notify(
         for characteristic: Characteristic<Peripheral, UInt16>
-    ) async throws -> AsyncThrowingStream<Data, Error> {
+    ) -> AsyncThrowingStream<Data, Error> {
         
         assert(characteristic.peripheral == peripheral)
         
@@ -275,31 +254,82 @@ internal final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         )
     }
     
-    internal func clientCharacteristicConfiguration(
-        notification: Notification?,
-        indication: Notification?,
-        for characteristic: GATTClient.Characteristic,
-        descriptors: [GATTClient.Descriptor]
-    ) async throws {
-        
-        assert(characteristic.peripheral == peripheral)
-        
-        // GATT characteristic
-        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
-            else { throw CentralError.invalidAttribute(characteristic.uuid) }
-        
-        // GATT request
-        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
+    
+}
+
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+internal extension GATTClient {
+    
+    func discoverAllPrimaryServices() async throws -> [Service] {
+        return try await withUnsafeThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            client.clientCharacteristicConfiguration(
-                notification: notification,
-                indication: indication,
-                for: gattCharacteristic.attribute,
-                descriptors: descriptors) { clientResponse in
+            self.discoverAllPrimaryServices { clientResponse in
                 continuation.resume(with: clientResponse)
             }
         }
-        
+    }
+    
+    func discoverAllCharacteristics(
+        of service: Service
+    ) async throws -> [Characteristic] {
+        return try await withUnsafeThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.discoverAllCharacteristics(of: service) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
+        }
+    }
+    
+    func readCharacteristic(_ characteristic: Characteristic) async throws -> Data {
+        return try await withUnsafeThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.readCharacteristic(characteristic) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
+        }
+    }
+    
+    func writeCharacteristic(
+        _ characteristic: Characteristic,
+        data: Data,
+        reliableWrites: Bool
+    ) async throws {
+        return try await withUnsafeThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.writeCharacteristic(characteristic, data: data, reliableWrites: reliableWrites) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
+        }
+    }
+    
+    func discoverDescriptors(
+        for characteristic: Characteristic,
+        service: (declaration: Service, characteristics: [Characteristic])
+    ) async throws -> [Descriptor] {
+        return try await withUnsafeThrowingContinuation { [weak self] continuation in
+            guard let self = self else { return }
+            self.discoverDescriptors(for: characteristic, service: service) { clientResponse in
+                continuation.resume(with: clientResponse)
+            }
+        }
+    }
+    
+    func clientCharacteristicConfiguration(
+        notification: Notification?,
+        indication: Notification?,
+        for characteristic: Characteristic,
+        descriptors: [Descriptor]
+    ) async throws {
+        try await withUnsafeThrowingContinuation { [weak self] (continuation: UnsafeContinuation<(), Swift.Error>) in
+            guard let self = self else { return }
+            self.clientCharacteristicConfiguration(
+                notification: notification,
+                indication: indication,
+                for: characteristic,
+                descriptors: descriptors) {
+                continuation.resume(with: $0)
+            }
+        }
     }
 }
 
