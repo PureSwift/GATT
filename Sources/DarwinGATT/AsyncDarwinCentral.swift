@@ -197,30 +197,30 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     public func discoverServices(
         _ services: Set<BluetoothUUID> = [],
         for peripheral: Peripheral
-    ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> {
+    ) async throws -> [Service<Peripheral, AttributeID>] {
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
-        return AsyncThrowingStream(Service<Peripheral, AttributeID>.self, bufferingPolicy: .unbounded) { [weak self] continuation in
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.queue.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.finish(throwing: CentralError.unknownPeripheral)
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
                     return
                 }
                 // check power on
                 let state = self.centralManager._state
                 guard state == .poweredOn else {
-                    continuation.finish(throwing: DarwinCentralError.invalidState(state))
+                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
                     return
                 }
                 // check connected
                 guard peripheralObject.state == .connected else {
-                    continuation.finish(throwing: CentralError.disconnected)
+                    continuation.resume(throwing: CentralError.disconnected)
                     return
                 }
                 // cancel old task
                 if let oldTask = self.continuation.discoverServices[peripheral] {
-                    oldTask.finish(throwing: CancellationError())
+                    oldTask.resume(throwing: CancellationError())
                     self.continuation.discoverServices[peripheral] = nil
                 }
                 // discover
@@ -233,36 +233,36 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     public func discoverIncludedServices(
         _ services: Set<BluetoothUUID> = [],
         for service: Service<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error> {
+    ) async throws -> [Service<Peripheral, AttributeID>] {
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
-        return AsyncThrowingStream(Service<Peripheral, AttributeID>.self, bufferingPolicy: .unbounded) { [weak self] continuation in
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.queue.async {
                 let peripheral = service.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.finish(throwing: CentralError.unknownPeripheral)
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
                     return
                 }
                 // get service
                 guard let serviceObject = self.cache.services[service] else {
-                    continuation.finish(throwing: CentralError.invalidAttribute(service.uuid))
+                    continuation.resume(throwing: CentralError.invalidAttribute(service.uuid))
                     return
                 }
                 // check power on
                 let state = self.centralManager._state
                 guard state == .poweredOn else {
-                    continuation.finish(throwing: DarwinCentralError.invalidState(state))
+                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
                     return
                 }
                 // check connected
                 guard peripheralObject.state == .connected else {
-                    continuation.finish(throwing: CentralError.disconnected)
+                    continuation.resume(throwing: CentralError.disconnected)
                     return
                 }
                 // cancel old task
                 if let oldTask = self.continuation.discoverIncludedServices[service] {
-                    oldTask.finish(throwing: CancellationError())
+                    oldTask.resume(throwing: CancellationError())
                     self.continuation.discoverIncludedServices[service] = nil
                 }
                 // discover
@@ -275,36 +275,36 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
     public func discoverCharacteristics(
         _ characteristics: Set<BluetoothUUID>,
         for service: Service<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error> {
+    ) async throws -> [Characteristic<Peripheral, AttributeID>]{
         let characteristicUUIDs = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
-        return AsyncThrowingStream(Characteristic<Peripheral, AttributeID>.self, bufferingPolicy: .unbounded) { [weak self] continuation in
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.queue.async {
                 let peripheral = service.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.finish(throwing: CentralError.unknownPeripheral)
+                    continuation.resume(throwing: CentralError.unknownPeripheral)
                     return
                 }
                 // get service
                 guard let serviceObject = self.cache.services[service] else {
-                    continuation.finish(throwing: CentralError.invalidAttribute(service.uuid))
+                    continuation.resume(throwing: CentralError.invalidAttribute(service.uuid))
                     return
                 }
                 // check power on
                 let state = self.centralManager._state
                 guard state == .poweredOn else {
-                    continuation.finish(throwing: DarwinCentralError.invalidState(state))
+                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
                     return
                 }
                 // check connected
                 guard peripheralObject.state == .connected else {
-                    continuation.finish(throwing: CentralError.disconnected)
+                    continuation.resume(throwing: CentralError.disconnected)
                     return
                 }
                 // cancel old task
                 if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
-                    oldTask.finish(throwing: CancellationError())
+                    oldTask.resume(throwing: CancellationError())
                     self.continuation.discoverCharacteristics[peripheral] = nil
                 }
                 // discover
@@ -397,7 +397,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
                 }
                 // cancel old task
                 if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
-                    oldTask.finish(throwing: CancellationError())
+                    oldTask.resume(throwing: CancellationError())
                     self.continuation.discoverCharacteristics[peripheral] = nil
                 }
                 // notify
@@ -437,7 +437,7 @@ public final class AsyncDarwinCentral { //: AsyncCentral {
                 }
                 // cancel old task
                 if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
-                    oldTask.finish(throwing: CancellationError())
+                    oldTask.resume(throwing: CancellationError())
                     self.continuation.discoverCharacteristics[peripheral] = nil
                 }
                 // notify
@@ -670,10 +670,10 @@ internal extension AsyncDarwinCentral {
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
         var connect = [Peripheral: CheckedContinuation<(), Error>]()
-        var discoverServices = [Peripheral: AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>.Continuation]()
-        var discoverIncludedServices = [Service<Peripheral, AttributeID>: AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>.Continuation]()
-        var discoverCharacteristics = [Peripheral: AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error>.Continuation]()
-        var discoverDescriptors = [Peripheral: AsyncThrowingStream<Descriptor<Peripheral, AttributeID>, Error>.Continuation]()
+        var discoverServices = [Peripheral: CheckedContinuation<[Service<Peripheral, AttributeID>], Error>]()
+        var discoverIncludedServices = [Service<Peripheral, AttributeID>: CheckedContinuation<[Service<Peripheral, AttributeID>], Error>]()
+        var discoverCharacteristics = [Peripheral: CheckedContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
+        var discoverDescriptors = [Peripheral: CheckedContinuation<[Descriptor<Peripheral, AttributeID>], Error>]()
         var readCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<Data, Error>]()
         var readDescriptor = [Descriptor<Peripheral, AttributeID>: CheckedContinuation<Data, Error>]()
         var writeCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
@@ -808,9 +808,9 @@ internal extension AsyncDarwinCentral {
             
             // cancel all actions that require an active connection
             self.central.continuation.discoverServices[peripheral]?
-                .finish(throwing: CentralError.disconnected)
+                .resume(throwing: CentralError.disconnected)
             self.central.continuation.discoverCharacteristics[peripheral]?
-                .finish(throwing: CentralError.disconnected)
+                .resume(throwing: CentralError.disconnected)
             self.central.continuation.readCharacteristic
                 .filter { $0.key.peripheral == peripheral }
                 .forEach { $0.value.resume(throwing: CentralError.disconnected) }
@@ -842,16 +842,15 @@ internal extension AsyncDarwinCentral {
                 return
             }
             if let error = error {
-                continuation.finish(throwing: error)
+                continuation.resume(throwing: error)
             } else {
-                for serviceObject in (corePeripheral.services ?? []) {
-                    let service = Service(
+                let services = (corePeripheral.services ?? []).map { serviceObject in
+                    Service(
                         service: serviceObject,
                         peripheral: corePeripheral
                     )
-                    continuation.yield(service)
                 }
-                continuation.finish(throwing: nil)
+                continuation.resume(returning: services)
             }
             // remove callback
             self.central.continuation.discoverServices[peripheral] = nil
@@ -871,16 +870,15 @@ internal extension AsyncDarwinCentral {
                 return
             }
             if let error = error {
-                continuation.finish(throwing: error)
+                continuation.resume(throwing: error)
             } else {
-                for characteristicObject in (serviceObject.characteristics ?? []) {
-                    let characteristic = Characteristic(
+                let characteristics = (serviceObject.characteristics ?? []).map { characteristicObject in
+                    Characteristic(
                         characteristic: characteristicObject,
                         peripheral: peripheralObject
                     )
-                    continuation.yield(characteristic)
                 }
-                continuation.finish(throwing: nil)
+                continuation.resume(returning: characteristics)
             }
             // remove callback
             self.central.continuation.discoverCharacteristics[peripheral] = nil
@@ -1032,16 +1030,15 @@ internal extension AsyncDarwinCentral {
                 return
             }
             if let error = error {
-                continuation.finish(throwing: error)
+                continuation.resume(throwing: error)
             } else {
-                for serviceObject in (serviceObject.includedServices ?? []) {
-                    let service = Service(
+                let services = (serviceObject.includedServices ?? []).map { serviceObject in
+                    Service(
                         service: serviceObject,
                         peripheral: peripheralObject
                     )
-                    continuation.yield(service)
                 }
-                continuation.finish(throwing: nil)
+                continuation.resume(returning: services)
             }
             // remove callback
             self.central.continuation.discoverIncludedServices[service] = nil
@@ -1062,16 +1059,15 @@ internal extension AsyncDarwinCentral {
                 return
             }
             if let error = error {
-                continuation.finish(throwing: error)
+                continuation.resume(throwing: error)
             } else {
-                for descriptorObject in (characteristicObject.descriptors ?? []) {
-                    let descriptor = Descriptor(
+                let descriptors = (characteristicObject.descriptors ?? []).map { descriptorObject in
+                    Descriptor(
                         descriptor: descriptorObject,
                         peripheral: peripheralObject
                     )
-                    continuation.yield(descriptor)
                 }
-                continuation.finish(throwing: nil)
+                continuation.resume(returning: descriptors)
             }
             // remove callback
             self.central.continuation.discoverDescriptors[peripheral] = nil
