@@ -6,13 +6,16 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if swift(>=5.5)
 import Foundation
 import Bluetooth
+
 
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system and framework.
-public protocol CentralProtocol: AnyObject {
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+public protocol CentralManager {
     
     /// Central Peripheral Type
     associatedtype Peripheral: Peer
@@ -23,158 +26,67 @@ public protocol CentralProtocol: AnyObject {
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
-    /// 
-    var log: ((String) -> ())? { get set }
-     
+    /// Log stream
+    var log: AsyncStream<String> { get }
+    
     /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool,
-              _ foundDevice: @escaping (Result<ScanData<Peripheral, Advertisement>, Error>) -> ())
+    func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>
     
     /// Stops scanning for peripherals.
-    func stopScan()
+    func stopScan() async
     
-    ///
-    var isScanning: Bool { get }
+    /// Scanning status
+    var isScanning: AsyncStream<Bool> { get }
     
-    ///
-    var scanningChanged: ((Bool) -> ())? { get set }
+    /// Connect to the specified device
+    func connect(to peripheral: Peripheral) async throws
     
-    ///
-    func connect(to peripheral: Peripheral,
-                 timeout: TimeInterval,
-                 completion: @escaping (Result<Void, Error>) -> ())
+    /// Disconnect the specified device.
+    func disconnect(_ peripheral: Peripheral) async
     
-    ///
-    func disconnect(_ peripheral: Peripheral)
+    /// Disconnect all connected devices.
+    func disconnectAll() async
     
-    ///
-    func disconnectAll()
+    /// Disconnected peripheral callback
+    var didDisconnect: AsyncStream<Peripheral> { get }
     
-    ///
-    var didDisconnect: ((Peripheral) -> ())? { get set }
-    
-    ///
+    /// Discover Services
     func discoverServices(
         _ services: [BluetoothUUID],
-        for peripheral: Peripheral,
-        timeout: TimeInterval,
-        completion: @escaping (Result<[Service<Peripheral, AttributeID>], Error>) -> ()
-    )
+        for peripheral: Peripheral
+    ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>
     
-    ///
+    /// Discover Characteristics for service
     func discoverCharacteristics(
         _ characteristics: [BluetoothUUID],
-        for service: Service<Peripheral, AttributeID>,
-        timeout: TimeInterval,
-        completion: @escaping (Result<[Characteristic<Peripheral, AttributeID>], Error>) -> ()
-    )
+        for service: Service<Peripheral, AttributeID>
+    ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error>
     
-    ///
+    /// Read Characteristic Value
     func readValue(
-        for characteristic: Characteristic<Peripheral, AttributeID>,
-        timeout: TimeInterval,
-        completion: @escaping (Result<Data, Error>) -> ()
-    )
+        for characteristic: Characteristic<Peripheral, AttributeID>
+    ) async throws -> Data
     
-    ///
+    /// Write Characteristic Value
     func writeValue(
         _ data: Data,
         for characteristic: Characteristic<Peripheral, AttributeID>,
-        withResponse: Bool,
-        timeout: TimeInterval,
-        completion: @escaping (Result<Void, Error>) -> ()
-    )
+        withResponse: Bool
+    ) async throws
     
-    ///
-    func notify(_ notification: ((Data) -> ())?,
-                for characteristic: Characteristic<Peripheral, AttributeID>,
-                timeout: TimeInterval,
-                completion: @escaping (Result<Void, Error>) -> ())
+    /// Start Notifications
+    func notify(
+        for characteristic: Characteristic<Peripheral, AttributeID>
+    ) -> AsyncThrowingStream<Data, Error>
     
-    ///
-    func maximumTransmissionUnit(for peripheral: Peripheral,
-                                 completion: @escaping (Result<MaximumTransmissionUnit, Error>) -> ())
+    // Stop Notifications
+    func stopNotifications(for characteristic: Characteristic<Peripheral, AttributeID>) async throws
+    
+    /// Read MTU
+    func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit
+    
+    // Read RSSI
+    func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
 
-// MARK: - Supporting Types
-
-public protocol GATTCentralAttribute {
-    
-    associatedtype Peripheral: Peer
-    
-    associatedtype ID
-    
-    /// Attribute identifier, usually the ATT handle.
-    var id: ID { get }
-    
-    /// GATT Attribute UUID.
-    var uuid: BluetoothUUID { get }
-    
-    /// Peripheral this attribute was read from.
-    var peripheral: Peripheral { get }
-}
-
-public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
-    
-    public let id: ID
-    
-    public let uuid: BluetoothUUID
-    
-    public let peripheral: Peripheral
-    
-    /// A Boolean value that indicates whether the type of service is primary or secondary.
-    public let isPrimary: Bool
-    
-    public init(id: ID,
-                uuid: BluetoothUUID,
-                peripheral: Peripheral,
-                isPrimary: Bool = true) {
-        
-        self.id = id
-        self.uuid = uuid
-        self.peripheral = peripheral
-        self.isPrimary = isPrimary
-    }
-}
-
-public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
-    
-    public typealias Property = CharacteristicProperty
-    
-    public let id: ID
-    
-    public let uuid: BluetoothUUID
-    
-    public let peripheral: Peripheral
-    
-    public let properties: BitMaskOptionSet<Property>
-    
-    public init(id: ID,
-                uuid: BluetoothUUID,
-                peripheral: Peripheral,
-                properties: BitMaskOptionSet<Property>) {
-        
-        self.id = id
-        self.uuid = uuid
-        self.peripheral = peripheral
-        self.properties = properties
-    }
-}
-
-public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute, Hashable {
-    
-    public let id: ID
-    
-    public let uuid: BluetoothUUID
-    
-    public let peripheral: Peripheral
-    
-    public init(id: ID,
-                uuid: BluetoothUUID,
-                peripheral: Peripheral) {
-        
-        self.id = id
-        self.uuid = uuid
-        self.peripheral = peripheral
-    }
-}
+#endif

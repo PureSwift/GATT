@@ -29,3 +29,35 @@ public extension Peer {
         return id.description
     }
 }
+
+// MARK: - Central
+
+/// Central Peer
+///
+/// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
+public struct Central: Peer {
+    
+    public let id: BluetoothAddress
+    
+    public init(id: BluetoothAddress) {
+        self.id = id
+    }
+}
+
+extension Central: Identifiable { }
+
+// MARK: - Peripheral
+
+/// Peripheral Peer
+///
+/// Represents a remote peripheral device that has been discovered.
+public struct Peripheral: Peer {
+    
+    public let id: BluetoothAddress
+    
+    public init(id: BluetoothAddress) {
+        self.id = id
+    }
+}
+
+extension Peripheral: Identifiable { }
