@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if canImport(BluetoothGATT)
+#if swift(>=5.5) && canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
 import BluetoothGATT
@@ -107,8 +107,7 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     // MARK: - Methods
     
     public func discoverServices(
-        _ services: Set<BluetoothUUID>,
-        for peripheral: Peripheral
+        _ services: Set<BluetoothUUID>
     ) async throws -> [Service<Peripheral, UInt16>] {
         let foundServices = try await client.discoverAllPrimaryServices()
         cache.insert(foundServices)
@@ -207,18 +206,13 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) { [weak self] continuation in
             guard let self = self else { return }
             Task {
-                do {
-                    try await self.notify(characteristic) { continuation.yield($0) }
-                    
-                }
-                catch {
-                    continuation.finish(throwing: error)
-                }
+                do { try await self.notify(characteristic) { continuation.yield($0) } }
+                catch { continuation.finish(throwing: error) }
             }
         }
     }
     
-    private func notify(
+    public func notify(
         _ characteristic: Characteristic<Peripheral, UInt16>,
         notification: @escaping GATTClient.Notification
     ) async throws {

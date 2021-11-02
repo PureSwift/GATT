@@ -27,7 +27,7 @@ public protocol CentralManager {
     associatedtype AttributeID: Hashable
     
     /// Log stream
-    var log: AsyncStream<String> { get }
+    //var log: AsyncStream<String> { get }
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>
@@ -36,7 +36,7 @@ public protocol CentralManager {
     func stopScan() async
     
     /// Scanning status
-    var isScanning: AsyncStream<Bool> { get }
+    //var isScanning: AsyncStream<Bool> { get }
     
     /// Connect to the specified device
     func connect(to peripheral: Peripheral) async throws
@@ -52,15 +52,15 @@ public protocol CentralManager {
     
     /// Discover Services
     func discoverServices(
-        _ services: [BluetoothUUID],
+        _ services: Set<BluetoothUUID>,
         for peripheral: Peripheral
-    ) -> AsyncThrowingStream<Service<Peripheral, AttributeID>, Error>
+    ) async throws -> [Service<Peripheral, AttributeID>]
     
     /// Discover Characteristics for service
     func discoverCharacteristics(
-        _ characteristics: [BluetoothUUID],
+        _ characteristics: Set<BluetoothUUID>,
         for service: Service<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Characteristic<Peripheral, AttributeID>, Error>
+    ) async throws -> [Characteristic<Peripheral, AttributeID>]
     
     /// Read Characteristic Value
     func readValue(
