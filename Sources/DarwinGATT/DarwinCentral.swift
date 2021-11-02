@@ -27,10 +27,11 @@ public final class DarwinCentral { //: AsyncCentral {
     
     public let didDisconnect: AsyncStream<Peripheral>
     
+    /// Currently scanned devices, or restored devices.
     public func peripherals() async -> Set<Peripheral> {
         return await withUnsafeContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripherals = Set(self.cache.peripherals.keys)
                 continuation.resume(returning: peripherals)
             }
@@ -41,7 +42,7 @@ public final class DarwinCentral { //: AsyncCentral {
     
     private var delegate: Delegate!
     
-    fileprivate let queue: DispatchQueue
+    private let queue: DispatchQueue?
     
     internal fileprivate(set) var cache = Cache()
     
@@ -55,7 +56,7 @@ public final class DarwinCentral { //: AsyncCentral {
     /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
     public init(
         options: Options = Options(),
-        queue: DispatchQueue = .main
+        queue: DispatchQueue? = nil
     ) {
         var continuation = Continuation()
         self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) {
@@ -101,7 +102,7 @@ public final class DarwinCentral { //: AsyncCentral {
         ]
         return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) {  [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // cancel old scanning task
                 if let oldContinuation = self.continuation.scan {
                     oldContinuation.finish(throwing: CancellationError())
@@ -120,7 +121,7 @@ public final class DarwinCentral { //: AsyncCentral {
     public func stopScan() async {
         await withCheckedContinuation { [weak self] (continuation: CheckedContinuation<(), Never>) in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 guard let scanContinuation = self.continuation.scan else {
                     continuation.resume() // not currently scanning
                     return
@@ -150,7 +151,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws {
         try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // cancel old task
                 self.continuation.connect[peripheral]?.resume(throwing: CancellationError())
                 self.continuation.connect[peripheral] = nil
@@ -174,7 +175,7 @@ public final class DarwinCentral { //: AsyncCentral {
     }
     
     public func disconnect(_ peripheral: Peripheral) {
-        self.queue.async { [weak self] in
+        self.async { [weak self] in
             guard let self = self else { return }
             // get CoreBluetooth objects from cache
             guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -185,7 +186,7 @@ public final class DarwinCentral { //: AsyncCentral {
     }
     
     public func disconnectAll() {
-        self.queue.async { [weak self] in
+        self.async { [weak self] in
             guard let self = self else { return }
             // get CoreBluetooth objects from cache
             for peripheralObject in self.cache.peripherals.values {
@@ -201,7 +202,7 @@ public final class DarwinCentral { //: AsyncCentral {
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -237,7 +238,7 @@ public final class DarwinCentral { //: AsyncCentral {
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = service.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -279,7 +280,7 @@ public final class DarwinCentral { //: AsyncCentral {
         let characteristicUUIDs = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = service.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -319,7 +320,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws -> Data {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -372,7 +373,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) -> AsyncThrowingStream<Data, Error> {
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -412,7 +413,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -450,7 +451,7 @@ public final class DarwinCentral { //: AsyncCentral {
     public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -472,7 +473,7 @@ public final class DarwinCentral { //: AsyncCentral {
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -507,6 +508,20 @@ public final class DarwinCentral { //: AsyncCentral {
         continuation.log.yield(message)
     }
     
+    private func async(_ body: @escaping () -> ()) {
+        
+        // use specified queue
+        if let queue = self.queue {
+            queue.async(execute: body)
+        } else if Thread.isMainThread {
+            // when no queue is specified, the main thread is used
+            body()
+        } else {
+            // force to use main thread if none specified but calling from another thread
+            DispatchQueue.main.async(execute: body)
+        }
+    }
+    
     private func write(
         _ data: Data,
         type: CBCharacteristicWriteType,
@@ -514,7 +529,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -559,7 +574,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws -> Bool {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -576,7 +591,7 @@ public final class DarwinCentral { //: AsyncCentral {
     ) async throws {
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
-            self.queue.async {
+            self.async {
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
