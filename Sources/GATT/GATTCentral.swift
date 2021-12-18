@@ -12,7 +12,7 @@ import Foundation
 @_exported import BluetoothHCI
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-public actor GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol> : CentralManager {
+public actor GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> : CentralManager {
     
     // MARK: - Properties
     
@@ -38,11 +38,7 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, L2CA
     
     internal let newConnection: NewConnection
     
-    internal private(set) var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
-    
-    internal private(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
-    
-    private var lastConnectionID = 0
+    internal let state: GATTCentralState
     
     // MARK: - Initialization
     
@@ -103,7 +99,7 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, L2CA
     
     public func connect(to peripheral: Peripheral) async throws {
         // get scan data (bluetooth address) for new connection
-        guard let (scanData, report) = self.scanData[peripheral]
+        guard let (scanData, report) = self.state.scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
@@ -180,7 +176,6 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, L2CA
         for characteristic: Characteristic<Peripheral, UInt16>
     ) async -> AsyncThrowingStream<Data, Swift.Error> {
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) {
-            
             try await connection(for: characteristic.peripheral)
                 .notify(for: characteristic)
         }
@@ -239,6 +234,16 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, L2CA
 }
 
 // MARK: - Supporting Types
+
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+internal actor GATTCentralState {
+    
+    fileprivate(set) var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
+    
+    fileprivate(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
+    
+    fileprivate var lastConnectionID = 0
+}
 
 public struct GATTCentralOptions {
     

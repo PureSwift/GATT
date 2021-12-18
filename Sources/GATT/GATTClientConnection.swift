@@ -11,7 +11,7 @@ import Bluetooth
 import BluetoothGATT
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
+internal actor GATTClientConnection <Socket: L2CAPSocket> {
     
     // MARK: - Properties
     
@@ -19,7 +19,7 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
     
     public let callback: GATTClientConnectionCallback
     
-    internal private(set) var client: GATTClient
+    internal let client: GATTClient
     
     public private(set) var error: Swift.Error?
     
@@ -85,7 +85,6 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
             log: { callback.log?("[\(peripheral)]: " + $0) },
-            writePending: nil
         )
         /*
         self.client.writePending = { [weak self] in
@@ -259,87 +258,11 @@ internal actor GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
         
         // GATT request
         try await client.clientCharacteristicConfiguration(
+            gattCharacteristic.attribute,
             notification: notify,
             indication: indicate,
-            for: gattCharacteristic.attribute,
             descriptors: descriptors
         )
-    }
-}
-
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-internal extension GATTClient {
-    
-    func discoverAllPrimaryServices() async throws -> [Service] {
-        return try await withUnsafeThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.discoverAllPrimaryServices {
-                continuation.resume(with: $0)
-            }
-        }
-    }
-    
-    func discoverAllCharacteristics(
-        of service: Service
-    ) async throws -> [Characteristic] {
-        return try await withUnsafeThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.discoverAllCharacteristics(of: service) {
-                continuation.resume(with: $0)
-            }
-        }
-    }
-    
-    func readCharacteristic(_ characteristic: Characteristic) async throws -> Data {
-        return try await withUnsafeThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.readCharacteristic(characteristic) {
-                continuation.resume(with: $0)
-            }
-        }
-    }
-    
-    func writeCharacteristic(
-        _ characteristic: Characteristic,
-        data: Data,
-        reliableWrites: Bool
-    ) async throws {
-        return try await withUnsafeThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.writeCharacteristic(characteristic, data: data, reliableWrites: reliableWrites) {
-                continuation.resume(with: $0)
-            }
-        }
-    }
-    
-    func discoverDescriptors(
-        for characteristic: Characteristic,
-        service: (declaration: Service, characteristics: [Characteristic])
-    ) async throws -> [Descriptor] {
-        return try await withUnsafeThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.discoverDescriptors(for: characteristic, service: service) {
-                continuation.resume(with: $0)
-            }
-        }
-    }
-    
-    func clientCharacteristicConfiguration(
-        notification: Notification?,
-        indication: Notification?,
-        for characteristic: Characteristic,
-        descriptors: [Descriptor]
-    ) async throws {
-        try await withUnsafeThrowingContinuation { [weak self] (continuation: UnsafeContinuation<(), Swift.Error>) in
-            guard let self = self else { return }
-            self.clientCharacteristicConfiguration(
-                notification: notification,
-                indication: indication,
-                for: characteristic,
-                descriptors: descriptors) {
-                continuation.resume(with: $0)
-            }
-        }
     }
 }
 
@@ -366,17 +289,14 @@ internal struct GATTClientConnectionCache {
     private(set) var services = [UInt16: GATTClientConnectionServiceCache](minimumCapacity: 1)
     
     func service(for identifier: UInt16) -> GATTClientConnectionServiceCache? {
-        
         return services[identifier]
     }
     
     func characteristic(for identifier: UInt16) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache)? {
         
         for service in services.values {
-            
             guard let characteristic = service.characteristics[identifier]
                 else { continue }
-            
             return (service, characteristic)
         }
         
@@ -386,11 +306,8 @@ internal struct GATTClientConnectionCache {
     func descriptor(for identifier: UInt) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache, GATTClientConnectionDescriptorCache)? {
         
         for service in services.values {
-            
             for characteristic in service.characteristics.values {
-                
                 for descriptor in characteristic.descriptors.values {
-                    
                     return (service, characteristic, descriptor)
                 }
             }
@@ -400,20 +317,19 @@ internal struct GATTClientConnectionCache {
     }
     
     mutating func insert(_ newValues: [GATTClient.Service]) {
-        
         services.removeAll(keepingCapacity: true)
-        
         newValues.forEach {
             services[$0.handle] = GATTClientConnectionServiceCache(attribute: $0, characteristics: [:])
         }
     }
     
-    mutating func insert(_ newValues: [GATTClient.Characteristic],
-                         for service: UInt16) {
+    mutating func insert(
+        _ newValues: [GATTClient.Characteristic],
+        for service: UInt16
+    ) {
         
         // remove old values
         services[service]?.characteristics.removeAll(keepingCapacity: true)
-        
         // insert new values
         newValues.forEach {
             services[service]?.characteristics[$0.handle.declaration] = GATTClientConnectionCharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
@@ -424,16 +340,12 @@ internal struct GATTClientConnectionCache {
                          for characteristic: UInt16) {
         
         var descriptorsCache = [UInt16: GATTClientConnectionDescriptorCache](minimumCapacity: newValues.count)
-        
         newValues.forEach {
             descriptorsCache[$0.handle] = GATTClientConnectionDescriptorCache(attribute: $0)
         }
-        
         for (serviceIdentifier, service) in services {
-            
             guard let _ = service.characteristics[characteristic]
                 else { continue }
-            
             services[serviceIdentifier]?.characteristics[characteristic]?.descriptors = descriptorsCache
         }
     }

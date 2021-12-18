@@ -11,7 +11,7 @@ import Bluetooth
 import GATT
 
 /// Test L2CAP socket
-internal final class TestL2CAPSocket: L2CAPSocketProtocol {
+internal final class TestL2CAPSocket {
     
     // MARK: - Properties
     

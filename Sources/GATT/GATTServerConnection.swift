@@ -12,7 +12,7 @@ import Bluetooth
 import BluetoothGATT
 
 @available(macOS 10.12, iOS 10, *)
-internal final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
+internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     // MARK: - Properties
     
@@ -33,11 +33,8 @@ internal final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
             self?.readMain()
         }
     }
-    
-    internal lazy var writeQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) \(self.central) Write Queue")
-    
-    internal var maximumUpdateValueLength: Int {
         
+    internal var maximumUpdateValueLength: Int {
         // ATT_MTU-3
         return Int(server.maximumTransmissionUnit.rawValue) - 3
     }
@@ -50,9 +47,11 @@ internal final class GATTServerConnection <L2CAPSocket: L2CAPSocketProtocol> {
                 maximumPreparedWrites: Int) {
         
         self.central = central
-        self.server = GATTServer(socket: socket,
-                                 maximumTransmissionUnit: maximumTransmissionUnit,
-                                 maximumPreparedWrites: maximumPreparedWrites)
+        self.server = GATTServer(
+            socket: socket,
+            maximumTransmissionUnit: maximumTransmissionUnit,
+            maximumPreparedWrites: maximumPreparedWrites
+        )
         
         // setup callbacks
         self.configureServer()
