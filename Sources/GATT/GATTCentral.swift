@@ -11,7 +11,7 @@ import Foundation
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public actor GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> : CentralManager {
     
     // MARK: - Properties
@@ -235,7 +235,7 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, Sock
 
 // MARK: - Supporting Types
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal actor GATTCentralState {
     
     fileprivate(set) var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()

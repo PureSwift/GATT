@@ -12,7 +12,7 @@ import CoreBluetooth
 import Bluetooth
 import GATT
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public final class DarwinCentral { //: AsyncCentral {
     
     // MARK: - Properties
@@ -610,7 +610,7 @@ public final class DarwinCentral { //: AsyncCentral {
 
 // MARK: - Supporting Types
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension DarwinCentral {
     
     typealias Advertisement = DarwinAdvertisementData
@@ -668,7 +668,7 @@ public extension DarwinCentral {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     struct Cache {
@@ -700,7 +700,7 @@ internal extension DarwinCentral {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     @objc(GATTAsyncCentralManagerDelegate)
@@ -1138,7 +1138,7 @@ internal extension DarwinCentral {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Service where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(
@@ -1154,7 +1154,7 @@ internal extension Service where ID == ObjectIdentifier, Peripheral == DarwinCen
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Characteristic where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(
@@ -1170,7 +1170,7 @@ internal extension Characteristic where ID == ObjectIdentifier, Peripheral == Da
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Descriptor where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(
