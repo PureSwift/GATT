@@ -9,7 +9,7 @@ import Foundation
 import Bluetooth
 
 /// GATT Central Attribute protocol
-public protocol GATTCentralAttribute {
+public protocol GATTCentralAttribute: Identifiable {
     
     associatedtype Peripheral: Peer
     
