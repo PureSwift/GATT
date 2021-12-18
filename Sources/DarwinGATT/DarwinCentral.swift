@@ -13,7 +13,7 @@ import Bluetooth
 import GATT
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public final class DarwinCentral { //: AsyncCentral {
+public final class DarwinCentral: CentralManager {
     
     // MARK: - Properties
     
@@ -74,7 +74,7 @@ public final class DarwinCentral { //: AsyncCentral {
         self.options = options
         self.continuation = continuation
         self.queue = queue
-        self.delegate = Delegate(self)
+        self.delegate = options.restoreIdentifier == nil ? Delegate(self) : RestorableDelegate(self)
         self.centralManager = CBCentralManager(
             delegate: self.delegate,
             queue: self.queue,
@@ -645,13 +645,13 @@ public extension DarwinCentral {
          A string (an instance of NSString) containing a unique identifier (UID) for the peripheral manager that is being instantiated.
          The system uses this UID to identify a specific peripheral manager. As a result, the UID must remain the same for subsequent executions of the app in order for the peripheral manager to be successfully restored.
          */
-        public let restoreIdentifier: String
+        public let restoreIdentifier: String?
         
         /**
          Initialize options.
          */
         public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinCentral") {
+                    restoreIdentifier: String? = nil) {
             
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
@@ -703,8 +703,25 @@ internal extension DarwinCentral {
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
+    @objc(GATTAsyncCentralManagerRestorableDelegate)
+    class RestorableDelegate: Delegate {
+        
+        @objc
+        func centralManager(_ centralManager: CBCentralManager, willRestoreState state: [String : Any]) {
+            assert(self.central != nil)
+            assert(self.central?.centralManager === centralManager)
+            log("\(NSDictionary(dictionary: state).description)")
+            // An array of peripherals for use when restoring the state of a central manager.
+            if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+                for peripheralObject in peripherals {
+                    self.central.cache.peripherals[Peripheral(peripheralObject)] = peripheralObject
+                }
+            }
+        }
+    }
+    
     @objc(GATTAsyncCentralManagerDelegate)
-    final class Delegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+    class Delegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
         
         private(set) weak var central: DarwinCentral!
         
@@ -713,7 +730,7 @@ internal extension DarwinCentral {
             self.central = central
         }
         
-        private func log(_ function: String = #function, _ arguments: String?...) {
+        fileprivate func log(_ function: String = #function, _ arguments: String?...) {
             let message = arguments
                 .lazy
                 .compactMap { $0 }
@@ -729,18 +746,6 @@ internal extension DarwinCentral {
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
             log(state.description)
             self.central.continuation.state.yield(state)
-        }
-        
-        func centralManager(_ centralManager: CBCentralManager, willRestoreState state: [String : Any]) {
-            assert(self.central != nil)
-            assert(self.central?.centralManager === centralManager)
-            log("\(NSDictionary(dictionary: state).description)")
-            // An array of peripherals for use when restoring the state of a central manager.
-            if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
-                for peripheralObject in peripherals {
-                    self.central.cache.peripherals[Peripheral(peripheralObject)] = peripheralObject
-                }
-            }
         }
         
         func centralManager(
