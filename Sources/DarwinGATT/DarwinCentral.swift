@@ -166,7 +166,7 @@ public final class DarwinCentral: CentralManager {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
                     return
                 }
-                
+                assert(peripheralObject.delegate != nil)
                 // connect
                 self.continuation.connect[peripheral] = continuation
                 self.centralManager.connect(peripheralObject, options: options)
@@ -756,6 +756,7 @@ internal extension DarwinCentral {
         ) {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
+            corePeripheral.delegate = self
             let peripheral = Peripheral(corePeripheral)
             let advertisement = Advertisement(advertisementData)
             let scanResult = ScanData(
@@ -851,7 +852,7 @@ internal extension DarwinCentral {
         
         func peripheral(
             _ corePeripheral: CBPeripheral,
-            didDiscoverServices error: Error?
+            didDiscoverServices error: Swift.Error?
         ) {
             
             log(corePeripheral.gattIdentifier.uuidString, error?.localizedDescription)
