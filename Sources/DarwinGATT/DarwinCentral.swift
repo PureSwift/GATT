@@ -399,9 +399,9 @@ public final class DarwinCentral: CentralManager {
                     return
                 }
                 // cancel old task
-                if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
-                    oldTask.resume(throwing: CancellationError())
-                    self.continuation.discoverCharacteristics[peripheral] = nil
+                if let oldTask = self.continuation.notificationStream[characteristic] {
+                    oldTask.finish(throwing: CancellationError())
+                    self.continuation.notificationStream[characteristic] = nil
                 }
                 // notify
                 self.continuation.notificationStream[characteristic] = continuation
@@ -439,9 +439,9 @@ public final class DarwinCentral: CentralManager {
                     return
                 }
                 // cancel old task
-                if let oldTask = self.continuation.discoverCharacteristics[peripheral] {
+                if let oldTask = self.continuation.stopNotification[characteristic] {
                     oldTask.resume(throwing: CancellationError())
-                    self.continuation.discoverCharacteristics[peripheral] = nil
+                    self.continuation.stopNotification[characteristic] = nil
                 }
                 // notify
                 self.continuation.stopNotification[characteristic] = continuation
