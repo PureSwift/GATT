@@ -730,7 +730,7 @@ internal extension DarwinCentral {
             self.central = central
         }
         
-        fileprivate func log(_ function: String = #function, _ arguments: String?...) {
+        fileprivate func log(function: String = #function, _ arguments: String?...) {
             let message = arguments
                 .lazy
                 .compactMap { $0 }
