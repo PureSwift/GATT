@@ -867,11 +867,15 @@ internal extension DarwinCentral {
             if let error = error {
                 continuation.resume(throwing: error)
             } else {
-                let services = (corePeripheral.services ?? []).map { serviceObject in
+                let serviceObjects = corePeripheral.services ?? []
+                let services = serviceObjects.map { serviceObject in
                     Service(
                         service: serviceObject,
                         peripheral: corePeripheral
                     )
+                }
+                for (index, service) in services.enumerated() {
+                    self.central.cache.services[service] = serviceObjects[index]
                 }
                 continuation.resume(returning: services)
             }
@@ -895,11 +899,15 @@ internal extension DarwinCentral {
             if let error = error {
                 continuation.resume(throwing: error)
             } else {
-                let characteristics = (serviceObject.characteristics ?? []).map { characteristicObject in
+                let characteristicObjects = serviceObject.characteristics ?? []
+                let characteristics = characteristicObjects.map { characteristicObject in
                     Characteristic(
                         characteristic: characteristicObject,
                         peripheral: peripheralObject
                     )
+                }
+                for (index, characteristic) in characteristics.enumerated() {
+                    self.central.cache.characteristics[characteristic] = characteristicObjects[index]
                 }
                 continuation.resume(returning: characteristics)
             }
