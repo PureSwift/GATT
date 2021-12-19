@@ -113,6 +113,7 @@ public final class DarwinCentral: CentralManager {
                 // start scanning
                 assert(self.continuation.scan == nil)
                 self.continuation.scan = continuation
+                self.continuation.isScanning.yield(true)
                 self.centralManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
             }
         }
@@ -127,6 +128,7 @@ public final class DarwinCentral: CentralManager {
                     return
                 }
                 self.centralManager.stopScan()
+                self.continuation.isScanning.yield(false)
                 self.log("Discovered \(self.cache.peripherals.count) peripherals")
                 scanContinuation.finish(throwing: nil) // end stream
                 continuation.resume()
