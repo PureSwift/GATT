@@ -511,17 +511,8 @@ public final class DarwinCentral: CentralManager {
     }
     
     private func async(_ body: @escaping () -> ()) {
-        
-        // use specified queue
-        if let queue = self.queue {
-            queue.async(execute: body)
-        } else if Thread.isMainThread {
-            // when no queue is specified, the main thread is used
-            body()
-        } else {
-            // force to use main thread if none specified but calling from another thread
-            DispatchQueue.main.async(execute: body)
-        }
+        let queue = self.queue ?? .main
+        queue.async(execute: body)
     }
     
     private func write(
