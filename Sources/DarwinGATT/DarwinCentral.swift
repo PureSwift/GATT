@@ -512,7 +512,12 @@ public final class DarwinCentral: CentralManager {
     
     private func async(_ body: @escaping () -> ()) {
         let queue = self.queue ?? .main
-        queue.async(execute: body)
+        if self.queue == nil, Thread.isMainThread {
+            // run on main thread directly
+            body()
+        } else {
+            queue.async(execute: body)
+        }
     }
     
     private func write(
