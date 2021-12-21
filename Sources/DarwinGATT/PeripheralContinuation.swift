@@ -9,14 +9,8 @@ import Foundation
 import Bluetooth
 import GATT
 
-#if os(macOS)
+#if DEBUG
 internal struct PeripheralContinuation<T, E> where E: Error {
-    
-    static var log: (String) -> () = {
-        #if DEBUG
-        print($0)
-        #endif
-    }
     
     private let function: String
     
@@ -32,14 +26,20 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         self.continuation = CheckedContinuation(continuation: continuation, function: function)
         self.function = function
         self.peripheral = peripheral
-        Self.log("Will wait for continuation '\(self.function)'")
+        log("Will wait for continuation '\(self.function)'")
+    }
+    
+    private func log(_ message: String) {
+        #if DEBUG
+        print(log)
+        #endif
     }
     
     func resume(
         returning value: T,
         function: String = #function
     ) {
-        Self.log("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
+        log("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
         continuation.resume(returning: value)
     }
     
@@ -47,7 +47,7 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         throwing error: E,
         function: String = #function
     ) {
-        Self.log("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
+        log("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
         continuation.resume(throwing: error)
     }
 }
