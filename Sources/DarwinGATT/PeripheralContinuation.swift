@@ -9,9 +9,14 @@ import Foundation
 import Bluetooth
 import GATT
 
+#if os(macOS)
 internal struct PeripheralContinuation<T, E> where E: Error {
     
-    typealias Peripheral = DarwinCentral.Peripheral
+    static var log: (String) -> () = {
+        #if DEBUG
+        print($0)
+        #endif
+    }
     
     private let function: String
     
@@ -22,23 +27,19 @@ internal struct PeripheralContinuation<T, E> where E: Error {
     fileprivate init(
         continuation: UnsafeContinuation<T, E>,
         function: String,
-        peripheral: Peripheral
+        peripheral: DarwinCentral.Peripheral
     ) {
         self.continuation = CheckedContinuation(continuation: continuation, function: function)
         self.function = function
         self.peripheral = peripheral
-        #if DEBUG
-        print("Will wait for continuation '\(self.function)'")
-        #endif
+        Self.log("Will wait for continuation '\(self.function)'")
     }
     
     func resume(
         returning value: T,
         function: String = #function
     ) {
-        #if DEBUG
-        print("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
-        #endif
+        Self.log("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
         continuation.resume(returning: value)
     }
     
@@ -46,9 +47,7 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         throwing error: E,
         function: String = #function
     ) {
-        #if DEBUG
-        print("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
-        #endif
+        Self.log("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
         continuation.resume(throwing: error)
     }
 }
@@ -79,3 +78,24 @@ internal func withThrowingContinuation<T>(
         body(PeripheralContinuation(continuation: $0, function: function, peripheral: peripheral))
     }
 }
+#else
+internal typealias PeripheralContinuation<T, E> = CheckedContinuation<T, E> where E: Error
+
+@inline(__always)
+internal func withContinuation<T>(
+    for peripheral: DarwinCentral.Peripheral,
+    function: String = #function,
+    _ body: (CheckedContinuation<T, Never>) -> Void
+) async -> T {
+    return await withCheckedContinuation(function: function, body)
+}
+
+@inline(__always)
+internal func withThrowingContinuation<T>(
+    for peripheral: DarwinCentral.Peripheral,
+    function: String = #function,
+    _ body: (CheckedContinuation<T, Swift.Error>) -> Void
+) async throws -> T {
+    return try await withCheckedThrowingContinuation(function: function, body)
+}
+#endif
