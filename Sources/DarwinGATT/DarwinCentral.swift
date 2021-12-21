@@ -159,7 +159,6 @@ public final class DarwinCentral: CentralManager {
         to peripheral: Peripheral,
         options: [String: Any]?
     ) async throws {
-        self.log("Will connect to \(peripheral)")
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -200,7 +199,6 @@ public final class DarwinCentral: CentralManager {
         _ services: Set<BluetoothUUID> = [],
         for peripheral: Peripheral
     ) async throws -> [DarwinCentral.Service] {
-        self.log("Will discover services for \(peripheral)")
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -218,7 +216,6 @@ public final class DarwinCentral: CentralManager {
         _ services: Set<BluetoothUUID> = [],
         for service: DarwinCentral.Service
     ) async throws -> [DarwinCentral.Service] {
-        self.log("Peripheral \(service.peripheral) will discover included services of service \(service.uuid)")
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -236,7 +233,6 @@ public final class DarwinCentral: CentralManager {
         _ characteristics: Set<BluetoothUUID> = [],
         for service: DarwinCentral.Service
     ) async throws -> [DarwinCentral.Characteristic] {
-        self.log("Peripheral \(service.peripheral) will discover characteristics of service \(service.uuid)")
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -253,7 +249,6 @@ public final class DarwinCentral: CentralManager {
     public func readValue(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> Data {
-        self.log("Peripheral \(characteristic.peripheral) will read characteristic \(characteristic.uuid)")
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -271,7 +266,6 @@ public final class DarwinCentral: CentralManager {
         for characteristic: DarwinCentral.Characteristic,
         withResponse: Bool = true
     ) async throws {
-        self.log("Peripheral \(characteristic.peripheral) will write characteristic \(characteristic.uuid)")
         if withResponse == false  {
             try await waitUntilCanSendWriteWithoutResponse(for: characteristic.peripheral)
         }
@@ -320,7 +314,6 @@ public final class DarwinCentral: CentralManager {
     public func stopNotifications(
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
-        self.log("Peripheral \(characteristic.peripheral) will disable notifications for characteristic \(characteristic.uuid)")
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -380,35 +373,14 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
-        self.log("Will read RSSI for \(peripheral)")
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
-            self.async {/*
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // cancel old task
-                if let oldTask = self.continuation.readRSSI[peripheral] {
-                    oldTask.resume(throwing: CancellationError())
-                    self.continuation.readRSSI[peripheral] = nil
-                }
-                // read value
-                self.continuation.readRSSI[peripheral] = continuation
-                peripheralObject.readRSSI()
-                */
+            self.async {
+                let operation = Operation.ReadRSSI(
+                    peripheral: peripheral,
+                    continuation: continuation
+                )
+                self.enqueue(operation, for: peripheral)
             }
         }
     }
@@ -430,8 +402,13 @@ public final class DarwinCentral: CentralManager {
     }
     
     private func enqueue(_ operation: Operation, for peripheral: Peripheral) {
-        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext()
-        context.queue.append(operation)
+        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext(self)
+        context.queue.push(operation)
+    }
+    
+    private func enqueue(_ operation: Operation.ReadRSSI, for peripheral: Peripheral) {
+        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext(self)
+        context.readRSSI.push(operation)
     }
     
     private func write(
@@ -607,9 +584,20 @@ internal extension DarwinCentral {
     }
     
     final class PeripheralContinuationContext {
-        var queue = [Operation]()
+        
+        var queue: Queue<Operation>
         var notificationStream = [AttributeID: AsyncThrowingStream<Data, Error>.Continuation]()
-        var readRSSI: PeripheralContinuation<RSSI, Error>?
+        var readRSSI: Queue<Operation.ReadRSSI>
+        
+        fileprivate init(_ central: DarwinCentral) {
+            self.queue = Queue<Operation> { [unowned central] in
+                central.execute($0)
+            }
+            self.readRSSI = Queue<Operation.ReadRSSI> { [unowned central] in
+                central.execute($0)
+                return true // wait for continuation
+            }
+        }
     }
 }
 
@@ -694,6 +682,11 @@ internal extension DarwinCentral.Operation {
         let isEnabled: Bool
         let continuation: PeripheralContinuation<(), Error>
     }
+    
+    struct ReadRSSI {
+        let peripheral: DarwinCentral.Peripheral
+        let continuation: PeripheralContinuation<RSSI, Error>
+    }
 }
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
@@ -725,10 +718,11 @@ internal extension DarwinCentral {
         case let .isReadyToWriteWithoutResponse(operation):
             return execute(operation)
         }
-        return false // do not wait for continuation
+        return true // wait for continuation
     }
     
     func execute(_ operation: Operation.Connect) {
+        log("Will connect to \(operation.peripheral)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -742,6 +736,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverServices) {
+        log("Peripheral \(operation.peripheral) will discover services")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -760,6 +755,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverIncludedServices) {
+        log("Peripheral \(operation.service.peripheral) will discover included services of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -781,6 +777,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverCharacteristics) {
+        log("Peripheral \(operation.service.peripheral) will discover characteristics of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -803,6 +800,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.ReadCharacteristic) {
+        log("Peripheral \(operation.characteristic.peripheral) will read characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -824,6 +822,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.WriteCharacteristic) -> Bool {
+        log("Peripheral \(operation.characteristic.peripheral) will write characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -874,6 +873,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.NotificationState) {
+        log("Peripheral \(operation.characteristic.peripheral) will \(operation.isEnabled ? "enable" : "disable") notifications for characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return
@@ -892,6 +892,24 @@ internal extension DarwinCentral {
         }
         // notify
         peripheralObject.setNotifyValue(operation.isEnabled, for: characteristicObject)
+    }
+    
+    func execute(_ operation: Operation.ReadRSSI) {
+        self.log("Will read RSSI for \(operation.peripheral)")
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // read value
+        peripheralObject.readRSSI()
     }
 }
 
@@ -1048,12 +1066,17 @@ internal extension DarwinCentral {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             let peripheral = Peripheral(corePeripheral)
-            guard let continuation = self.central.continuation.connect[peripheral] else {
-                assertionFailure("Missing continuation")
+            guard let context = self.central.continuation.peripherals[peripheral] else {
+                assertionFailure("Missing context")
                 return
             }
-            continuation.resume()
-            self.central.continuation.connect[peripheral] = nil
+            context.queue.pop {
+                guard case let .connect(operation) = $0 else {
+                    assertionFailure("Missing continuation")
+                    return
+                }
+                operation.continuation.resume()
+            }
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
@@ -1072,7 +1095,7 @@ internal extension DarwinCentral {
                 return
             }
             continuation.resume(throwing: error ?? CentralError.disconnected)
-            self.central.continuation.connect[peripheral] = nil
+            //self.central.continuation.connect[peripheral] = nil
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
