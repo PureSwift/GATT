@@ -165,7 +165,7 @@ public final class DarwinCentral: CentralManager {
         await semaphore.wait()
         defer { semaphore.signal() }
         self.log("Will connect to \(peripheral)")
-        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
+        try await withThrowingContinuation(for: peripheral) { [weak self] (continuation: PeripheralContinuation<(), Error>) in
             guard let self = self else { return }
             self.async {
                 // check power on
@@ -221,7 +221,7 @@ public final class DarwinCentral: CentralManager {
         defer { semaphore.signal() }
         self.log("Will discover services for \(peripheral)")
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 // get peripheral
@@ -257,7 +257,7 @@ public final class DarwinCentral: CentralManager {
         defer { semaphore.signal() }
         self.log("Peripheral \(service.peripheral) will discover included services of service \(service.uuid)")
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 let peripheral = service.peripheral
@@ -299,7 +299,7 @@ public final class DarwinCentral: CentralManager {
         defer { semaphore.signal() }
         self.log("Peripheral \(service.peripheral) will discover characteristics of service \(service.uuid)")
         let characteristicUUIDs = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 let peripheral = service.peripheral
@@ -338,11 +338,11 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
-        self.log("Peripheral \(characteristic.peripheral) will read characteristic \(characteristic.uuid)")
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        let peripheral = characteristic.peripheral
+        self.log("Peripheral \(peripheral) will read characteristic \(characteristic.uuid)")
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -432,11 +432,11 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
-        self.log("Peripheral \(characteristic.peripheral) will disable notifications for characteristic \(characteristic.uuid)")
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        let peripheral = characteristic.peripheral
+        self.log("Peripheral \(peripheral) will disable notifications for characteristic \(characteristic.uuid)")
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -475,7 +475,7 @@ public final class DarwinCentral: CentralManager {
         if queue == nil, Thread.isMainThread {
             return try _maximumTransmissionUnit(for: peripheral) // optimization
         } else {
-            return try await withCheckedThrowingContinuation { [weak self] continuation in
+            return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
                 guard let self = self else { return }
                 self.async {
                     do {
@@ -508,7 +508,7 @@ public final class DarwinCentral: CentralManager {
     
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
         self.log("Will read RSSI for \(peripheral)")
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 // get peripheral
@@ -570,7 +570,7 @@ public final class DarwinCentral: CentralManager {
         type: CBCharacteristicWriteType,
         for characteristic: Characteristic<Peripheral, AttributeID>
     ) async throws {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 let peripheral = characteristic.peripheral
@@ -615,7 +615,7 @@ public final class DarwinCentral: CentralManager {
     private func canSendWriteWithoutResponse(
         for peripheral: Peripheral
     ) async throws -> Bool {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 // get peripheral
@@ -632,7 +632,7 @@ public final class DarwinCentral: CentralManager {
     private func waitUntilCanSendWriteWithoutResponse(
         for peripheral: Peripheral
     ) async throws {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 // get peripheral
@@ -727,19 +727,19 @@ internal extension DarwinCentral {
         var didDisconnect: AsyncStream<Peripheral>.Continuation!
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
-        var connect = [Peripheral: CheckedContinuation<(), Error>]()
-        var discoverServices = [Peripheral: CheckedContinuation<[Service<Peripheral, AttributeID>], Error>]()
-        var discoverIncludedServices = [Service<Peripheral, AttributeID>: CheckedContinuation<[Service<Peripheral, AttributeID>], Error>]()
-        var discoverCharacteristics = [Peripheral: CheckedContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
-        var discoverDescriptors = [Peripheral: CheckedContinuation<[Descriptor<Peripheral, AttributeID>], Error>]()
-        var readCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<Data, Error>]()
-        var readDescriptor = [Descriptor<Peripheral, AttributeID>: CheckedContinuation<Data, Error>]()
-        var writeCharacteristic = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
-        var writeDescriptor = [Descriptor<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
-        var isReadyToWriteWithoutResponse = [Peripheral: CheckedContinuation<(), Error>]()
+        var connect = [Peripheral: PeripheralContinuation<(), Error>]()
+        var discoverServices = [Peripheral: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
+        var discoverIncludedServices = [Service<Peripheral, AttributeID>: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
+        var discoverCharacteristics = [Peripheral: PeripheralContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
+        var discoverDescriptors = [Peripheral: PeripheralContinuation<[Descriptor<Peripheral, AttributeID>], Error>]()
+        var readCharacteristic = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
+        var readDescriptor = [Descriptor<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
+        var writeCharacteristic = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
+        var writeDescriptor = [Descriptor<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
+        var isReadyToWriteWithoutResponse = [Peripheral: PeripheralContinuation<(), Error>]()
         var notificationStream = [Characteristic<Peripheral, AttributeID>: AsyncThrowingStream<Data, Error>.Continuation]()
-        var stopNotification = [Characteristic<Peripheral, AttributeID>: CheckedContinuation<(), Error>]()
-        var readRSSI = [Peripheral: CheckedContinuation<RSSI, Error>]()
+        var stopNotification = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
+        var readRSSI = [Peripheral: PeripheralContinuation<RSSI, Error>]()
     }
     
     struct Semaphore {
