@@ -274,7 +274,7 @@ public final class DarwinCentral: CentralManager {
     
     public func notify(
         for characteristic: DarwinCentral.Characteristic
-    ) -> AsyncThrowingStream<Data, Error> {
+    ) async throws -> AsyncThrowingStream<Data, Error> {
         self.log("Peripheral \(characteristic.peripheral) will enable notifications for characteristic \(characteristic.uuid)")
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }

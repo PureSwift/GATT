@@ -76,7 +76,7 @@ public protocol CentralManager {
     /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) -> AsyncThrowingStream<Data, Error>
+    ) async throws -> AsyncThrowingStream<Data, Error>
     
     // Stop Notifications
     func stopNotifications(for characteristic: Characteristic<Peripheral, AttributeID>) async throws
