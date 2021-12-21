@@ -471,26 +471,39 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get MTU
-                let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
-                assert(peripheralObject.mtuLength.intValue == rawValue)
-                guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
-                    assertionFailure("Invalid MTU \(rawValue)")
-                    continuation.resume(returning: .default)
-                    return
         self.log("Will read MTU for \(peripheral)")
+        if queue == nil, Thread.isMainThread {
+            return try _maximumTransmissionUnit(for: peripheral) // optimization
+        } else {
+            return try await withCheckedThrowingContinuation { [weak self] continuation in
+                guard let self = self else { return }
+                self.async {
+                    do {
+                        let mtu = try self._maximumTransmissionUnit(for: peripheral)
+                        continuation.resume(returning: mtu)
+                    }
+                    catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
-                continuation.resume(returning: mtu)
             }
         }
+    }
+    
+    private func _maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
+        assert(queue != nil || Thread.isMainThread, "Should only run on main thread")
+        // get peripheral
+        guard let peripheralObject = self.cache.peripherals[peripheral] else {
+            throw CentralError.unknownPeripheral
+        }
+        // get MTU
+        let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
+        assert(peripheralObject.mtuLength.intValue == rawValue)
+        guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
+            assertionFailure("Invalid MTU \(rawValue)")
+            return .default
+        }
+        return mtu
     }
     
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
