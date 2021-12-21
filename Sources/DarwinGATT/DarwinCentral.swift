@@ -108,6 +108,7 @@ public final class DarwinCentral: CentralManager {
         let options: [String: Any] = [
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
         ]
+        self.log("Will scan for nearby devices")
         return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) {  [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -128,6 +129,7 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func stopScan() async {
+        self.log("Stopped scanning")
         await withCheckedContinuation { [weak self] (continuation: CheckedContinuation<(), Never>) in
             guard let self = self else { return }
             self.async {
@@ -162,6 +164,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Will connect to \(peripheral)")
         try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<(), Error>) in
             guard let self = self else { return }
             self.async {
@@ -186,17 +189,20 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func disconnect(_ peripheral: Peripheral) {
+        self.log("Will disconnect \(peripheral)")
         self.async { [weak self] in
             guard let self = self else { return }
             // get CoreBluetooth objects from cache
             guard let peripheralObject = self.cache.peripherals[peripheral] else {
                 return
             }
+            
             self.centralManager.cancelPeripheralConnection(peripheralObject)
         }
     }
     
     public func disconnectAll() {
+        self.log("Will disconnect all")
         self.async { [weak self] in
             guard let self = self else { return }
             // get CoreBluetooth objects from cache
@@ -213,6 +219,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Will discover services for \(peripheral)")
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
@@ -248,6 +255,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: service.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Peripheral \(service.peripheral) will discover included services of service \(service.uuid)")
         let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
@@ -289,6 +297,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: service.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Peripheral \(service.peripheral) will discover characteristics of service \(service.uuid)")
         let characteristicUUIDs = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
@@ -329,6 +338,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Peripheral \(characteristic.peripheral) will read characteristic \(characteristic.uuid)")
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -370,6 +380,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Peripheral \(characteristic.peripheral) will write characteristic \(characteristic.uuid)")
         if withResponse {
             try await write(data, type: .withResponse, for: characteristic)
         } else {
@@ -381,6 +392,7 @@ public final class DarwinCentral: CentralManager {
     public func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
     ) -> AsyncThrowingStream<Data, Error> {
+        self.log("Peripheral \(characteristic.peripheral) will enable notifications for characteristic \(characteristic.uuid)")
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -420,6 +432,7 @@ public final class DarwinCentral: CentralManager {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
         defer { semaphore.signal() }
+        self.log("Peripheral \(characteristic.peripheral) will disable notifications for characteristic \(characteristic.uuid)")
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
@@ -473,6 +486,7 @@ public final class DarwinCentral: CentralManager {
                     assertionFailure("Invalid MTU \(rawValue)")
                     continuation.resume(returning: .default)
                     return
+        self.log("Will read MTU for \(peripheral)")
                 }
                 continuation.resume(returning: mtu)
             }
