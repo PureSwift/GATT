@@ -31,7 +31,7 @@ internal struct PeripheralContinuation<T, E> where E: Error {
     
     private func log(_ message: String) {
         #if DEBUG
-        print(log)
+        print(message)
         #endif
     }
     
