@@ -43,6 +43,7 @@ internal struct Queue<T> {
         if let operation = self.current {
             guard execute(operation) else {
                 operations.removeFirst()
+                executeCurrent() // execute next
                 return
             }
             // wait for continuation

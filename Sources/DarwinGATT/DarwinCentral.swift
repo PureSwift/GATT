@@ -1171,8 +1171,8 @@ internal extension DarwinCentral {
             
             // TODO: Use error from CoreBluetooth
             let disconnectionError = CentralError.disconnected
-            
             guard let context = self.central.continuation.peripherals[peripheral] else {
+                assertionFailure("Missing context")
                 return
             }
             // cancel current action that requires an active connection
