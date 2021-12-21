@@ -26,7 +26,7 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         self.continuation = CheckedContinuation(continuation: continuation, function: function)
         self.function = function
         self.peripheral = peripheral
-        log("Will wait for continuation '\(self.function)'")
+        log("Will wait for continuation '\(self.function)' for peripheral \(peripheral)")
     }
     
     private func log(_ message: String) {
