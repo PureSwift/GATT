@@ -28,12 +28,14 @@ public final class DarwinCentral: CentralManager {
     public let didDisconnect: AsyncStream<Peripheral>
     
     /// Currently scanned devices, or restored devices.
-    public func peripherals() async -> Set<Peripheral> {
-        return await withUnsafeContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                let peripherals = Set(self.cache.peripherals.keys)
-                continuation.resume(returning: peripherals)
+    public var peripherals: Set<Peripheral> {
+        get async {
+            return await withUnsafeContinuation { [weak self] continuation in
+                guard let self = self else { return }
+                self.async {
+                    let peripherals = Set(self.cache.peripherals.keys)
+                    continuation.resume(returning: peripherals)
+                }
             }
         }
     }
@@ -85,6 +87,10 @@ public final class DarwinCentral: CentralManager {
     }
     
     // MARK: - Methods
+    
+    public func wait(for state: DarwinBluetoothState) async throws {
+        
+    }
     
     /// Scans for peripherals that are advertising services.
     public func scan(
@@ -1056,7 +1062,7 @@ internal extension DarwinCentral {
         
         func peripheralIsReady(toSendWriteWithoutResponse peripheralObject: CBPeripheral) {
             
-            log("Peripheral \(peripheral.gattIdentifier.uuidString) is ready to send write without response")
+            log("Peripheral \(peripheralObject.gattIdentifier.uuidString) is ready to send write without response")
             
             let peripheral = Peripheral(peripheralObject)
             if let continuation = self.central.continuation.isReadyToWriteWithoutResponse[peripheral] {
@@ -1129,13 +1135,17 @@ internal extension DarwinCentral {
         }
         
         func peripheral(_ peripheralObject: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
-            
-            log(peripheralObject.gattIdentifier.uuidString, invalidatedServices.map { $0.uuid.uuidString }.description)
+            log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did modify \(invalidatedServices.count) services")
+            // TODO: Try to rediscover services
         }
         
         func peripheral(_ peripheralObject: CBPeripheral, didDiscoverDescriptorsFor characteristicObject: CBCharacteristic, error: Error?) {
             
-            log(peripheralObject.gattIdentifier.uuidString, characteristicObject.uuid.uuidString, error?.localizedDescription)
+            if let error = error {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed discovering descriptors for characteristic \(characteristicObject.uuid.uuidString) (\(error))")
+            } else {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(characteristicObject.descriptors?.count ?? 0) descriptors for characteristic \(characteristicObject.uuid.uuidString)")
+            }
             
             let peripheral = Peripheral(peripheralObject)
             guard let continuation = self.central.continuation.discoverDescriptors[peripheral] else {
@@ -1157,9 +1167,17 @@ internal extension DarwinCentral {
             self.central.continuation.discoverDescriptors[peripheral] = nil
         }
         
-        func peripheral(_ peripheralObject: CBPeripheral, didWriteValueFor descriptorObject: CBDescriptor, error: Error?) {
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didWriteValueFor descriptorObject: CBDescriptor,
+            error: Error?
+        ) {
             
-            log(peripheralObject.gattIdentifier.uuidString, descriptorObject.uuid.uuidString, error?.localizedDescription)
+            if let error = error {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed writing descriptor \(descriptorObject.uuid.uuidString) (\(error))")
+            } else {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for descriptor \(descriptorObject.uuid.uuidString)")
+            }
             
             let descriptor = Descriptor(
                 descriptor: descriptorObject,
@@ -1177,9 +1195,17 @@ internal extension DarwinCentral {
             self.central.continuation.writeDescriptor[descriptor] = nil
         }
         
-        func peripheral(_ peripheralObject: CBPeripheral, didUpdateValueFor descriptorObject: CBDescriptor, error: Error?) {
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didUpdateValueFor descriptorObject: CBDescriptor,
+            error: Error?
+        ) {
             
-            log(peripheralObject.gattIdentifier.uuidString, descriptorObject.uuid.uuidString, error?.localizedDescription)
+            if let error = error {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed updating value for descriptor \(descriptorObject.uuid.uuidString) (\(error))")
+            } else {
+                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for descriptor \(descriptorObject.uuid.uuidString)")
+            }
             
             let descriptor = Descriptor(
                 descriptor: descriptorObject,
