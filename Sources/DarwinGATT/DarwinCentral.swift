@@ -401,13 +401,23 @@ public final class DarwinCentral: CentralManager {
         }
     }
     
+    private func continuation(for peripheral: Peripheral) -> PeripheralContinuationContext {
+        if let context = self.continuation.peripherals[peripheral] {
+            return context
+        } else {
+            let context = PeripheralContinuationContext(self)
+            self.continuation.peripherals[peripheral] = context
+            return context
+        }
+    }
+    
     private func enqueue(_ operation: Operation, for peripheral: Peripheral) {
-        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext(self)
+        let context = continuation(for: peripheral)
         context.queue.push(operation)
     }
     
     private func dequeue(for peripheral: Peripheral, _ body: (Operation) -> ()) {
-        guard let context = self.central.continuation.peripherals[peripheral] else {
+        guard let context = self.continuation.peripherals[peripheral] else {
             assertionFailure("Missing context")
             return
         }
@@ -415,16 +425,16 @@ public final class DarwinCentral: CentralManager {
     }
     
     private func enqueueReadRSSI(_ operation: Operation.ReadRSSI, for peripheral: Peripheral) {
-        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext(self)
+        let context = continuation(for: peripheral)
         context.readRSSI.push(operation)
     }
     
     private func dequeueReadRSSI(for peripheral: Peripheral, _ body: (Operation.ReadRSSI) -> ()) {
-        guard let context = self.central.continuation.peripherals[peripheral] else {
+        guard let context = self.continuation.peripherals[peripheral] else {
             assertionFailure("Missing context")
             return
         }
-        context.readRSSi.pop(body)
+        context.readRSSI.pop(body)
     }
     
     private func write(
@@ -1288,7 +1298,7 @@ internal extension DarwinCentral {
                     }
                 }
             } else if characteristicObject.isNotifying {
-                guard let stream = self.central.continuation.notificationStream[characteristic.id] else {
+                guard let stream = context.notificationStream[characteristic.id] else {
                     assertionFailure("Missing notification stream")
                     return
                 }
@@ -1362,11 +1372,17 @@ internal extension DarwinCentral {
         func peripheralIsReady(toSendWriteWithoutResponse peripheralObject: CBPeripheral) {
             
             log("Peripheral \(peripheralObject.gattIdentifier.uuidString) is ready to send write without response")
-            
             let peripheral = Peripheral(peripheralObject)
-            if let continuation = self.central.continuation.isReadyToWriteWithoutResponse[peripheral] {
-                continuation.resume()
-                self.central.continuation.isReadyToWriteWithoutResponse[peripheral] = nil
+            guard let context = self.central.continuation.peripherals[peripheral] else {
+                assertionFailure("Missing context")
+                return
+            }
+            // possible nothing is waiting
+            guard case let .isReadyToWriteWithoutResponse(operation) = context.queue.current else {
+                return
+            }
+            self.central.dequeue(for: peripheral) { _ in
+                operation.continuation.resume()
             }
         }
         
@@ -1381,24 +1397,20 @@ internal extension DarwinCentral {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did read RSSI \(rssiObject.description)")
             }
             let peripheral = Peripheral(peripheralObject)
-            guard let continuation = self.central.continuation.readRSSI[peripheral] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                guard let rssi = Bluetooth.RSSI(rawValue: rssiObject.int8Value) else {
-                    assertionFailure("Invalid RSSI \(rssiObject)")
-                    continuation.resume(returning: RSSI(rawValue: -127)!)
-                    self.central.continuation.readRSSI[peripheral] = nil
-                    return
+            self.central.dequeueReadRSSI(for: peripheral) { operation in
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    guard let rssi = Bluetooth.RSSI(rawValue: rssiObject.int8Value) else {
+                        assertionFailure("Invalid RSSI \(rssiObject)")
+                        operation.continuation.resume(returning: RSSI(rawValue: -127)!)
+                        return
+                    }
+                    operation.continuation.resume(returning: rssi)
                 }
-                continuation.resume(returning: rssi)
             }
-            self.central.continuation.readRSSI[peripheral] = nil
         }
-        
+        /*
         func peripheral(
             _ peripheralObject: CBPeripheral,
             didDiscoverIncludedServicesFor serviceObject: CBService,
@@ -1528,7 +1540,7 @@ internal extension DarwinCentral {
                 continuation.resume(returning: data)
             }
             self.central.continuation.readDescriptor[descriptor] = nil
-        }
+        }*/
     }
 }
 
