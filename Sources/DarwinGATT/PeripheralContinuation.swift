@@ -38,7 +38,7 @@ internal final class PeripheralContinuation<T, E> where E: Error {
         function: String = #function
     ) {
         #if DEBUG
-        print("Will resume continuation \(self.function) for peripheral \(peripheral), returning in \(function)")
+        print("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
         #endif
         continuation.resume(returning: value)
     }
@@ -48,7 +48,7 @@ internal final class PeripheralContinuation<T, E> where E: Error {
         function: String = #function
     ) {
         #if DEBUG
-        print("Will resume continuation \(self.function) for peripheral \(peripheral), throwing \(error.localizedDescription) in \(function)")
+        print("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
         #endif
         continuation.resume(throwing: error)
     }
