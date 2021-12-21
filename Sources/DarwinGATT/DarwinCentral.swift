@@ -380,7 +380,7 @@ public final class DarwinCentral: CentralManager {
                     peripheral: peripheral,
                     continuation: continuation
                 )
-                self.enqueue(operation, for: peripheral)
+                self.enqueueReadRSSI(operation, for: peripheral)
             }
         }
     }
@@ -1193,7 +1193,6 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            
             self.central.dequeue(for: peripheral) {
                 guard case let .discoverServices(operation) = $0 else {
                     assertionFailure("Invalid continuation")
@@ -1230,28 +1229,31 @@ internal extension DarwinCentral {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
             }
             
-            let service = Service(service: serviceObject, peripheral: peripheralObject)
-            guard let continuation = self.central.continuation.discoverCharacteristics[service] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                let characteristicObjects = serviceObject.characteristics ?? []
-                let characteristics = characteristicObjects.map { characteristicObject in
-                    Characteristic(
-                        characteristic: characteristicObject,
-                        peripheral: peripheralObject
-                    )
+            let service = Service(
+                service: serviceObject,
+                peripheral: peripheralObject
+            )
+            self.central.dequeue(for: service.peripheral) {
+                guard case let .discoverCharacteristics(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
                 }
-                for (index, characteristic) in characteristics.enumerated() {
-                    self.central.cache.characteristics[characteristic] = characteristicObjects[index]
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    let characteristicObjects = serviceObject.characteristics ?? []
+                    let characteristics = characteristicObjects.map { characteristicObject in
+                        Characteristic(
+                            characteristic: characteristicObject,
+                            peripheral: peripheralObject
+                        )
+                    }
+                    for (index, characteristic) in characteristics.enumerated() {
+                        self.central.cache.characteristics[characteristic] = characteristicObjects[index]
+                    }
+                    operation.continuation.resume(returning: characteristics)
                 }
-                continuation.resume(returning: characteristics)
             }
-            // remove callback
-            self.central.continuation.discoverCharacteristics[service] = nil
         }
         
         @objc(peripheral:didUpdateValueForCharacteristic:error:)
@@ -1267,26 +1269,31 @@ internal extension DarwinCentral {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
-            let data = characteristicObject.value ?? Data()
             let characteristic = Characteristic(
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
             )
-            
-            // read value
-            if let continuation = self.central.continuation.readCharacteristic[characteristic] {
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: data)
-                }
-                self.central.continuation.readCharacteristic[characteristic] = nil
+            let data = characteristicObject.value ?? Data()
+            guard let context = self.central.continuation.peripherals[characteristic.peripheral] else {
+                assertionFailure("Missing context")
+                return
             }
-            // notification
-            else if let stream = self.central.continuation.notificationStream[characteristic] {
+            // either read operation or notification
+            if case let .readCharacteristic(operation) = context.queue.current {
+                context.queue.pop { _ in
+                    if let error = error {
+                        operation.continuation.resume(throwing: error)
+                    } else {
+                        operation.continuation.resume(returning: data)
+                    }
+                }
+            } else if characteristicObject.isNotifying {
+                guard let stream = self.central.continuation.notificationStream[characteristic.id] else {
+                    assertionFailure("Missing notification stream")
+                    return
+                }
                 assert(error == nil, "Notifications should never fail")
                 stream.yield(data)
-                self.central.continuation.notificationStream[characteristic] = nil
             } else {
                 assertionFailure("Missing continuation, not read or notification")
             }
@@ -1298,28 +1305,28 @@ internal extension DarwinCentral {
             didWriteValueFor characteristicObject: CBCharacteristic,
             error: Swift.Error?
         ) {
-            
             if let error = error {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed writing characteristic (\(error))")
             } else {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for characteristic \(characteristicObject.uuid.uuidString)")
             }
-            
             let characteristic = Characteristic(
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
             )
             // should only be called for write with response
-            guard let continuation = self.central.continuation.writeCharacteristic[characteristic] else {
-                assertionFailure("Missing continuation")
-                return
+            self.central.dequeue(for: characteristic.peripheral) {
+                guard case let .writeCharacteristic(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
+                }
+                assert(operation.withResponse)
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    operation.continuation.resume()
+                }
             }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                continuation.resume()
-            }
-            self.central.continuation.writeCharacteristic[characteristic] = nil
         }
         
         @objc
@@ -1338,28 +1345,17 @@ internal extension DarwinCentral {
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
             )
-            if characteristicObject.isNotifying {
-                guard let continuation = self.central.continuation.notificationStream[characteristic] else {
-                    assertionFailure("Missing continuation")
+            self.central.dequeue(for: characteristic.peripheral) {
+                guard case let .setNotification(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
                     return
                 }
                 if let error = error {
-                    continuation.finish(throwing: error)
-                    self.central.continuation.notificationStream[characteristic] = nil
+                    operation.continuation.resume(throwing: error)
                 } else {
-                    // do nothing until notification is recieved.
+                    assert(characteristicObject.isNotifying == operation.isEnabled)
+                    operation.continuation.resume()
                 }
-            } else {
-                guard let continuation = self.central.continuation.stopNotification[characteristic] else {
-                    assertionFailure("Missing continuation")
-                    return
-                }
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-                self.central.continuation.stopNotification[characteristic] = nil
             }
         }
         
