@@ -253,11 +253,15 @@ public final class DarwinCentral: CentralManager {
     public func readValue(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> Data {
-        self.log("Peripheral \(peripheral) will read characteristic \(characteristic.uuid)")
-        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
+        self.log("Peripheral \(characteristic.peripheral) will read characteristic \(characteristic.uuid)")
+        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                
+                let operation = Operation.ReadCharacteristic(
+                    characteristic: characteristic,
+                    continuation: continuation
+                )
+                self.enqueue(.readCharacteristic(operation), for: characteristic.peripheral)
             }
         }
     }
@@ -267,16 +271,11 @@ public final class DarwinCentral: CentralManager {
         for characteristic: DarwinCentral.Characteristic,
         withResponse: Bool = true
     ) async throws {
-        let semaphore = self.semaphore(for: characteristic.peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
         self.log("Peripheral \(characteristic.peripheral) will write characteristic \(characteristic.uuid)")
-        if withResponse {
-            try await write(data, type: .withResponse, for: characteristic)
-        } else {
+        if withResponse == false  {
             try await waitUntilCanSendWriteWithoutResponse(for: characteristic.peripheral)
-            try await write(data, type: .withoutResponse, for: characteristic)
         }
+        try await write(data, withResponse: withResponse, for: characteristic)
     }
     
     public func notify(
@@ -286,6 +285,7 @@ public final class DarwinCentral: CentralManager {
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                /*
                 let peripheral = characteristic.peripheral
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
@@ -312,6 +312,7 @@ public final class DarwinCentral: CentralManager {
                 assert(self.continuation.notificationStream[characteristic] == nil)
                 self.continuation.notificationStream[characteristic] = continuation
                 peripheralObject.setNotifyValue(true, for: characteristicObject)
+                 */
             }
         }
     }
@@ -319,14 +320,11 @@ public final class DarwinCentral: CentralManager {
     public func stopNotifications(
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
-        let semaphore = self.semaphore(for: characteristic.peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
-        let peripheral = characteristic.peripheral
-        self.log("Peripheral \(peripheral) will disable notifications for characteristic \(characteristic.uuid)")
-        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
+        self.log("Peripheral \(characteristic.peripheral) will disable notifications for characteristic \(characteristic.uuid)")
+        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                /*
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -356,6 +354,7 @@ public final class DarwinCentral: CentralManager {
                 // notify
                 self.continuation.stopNotification[characteristic] = continuation
                 peripheralObject.setNotifyValue(false, for: characteristicObject)
+                 */
             }
         }
     }
@@ -380,27 +379,11 @@ public final class DarwinCentral: CentralManager {
         }
     }
     
-    private func _maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
-        assert(queue != nil || Thread.isMainThread, "Should only run on main thread")
-        // get peripheral
-        guard let peripheralObject = self.cache.peripherals[peripheral] else {
-            throw CentralError.unknownPeripheral
-        }
-        // get MTU
-        let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
-        assert(peripheralObject.mtuLength.intValue == rawValue)
-        guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
-            assertionFailure("Invalid MTU \(rawValue)")
-            return .default
-        }
-        return mtu
-    }
-    
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
         self.log("Will read RSSI for \(peripheral)")
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
-            self.async {
+            self.async {/*
                 // get peripheral
                 guard let peripheralObject = self.cache.peripherals[peripheral] else {
                     continuation.resume(throwing: CentralError.unknownPeripheral)
@@ -425,6 +408,7 @@ public final class DarwinCentral: CentralManager {
                 // read value
                 self.continuation.readRSSI[peripheral] = continuation
                 peripheralObject.readRSSI()
+                */
             }
         }
     }
@@ -452,47 +436,24 @@ public final class DarwinCentral: CentralManager {
     
     private func write(
         _ data: Data,
-        type: CBCharacteristicWriteType,
+        withResponse: Bool,
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                let peripheral = characteristic.peripheral
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get characteristic
-                guard let characteristicObject = self.cache.characteristics[characteristic] else {
-                    continuation.resume(throwing: CentralError.invalidAttribute(characteristic.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // store continuation for callback
-                if type == .withResponse {
-                    // calls `peripheral:didWriteValueForCharacteristic:error:` only
-                    // if you specified the write type as `.withResponse`.
-                    assert(self.continuation.peripherals[peripheral]?.pendingContinuation == nil)
-                    self.continuation.writeCharacteristic[characteristic] = continuation
-                }
-                // write data
-                peripheralObject.writeValue(data, for: characteristicObject, type: type)
+                let operation = Operation.WriteCharacteristic(
+                    characteristic: characteristic,
+                    data: data,
+                    withResponse: withResponse,
+                    continuation: continuation
+                )
+                self.enqueue(.writeCharacteristic(operation), for: characteristic.peripheral)
             }
         }
     }
     
+    @available(*, deprecated)
     private func canSendWriteWithoutResponse(
         for peripheral: Peripheral
     ) async throws -> Bool {
@@ -500,12 +461,12 @@ public final class DarwinCentral: CentralManager {
             guard let self = self else { return }
             self.async {
                 // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
+                guard let peripheralObject = self.validatePeripheral(peripheral, for: continuation) else {
                     return
                 }
                 // yield value
-                continuation.resume(returning: peripheralObject.canSendWriteWithoutResponse)
+                let value = peripheralObject.canSendWriteWithoutResponse
+                continuation.resume(returning: value)
             }
         }
     }
@@ -516,20 +477,46 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                if peripheralObject.canSendWriteWithoutResponse {
-                    continuation.resume()
-                } else {
-                    // wait until delegate is called
-                    assert(self.continuation.peripherals[peripheral]?.pendingContinuation == nil)
-                    self.continuation.peripherals[peripheral]?.pendingContinuation = .isReadyToWriteWithoutResponse(continuation)
-                }
+                let operation = Operation.WriteWithoutResponseReady(
+                    peripheral: peripheral,
+                    continuation: continuation
+                )
+                self.enqueue(.isReadyToWriteWithoutResponse(operation), for: peripheral)
             }
         }
+    }
+    
+    private func setNotification(
+        _ isEnabled: Bool,
+        for characteristic: Characteristic
+    ) async throws {
+        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                let operation = Operation.NotificationState(
+                    characteristic: characteristic,
+                    isEnabled: isEnabled,
+                    continuation: continuation
+                )
+                self.enqueue(.setNotification(operation), for: characteristic.peripheral)
+            }
+        }
+    }
+    
+    private func _maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
+        assert(queue != nil || Thread.isMainThread, "Should only run on main thread")
+        // get peripheral
+        guard let peripheralObject = self.cache.peripherals[peripheral] else {
+            throw CentralError.unknownPeripheral
+        }
+        // get MTU
+        let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
+        assert(peripheralObject.mtuLength.intValue == rawValue)
+        guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
+            assertionFailure("Invalid MTU \(rawValue)")
+            return .default
+        }
+        return mtu
     }
 }
 
@@ -677,6 +664,8 @@ internal extension DarwinCentral.Operation {
     
     struct WriteCharacteristic {
         let characteristic: DarwinCentral.Characteristic
+        let data: Data
+        let withResponse: Bool
         let continuation: PeripheralContinuation<(), Error>
     }
     
@@ -696,7 +685,7 @@ internal extension DarwinCentral.Operation {
     }
     
     struct WriteWithoutResponseReady {
-        let characteristic: DarwinCentral.Characteristic
+        let peripheral: DarwinCentral.Peripheral
         let continuation: PeripheralContinuation<(), Error>
     }
     
@@ -710,7 +699,8 @@ internal extension DarwinCentral.Operation {
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
-    func execute(_ operation: DarwinCentral.Operation) {
+    /// Executes an operation and informs whether a continuation is pending.
+    func execute(_ operation: DarwinCentral.Operation) -> Bool {
         switch operation {
         case let .connect(operation):
             execute(operation)
@@ -723,7 +713,7 @@ internal extension DarwinCentral {
         case let .readCharacteristic(operation):
             execute(operation)
         case let .writeCharacteristic(operation):
-            execute(operation)
+            return execute(operation)
         case let .discoverDescriptors(operation):
             execute(operation)
         case let .readDescriptor(operation):
@@ -733,8 +723,9 @@ internal extension DarwinCentral {
         case let .setNotification(operation):
             execute(operation)
         case let .isReadyToWriteWithoutResponse(operation):
-            execute(operation)
+            return execute(operation)
         }
+        return false // do not wait for continuation
     }
     
     func execute(_ operation: Operation.Connect) {
@@ -832,8 +823,29 @@ internal extension DarwinCentral {
         peripheralObject.readValue(for: characteristicObject)
     }
     
-    func execute(_ operation: Operation.WriteCharacteristic) {
-        
+    func execute(_ operation: Operation.WriteCharacteristic) -> Bool {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return false
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
+            return false
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return false
+        }
+        // get characteristic
+        guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
+            return false
+        }
+        assert(operation.withResponse || peripheralObject.canSendWriteWithoutResponse, "Cannot write without response")
+        // calls `peripheral:didWriteValueForCharacteristic:error:` only
+        // if you specified the write type as `.withResponse`.
+        let writeType: CBCharacteristicWriteType = operation.withResponse ? .withResponse : .withoutResponse
+        peripheralObject.writeValue(operation.data, for: characteristicObject, type: writeType)
+        return operation.withResponse
     }
     
     func execute(_ operation: Operation.DiscoverDescriptors) {
@@ -848,12 +860,38 @@ internal extension DarwinCentral {
         
     }
     
-    func execute(_ operation: Operation.WriteWithoutResponseReady) {
-        
+    func execute(_ operation: Operation.WriteWithoutResponseReady) -> Bool {
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
+            return false
+        }
+        guard peripheralObject.canSendWriteWithoutResponse == false else {
+            operation.continuation.resume()
+            return false
+        }
+        // wait until delegate is called
+        return true
     }
     
     func execute(_ operation: Operation.NotificationState) {
-        
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // get characteristic
+        guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
+            return
+        }
+        // notify
+        peripheralObject.setNotifyValue(operation.isEnabled, for: characteristicObject)
     }
 }
 
