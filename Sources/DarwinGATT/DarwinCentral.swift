@@ -507,6 +507,7 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
+        self.log("Will read RSSI for \(peripheral)")
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
