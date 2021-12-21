@@ -50,8 +50,6 @@ public final class DarwinCentral: CentralManager {
     
     fileprivate var continuation: Continuation
     
-    fileprivate var semaphore = DarwinCentral.Semaphore()
-    
     // MARK: - Initialization
     
     /// Initialize with the specified options.
@@ -130,7 +128,7 @@ public final class DarwinCentral: CentralManager {
     
     public func stopScan() async {
         self.log("Stopped scanning")
-        await withCheckedContinuation { [weak self] (continuation: CheckedContinuation<(), Never>) in
+        return await withCheckedContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 guard let scanContinuation = self.continuation.scan else {
@@ -161,29 +159,16 @@ public final class DarwinCentral: CentralManager {
         to peripheral: Peripheral,
         options: [String: Any]?
     ) async throws {
-        let semaphore = self.semaphore(for: peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
         self.log("Will connect to \(peripheral)")
-        try await withThrowingContinuation(for: peripheral) { [weak self] (continuation: PeripheralContinuation<(), Error>) in
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // get CoreBluetooth objects from cache
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                assert(peripheralObject.delegate != nil)
-                // connect
-                assert(self.continuation.connect[peripheral] == nil)
-                self.continuation.connect[peripheral] = continuation
-                self.centralManager.connect(peripheralObject, options: options)
+                let operation = Operation.Connect(
+                    peripheral: peripheral,
+                    options: options,
+                    continuation: continuation
+                )
+                self.enqueue(.connect(operation), for: peripheral)
             }
         }
     }
@@ -214,166 +199,72 @@ public final class DarwinCentral: CentralManager {
     public func discoverServices(
         _ services: Set<BluetoothUUID> = [],
         for peripheral: Peripheral
-    ) async throws -> [Service<Peripheral, AttributeID>] {
-        let semaphore = self.semaphore(for: peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
+    ) async throws -> [DarwinCentral.Service] {
         self.log("Will discover services for \(peripheral)")
-        let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // discover
-                assert(self.continuation.discoverServices[peripheral] == nil)
-                self.continuation.discoverServices[peripheral] = continuation
-                peripheralObject.discoverServices(serviceUUIDs)
+                let operation = Operation.DiscoverServices(
+                    peripheral: peripheral,
+                    services: services,
+                    continuation: continuation
+                )
+                self.enqueue(.discoverServices(operation), for: peripheral)
             }
         }
     }
     
     public func discoverIncludedServices(
         _ services: Set<BluetoothUUID> = [],
-        for service: Service<Peripheral, AttributeID>
-    ) async throws -> [Service<Peripheral, AttributeID>] {
-        let semaphore = self.semaphore(for: service.peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
+        for service: DarwinCentral.Service
+    ) async throws -> [DarwinCentral.Service] {
         self.log("Peripheral \(service.peripheral) will discover included services of service \(service.uuid)")
-        let serviceUUIDs = services.isEmpty ? nil : services.map { CBUUID($0) }
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                let peripheral = service.peripheral
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get service
-                guard let serviceObject = self.cache.services[service] else {
-                    continuation.resume(throwing: CentralError.invalidAttribute(service.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // discover
-                assert(self.continuation.discoverIncludedServices[service] == nil)
-                self.continuation.discoverIncludedServices[service] = continuation
-                peripheralObject.discoverIncludedServices(serviceUUIDs, for: serviceObject)
+                let operation = Operation.DiscoverIncludedServices(
+                    service: service,
+                    services: services,
+                    continuation: continuation
+                )
+                self.enqueue(.discoverIncludedServices(operation), for: service.peripheral)
             }
         }
     }
     
     public func discoverCharacteristics(
         _ characteristics: Set<BluetoothUUID> = [],
-        for service: Service<Peripheral, AttributeID>
-    ) async throws -> [Characteristic<Peripheral, AttributeID>]{
-        let semaphore = self.semaphore(for: service.peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
+        for service: DarwinCentral.Service
+    ) async throws -> [DarwinCentral.Characteristic] {
         self.log("Peripheral \(service.peripheral) will discover characteristics of service \(service.uuid)")
-        let characteristicUUIDs = characteristics.isEmpty ? nil : characteristics.map { CBUUID($0) }
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                let peripheral = service.peripheral
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get service
-                guard let serviceObject = self.cache.services[service] else {
-                    continuation.resume(throwing: CentralError.invalidAttribute(service.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // discover
-                assert(self.continuation.discoverCharacteristics[service] == nil)
-                self.continuation.discoverCharacteristics[service] = continuation
-                peripheralObject.discoverCharacteristics(characteristicUUIDs, for: serviceObject)
+                let operation = Operation.DiscoverCharacteristics(
+                    service: service,
+                    characteristics: characteristics,
+                    continuation: continuation
+                )
+                self.enqueue(.discoverCharacteristics(operation), for: service.peripheral)
             }
         }
     }
     
     public func readValue(
-        for characteristic: Characteristic<Peripheral, AttributeID>
+        for characteristic: DarwinCentral.Characteristic
     ) async throws -> Data {
-        let semaphore = self.semaphore(for: characteristic.peripheral)
-        await semaphore.wait()
-        defer { semaphore.signal() }
-        let peripheral = characteristic.peripheral
         self.log("Peripheral \(peripheral) will read characteristic \(characteristic.uuid)")
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get characteristic
-                guard let characteristicObject = self.cache.characteristics[characteristic] else {
-                    continuation.resume(throwing: CentralError.invalidAttribute(characteristic.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // read value
-                assert(self.continuation.readCharacteristic[characteristic] == nil)
-                self.continuation.readCharacteristic[characteristic] = continuation
-                peripheralObject.readValue(for: characteristicObject)
+                
             }
         }
     }
     
     public func writeValue(
         _ data: Data,
-        for characteristic: Characteristic<Peripheral, AttributeID>,
+        for characteristic: DarwinCentral.Characteristic,
         withResponse: Bool = true
     ) async throws {
         let semaphore = self.semaphore(for: characteristic.peripheral)
@@ -389,7 +280,7 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func notify(
-        for characteristic: Characteristic<Peripheral, AttributeID>
+        for characteristic: DarwinCentral.Characteristic
     ) -> AsyncThrowingStream<Data, Error> {
         self.log("Peripheral \(characteristic.peripheral) will enable notifications for characteristic \(characteristic.uuid)")
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
@@ -426,7 +317,7 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func stopNotifications(
-        for characteristic: Characteristic<Peripheral, AttributeID>
+        for characteristic: DarwinCentral.Characteristic
     ) async throws {
         let semaphore = self.semaphore(for: characteristic.peripheral)
         await semaphore.wait()
@@ -554,20 +445,15 @@ public final class DarwinCentral: CentralManager {
         }
     }
     
-    private func semaphore(for peripheral: Peripheral) -> AsyncSemaphore {
-        if let semaphore = self.semaphore.peripherals[peripheral] {
-            return semaphore
-        } else {
-            let semaphore = AsyncSemaphore(value: 1)
-            self.semaphore.peripherals[peripheral] = semaphore
-            return semaphore
-        }
+    private func enqueue(_ operation: Operation, for peripheral: Peripheral) {
+        let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext()
+        context.queue.append(operation)
     }
     
     private func write(
         _ data: Data,
         type: CBCharacteristicWriteType,
-        for characteristic: Characteristic<Peripheral, AttributeID>
+        for characteristic: DarwinCentral.Characteristic
     ) async throws {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
@@ -594,15 +480,11 @@ public final class DarwinCentral: CentralManager {
                     continuation.resume(throwing: CentralError.disconnected)
                     return
                 }
-                // cancel old task
-                if let oldTask = self.continuation.writeCharacteristic[characteristic] {
-                    oldTask.resume(throwing: CancellationError())
-                    self.continuation.writeCharacteristic[characteristic] = nil
-                }
                 // store continuation for callback
                 if type == .withResponse {
                     // calls `peripheral:didWriteValueForCharacteristic:error:` only
                     // if you specified the write type as `.withResponse`.
+                    assert(self.continuation.peripherals[peripheral]?.pendingContinuation == nil)
                     self.continuation.writeCharacteristic[characteristic] = continuation
                 }
                 // write data
@@ -643,7 +525,8 @@ public final class DarwinCentral: CentralManager {
                     continuation.resume()
                 } else {
                     // wait until delegate is called
-                    self.continuation.isReadyToWriteWithoutResponse[peripheral] = continuation
+                    assert(self.continuation.peripherals[peripheral]?.pendingContinuation == nil)
+                    self.continuation.peripherals[peripheral]?.pendingContinuation = .isReadyToWriteWithoutResponse(continuation)
                 }
             }
         }
@@ -660,6 +543,12 @@ public extension DarwinCentral {
     typealias State = DarwinBluetoothState
     
     typealias AttributeID = ObjectIdentifier
+    
+    typealias Service = GATT.Service<DarwinCentral.Peripheral, DarwinCentral.AttributeID>
+    
+    typealias Characteristic = GATT.Characteristic<DarwinCentral.Peripheral, DarwinCentral.AttributeID>
+    
+    typealias Descriptor = GATT.Descriptor<DarwinCentral.Peripheral, DarwinCentral.AttributeID>
     
     /// Central Peer
     ///
@@ -715,35 +604,317 @@ internal extension DarwinCentral {
     
     struct Cache {
         var peripherals = [Peripheral: CBPeripheral]()
-        var services = [Service<Peripheral, AttributeID>: CBService]()
-        var characteristics = [Characteristic<Peripheral, AttributeID>: CBCharacteristic]()
-        var descriptors = [Descriptor<Peripheral, AttributeID>: CBCharacteristic]()
+        var services = [DarwinCentral.Service: CBService]()
+        var characteristics = [DarwinCentral.Characteristic: CBCharacteristic]()
+        var descriptors = [DarwinCentral.Descriptor: CBCharacteristic]()
     }
     
     struct Continuation {
+        
         var log: AsyncStream<String>.Continuation!
         var isScanning: AsyncStream<Bool>.Continuation!
         var didDisconnect: AsyncStream<Peripheral>.Continuation!
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
-        var connect = [Peripheral: PeripheralContinuation<(), Error>]()
-        var discoverServices = [Peripheral: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
-        var discoverIncludedServices = [Service<Peripheral, AttributeID>: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
-        var discoverCharacteristics = [Service<Peripheral, AttributeID>: PeripheralContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
-        var discoverDescriptors = [Peripheral: PeripheralContinuation<[Descriptor<Peripheral, AttributeID>], Error>]()
-        var readCharacteristic = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
-        var readDescriptor = [Descriptor<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
-        var writeCharacteristic = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
-        var writeDescriptor = [Descriptor<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
-        var isReadyToWriteWithoutResponse = [Peripheral: PeripheralContinuation<(), Error>]()
-        var notificationStream = [Characteristic<Peripheral, AttributeID>: AsyncThrowingStream<Data, Error>.Continuation]()
-        var stopNotification = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<(), Error>]()
-        var readRSSI = [Peripheral: PeripheralContinuation<RSSI, Error>]()
+        var peripherals = [Peripheral: PeripheralContinuationContext]()
     }
     
-    struct Semaphore {
+    final class PeripheralContinuationContext {
+        var queue = [Operation]()
+        var notificationStream = [AttributeID: AsyncThrowingStream<Data, Error>.Continuation]()
+        var readRSSI: PeripheralContinuation<RSSI, Error>?
+    }
+}
+
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+internal extension DarwinCentral {
+    
+    enum Operation {
+        case connect(Connect)
+        case discoverServices(DiscoverServices)
+        case discoverIncludedServices(DiscoverIncludedServices)
+        case discoverCharacteristics(DiscoverCharacteristics)
+        case readCharacteristic(ReadCharacteristic)
+        case writeCharacteristic(WriteCharacteristic)
+        case discoverDescriptors(DiscoverDescriptors)
+        case readDescriptor(ReadDescriptor)
+        case writeDescriptor(WriteDescriptor)
+        case isReadyToWriteWithoutResponse(WriteWithoutResponseReady)
+        case setNotification(NotificationState)
+    }
+}
+
+internal extension DarwinCentral.Operation {
+    
+    struct Connect {
+        let peripheral: DarwinCentral.Peripheral
+        let options: [String: Any]?
+        let continuation: PeripheralContinuation<(), Error>
+    }
+    
+    struct DiscoverServices {
+        let peripheral: DarwinCentral.Peripheral
+        let services: Set<BluetoothUUID>
+        let continuation: PeripheralContinuation<[DarwinCentral.Service], Error>
+    }
+    
+    struct DiscoverIncludedServices {
+        let service: DarwinCentral.Service
+        let services: Set<BluetoothUUID>
+        let continuation: PeripheralContinuation<[DarwinCentral.Service], Error>
+    }
+    
+    struct DiscoverCharacteristics {
+        let service: DarwinCentral.Service
+        let characteristics: Set<BluetoothUUID>
+        let continuation: PeripheralContinuation<[DarwinCentral.Characteristic], Error>
+    }
+    
+    struct ReadCharacteristic {
+        let characteristic: DarwinCentral.Characteristic
+        let continuation: PeripheralContinuation<Data, Error>
+    }
+    
+    struct WriteCharacteristic {
+        let characteristic: DarwinCentral.Characteristic
+        let continuation: PeripheralContinuation<(), Error>
+    }
+    
+    struct DiscoverDescriptors {
+        let characteristic: DarwinCentral.Characteristic
+        let continuation: PeripheralContinuation<[DarwinCentral.Descriptor], Error>
+    }
+    
+    struct ReadDescriptor {
+        let descriptor: DarwinCentral.Descriptor
+        let continuation: PeripheralContinuation<Data, Error>
+    }
+    
+    struct WriteDescriptor {
+        let descriptor: DarwinCentral.Descriptor
+        let continuation: PeripheralContinuation<(), Error>
+    }
+    
+    struct WriteWithoutResponseReady {
+        let characteristic: DarwinCentral.Characteristic
+        let continuation: PeripheralContinuation<(), Error>
+    }
+    
+    struct NotificationState {
+        let characteristic: DarwinCentral.Characteristic
+        let isEnabled: Bool
+        let continuation: PeripheralContinuation<(), Error>
+    }
+}
+
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+internal extension DarwinCentral {
+    
+    func execute(_ operation: DarwinCentral.Operation) {
+        switch operation {
+        case let .connect(operation):
+            execute(operation)
+        case let .discoverServices(operation):
+            execute(operation)
+        case let .discoverIncludedServices(operation):
+            execute(operation)
+        case let .discoverCharacteristics(operation):
+            execute(operation)
+        case let .readCharacteristic(operation):
+            execute(operation)
+        case let .writeCharacteristic(operation):
+            execute(operation)
+        case let .discoverDescriptors(operation):
+            execute(operation)
+        case let .readDescriptor(operation):
+            execute(operation)
+        case let .writeDescriptor(operation):
+            execute(operation)
+        case let .setNotification(operation):
+            execute(operation)
+        case let .isReadyToWriteWithoutResponse(operation):
+            execute(operation)
+        }
+    }
+    
+    func execute(_ operation: Operation.Connect) {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
+            return
+        }
+        // connect
+        self.centralManager.connect(peripheralObject, options: operation.options)
+    }
+    
+    func execute(_ operation: Operation.DiscoverServices) {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // discover
+        let serviceUUIDs = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
+        peripheralObject.discoverServices(serviceUUIDs)
+    }
+    
+    func execute(_ operation: Operation.DiscoverIncludedServices) {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.service.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // get service
+        guard let serviceObject = validateService(operation.service, for: operation.continuation) else {
+            return
+        }
+        let serviceUUIDs = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
+        peripheralObject.discoverIncludedServices(serviceUUIDs, for: serviceObject)
+    }
+    
+    func execute(_ operation: Operation.DiscoverCharacteristics) {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.service.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // get service
+        guard let serviceObject = validateService(operation.service, for: operation.continuation) else {
+            return
+        }
+        // discover
+        let characteristicUUIDs = operation.characteristics.isEmpty ? nil : operation.characteristics.map { CBUUID($0) }
+        peripheralObject.discoverCharacteristics(characteristicUUIDs, for: serviceObject)
+    }
+    
+    func execute(_ operation: Operation.ReadCharacteristic) {
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
+            return
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return
+        }
+        // get characteristic
+        guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
+            return
+        }
+        // read value
+        peripheralObject.readValue(for: characteristicObject)
+    }
+    
+    func execute(_ operation: Operation.WriteCharacteristic) {
         
-        var peripherals = [Peripheral: AsyncSemaphore]()
+    }
+    
+    func execute(_ operation: Operation.DiscoverDescriptors) {
+        
+    }
+    
+    func execute(_ operation: Operation.ReadDescriptor) {
+        
+    }
+    
+    func execute(_ operation: Operation.WriteDescriptor) {
+        
+    }
+    
+    func execute(_ operation: Operation.WriteWithoutResponseReady) {
+        
+    }
+    
+    func execute(_ operation: Operation.NotificationState) {
+        
+    }
+}
+
+private extension DarwinCentral {
+    
+    func validateState<T>(
+        _ state: DarwinBluetoothState,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> Bool {
+        let state = self.centralManager._state
+        guard state == .poweredOn else {
+            continuation.resume(throwing: DarwinCentralError.invalidState(state))
+            return false
+        }
+        return true
+    }
+    
+    func validatePeripheral<T>(
+        _ peripheral: Peripheral,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> CBPeripheral? {
+        // get peripheral
+        guard let peripheralObject = self.cache.peripherals[peripheral] else {
+            continuation.resume(throwing: CentralError.unknownPeripheral)
+            return nil
+        }
+        assert(peripheralObject.delegate != nil)
+        return peripheralObject
+    }
+    
+    func validateConnected<T>(
+        _ peripheral: CBPeripheral,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> Bool {
+        guard peripheral.state == .connected else {
+            continuation.resume(throwing: CentralError.disconnected)
+            return false
+        }
+        return true
+    }
+    
+    func validateService<T>(
+        _ service: Service,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> CBService? {
+        guard let serviceObject = self.cache.services[service] else {
+            continuation.resume(throwing: CentralError.invalidAttribute(service.uuid))
+            return nil
+        }
+        return serviceObject
+    }
+    
+    func validateCharacteristic<T>(
+        _ characteristic: Characteristic,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> CBCharacteristic? {
+        guard let characteristicObject = self.cache.characteristics[characteristic] else {
+            continuation.resume(throwing: CentralError.invalidAttribute(characteristic.uuid))
+            return nil
+        }
+        return characteristicObject
     }
 }
 

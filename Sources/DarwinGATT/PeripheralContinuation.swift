@@ -9,7 +9,7 @@ import Foundation
 import Bluetooth
 import GATT
 
-internal final class PeripheralContinuation<T, E> where E: Error {
+internal struct PeripheralContinuation<T, E> where E: Error {
     
     typealias Peripheral = DarwinCentral.Peripheral
     
@@ -19,18 +19,17 @@ internal final class PeripheralContinuation<T, E> where E: Error {
     
     private let peripheral: DarwinCentral.Peripheral
     
-    private let log: ((String) -> ())?
-    
     fileprivate init(
         continuation: UnsafeContinuation<T, E>,
         function: String,
-        peripheral: Peripheral,
-        log: ((String) -> ())? = nil
+        peripheral: Peripheral
     ) {
         self.continuation = CheckedContinuation(continuation: continuation, function: function)
         self.function = function
         self.peripheral = peripheral
-        self.log = log
+        #if DEBUG
+        print("Will wait for continuation '\(self.function)'")
+        #endif
     }
     
     func resume(
