@@ -406,9 +406,25 @@ public final class DarwinCentral: CentralManager {
         context.queue.push(operation)
     }
     
-    private func enqueue(_ operation: Operation.ReadRSSI, for peripheral: Peripheral) {
+    private func dequeue(for peripheral: Peripheral, _ body: (Operation) -> ()) {
+        guard let context = self.central.continuation.peripherals[peripheral] else {
+            assertionFailure("Missing context")
+            return
+        }
+        context.queue.pop(body)
+    }
+    
+    private func enqueueReadRSSI(_ operation: Operation.ReadRSSI, for peripheral: Peripheral) {
         let context = self.continuation.peripherals[peripheral] ?? PeripheralContinuationContext(self)
         context.readRSSI.push(operation)
+    }
+    
+    private func dequeueReadRSSI(for peripheral: Peripheral, _ body: (Operation.ReadRSSI) -> ()) {
+        guard let context = self.central.continuation.peripherals[peripheral] else {
+            assertionFailure("Missing context")
+            return
+        }
+        context.readRSSi.pop(body)
     }
     
     private func write(
@@ -580,7 +596,7 @@ internal extension DarwinCentral {
         var didDisconnect: AsyncStream<Peripheral>.Continuation!
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
-        var peripherals = [Peripheral: PeripheralContinuationContext]()
+        var peripherals = [DarwinCentral.Peripheral: PeripheralContinuationContext]()
     }
     
     final class PeripheralContinuationContext {
@@ -601,7 +617,6 @@ internal extension DarwinCentral {
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     enum Operation {
@@ -616,6 +631,36 @@ internal extension DarwinCentral {
         case writeDescriptor(WriteDescriptor)
         case isReadyToWriteWithoutResponse(WriteWithoutResponseReady)
         case setNotification(NotificationState)
+    }
+}
+
+internal extension DarwinCentral.Operation {
+    
+    func resume(throwing error: Swift.Error) {
+        switch self {
+        case let .connect(operation):
+            operation.continuation.resume(throwing: error)
+        case let .discoverServices(operation):
+            operation.continuation.resume(throwing: error)
+        case let .discoverIncludedServices(operation):
+            operation.continuation.resume(throwing: error)
+        case let .discoverCharacteristics(operation):
+            operation.continuation.resume(throwing: error)
+        case let .writeCharacteristic(operation):
+            operation.continuation.resume(throwing: error)
+        case let .readCharacteristic(operation):
+            operation.continuation.resume(throwing: error)
+        case let .discoverDescriptors(operation):
+            operation.continuation.resume(throwing: error)
+        case let .readDescriptor(operation):
+            operation.continuation.resume(throwing: error)
+        case let .writeDescriptor(operation):
+            operation.continuation.resume(throwing: error)
+        case let .isReadyToWriteWithoutResponse(operation):
+            operation.continuation.resume(throwing: error)
+        case let .setNotification(operation):
+            operation.continuation.resume(throwing: error)
+        }
     }
 }
 
@@ -844,7 +889,11 @@ internal extension DarwinCentral {
         // if you specified the write type as `.withResponse`.
         let writeType: CBCharacteristicWriteType = operation.withResponse ? .withResponse : .withoutResponse
         peripheralObject.writeValue(operation.data, for: characteristicObject, type: writeType)
-        return operation.withResponse
+        guard operation.withResponse else {
+            operation.continuation.resume()
+            return false
+        }
+        return true
     }
     
     func execute(_ operation: Operation.DiscoverDescriptors) {
@@ -1066,13 +1115,9 @@ internal extension DarwinCentral {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             let peripheral = Peripheral(corePeripheral)
-            guard let context = self.central.continuation.peripherals[peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            context.queue.pop {
+            self.central.dequeue(for: peripheral) {
                 guard case let .connect(operation) = $0 else {
-                    assertionFailure("Missing continuation")
+                    assertionFailure("Invalid continuation")
                     return
                 }
                 operation.continuation.resume()
@@ -1090,12 +1135,13 @@ internal extension DarwinCentral {
             assert(self.central?.centralManager === centralManager)
             assert(corePeripheral.state != .connected)
             let peripheral = Peripheral(corePeripheral)
-            guard let continuation = self.central.continuation.connect[peripheral] else {
-                assertionFailure("Missing continuation")
-                return
+            self.central.dequeue(for: peripheral) {
+                guard case let .connect(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
+                }
+                operation.continuation.resume(throwing: error ?? CentralError.disconnected)
             }
-            continuation.resume(throwing: error ?? CentralError.disconnected)
-            //self.central.continuation.connect[peripheral] = nil
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
@@ -1113,103 +1159,23 @@ internal extension DarwinCentral {
             let peripheral = Peripheral(corePeripheral)
             self.central.continuation.didDisconnect.yield(peripheral)
             
-            // cancel all actions that require an active connection
+            // TODO: Use error from CoreBluetooth
+            let disconnectionError = CentralError.disconnected
             
-            // discovering services
-            self.central.continuation.discoverServices[peripheral]?
-                .resume(throwing: CentralError.disconnected)
-            self.central.continuation.discoverServices[peripheral] = nil
-            // discover included services
-            let discoverIncludedServices = self.central.continuation.discoverIncludedServices
-                .filter { $0.key.peripheral == peripheral }
-            if discoverIncludedServices.isEmpty == false {
-                assert(discoverIncludedServices.count == 1, "\(discoverIncludedServices.count) discover included services")
-                discoverIncludedServices
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.discoverIncludedServices.removeValue(forKey: $0.key)
-                    }
+            guard let context = self.central.continuation.peripherals[peripheral] else {
+                return
             }
-            // discovering characteristics
-            let discoverCharacteristics = self.central.continuation.discoverCharacteristics
-                .filter { $0.key.peripheral == peripheral }
-            if discoverCharacteristics.isEmpty == false {
-                assert(discoverCharacteristics.count == 1, "\(discoverCharacteristics.count) discover characteristics")
-                discoverCharacteristics
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.discoverCharacteristics.removeValue(forKey: $0.key)
-                    }
+            // cancel current action that requires an active connection
+            if let _ = context.queue.current {
+                context.queue.pop { operation in
+                    operation.resume(throwing: disconnectionError)
+                }
             }
-            // read characteristic
-            let readCharacteristic = self.central.continuation.readCharacteristic
-                .filter { $0.key.peripheral == peripheral }
-            if readCharacteristic.isEmpty == false {
-                assert(readCharacteristic.count == 1, "\(readCharacteristic.count) read operations")
-                readCharacteristic
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.readCharacteristic.removeValue(forKey: $0.key)
-                    }
+            // stop notifications
+            context.notificationStream.forEach {
+                $0.value.finish(throwing: disconnectionError)
             }
-            // write characteristic
-            let writeCharacteristic = self.central.continuation.writeCharacteristic
-                .filter { $0.key.peripheral == peripheral }
-            if writeCharacteristic.isEmpty == false {
-                assert(writeCharacteristic.count == 1, "\(writeCharacteristic.count) write operations")
-                writeCharacteristic
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.writeCharacteristic.removeValue(forKey: $0.key)
-                    }
-            }
-            // write without response
-            self.central.continuation.isReadyToWriteWithoutResponse[peripheral]?
-                .resume(throwing: CentralError.disconnected)
-            // notifications
-            let notifications = self.central.continuation.notificationStream
-                .filter { $0.key.peripheral == peripheral }
-            if notifications.isEmpty == false {
-                assert(notifications.count == 1, "\(notifications.count) notification streams")
-                notifications
-                    .forEach {
-                        $0.value.finish(throwing: CentralError.disconnected)
-                        self.central.continuation.notificationStream.removeValue(forKey: $0.key)
-                    }
-            }
-            // disable notifications
-            let stopNotification = self.central.continuation.stopNotification
-                .filter { $0.key.peripheral == peripheral }
-            if stopNotification.isEmpty == false {
-                assert(stopNotification.count == 1, "\(stopNotification.count) disable notifications")
-                stopNotification
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.stopNotification.removeValue(forKey: $0.key)
-                    }
-            }
-            // read descriptor
-            let readDescriptor = self.central.continuation.readDescriptor
-                .filter { $0.key.peripheral == peripheral }
-            if readDescriptor.isEmpty == false {
-                assert(readCharacteristic.count == 1, "\(readDescriptor.count) read descriptor operations")
-                readDescriptor
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.readDescriptor.removeValue(forKey: $0.key)
-                    }
-            }
-            // write descriptor
-            let writeDescriptor = self.central.continuation.writeDescriptor
-                .filter { $0.key.peripheral == peripheral }
-            if writeDescriptor.isEmpty == false {
-                assert(writeDescriptor.count == 1, "\(writeDescriptor.count) write descriptor operations")
-                writeDescriptor
-                    .forEach {
-                        $0.value.resume(throwing: CentralError.disconnected)
-                        self.central.continuation.writeDescriptor.removeValue(forKey: $0.key)
-                    }
-            }
+            context.notificationStream.removeAll()
         }
         
         // MARK: - CBPeripheralDelegate
@@ -1227,27 +1193,28 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            guard let continuation = self.central.continuation.discoverServices[peripheral] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                let serviceObjects = corePeripheral.services ?? []
-                let services = serviceObjects.map { serviceObject in
-                    Service(
-                        service: serviceObject,
-                        peripheral: corePeripheral
-                    )
+            
+            self.central.dequeue(for: peripheral) {
+                guard case let .discoverServices(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
                 }
-                for (index, service) in services.enumerated() {
-                    self.central.cache.services[service] = serviceObjects[index]
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    let serviceObjects = corePeripheral.services ?? []
+                    let services = serviceObjects.map { serviceObject in
+                        Service(
+                            service: serviceObject,
+                            peripheral: corePeripheral
+                        )
+                    }
+                    for (index, service) in services.enumerated() {
+                        self.central.cache.services[service] = serviceObjects[index]
+                    }
+                    operation.continuation.resume(returning: services)
                 }
-                continuation.resume(returning: services)
             }
-            // remove callback
-            self.central.continuation.discoverServices[peripheral] = nil
         }
         
         @objc(peripheral:didDiscoverCharacteristicsForService:error:)
