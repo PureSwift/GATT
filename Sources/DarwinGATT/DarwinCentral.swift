@@ -196,7 +196,6 @@ public final class DarwinCentral: CentralManager {
             guard let peripheralObject = self.cache.peripherals[peripheral] else {
                 return
             }
-            
             self.centralManager.cancelPeripheralConnection(peripheralObject)
         }
     }
@@ -325,8 +324,8 @@ public final class DarwinCentral: CentralManager {
                     return
                 }
                 // discover
-                assert(self.continuation.discoverCharacteristics[peripheral] == nil)
-                self.continuation.discoverCharacteristics[peripheral] = continuation
+                assert(self.continuation.discoverCharacteristics[service] == nil)
+                self.continuation.discoverCharacteristics[service] = continuation
                 peripheralObject.discoverCharacteristics(characteristicUUIDs, for: serviceObject)
             }
         }
@@ -730,7 +729,7 @@ internal extension DarwinCentral {
         var connect = [Peripheral: PeripheralContinuation<(), Error>]()
         var discoverServices = [Peripheral: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
         var discoverIncludedServices = [Service<Peripheral, AttributeID>: PeripheralContinuation<[Service<Peripheral, AttributeID>], Error>]()
-        var discoverCharacteristics = [Peripheral: PeripheralContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
+        var discoverCharacteristics = [Service<Peripheral, AttributeID>: PeripheralContinuation<[Characteristic<Peripheral, AttributeID>], Error>]()
         var discoverDescriptors = [Peripheral: PeripheralContinuation<[Descriptor<Peripheral, AttributeID>], Error>]()
         var readCharacteristic = [Characteristic<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
         var readDescriptor = [Descriptor<Peripheral, AttributeID>: PeripheralContinuation<Data, Error>]()
@@ -873,7 +872,6 @@ internal extension DarwinCentral {
             didDisconnectPeripheral corePeripheral: CBPeripheral,
             error: Swift.Error?
         ) {
-                        
             if let error = error {
                 log("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
             } else {
@@ -884,24 +882,102 @@ internal extension DarwinCentral {
             self.central.continuation.didDisconnect.yield(peripheral)
             
             // cancel all actions that require an active connection
+            
+            // discovering services
             self.central.continuation.discoverServices[peripheral]?
                 .resume(throwing: CentralError.disconnected)
-            self.central.continuation.discoverCharacteristics[peripheral]?
-                .resume(throwing: CentralError.disconnected)
-            self.central.continuation.readCharacteristic
+            self.central.continuation.discoverServices[peripheral] = nil
+            // discover included services
+            let discoverIncludedServices = self.central.continuation.discoverIncludedServices
                 .filter { $0.key.peripheral == peripheral }
-                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
-            self.central.continuation.writeCharacteristic
+            if discoverIncludedServices.isEmpty == false {
+                assert(discoverIncludedServices.count == 1, "\(discoverIncludedServices.count) discover included services")
+                discoverIncludedServices
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.discoverIncludedServices.removeValue(forKey: $0.key)
+                    }
+            }
+            // discovering characteristics
+            let discoverCharacteristics = self.central.continuation.discoverCharacteristics
                 .filter { $0.key.peripheral == peripheral }
-                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
+            if discoverCharacteristics.isEmpty == false {
+                assert(discoverCharacteristics.count == 1, "\(discoverCharacteristics.count) discover characteristics")
+                discoverCharacteristics
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.discoverCharacteristics.removeValue(forKey: $0.key)
+                    }
+            }
+            // read characteristic
+            let readCharacteristic = self.central.continuation.readCharacteristic
+                .filter { $0.key.peripheral == peripheral }
+            if readCharacteristic.isEmpty == false {
+                assert(readCharacteristic.count == 1, "\(readCharacteristic.count) read operations")
+                readCharacteristic
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.readCharacteristic.removeValue(forKey: $0.key)
+                    }
+            }
+            // write characteristic
+            let writeCharacteristic = self.central.continuation.writeCharacteristic
+                .filter { $0.key.peripheral == peripheral }
+            if writeCharacteristic.isEmpty == false {
+                assert(writeCharacteristic.count == 1, "\(writeCharacteristic.count) write operations")
+                writeCharacteristic
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.writeCharacteristic.removeValue(forKey: $0.key)
+                    }
+            }
+            // write without response
             self.central.continuation.isReadyToWriteWithoutResponse[peripheral]?
                 .resume(throwing: CentralError.disconnected)
-            self.central.continuation.notificationStream
+            // notifications
+            let notifications = self.central.continuation.notificationStream
                 .filter { $0.key.peripheral == peripheral }
-                .forEach { $0.value.finish(throwing: CentralError.disconnected) }
-            self.central.continuation.stopNotification
+            if notifications.isEmpty == false {
+                assert(notifications.count == 1, "\(notifications.count) notification streams")
+                notifications
+                    .forEach {
+                        $0.value.finish(throwing: CentralError.disconnected)
+                        self.central.continuation.notificationStream.removeValue(forKey: $0.key)
+                    }
+            }
+            // disable notifications
+            let stopNotification = self.central.continuation.stopNotification
                 .filter { $0.key.peripheral == peripheral }
-                .forEach { $0.value.resume(throwing: CentralError.disconnected) }
+            if stopNotification.isEmpty == false {
+                assert(stopNotification.count == 1, "\(stopNotification.count) disable notifications")
+                stopNotification
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.stopNotification.removeValue(forKey: $0.key)
+                    }
+            }
+            // read descriptor
+            let readDescriptor = self.central.continuation.readDescriptor
+                .filter { $0.key.peripheral == peripheral }
+            if readDescriptor.isEmpty == false {
+                assert(readCharacteristic.count == 1, "\(readDescriptor.count) read descriptor operations")
+                readDescriptor
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.readDescriptor.removeValue(forKey: $0.key)
+                    }
+            }
+            // write descriptor
+            let writeDescriptor = self.central.continuation.writeDescriptor
+                .filter { $0.key.peripheral == peripheral }
+            if writeDescriptor.isEmpty == false {
+                assert(writeDescriptor.count == 1, "\(writeDescriptor.count) write descriptor operations")
+                writeDescriptor
+                    .forEach {
+                        $0.value.resume(throwing: CentralError.disconnected)
+                        self.central.continuation.writeDescriptor.removeValue(forKey: $0.key)
+                    }
+            }
         }
         
         // MARK: - CBPeripheralDelegate
@@ -955,8 +1031,8 @@ internal extension DarwinCentral {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
             }
             
-            let peripheral = Peripheral(peripheralObject)
-            guard let continuation = self.central.continuation.discoverCharacteristics[peripheral] else {
+            let service = Service(service: serviceObject, peripheral: peripheralObject)
+            guard let continuation = self.central.continuation.discoverCharacteristics[service] else {
                 assertionFailure("Missing continuation")
                 return
             }
@@ -976,7 +1052,7 @@ internal extension DarwinCentral {
                 continuation.resume(returning: characteristics)
             }
             // remove callback
-            self.central.continuation.discoverCharacteristics[peripheral] = nil
+            self.central.continuation.discoverCharacteristics[service] = nil
         }
         
         @objc(peripheral:didUpdateValueForCharacteristic:error:)
