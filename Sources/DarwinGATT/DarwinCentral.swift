@@ -275,38 +275,13 @@ public final class DarwinCentral: CentralManager {
     public func notify(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> AsyncThrowingStream<Data, Error> {
-        self.log("Peripheral \(characteristic.peripheral) will enable notifications for characteristic \(characteristic.uuid)")
+        try await setNotification(true, for: characteristic)
         return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                /*
-                let peripheral = characteristic.peripheral
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.finish(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get characteristic
-                guard let characteristicObject = self.cache.characteristics[characteristic] else {
-                    continuation.finish(throwing: CentralError.invalidAttribute(characteristic.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.finish(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.finish(throwing: CentralError.disconnected)
-                    return
-                }
-                // notify
-                assert(self.continuation.notificationStream[characteristic] == nil)
-                self.continuation.notificationStream[characteristic] = continuation
-                peripheralObject.setNotifyValue(true, for: characteristicObject)
-                 */
+                let context = self.continuation(for: characteristic.peripheral)
+                assert(context.notificationStream[characteristic.id] == nil)
+                context.notificationStream[characteristic.id] = continuation
             }
         }
     }
@@ -314,41 +289,12 @@ public final class DarwinCentral: CentralManager {
     public func stopNotifications(
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
-        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
+        try await setNotification(false, for: characteristic)
+        self.async { [weak self] in
             guard let self = self else { return }
-            self.async {
-                /*
-                // get peripheral
-                guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // get characteristic
-                guard let characteristicObject = self.cache.characteristics[characteristic] else {
-                    continuation.resume(throwing: CentralError.invalidAttribute(characteristic.uuid))
-                    return
-                }
-                // check power on
-                let state = self.centralManager._state
-                guard state == .poweredOn else {
-                    continuation.resume(throwing: DarwinCentralError.invalidState(state))
-                    return
-                }
-                // check connected
-                guard peripheralObject.state == .connected else {
-                    continuation.resume(throwing: CentralError.disconnected)
-                    return
-                }
-                // cancel old task
-                if let oldTask = self.continuation.stopNotification[characteristic] {
-                    oldTask.resume(throwing: CancellationError())
-                    self.continuation.stopNotification[characteristic] = nil
-                }
-                // notify
-                self.continuation.stopNotification[characteristic] = continuation
-                peripheralObject.setNotifyValue(false, for: characteristicObject)
-                 */
-            }
+            let context = self.continuation(for: characteristic.peripheral)
+            assert(context.notificationStream[characteristic.id] != nil)
+            context.notificationStream[characteristic.id] = nil
         }
     }
     
