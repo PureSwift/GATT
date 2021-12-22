@@ -542,7 +542,7 @@ internal extension DarwinCentral {
         var peripherals = [Peripheral: CBPeripheral]()
         var services = [DarwinCentral.Service: CBService]()
         var characteristics = [DarwinCentral.Characteristic: CBCharacteristic]()
-        var descriptors = [DarwinCentral.Descriptor: CBCharacteristic]()
+        var descriptors = [DarwinCentral.Descriptor: CBDescriptor]()
     }
     
     struct Continuation {
@@ -1361,7 +1361,7 @@ internal extension DarwinCentral {
                 }
             }
         }
-        /*
+        
         func peripheral(
             _ peripheralObject: CBPeripheral,
             didDiscoverIncludedServicesFor serviceObject: CBService,
@@ -1377,32 +1377,41 @@ internal extension DarwinCentral {
                 service: serviceObject,
                 peripheral: peripheralObject
             )
-            guard let continuation = self.central.continuation.discoverIncludedServices[service] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                let services = (serviceObject.includedServices ?? []).map { serviceObject in
-                    Service(
-                        service: serviceObject,
-                        peripheral: peripheralObject
-                    )
+            self.central.dequeue(for: service.peripheral) {
+                guard case let .discoverIncludedServices(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
                 }
-                continuation.resume(returning: services)
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    let serviceObjects = (serviceObject.includedServices ?? [])
+                    let services = serviceObjects.map { serviceObject in
+                        Service(
+                            service: serviceObject,
+                            peripheral: peripheralObject
+                        )
+                    }
+                    for (index, service) in services.enumerated() {
+                        self.central.cache.services[service] = serviceObjects[index]
+                    }
+                    operation.continuation.resume(returning: services)
+                }
             }
-            // remove callback
-            self.central.continuation.discoverIncludedServices[service] = nil
         }
         
+        @objc
         func peripheral(_ peripheralObject: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
             log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did modify \(invalidatedServices.count) services")
             // TODO: Try to rediscover services
         }
         
-        func peripheral(_ peripheralObject: CBPeripheral, didDiscoverDescriptorsFor characteristicObject: CBCharacteristic, error: Error?) {
-            
+        @objc
+        func peripheral(
+            _ peripheralObject: CBPeripheral,
+            didDiscoverDescriptorsFor characteristicObject: CBCharacteristic,
+            error: Error?
+        ) {
             if let error = error {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed discovering descriptors for characteristic \(characteristicObject.uuid.uuidString) (\(error))")
             } else {
@@ -1410,23 +1419,29 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(peripheralObject)
-            guard let continuation = self.central.continuation.discoverDescriptors[peripheral] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                let descriptors = (characteristicObject.descriptors ?? []).map { descriptorObject in
-                    Descriptor(
-                        descriptor: descriptorObject,
-                        peripheral: peripheralObject
-                    )
+            self.central.dequeue(for: peripheral) {
+                guard case let .discoverDescriptors(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
                 }
-                continuation.resume(returning: descriptors)
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    let descriptorObjects = (characteristicObject.descriptors ?? [])
+                    let descriptors = descriptorObjects.map { descriptorObject in
+                        Descriptor(
+                            descriptor: descriptorObject,
+                            peripheral: peripheralObject
+                        )
+                    }
+                    // store objects in cache
+                    for (index, descriptor) in descriptors.enumerated() {
+                        self.central.cache.descriptors[descriptor] = descriptorObjects[index]
+                    }
+                    // resume
+                    operation.continuation.resume(returning: descriptors)
+                }
             }
-            // remove callback
-            self.central.continuation.discoverDescriptors[peripheral] = nil
         }
         
         func peripheral(
@@ -1434,7 +1449,6 @@ internal extension DarwinCentral {
             didWriteValueFor descriptorObject: CBDescriptor,
             error: Error?
         ) {
-            
             if let error = error {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed writing descriptor \(descriptorObject.uuid.uuidString) (\(error))")
             } else {
@@ -1445,16 +1459,17 @@ internal extension DarwinCentral {
                 descriptor: descriptorObject,
                 peripheral: peripheralObject
             )
-            guard let continuation = self.central.continuation.writeDescriptor[descriptor] else {
-                assertionFailure("Missing continuation")
-                return
+            self.central.dequeue(for: descriptor.peripheral) {
+                guard case let .writeDescriptor(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
+                }
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    operation.continuation.resume()
+                }
             }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                continuation.resume()
-            }
-            self.central.continuation.writeDescriptor[descriptor] = nil
         }
         
         func peripheral(
@@ -1462,7 +1477,6 @@ internal extension DarwinCentral {
             didUpdateValueFor descriptorObject: CBDescriptor,
             error: Error?
         ) {
-            
             if let error = error {
                 log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed updating value for descriptor \(descriptorObject.uuid.uuidString) (\(error))")
             } else {
@@ -1473,25 +1487,26 @@ internal extension DarwinCentral {
                 descriptor: descriptorObject,
                 peripheral: peripheralObject
             )
-            guard let continuation = self.central.continuation.readDescriptor[descriptor] else {
-                assertionFailure("Missing continuation")
-                return
-            }
-            if let error = error {
-                continuation.resume(throwing: error)
-            } else {
-                let data: Data
-                if let descriptor = DarwinDescriptor(descriptorObject) {
-                    data = descriptor.data
-                } else if let dataObject = descriptorObject.value as? NSData {
-                    data = dataObject as Data
-                } else {
-                    data = Data()
+            self.central.dequeue(for: descriptor.peripheral) {
+                guard case let .readDescriptor(operation) = $0 else {
+                    assertionFailure("Invalid continuation")
+                    return
                 }
-                continuation.resume(returning: data)
+                if let error = error {
+                    operation.continuation.resume(throwing: error)
+                } else {
+                    let data: Data
+                    if let descriptor = DarwinDescriptor(descriptorObject) {
+                        data = descriptor.data
+                    } else if let dataObject = descriptorObject.value as? NSData {
+                        data = dataObject as Data
+                    } else {
+                        data = Data()
+                    }
+                    operation.continuation.resume(returning: data)
+                }
             }
-            self.central.continuation.readDescriptor[descriptor] = nil
-        }*/
+        }
     }
 }
 
