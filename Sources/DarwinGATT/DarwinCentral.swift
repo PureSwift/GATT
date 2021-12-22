@@ -261,6 +261,53 @@ public final class DarwinCentral: CentralManager {
         try await write(data, withResponse: withResponse, for: characteristic)
     }
     
+    public func discoverDescriptors(
+        for characteristic: DarwinCentral.Characteristic
+    ) async throws -> [DarwinCentral.Descriptor] {
+        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                let operation = Operation.DiscoverDescriptors(
+                    characteristic: characteristic,
+                    continuation: continuation
+                )
+                self.enqueue(.discoverDescriptors(operation), for: characteristic.peripheral)
+            }
+        }
+    }
+    
+    public func readValue(
+        for descriptor: DarwinCentral.Descriptor
+    ) async throws -> Data {
+        return try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                let operation = Operation.ReadDescriptor(
+                    descriptor: descriptor,
+                    continuation: continuation
+                )
+                self.enqueue(.readDescriptor(operation), for: descriptor.peripheral)
+            }
+        }
+    }
+    
+    public func writeValue(
+        _ data: Data,
+        for descriptor: DarwinCentral.Descriptor
+    ) async throws {
+        return try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                let operation = Operation.WriteDescriptor(
+                    descriptor: descriptor,
+                    data: data,
+                    continuation: continuation
+                )
+                self.enqueue(.writeDescriptor(operation), for: descriptor.peripheral)
+            }
+        }
+    }
+    
     public func notify(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> AsyncThrowingStream<Data, Error> {
@@ -658,6 +705,7 @@ internal extension DarwinCentral.Operation {
     
     struct WriteDescriptor {
         let descriptor: DarwinCentral.Descriptor
+        let data: Data
         let continuation: PeripheralContinuation<(), Error>
     }
     
@@ -851,18 +899,72 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverDescriptors) -> Bool {
-        // TODO: Discover Descriptor
-        fatalError()
+        log("Peripheral \(operation.characteristic.peripheral) will discover descriptors of characteristic \(operation.characteristic.uuid)")
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return false
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
+            return false
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return false
+        }
+        // get characteristic
+        guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
+            return false
+        }
+        // discover
+        peripheralObject.discoverDescriptors(for: characteristicObject)
+        return true
     }
     
     func execute(_ operation: Operation.ReadDescriptor) -> Bool {
-        // TODO: Read Descriptor
-        fatalError()
+        log("Peripheral \(operation.descriptor.peripheral) will read descriptor \(operation.descriptor.uuid)")
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return false
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.descriptor.peripheral, for: operation.continuation) else {
+            return false
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return false
+        }
+        // get descriptor
+        guard let descriptorObject = validateDescriptor(operation.descriptor, for: operation.continuation) else {
+            return false
+        }
+        // write
+        peripheralObject.readValue(for: descriptorObject)
+        return true
     }
     
     func execute(_ operation: Operation.WriteDescriptor) -> Bool {
-        // TODO: Write Descriptor
-        fatalError()
+        log("Peripheral \(operation.descriptor.peripheral) will write descriptor \(operation.descriptor.uuid)")
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return false
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.descriptor.peripheral, for: operation.continuation) else {
+            return false
+        }
+        // check connected
+        guard validateConnected(peripheralObject, for: operation.continuation) else {
+            return false
+        }
+        // get descriptor
+        guard let descriptorObject = validateDescriptor(operation.descriptor, for: operation.continuation) else {
+            return false
+        }
+        // write
+        peripheralObject.writeValue(operation.data, for: descriptorObject)
+        return true
     }
     
     func execute(_ operation: Operation.WriteWithoutResponseReady) -> Bool {
@@ -992,6 +1094,17 @@ private extension DarwinCentral {
             return nil
         }
         return characteristicObject
+    }
+    
+    func validateDescriptor<T>(
+        _ descriptor: Descriptor,
+        for continuation: PeripheralContinuation<T, Error>
+    ) -> CBDescriptor? {
+        guard let descriptorObject = self.cache.descriptors[descriptor] else {
+            continuation.resume(throwing: CentralError.invalidAttribute(descriptor.uuid))
+            return nil
+        }
+        return descriptorObject
     }
 }
 
