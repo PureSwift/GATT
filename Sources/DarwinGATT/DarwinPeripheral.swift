@@ -342,13 +342,13 @@ public final class DarwinPeripheral: NSObject, PeripheralManager, CBPeripheralMa
     @objc(peripheralManager:central:didSubscribeToCharacteristic:)
     public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
         
-        log?("Central \(central.gattIdentifier) did subscribe to \(characteristic.uuid)")
+        log?("Central \(central.id) did subscribe to \(characteristic.uuid)")
     }
     
     @objc
     public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
         
-        log?("Central \(central.gattIdentifier) did unsubscribe from \(characteristic.uuid)")
+        log?("Central \(central.id) did unsubscribe from \(characteristic.uuid)")
     }
     
     @objc
@@ -381,7 +381,7 @@ public extension DarwinPeripheral {
         public let id: UUID
         
         init(_ central: CBCentral) {
-            self.id = central.gattIdentifier
+            self.id = central.id
         }
     }
 }

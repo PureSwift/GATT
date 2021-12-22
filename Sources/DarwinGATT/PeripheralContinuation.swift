@@ -5,6 +5,7 @@
 //  Created by Alsey Coleman Miller on 20/12/21.
 //
 
+#if canImport(CoreBluetooth)
 import Foundation
 import Bluetooth
 import GATT
@@ -98,4 +99,5 @@ internal func withThrowingContinuation<T>(
 ) async throws -> T {
     return try await withCheckedThrowingContinuation(function: function, body)
 }
+#endif
 #endif

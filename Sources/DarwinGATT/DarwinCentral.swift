@@ -494,7 +494,7 @@ public extension DarwinCentral {
         public let id: UUID
         
         internal init(_ peripheral: CBPeripheral) {
-            self.id = peripheral.gattIdentifier
+            self.id = peripheral.id
         }
     }
     
@@ -1062,7 +1062,7 @@ internal extension DarwinCentral {
             connectionEventDidOccur event: CBConnectionEvent,
             for corePeripheral: CBPeripheral
         ) {
-            log("\(corePeripheral.gattIdentifier.uuidString) connection event")
+            log("\(corePeripheral.id.uuidString) connection event")
         }
         #endif
         
@@ -1071,7 +1071,7 @@ internal extension DarwinCentral {
             _ centralManager: CBCentralManager,
             didConnect corePeripheral: CBPeripheral
         ) {
-            log("Did connect to peripheral \(corePeripheral.gattIdentifier.uuidString)")
+            log("Did connect to peripheral \(corePeripheral.id.uuidString)")
             assert(corePeripheral.state != .disconnected, "Should be connected")
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
@@ -1091,7 +1091,7 @@ internal extension DarwinCentral {
             didFailToConnect corePeripheral: CBPeripheral,
             error: Swift.Error?
         ) {
-            log("Did fail to connect to peripheral \(corePeripheral.gattIdentifier.uuidString) (\(error!))")
+            log("Did fail to connect to peripheral \(corePeripheral.id.uuidString) (\(error!))")
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             assert(corePeripheral.state != .connected)
@@ -1112,9 +1112,9 @@ internal extension DarwinCentral {
             error: Swift.Error?
         ) {
             if let error = error {
-                log("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString) due to error \(error.localizedDescription)")
+                log("Did disconnect peripheral \(corePeripheral.id.uuidString) due to error \(error.localizedDescription)")
             } else {
-                log("Did disconnect peripheral \(corePeripheral.gattIdentifier.uuidString)")
+                log("Did disconnect peripheral \(corePeripheral.id.uuidString)")
             }
             
             let peripheral = Peripheral(corePeripheral)
@@ -1148,9 +1148,9 @@ internal extension DarwinCentral {
         ) {
             
             if let error = error {
-                log("Peripheral \(corePeripheral.gattIdentifier.uuidString) failed discovering services (\(error))")
+                log("Peripheral \(corePeripheral.id.uuidString) failed discovering services (\(error))")
             } else {
-                log("Peripheral \(corePeripheral.gattIdentifier.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
+                log("Peripheral \(corePeripheral.id.uuidString) did discover \(corePeripheral.services?.count ?? 0) services")
             }
             
             let peripheral = Peripheral(corePeripheral)
@@ -1185,9 +1185,9 @@ internal extension DarwinCentral {
         ) {
             
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed discovering characteristics (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed discovering characteristics (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did discover \(serviceObject.characteristics?.count ?? 0) characteristics for service \(serviceObject.uuid.uuidString)")
             }
             
             let service = Service(
@@ -1225,9 +1225,9 @@ internal extension DarwinCentral {
         ) {
             
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed reading characteristic (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed reading characteristic (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for characteristic \(characteristicObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did update value for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
             let characteristic = Characteristic(
@@ -1267,9 +1267,9 @@ internal extension DarwinCentral {
             error: Swift.Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed writing characteristic (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed writing characteristic (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for characteristic \(characteristicObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did write value for characteristic \(characteristicObject.uuid.uuidString)")
             }
             let characteristic = Characteristic(
                 characteristic: characteristicObject,
@@ -1297,9 +1297,9 @@ internal extension DarwinCentral {
             error: Swift.Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed setting notifications for characteristic (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed setting notifications for characteristic (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update notification state for characteristic \(characteristicObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did update notification state for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
             let characteristic = Characteristic(
@@ -1322,7 +1322,7 @@ internal extension DarwinCentral {
         
         func peripheralIsReady(toSendWriteWithoutResponse peripheralObject: CBPeripheral) {
             
-            log("Peripheral \(peripheralObject.gattIdentifier.uuidString) is ready to send write without response")
+            log("Peripheral \(peripheralObject.id.uuidString) is ready to send write without response")
             let peripheral = Peripheral(peripheralObject)
             guard let context = self.central.continuation.peripherals[peripheral] else {
                 assertionFailure("Missing context")
@@ -1338,14 +1338,14 @@ internal extension DarwinCentral {
         }
         
         func peripheralDidUpdateName(_ peripheralObject: CBPeripheral) {
-            log("Peripheral \(peripheralObject.gattIdentifier.uuidString) updated name \(peripheralObject.name ?? "")")
+            log("Peripheral \(peripheralObject.id.uuidString) updated name \(peripheralObject.name ?? "")")
         }
         
         func peripheral(_ peripheralObject: CBPeripheral, didReadRSSI rssiObject: NSNumber, error: Error?) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed to read RSSI (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed to read RSSI (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did read RSSI \(rssiObject.description)")
+                log("Peripheral \(peripheralObject.id.uuidString) did read RSSI \(rssiObject.description)")
             }
             let peripheral = Peripheral(peripheralObject)
             self.central.dequeueReadRSSI(for: peripheral) { operation in
@@ -1368,9 +1368,9 @@ internal extension DarwinCentral {
             error: Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed discovering included services for service \(serviceObject.uuid.description) (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed discovering included services for service \(serviceObject.uuid.description) (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(serviceObject.includedServices?.count ?? 0) included services for service \(serviceObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did discover \(serviceObject.includedServices?.count ?? 0) included services for service \(serviceObject.uuid.uuidString)")
             }
                         
             let service = Service(
@@ -1402,7 +1402,7 @@ internal extension DarwinCentral {
         
         @objc
         func peripheral(_ peripheralObject: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
-            log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did modify \(invalidatedServices.count) services")
+            log("Peripheral \(peripheralObject.id.uuidString) did modify \(invalidatedServices.count) services")
             // TODO: Try to rediscover services
         }
         
@@ -1413,9 +1413,9 @@ internal extension DarwinCentral {
             error: Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed discovering descriptors for characteristic \(characteristicObject.uuid.uuidString) (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed discovering descriptors for characteristic \(characteristicObject.uuid.uuidString) (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did discover \(characteristicObject.descriptors?.count ?? 0) descriptors for characteristic \(characteristicObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did discover \(characteristicObject.descriptors?.count ?? 0) descriptors for characteristic \(characteristicObject.uuid.uuidString)")
             }
             
             let peripheral = Peripheral(peripheralObject)
@@ -1450,9 +1450,9 @@ internal extension DarwinCentral {
             error: Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed writing descriptor \(descriptorObject.uuid.uuidString) (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed writing descriptor \(descriptorObject.uuid.uuidString) (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did write value for descriptor \(descriptorObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did write value for descriptor \(descriptorObject.uuid.uuidString)")
             }
             
             let descriptor = Descriptor(
@@ -1478,9 +1478,9 @@ internal extension DarwinCentral {
             error: Error?
         ) {
             if let error = error {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) failed updating value for descriptor \(descriptorObject.uuid.uuidString) (\(error))")
+                log("Peripheral \(peripheralObject.id.uuidString) failed updating value for descriptor \(descriptorObject.uuid.uuidString) (\(error))")
             } else {
-                log("Peripheral \(peripheralObject.gattIdentifier.uuidString) did update value for descriptor \(descriptorObject.uuid.uuidString)")
+                log("Peripheral \(peripheralObject.id.uuidString) did update value for descriptor \(descriptorObject.uuid.uuidString)")
             }
             
             let descriptor = Descriptor(
@@ -1556,12 +1556,4 @@ internal extension Descriptor where ID == ObjectIdentifier, Peripheral == Darwin
         )
     }
 }
-
-internal extension CBPeripheral {
-    
-    var mtuLength: NSNumber {
-        return self.value(forKey: "mtuLength") as! NSNumber
-    }
-}
-
 #endif
