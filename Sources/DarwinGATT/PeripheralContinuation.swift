@@ -27,20 +27,12 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         self.continuation = CheckedContinuation(continuation: continuation, function: function)
         self.function = function
         self.peripheral = peripheral
-        log("Will wait for continuation '\(self.function)' for peripheral \(peripheral)")
-    }
-    
-    private func log(_ message: String) {
-        #if DEBUG
-        print(message)
-        #endif
     }
     
     func resume(
         returning value: T,
         function: String = #function
     ) {
-        log("Will resume continuation '\(self.function)' for peripheral \(peripheral), returning in '\(function)'")
         continuation.resume(returning: value)
     }
     
@@ -48,7 +40,6 @@ internal struct PeripheralContinuation<T, E> where E: Error {
         throwing error: E,
         function: String = #function
     ) {
-        log("Will resume continuation '\(self.function)' for peripheral \(peripheral), throwing in '\(function)' (\(error.localizedDescription))")
         continuation.resume(throwing: error)
     }
 }
