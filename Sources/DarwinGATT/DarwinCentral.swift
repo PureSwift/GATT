@@ -621,7 +621,6 @@ internal extension DarwinCentral {
             }
             self.readRSSI = Queue<Operation.ReadRSSI> { [unowned central] in
                 central.execute($0)
-                return true // wait for continuation
             }
         }
     }
@@ -751,129 +750,133 @@ internal extension DarwinCentral {
     func execute(_ operation: DarwinCentral.Operation) -> Bool {
         switch operation {
         case let .connect(operation):
-            execute(operation)
+            return execute(operation)
         case let .discoverServices(operation):
-            execute(operation)
+            return execute(operation)
         case let .discoverIncludedServices(operation):
-            execute(operation)
+            return execute(operation)
         case let .discoverCharacteristics(operation):
-            execute(operation)
+            return execute(operation)
         case let .readCharacteristic(operation):
-            execute(operation)
+            return execute(operation)
         case let .writeCharacteristic(operation):
             return execute(operation)
         case let .discoverDescriptors(operation):
-            execute(operation)
+            return execute(operation)
         case let .readDescriptor(operation):
-            execute(operation)
+            return execute(operation)
         case let .writeDescriptor(operation):
-            execute(operation)
+            return execute(operation)
         case let .setNotification(operation):
-            execute(operation)
+            return execute(operation)
         case let .isReadyToWriteWithoutResponse(operation):
             return execute(operation)
         }
-        return true // wait for continuation
     }
     
-    func execute(_ operation: Operation.Connect) {
+    func execute(_ operation: Operation.Connect) -> Bool {
         log("Will connect to \(operation.peripheral)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // connect
         self.centralManager.connect(peripheralObject, options: operation.options)
+        return true
     }
     
-    func execute(_ operation: Operation.DiscoverServices) {
+    func execute(_ operation: Operation.DiscoverServices) -> Bool {
         log("Peripheral \(operation.peripheral) will discover services")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // discover
         let serviceUUIDs = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
         peripheralObject.discoverServices(serviceUUIDs)
+        return true
     }
     
-    func execute(_ operation: Operation.DiscoverIncludedServices) {
+    func execute(_ operation: Operation.DiscoverIncludedServices) -> Bool {
         log("Peripheral \(operation.service.peripheral) will discover included services of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.service.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // get service
         guard let serviceObject = validateService(operation.service, for: operation.continuation) else {
-            return
+            return false
         }
         let serviceUUIDs = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
         peripheralObject.discoverIncludedServices(serviceUUIDs, for: serviceObject)
+        return true
     }
     
-    func execute(_ operation: Operation.DiscoverCharacteristics) {
+    func execute(_ operation: Operation.DiscoverCharacteristics) -> Bool {
         log("Peripheral \(operation.service.peripheral) will discover characteristics of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.service.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // get service
         guard let serviceObject = validateService(operation.service, for: operation.continuation) else {
-            return
+            return false
         }
         // discover
         let characteristicUUIDs = operation.characteristics.isEmpty ? nil : operation.characteristics.map { CBUUID($0) }
         peripheralObject.discoverCharacteristics(characteristicUUIDs, for: serviceObject)
+        return true
     }
     
-    func execute(_ operation: Operation.ReadCharacteristic) {
+    func execute(_ operation: Operation.ReadCharacteristic) -> Bool {
         log("Peripheral \(operation.characteristic.peripheral) will read characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // get characteristic
         guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
-            return
+            return false
         }
         // read value
         peripheralObject.readValue(for: characteristicObject)
+        return true
     }
     
     func execute(_ operation: Operation.WriteCharacteristic) -> Bool {
@@ -906,16 +909,16 @@ internal extension DarwinCentral {
         return true
     }
     
-    func execute(_ operation: Operation.DiscoverDescriptors) {
-        
+    func execute(_ operation: Operation.DiscoverDescriptors) -> Bool {
+        fatalError()
     }
     
-    func execute(_ operation: Operation.ReadDescriptor) {
-        
+    func execute(_ operation: Operation.ReadDescriptor) -> Bool {
+        fatalError()
     }
     
-    func execute(_ operation: Operation.WriteDescriptor) {
-        
+    func execute(_ operation: Operation.WriteDescriptor) -> Bool {
+        fatalError()
     }
     
     func execute(_ operation: Operation.WriteWithoutResponseReady) -> Bool {
@@ -931,44 +934,46 @@ internal extension DarwinCentral {
         return true
     }
     
-    func execute(_ operation: Operation.NotificationState) {
+    func execute(_ operation: Operation.NotificationState) -> Bool {
         log("Peripheral \(operation.characteristic.peripheral) will \(operation.isEnabled ? "enable" : "disable") notifications for characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.characteristic.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // get characteristic
         guard let characteristicObject = validateCharacteristic(operation.characteristic, for: operation.continuation) else {
-            return
+            return false
         }
         // notify
         peripheralObject.setNotifyValue(operation.isEnabled, for: characteristicObject)
+        return true
     }
     
-    func execute(_ operation: Operation.ReadRSSI) {
+    func execute(_ operation: Operation.ReadRSSI) -> Bool {
         self.log("Will read RSSI for \(operation.peripheral)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
-            return
+            return false
         }
         // get peripheral
         guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
-            return
+            return false
         }
         // check connected
         guard validateConnected(peripheralObject, for: operation.continuation) else {
-            return
+            return false
         }
         // read value
         peripheralObject.readRSSI()
+        return true
     }
 }
 
