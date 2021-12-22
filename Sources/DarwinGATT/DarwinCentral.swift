@@ -48,7 +48,7 @@ public final class DarwinCentral: CentralManager {
     
     fileprivate var cache = Cache()
     
-    fileprivate var continuation: Continuation
+    fileprivate var continuation: Continuation!
     
     // MARK: - Initialization
     
@@ -74,7 +74,6 @@ public final class DarwinCentral: CentralManager {
             continuation.state = $0
         }
         self.options = options
-        self.continuation = continuation
         self.queue = queue
         self.delegate = options.restoreIdentifier == nil ? Delegate(self) : RestorableDelegate(self)
         self.centralManager = CBCentralManager(
@@ -86,6 +85,7 @@ public final class DarwinCentral: CentralManager {
             self.execute($0)
             return false
         }
+        self.continuation = continuation
     }
     
     // MARK: - Methods
