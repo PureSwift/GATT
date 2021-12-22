@@ -79,16 +79,16 @@ public final class DarwinCentral: CentralManager {
         self.delegate = options.restoreIdentifier == nil ? Delegate(self) : RestorableDelegate(self)
         self.centralManager = CBCentralManager(
             delegate: self.delegate,
-            queue: self.queue,
-            options: options.optionsDictionary
+            queue: queue,
+            options: options.dictionary
         )
+        continuation.scan = Queue<Operation.Scan> { [unowned self] in
+            self.execute($0)
+            return false
+        }
     }
     
     // MARK: - Methods
-    
-    public func wait(for state: DarwinBluetoothState) async throws {
-        
-    }
     
     /// Scans for peripherals that are advertising services.
     public func scan(
@@ -102,45 +102,34 @@ public final class DarwinCentral: CentralManager {
         with services: Set<BluetoothUUID>,
         filterDuplicates: Bool = true
     ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
-        let serviceUUIDs: [CBUUID]? = services.isEmpty ? nil : services.map { CBUUID($0) }
-        let options: [String: Any] = [
-            CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: filterDuplicates == false)
-        ]
-        self.log("Will scan for nearby devices")
         return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) {  [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                // cancel old scanning task
-                if let oldContinuation = self.continuation.scan {
-                    oldContinuation.finish(throwing: CancellationError())
-                    self.continuation.scan = nil
-                }
-                // reset cache
-                self.cache = Cache()
-                // start scanning
-                assert(self.continuation.scan == nil)
-                self.continuation.scan = continuation
-                self.continuation.isScanning.yield(true)
-                self.centralManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
+                let operations = Operation.Scan(
+                    services: services,
+                    filterDuplicates: filterDuplicates,
+                    continuation: continuation
+                )
+                self.continuation.scan.push(operations)
             }
         }
     }
     
     public func stopScan() async {
-        self.log("Stopped scanning")
         return await withCheckedContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
-                guard let scanContinuation = self.continuation.scan else {
+                guard let _ = self.continuation.scan.current else {
                     continuation.resume() // not currently scanning
                     return
                 }
-                self.centralManager.stopScan()
-                self.continuation.isScanning.yield(false)
-                self.log("Discovered \(self.cache.peripherals.count) peripherals")
-                scanContinuation.finish(throwing: nil) // end stream
-                continuation.resume()
-                self.continuation.scan = nil
+                self.continuation.scan.pop { operation in
+                    self.centralManager.stopScan()
+                    self.continuation.isScanning.yield(false)
+                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
+                    operation.continuation.finish(throwing: nil) // end stream
+                    continuation.resume()
+                }
             }
         }
     }
@@ -524,7 +513,7 @@ public extension DarwinCentral {
             self.restoreIdentifier = restoreIdentifier
         }
         
-        internal var optionsDictionary: [String: Any] {
+        internal var dictionary: [String: Any] {
             var options = [String: Any](minimumCapacity: 2)
             if showPowerAlert {
                 options[CBCentralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
@@ -536,7 +525,7 @@ public extension DarwinCentral {
 }
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-internal extension DarwinCentral {
+private extension DarwinCentral {
     
     struct Cache {
         var peripherals = [Peripheral: CBPeripheral]()
@@ -551,7 +540,7 @@ internal extension DarwinCentral {
         var isScanning: AsyncStream<Bool>.Continuation!
         var didDisconnect: AsyncStream<Peripheral>.Continuation!
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
-        var scan: AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>.Continuation?
+        var scan: Queue<Operation.Scan>!
         var peripherals = [DarwinCentral.Peripheral: PeripheralContinuationContext]()
     }
     
@@ -686,6 +675,12 @@ internal extension DarwinCentral.Operation {
     struct ReadRSSI {
         let peripheral: DarwinCentral.Peripheral
         let continuation: PeripheralContinuation<RSSI, Error>
+    }
+    
+    struct Scan {
+        let services: Set<BluetoothUUID>
+        let filterDuplicates: Bool
+        let continuation: AsyncThrowingStream<ScanData<DarwinCentral.Peripheral, DarwinCentral.Advertisement>, Error>.Continuation
     }
 }
 
@@ -856,14 +851,17 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverDescriptors) -> Bool {
+        // TODO: Discover Descriptor
         fatalError()
     }
     
     func execute(_ operation: Operation.ReadDescriptor) -> Bool {
+        // TODO: Read Descriptor
         fatalError()
     }
     
     func execute(_ operation: Operation.WriteDescriptor) -> Bool {
+        // TODO: Write Descriptor
         fatalError()
     }
     
@@ -920,6 +918,19 @@ internal extension DarwinCentral {
         // read value
         peripheralObject.readRSSI()
         return true
+    }
+    
+    func execute(_ operation: Operation.Scan) {
+        log("Will scan for nearby devices")
+        let serviceUUIDs: [CBUUID]? = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
+        let options: [String: Any] = [
+            CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: operation.filterDuplicates == false)
+        ]
+        // reset cache
+        self.cache = Cache()
+        // start scanning
+        self.continuation.isScanning.yield(true)
+        self.centralManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
     }
 }
 
@@ -1053,7 +1064,11 @@ internal extension DarwinCentral {
             // cache value
             self.central.cache.peripherals[peripheral] = corePeripheral
             // yield value to stream
-            self.central.continuation.scan?.yield(scanResult)
+            guard let operation = self.central.continuation.scan.current else {
+                assertionFailure("Not currently scanning")
+                return
+            }
+            operation.continuation.yield(scanResult)
         }
         
         #if os(iOS)
