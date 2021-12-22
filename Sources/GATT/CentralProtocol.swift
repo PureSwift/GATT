@@ -73,6 +73,22 @@ public protocol CentralManager {
         withResponse: Bool
     ) async throws
     
+    /// Discover descriptors
+    func discoverDescriptors(
+        for characteristic: Characteristic<Peripheral, AttributeID>
+    ) async throws -> [Descriptor<Peripheral, AttributeID>]
+    
+    /// Read descriptor
+    func readValue(
+        for descriptor: Descriptor<Peripheral, AttributeID>
+    ) async throws -> Data
+    
+    /// Write descriptor
+    func writeValue(
+        _ data: Data,
+        for descriptor: Descriptor<Peripheral, AttributeID>
+    ) async throws
+    
     /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
