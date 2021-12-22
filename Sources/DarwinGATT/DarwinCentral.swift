@@ -83,7 +83,7 @@ public final class DarwinCentral: CentralManager {
         )
         continuation.scan = Queue<Operation.Scan> { [unowned self] in
             self.execute($0)
-            return false
+            return true
         }
         self.continuation = continuation
     }
@@ -125,9 +125,9 @@ public final class DarwinCentral: CentralManager {
                 }
                 self.continuation.scan.pop { operation in
                     self.centralManager.stopScan()
-                    self.continuation.isScanning.yield(false)
-                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
                     operation.continuation.finish(throwing: nil) // end stream
+                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
+                    self.continuation.isScanning.yield(false)
                     continuation.resume()
                 }
             }
