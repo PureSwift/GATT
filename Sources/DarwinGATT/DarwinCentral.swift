@@ -60,7 +60,7 @@ public final class DarwinCentral: CentralManager {
         options: Options = Options(),
         queue: DispatchQueue? = nil
     ) {
-        var continuation = Continuation()
+        let continuation = Continuation()
         self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) {
             continuation.log = $0
         }
@@ -581,7 +581,7 @@ private extension DarwinCentral {
         var descriptors = [DarwinCentral.Descriptor: CBDescriptor]()
     }
     
-    struct Continuation {
+    final class Continuation {
         
         var log: AsyncStream<String>.Continuation!
         var isScanning: AsyncStream<Bool>.Continuation!
@@ -589,6 +589,7 @@ private extension DarwinCentral {
         var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: Queue<Operation.Scan>!
         var peripherals = [DarwinCentral.Peripheral: PeripheralContinuationContext]()
+        fileprivate init() { }
     }
     
     final class PeripheralContinuationContext {
