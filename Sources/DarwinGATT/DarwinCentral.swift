@@ -105,6 +105,9 @@ public final class DarwinCentral: CentralManager {
         return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) {  [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                // disconnect all first
+                self._disconnectAll()
+                // queue scan operation
                 let operations = Operation.Scan(
                     services: services,
                     filterDuplicates: filterDuplicates,
@@ -162,25 +165,33 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func disconnect(_ peripheral: Peripheral) {
-        self.log("Will disconnect \(peripheral)")
         self.async { [weak self] in
             guard let self = self else { return }
-            // get CoreBluetooth objects from cache
-            guard let peripheralObject = self.cache.peripherals[peripheral] else {
-                return
+            if self._disconnect(peripheral) {
+                self.log("Will disconnect \(peripheral)")
             }
-            self.centralManager.cancelPeripheralConnection(peripheralObject)
         }
+    }
+    
+    private func _disconnect(_ peripheral: Peripheral) -> Bool {
+        guard let peripheralObject = self.cache.peripherals[peripheral] else {
+            return false
+        }
+        self.centralManager.cancelPeripheralConnection(peripheralObject)
+        return true
     }
     
     public func disconnectAll() {
         self.log("Will disconnect all")
         self.async { [weak self] in
             guard let self = self else { return }
-            // get CoreBluetooth objects from cache
-            for peripheralObject in self.cache.peripherals.values {
-                self.centralManager.cancelPeripheralConnection(peripheralObject)
-            }
+            self._disconnectAll()
+        }
+    }
+    
+    private func _disconnectAll() {
+        for peripheralObject in self.cache.peripherals.values {
+            self.centralManager.cancelPeripheralConnection(peripheralObject)
         }
     }
     
