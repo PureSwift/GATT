@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-
+/*
 #if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
 import Dispatch
@@ -232,3 +232,4 @@ public struct GATTPeripheralOptions {
 }
 
 #endif
+*/

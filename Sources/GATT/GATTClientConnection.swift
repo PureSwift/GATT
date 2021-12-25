@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-
+/*
 #if swift(>=5.5) && canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
@@ -419,3 +419,4 @@ internal extension Result where Failure == Swift.Error {
 }
 
 #endif
+*/

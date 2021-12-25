@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/17/18.
 //
-
+/*
 #if canImport(BluetoothGATT)
 import Foundation
 import Dispatch
@@ -217,3 +217,4 @@ public struct GATTServerConnectionCallback {
 }
 
 #endif
+*/

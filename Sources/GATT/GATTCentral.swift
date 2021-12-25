@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-
+/*
 #if swift(>=5.5) && canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
 @_exported import Bluetooth
@@ -274,3 +274,4 @@ public extension HCILESetScanParameters {
 }
 
 #endif
+*/
