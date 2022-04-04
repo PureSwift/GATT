@@ -1,11 +1,7 @@
 // swift-tools-version:5.5
 import PackageDescription
 
-#if os(Linux)
-let libraryType: PackageDescription.Product.Library.LibraryType = .dynamic
-#else
 let libraryType: PackageDescription.Product.Library.LibraryType = .static
-#endif
 
 let package = Package(
     name: "GATT",
@@ -23,7 +19,6 @@ let package = Package(
         ),
         .library(
             name: "DarwinGATT",
-            type: libraryType,
             targets: ["DarwinGATT"]
         )
     ],
