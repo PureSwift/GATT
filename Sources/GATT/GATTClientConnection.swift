@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-/*
+
 #if swift(>=5.5) && canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
@@ -23,48 +23,11 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
     
     public private(set) var error: Swift.Error?
     
-    /*
-    private lazy var connectionThread: Thread = Thread { [weak self] in
-        
-        do {
-            
-            var didWrite = true
-            var didRead = true
-            
-            // run until object is released
-            while self != nil, self?.error == nil {
-                
-                // sleep if we did not previously read / write to save energy
-                if didRead == false,
-                    didWrite == false,
-                    (self?.writePending ?? false) == false {
-                    
-                    // did not previously read or write, no pending writes
-                    // sleep thread to save energy
-                    usleep(100)
-                }
-                
-                // attempt write
-                didWrite = try self?.client.write() ?? false
-                
-                if didWrite {
-                    self?.writePending = false
-                }
-                
-                // attempt read
-                didRead = try self?.client.read() ?? false
-            }
-        }
-        
-        catch { self?.disconnect(error) }
-    }*/
-    
     internal private(set) var cache = GATTClientConnectionCache()
     
-    internal var maximumUpdateValueLength: Int {
-        
+    internal func maximumUpdateValueLength() async -> Int {
         // ATT_MTU-3
-        return Int(client.maximumTransmissionUnit.rawValue) - 3
+        return await Int(client.maximumTransmissionUnit.rawValue) - 3
     }
     
     // MARK: - Initialization
@@ -78,29 +41,14 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         socket: L2CAPSocket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
         callback: GATTClientConnectionCallback
-    ) {
+    ) async {
         self.peripheral = peripheral
         self.callback = callback
-        self.client = GATTClient(
+        self.client = await GATTClient(
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
-            log: { callback.log?("[\(peripheral)]: " + $0) },
+            log: { callback.log?("[\(peripheral)]: " + $0) }
         )
-        /*
-        self.client.writePending = { [weak self] in
-            guard let self = self else { return }
-            Task(priority: .userInitiated) {
-                do {
-                    var didWrite = true
-                    repeat {
-                        didWrite = try await self.client.write()
-                    } while didWrite
-                }
-                catch {
-                    
-                }
-            }
-        }*/
     }
     
     // MARK: - Methods
@@ -169,7 +117,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
-        try await client.writeCharacteristic(gattCharacteristic.attribute, data: data, reliableWrites: withResponse)
+        try await client.writeCharacteristic(gattCharacteristic.attribute, data: data, withResponse: withResponse)
     }
     
     public func discoverDescriptors(
@@ -186,7 +134,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
                        characteristics: Array(gattService.characteristics.values.map { $0.attribute }))
         
         // GATT request
-        let foundDescriptors = try await client.discoverDescriptors(for: gattCharacteristic.attribute, service: service)
+        let foundDescriptors = try await client.discoverDescriptors(of: gattCharacteristic.attribute, service: service)
         
         // update cache
         cache.insert(foundDescriptors, for: characteristic.id)
@@ -406,17 +354,5 @@ internal extension CharacteristicProperty {
     }
 }
 
-internal extension Result where Failure == Swift.Error {
-    
-    init(_ response: GATTClientResponse<Success>) {
-        switch response {
-        case let .success(value):
-            self = .success(value)
-        case let .failure(clientError):
-            self = .failure(clientError as Swift.Error)
-        }
-    }
-}
-
 #endif
-*/
+
