@@ -161,7 +161,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
     
     public func notify(
         _ characteristic: Characteristic<Peripheral, UInt16>,
-        notification: @escaping GATTClient.Notification
+        notification: (GATTClient.Notification)?
     ) async throws {
         
         assert(characteristic.peripheral == peripheral)

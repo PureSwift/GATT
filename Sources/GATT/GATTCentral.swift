@@ -30,7 +30,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     internal let newConnection: NewConnection
     
-    internal private(set) var state: GATTCentralState
+    internal let state = GATTCentralState()
     
     // MARK: - Initialization
     
@@ -89,7 +89,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func connect(to peripheral: Peripheral) async throws {
         // get scan data (bluetooth address) for new connection
-        guard let (scanData, report) = self.state.scanData[peripheral]
+        guard let (scanData, report) = await self.state.scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
@@ -103,27 +103,24 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             }
         )
         // keep connection open and store for future use
-        let connection = GATTClientConnection(
+        let connection = await GATTClientConnection<Socket>(
             peripheral: peripheral,
             socket: socket,
             maximumTransmissionUnit: self.options.maximumTransmissionUnit,
             callback: callback
         )
         // store connection
-        self.connections[peripheral] = connection
+        await self.state.didConnect(connection)
     }
     
     public func disconnect(_ peripheral: Peripheral) async {
-        self.connections[peripheral] = nil
-        self.didDisconnect?(peripheral)
+        await state.removeConnection(peripheral)
+        // TODO: Emit notification
+        //self.didDisconnect?(peripheral)
     }
     
     public func disconnectAll() async {
-        let peripherals = self.didDisconnect != nil ? Array(self.connections.keys) : []
-        self.connections.removeAll(keepingCapacity: true)
-        if let didDisconnect = self.didDisconnect {
-            peripherals.forEach { didDisconnect($0) }
-        }
+        await state.removeAllConnections()
     }
     
     public func discoverServices(
@@ -165,16 +162,27 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func notify(
         for characteristic: Characteristic<Peripheral, UInt16>
     ) async -> AsyncThrowingStream<Data, Swift.Error> {
-        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) {
-            try await connection(for: characteristic.peripheral)
-                .notify(for: characteristic)
+        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) { continuation in
+            Task(priority: .userInitiated) {
+                do {
+                    let stream = try await connection(for: characteristic.peripheral)
+                        .notify(for: characteristic)
+                    for try await notification in stream {
+                        continuation.yield(notification)
+                    }
+                    continuation.finish()
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                }
+            }
         }
     }
     
     // Stop Notifications
     public func stopNotifications(for characteristic: Characteristic<Peripheral, UInt16>) async throws {
         try await connection(for: characteristic.peripheral)
-            
+            .notify(characteristic, notification: nil)
     }
     
     /// Read MTU
@@ -184,22 +192,19 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     // Read RSSI
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
-        
+        RSSI(rawValue: +20)!
     }
     
     // MARK: - Private Methods
     
-    private func newConnectionID() -> Int {
-        lastConnectionID += 1
-        return lastConnectionID
-    }
-    
-    private func connection(for peripheral: Peripheral) throws -> GATTClientConnection<Socket> {
+    private func connection(for peripheral: Peripheral) async throws -> GATTClientConnection<Socket> {
         
-        guard let _ = scanData[peripheral]
+        guard await state.scanData.keys.contains(peripheral)
             else { throw CentralError.unknownPeripheral }
-        guard let connection = connections[peripheral]
+        
+        guard let connection = await state.connections[peripheral]
             else { throw CentralError.disconnected }
+        
         return connection
     }
 }
@@ -236,9 +241,26 @@ internal extension GATTCentral {
             return scanData
         }
         
-        var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 1)
+        var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 2)
         
-        var lastConnectionID = 0
+        func didConnect(_ connection: GATTClientConnection<Socket>) {
+            self.connections[connection.peripheral] = connection
+        }
+        
+        func removeConnection(_ peripheral: Peripheral) {
+            self.connections[peripheral] = nil
+        }
+        
+        func removeAllConnections() {
+            self.connections.removeAll(keepingCapacity: true)
+        }
+        
+        var lastConnectionID: UInt = 0
+        
+        func newConnectionID() -> UInt {
+            lastConnectionID += 1
+            return lastConnectionID
+        }
     }
 }
 
