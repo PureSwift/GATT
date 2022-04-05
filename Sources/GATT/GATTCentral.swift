@@ -4,7 +4,7 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-/*
+
 #if swift(>=5.5) && canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
 @_exported import Bluetooth
@@ -12,7 +12,7 @@ import Foundation
 @_exported import BluetoothHCI
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public actor GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> : CentralManager {
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> /* : CentralManager */ {
     
     // MARK: - Properties
     
@@ -20,81 +20,71 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, Sock
     
     public typealias AttributeID = UInt16
     
-    public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket)
+    public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (Socket)
     
-    public var log: ((String) -> ())?
+    public let log: ((String) -> ())?
     
     public let hostController: HostController
     
     public let options: GATTCentralOptions
     
-    public private(set) var isScanning: Bool = false {
-        didSet { scanningChanged?(isScanning) }
-    }
-    
-    public var scanningChanged: ((Bool) -> ())?
-    
-    public var didDisconnect: ((Peripheral) -> ())?
-    
     internal let newConnection: NewConnection
     
-    internal let state: GATTCentralState
+    internal private(set) var state: GATTCentralState
     
     // MARK: - Initialization
     
-    public init(hostController: HostController,
-                options: GATTCentralOptions = GATTCentralOptions(),
-                newConnection: @escaping NewConnection) {
-        
+    public init(
+        hostController: HostController,
+        options: GATTCentralOptions = GATTCentralOptions(),
+        newConnection: @escaping NewConnection,
+        log: ((String) -> ())? = nil
+    ) {
         self.hostController = hostController
         self.options = options
         self.newConnection = newConnection
+        self.log = log
     }
     
     // MARK: - Methods
     
     /// Scans for peripherals that are advertising services.
-    public func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Swift.Error> {
-        precondition(isScanning == false, "Already scanning")
-        self.log?("Scanning...")
-        self.isScanning = true
-        // FIXME: Use HCI async methods
-        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
-            guard let self = self else { return }
-            /*
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.log?("Scanning...")
-            self.isScanning = true
-            do {
-                try self.hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: self.options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
-                    
-                    let peripheral = Peripheral(identifier: report.address)
-                    let isConnectable = report.event.isConnectable
-                    let scanData = ScanData(
-                        peripheral: peripheral,
-                        date: Date(),
-                        rssi: Double(report.rssi?.rawValue ?? 0),
-                        advertisementData: report.responseData,
-                        isConnectable: isConnectable
-                    )
-                    self.scanData[peripheral] = (scanData, report)
-                    foundDevice(.success(scanData))
+    public func scan(
+        filterDuplicates: Bool
+    ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Swift.Error> {
+        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(30)) { continuation in
+            Task(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                // wait until scanning is possible
+                while await self.state.scanningStream != nil {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
                 }
-            } catch {
-                self.isScanning = false
-                self.log?("Unable to scan: \(error)")
+                // start scanning
+                self.log?("Scanning...")
+                let stream = self.hostController.lowEnergyScan(
+                    filterDuplicates: filterDuplicates,
+                    parameters: self.options.scanParameters
+                )
+                // store stream
+                await self.state.startScanning(stream)
+                // store
+                do {
+                    for try await report in stream {
+                        let scanData = await self.state.found(report)
+                        continuation.yield(scanData)
+                    }
+                    continuation.finish()
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                }
             }
-            
-            self.log?("Did discover \(self.scanData.count) peripherals")
-            assert(self.isScanning == false, "Invalid scanning state: \(self.isScanning)")
-             */
         }
     }
     
     public func stopScan() async {
         self.log?("Stop scanning")
-        self.isScanning = false
+        await self.state.stopScanning()
     }
     
     public func connect(to peripheral: Peripheral) async throws {
@@ -204,7 +194,7 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, Sock
         return lastConnectionID
     }
     
-    private func connection(for peripheral: Peripheral) throws -> GATTClientConnection<L2CAPSocket> {
+    private func connection(for peripheral: Peripheral) throws -> GATTClientConnection<Socket> {
         
         guard let _ = scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
@@ -212,37 +202,44 @@ public actor GATTCentral <HostController: BluetoothHostControllerInterface, Sock
             else { throw CentralError.disconnected }
         return connection
     }
-    
-    private func async<T>(timeout: TimeInterval,
-                          completion: @escaping (Result<T, Error>) -> (),
-                          _ block: @escaping (Self) throws -> (T)) {
-        
-        queue.async { [weak self] in
-            let semaphore = Semaphore<T>(timeout: timeout)
-            self?.concurrentQueue.async { [weak self] in
-                guard let self = self else { return }
-                do {
-                    let value = try block(self)
-                    semaphore.stopWaiting(.success(value))
-                }
-                catch { semaphore.stopWaiting(.failure(error)) }
-            }
-            let result = Result<T, Error>(catching: { try semaphore.wait() })
-            completion(result)
-        }
-    }
 }
 
 // MARK: - Supporting Types
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-internal actor GATTCentralState {
+internal extension GATTCentral {
     
-    fileprivate(set) var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
-    
-    fileprivate(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
-    
-    fileprivate var lastConnectionID = 0
+    actor GATTCentralState {
+        
+        var scanningStream: AsyncLowEnergyScanStream?
+        
+        func startScanning(_ stream: AsyncLowEnergyScanStream) {
+            self.scanningStream = stream
+        }
+        
+        func stopScanning() {
+            self.scanningStream?.stop()
+        }
+        
+        var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
+        
+        func found(_ report: HCILEAdvertisingReport.Report) -> ScanData<Peripheral, Advertisement> {
+            let peripheral = Peripheral(id: report.address)
+            let scanData = ScanData(
+                peripheral: peripheral,
+                date: Date(),
+                rssi: Double(report.rssi?.rawValue ?? 0),
+                advertisementData: report.responseData,
+                isConnectable: report.event.isConnectable
+            )
+            self.scanData[peripheral] = (scanData, report)
+            return scanData
+        }
+        
+        var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 1)
+        
+        var lastConnectionID = 0
+    }
 }
 
 public struct GATTCentralOptions {
@@ -274,4 +271,3 @@ public extension HCILESetScanParameters {
 }
 
 #endif
-*/

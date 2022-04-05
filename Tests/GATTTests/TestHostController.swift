@@ -79,15 +79,11 @@ final class PeripheralHostController: BluetoothHostControllerInterface {
     func deviceRequest <CP: HCICommandParameter, Return: HCICommandReturnParameter> (_ commandParameter: CP, _ commandReturnType : Return.Type, timeout: HCICommandTimeout) throws -> Return {
         
         assert(CP.command.opcode == Return.command.opcode)
-        
         fatalError()
     }
     
     /// Polls and waits for events.
-    func pollEvent <T: HCIEventParameter> (_ eventParameterType: T.Type,
-                                           shouldContinue: () -> (Bool),
-                                           event: (T) throws -> ()) throws {
-        
+    func recieve<Event>(_ eventType: Event.Type) async throws -> Event where Event : HCIEventParameter, Event.HCIEventType == HCIGeneralEvent {
         fatalError()
     }
 }
@@ -152,30 +148,8 @@ final class CentralHostController: BluetoothHostControllerInterface {
     }
     
     /// Polls and waits for events.
-    func pollEvent<EP: HCIEventParameter>(_ eventParameterType: EP.Type,
-                                          shouldContinue: () -> (Bool),
-                                          event eventCallback: (EP) throws -> ()) throws  {
-        
-        guard eventParameterType == HCILowEnergyMetaEvent.self
-            else { fatalError("Invalid event parameter type") }
-        
-        var events = self.advertisingReports
-        
-        while let eventBuffer = events.popFirst() {
-            
-            let actualBytesRead = eventBuffer.count
-            let eventHeader = HCIEventHeader(data: Data(eventBuffer[0 ..< HCIEventHeader.length]))
-            let eventData = Data(eventBuffer[HCIEventHeader.length ..< actualBytesRead])
-            
-            guard let eventParameter = EP.init(data: eventData)
-                else { throw BluetoothHostControllerError.garbageResponse(Data(eventData)) }
-                        
-            assert(eventHeader?.event.rawValue == EP.event.rawValue)
-            try eventCallback(eventParameter)
-        }
-        
-        /// sleep for scan duration
-        while shouldContinue() { sleep(1) }
+    func recieve<Event>(_ eventType: Event.Type) async throws -> Event where Event : HCIEventParameter, Event.HCIEventType == HCIGeneralEvent {
+        fatalError()
     }
 }
 
