@@ -4,100 +4,92 @@
 //
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
-/*
+
 #if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
-import Dispatch
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.12, iOS 10.0, *)
-public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralManager {
+/// GATT Peripheral Manager
+public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> /* : PeripheralManager */ {
     
+    /// Peripheral Options
+    public typealias Options = GATTPeripheralOptions
+        
     // MARK: - Properties
     
-    public var log: ((String) -> ())?
+    public let hostController: HostController
     
     public let options: GATTPeripheralOptions
     
-    public let controller: HostController
+    private var socket: Socket?
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
-    
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
-    
-    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
-    
-    public var newConnection: (() throws -> (socket: L2CAPSocket, central: Central))?
-    
-    public var activeConnections: [Central] {
+    private var task: Task<(), Never>?
         
-        return connectionsQueue.sync { [unowned self] in
-            self.connections.values.map { $0.central }
-        }
+    public var activeConnections: [Central] {
+        self.connections.values.map { $0.central }
     }
     
-    // MARK: - Private Properties
-    
-    internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(self) Database Queue")
-    
-    internal lazy var readQueue: DispatchQueue = DispatchQueue(label: "\(self) Read Queue")
-    
-    internal lazy var connectionsQueue: DispatchQueue = DispatchQueue(label: "\(self) Connections Queue")
-    
     internal private(set) var database = GATTDatabase()
-    
-    internal private(set) var isServerRunning = false
-    
-    internal private(set) var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
-    
-    private var serverThread: Thread?
-    
+        
+    internal private(set) var connections = [UInt: GATTServerConnection<Socket>]()
+        
     private var lastConnectionID: UInt = 0
     
     // MARK: - Initialization
     
-    public init(controller: HostController,
-                options: GATTPeripheralOptions = GATTPeripheralOptions()) {
-        
-        self.controller = controller
+    public init(
+        hostController: HostController,
+        options: GATTPeripheralOptions = GATTPeripheralOptions(),
+        socket: Socket.Type
+    ) {
+        self.hostController = hostController
         self.options = options
+    }
+    
+    deinit {
+        stop()
     }
     
     // MARK: - Methods
     
-    public func start() throws {
-        
-        guard isServerRunning == false else { return }
-        
+    public func start() async throws {
+        // read address
+        let address = try await hostController.readDeviceAddress()
         // enable advertising
-        do { try controller.enableLowEnergyAdvertising() }
+        do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
-        
-        /*
-         let serverSocket = try L2CAPSocket.lowEnergyServer(controllerAddress: controller.address,
-         isRandom: false,
-         securityLevel: .low)
-         */
-        
-        isServerRunning = true
-        
-        log?("Started GATT Server")
-        
-        let serverThread = Thread { [weak self] in self?.main() }
-        
-        self.serverThread = serverThread
-        
-        serverThread.start()
+        // create server socket
+        let socket = try Socket.lowEnergyServer(
+            address: address,
+            isRandom: false,
+            backlog: 10
+        )
+        // start listening for connections
+        self.socket = socket
+        self.task = Task { [weak self] in
+            log("Started GATT Server")
+            do {
+                while let socket = await self?.socket {
+                    try Task.checkCancellation()
+                    let newSocket = try await socket.accept()
+                    await self?.newConnection(newSocket)
+                }
+            }
+            catch _ as CancellationError { }
+            catch {
+                log("Error waiting for new connection: \(error)")
+                return
+            }
+        }
     }
     
     public func stop() {
-        
-        guard isServerRunning else { return }
-        
-        self.isServerRunning = false
-        self.serverThread = nil
+        self.socket = nil
+        self.task?.cancel()
+        self.task = nil
+        log("Stopped GATT Server")
     }
     
     public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
@@ -133,6 +125,22 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
     
     // MARK: - Private Methods
+    
+    private func newConnection(_ socket: Socket) async {
+        let central = Central(id: socket.address)
+        let id = newConnectionID()
+        self.connections[id] = GATTServerConnection(
+            central: central,
+            socket: socket,
+            maximumTransmissionUnit: options.maximumTransmissionUnit,
+            maximumPreparedWrites: options.maximumPreparedWrites,
+            delegate: self
+        )
+    }
+    
+    private func log(_ message: String) {
+        
+    }
     
     private func main() {
         
@@ -177,43 +185,24 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
                 }
             }
                 
-            catch { log?("Error waiting for new connection: \(error)") }
+            catch { log("Error waiting for new connection: \(error)") }
         }
         
-        log?("Stopped GATT Server")
+        log("Stopped GATT Server")
     }
     
-    @inline(__always)
     private func newConnectionID() -> UInt {
-        
         lastConnectionID += 1
-        
         return lastConnectionID
     }
     
-    private func disconnect(_ connection: UInt, error: Error) {
-        
+    private func disconnect(_ connection: UInt, error: Error) async {
         // remove from peripheral, release and close socket
-        connectionsQueue.sync { [unowned self] in
-            self.connections[connection] = nil
-        }
-        
+        self.connections[connection] = nil
         // enable LE advertising
-        do { try controller.enableLowEnergyAdvertising() }
+        do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
-        catch { log?("Could not enable advertising. \(error)") }
-    }
-    
-    @inline(__always)
-    private func writeDatabase <T> (_ block: (inout GATTDatabase) -> (T)) -> T {
-        
-        return databaseQueue.sync { block(&self.database) }
-    }
-    
-    @inline(__always)
-    private func readConnection(_ block: () -> ()) {
-        
-        return readQueue.sync(execute: block)
+        catch { log("Could not enable advertising. \(error)") }
     }
 }
 
@@ -232,4 +221,3 @@ public struct GATTPeripheralOptions {
 }
 
 #endif
-*/
