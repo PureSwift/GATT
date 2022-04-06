@@ -7,7 +7,6 @@
 
 #if canImport(BluetoothGATT)
 import Foundation
-import Dispatch
 import Bluetooth
 import BluetoothGATT
 
@@ -17,7 +16,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     let central: Central
     
-    unowned let delegate: GATTServerConnectionDelegate
+    weak var delegate: GATTServerConnectionDelegate?
     
     private let server: GATTServer
         
@@ -41,7 +40,9 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
             maximumPreparedWrites: maximumPreparedWrites,
-            log: { delegate.connection(central, log: $0) }
+            log: { message in
+                Task { await delegate.connection(central, log: message) }
+            }
         )
         // setup callbacks
         await configureServer()
@@ -49,27 +50,19 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     // MARK: - Methods
     
-    public func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
-        /*
-        await self.server.updateDatabase({ (database) in
-            // update server with database from peripheral
-            server.database = database
-            // modify database
-            server.writeValue(value, forCharacteristic: handle)
-            // update peripheral database
-            database = connection.server.database
-        })*/
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
+        await server.writeValue(value, forCharacteristic: handle)
     }
     
     // IO error
-    private func error(_ error: Error) {
-        
-        self.log("Disconnected \(error)")
-        delegate.connection(central, didDisconnect: error)
+    private func error(_ error: Error) async {
+        await log("Disconnected \(error)")
+        await delegate?.connection(central, didDisconnect: error)
     }
     
-    private func log(_ message: String) {
-        delegate.connection(central, log: message)
+    private func log(_ message: String) async {
+        await delegate?.connection(central, log: message)
     }
     
     private func configureServer() async {
@@ -95,7 +88,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             value: value,
             offset: offset
         )
-        return delegate.connection(central, willRead: request)
+        return await delegate?.connection(central, willRead: request)
     }
     
     private func willWrite(uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) async -> ATTError? {
@@ -107,7 +100,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             value: value,
             newValue: newValue
         )
-        return delegate.connection(central, willWrite: request)
+        return await delegate?.connection(central, willWrite: request)
     }
     
     private func didWrite(uuid: BluetoothUUID, handle: UInt16, value: Data) async {
@@ -118,23 +111,21 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             handle: handle,
             value: value
         )
-        delegate.connection(central, didWrite: confirmation)
+        await delegate?.connection(central, didWrite: confirmation)
     }
 }
 
 internal protocol GATTServerConnectionDelegate: AnyObject {
     
-    func connection(_ central: Central, log: String)
+    func connection(_ central: Central, log: String) async
     
-    func connection(_ central: Central, didDisconnect error: Error?)
+    func connection(_ central: Central, didDisconnect error: Error?) async
     
-    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError?
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError?
     
-    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError?
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) async -> ATTError?
         
-    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>)
-    
-    func connection(_ central: Central, access database: inout GATTDatabase)
+    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async
 }
 
 #endif
