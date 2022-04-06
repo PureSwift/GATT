@@ -4,217 +4,137 @@
 //
 //  Created by Alsey Coleman Miller on 7/17/18.
 //
-/*
+
 #if canImport(BluetoothGATT)
 import Foundation
 import Dispatch
 import Bluetooth
 import BluetoothGATT
 
-@available(macOS 10.12, iOS 10, *)
 internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     // MARK: - Properties
     
-    public let central: Central
+    let central: Central
     
-    public var callback = GATTServerConnectionCallback()
+    unowned let delegate: GATTServerConnectionDelegate
     
-    internal let server: GATTServer
-    
-    internal private(set) var isRunning: Bool = true
-    
-    private lazy var readThread: Thread = Thread { [weak self] in
+    private let server: GATTServer
         
-        // run until object is released
-        while let connection = self {
-            
-            // run the main loop exactly once.
-            self?.readMain()
-        }
-    }
-        
-    internal var maximumUpdateValueLength: Int {
+    private func maximumUpdateValueLength() async -> Int {
         // ATT_MTU-3
-        return Int(server.maximumTransmissionUnit.rawValue) - 3
+        return await Int(server.maximumTransmissionUnit.rawValue) - 3
     }
     
     // MARK: - Initialization
     
-    public init(central: Central,
-                socket: L2CAPSocket,
-                maximumTransmissionUnit: ATTMaximumTransmissionUnit,
-                maximumPreparedWrites: Int) {
-        
+    public init(
+        central: Central,
+        socket: Socket,
+        maximumTransmissionUnit: ATTMaximumTransmissionUnit,
+        maximumPreparedWrites: Int,
+        delegate: GATTServerConnectionDelegate
+    ) async {
         self.central = central
-        self.server = GATTServer(
+        self.delegate = delegate
+        self.server = await GATTServer(
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
-            maximumPreparedWrites: maximumPreparedWrites
+            maximumPreparedWrites: maximumPreparedWrites,
+            log: { delegate.connection(central, log: $0) }
         )
-        
         // setup callbacks
-        self.configureServer()
-        
-        // run read thread
-        self.readThread.start()
+        await configureServer()
     }
     
     // MARK: - Methods
     
-    public func writeValue(_ value: Data, forCharacteristic handle: UInt16) {
-        
-        self.callback.writeDatabase?({ [weak self] (database) in
-            
-            guard let connection = self
-                else { return }
-            
+    public func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
+        /*
+        await self.server.updateDatabase({ (database) in
             // update server with database from peripheral
-            connection.server.database = database
-            
+            server.database = database
             // modify database
-            connection.server.writeValue(value, forCharacteristic: handle)
-            
+            server.writeValue(value, forCharacteristic: handle)
             // update peripheral database
             database = connection.server.database
-        })
-    }
-    
-    // MARK: - Private Methods
-    
-    private func configureServer() {
-        
-        // log
-        server.log = { [unowned self] in self.callback.log?($0) }
-        
-        // wakeup ATT writer
-        server.writePending = { [unowned self] in self.write() }
-        
-        server.willRead = { [unowned self] (uuid, handle, value, offset) in
-            
-            let request = GATTReadRequest(central: self.central,
-                                          maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                          uuid: uuid,
-                                          handle: handle,
-                                          value: value,
-                                          offset: offset)
-            
-            return self.callback.willRead?(request)
-        }
-        
-        server.willWrite = { [unowned self] (uuid, handle, value, newValue) in
-            
-            let request = GATTWriteRequest(central: self.central,
-                                           maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                           uuid: uuid,
-                                           handle: handle,
-                                           value: value,
-                                           newValue: newValue)
-            
-            return self.callback.willWrite?(request)
-        }
-        
-        server.didWrite = { [unowned self] (uuid, handle, newValue) in
-            
-            let confirmation = GATTWriteConfirmation(central: self.central,
-                                                     maximumUpdateValueLength: self.maximumUpdateValueLength,
-                                                     uuid: uuid,
-                                                     handle: handle,
-                                                     value: newValue)
-            
-            self.callback.didWrite?(confirmation)
-        }
+        })*/
     }
     
     // IO error
     private func error(_ error: Error) {
         
-        self.callback.log?("Disconnected \(error)")
-        self.isRunning = false
-        self.callback.didDisconnect?(error)
+        self.log("Disconnected \(error)")
+        delegate.connection(central, didDisconnect: error)
     }
     
-    private func readMain() {
-        
-        guard self.isRunning
-            else { sleep(1); return }
-        
-        guard let writeDatabase = self.callback.writeDatabase,
-            let readConnection = self.callback.readConnection
-            else { usleep(100); return }
-        
-        readConnection({ [weak self] in
-            
-            // write GATT DB serially
-            writeDatabase({ [weak self] (database) in
-                
-                // update server with database from peripheral
-                self?.server.database = database
-            })
-            
-            // read incoming PDUs and may modify internal database
-            do {
-                
-                guard let server = self?.server,
-                    try server.read()
-                    else { return }
-            }
-            catch {
-                self?.error(error)
-                return
-            }
-            
-            // write GATT DB serially
-            writeDatabase({ [weak self] (database) in
-                
-                // update peripheral database
-                if let modifiedDatabase = self?.server.database {
-                    
-                    database = modifiedDatabase
-                }
-            })
-        })
+    private func log(_ message: String) {
+        delegate.connection(central, log: message)
     }
     
-    private func write() {
-        
-        // write outgoing PDU in the background.
-        writeQueue.async { [weak self] in
-            
-            guard (self?.isRunning ?? false) else { sleep(1); return }
-            
-            do {
-                
-                /// write outgoing pending ATT PDUs
-                var didWrite = false
-                repeat { didWrite = try (self?.server.write() ?? false) }
-                while didWrite && (self?.isRunning ?? false)
-            }
-            
-            catch { self?.error(error) }
+    private func configureServer() async {
+        var callback = GATTServer.Callback()
+        callback.willRead = { [unowned self] in
+            await self.willRead(uuid: $0, handle: $1, value: $2, offset: $3)
         }
+        callback.willWrite = { [unowned self] in
+            await self.willWrite(uuid: $0, handle: $1, value: $2, newValue: $3)
+        }
+        callback.didWrite = { [unowned self] in
+            await self.didWrite(uuid: $0, handle: $1, value: $2)
+        }
+        await self.server.setCallbacks(callback)
+    }
+    
+    private func willRead(uuid: BluetoothUUID, handle: UInt16, value: Data, offset: Int) async -> ATTError? {
+        let request = GATTReadRequest(
+            central: central,
+            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            uuid: uuid,
+            handle: handle,
+            value: value,
+            offset: offset
+        )
+        return delegate.connection(central, willRead: request)
+    }
+    
+    private func willWrite(uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) async -> ATTError? {
+        let request = GATTWriteRequest(
+            central: central,
+            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            uuid: uuid,
+            handle: handle,
+            value: value,
+            newValue: newValue
+        )
+        return delegate.connection(central, willWrite: request)
+    }
+    
+    private func didWrite(uuid: BluetoothUUID, handle: UInt16, value: Data) async {
+        let confirmation = GATTWriteConfirmation(
+            central: central,
+            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            uuid: uuid,
+            handle: handle,
+            value: value
+        )
+        delegate.connection(central, didWrite: confirmation)
     }
 }
 
-@available(OSX 10.12, *)
-public struct GATTServerConnectionCallback {
+internal protocol GATTServerConnectionDelegate: AnyObject {
     
-    public var log: ((String) -> ())?
+    func connection(_ central: Central, log: String)
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
+    func connection(_ central: Central, didDisconnect error: Error?)
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError?
     
-    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError?
+        
+    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>)
     
-    public var writeDatabase: (((inout GATTDatabase) -> ()) -> ())?
-    
-    public var readConnection: ((() -> ()) -> ())?
-    
-    public var didDisconnect: ((Error) -> ())?
-    
-    fileprivate init() { }
+    func connection(_ central: Central, access database: inout GATTDatabase)
 }
 
 #endif
-*/
