@@ -19,15 +19,10 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     weak var delegate: GATTServerConnectionDelegate?
     
     private let server: GATTServer
-        
-    private func maximumUpdateValueLength() async -> Int {
-        // ATT_MTU-3
-        return await Int(server.maximumTransmissionUnit.rawValue) - 3
-    }
     
     // MARK: - Initialization
     
-    public init(
+    init(
         central: Central,
         socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
@@ -41,7 +36,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             maximumTransmissionUnit: maximumTransmissionUnit,
             maximumPreparedWrites: maximumPreparedWrites,
             log: { message in
-                Task { await delegate.connection(central, log: message) }
+                delegate.connection(central, log: message)
             }
         )
         // setup callbacks
@@ -54,15 +49,20 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
         await server.writeValue(value, forCharacteristic: handle)
     }
+        
+    private func maximumUpdateValueLength() async -> Int {
+        // ATT_MTU-3
+        return await Int(server.maximumTransmissionUnit.rawValue) - 3
+    }
     
     // IO error
     private func error(_ error: Error) async {
-        await log("Disconnected \(error)")
+        log("Disconnected \(error)")
         await delegate?.connection(central, didDisconnect: error)
     }
     
-    private func log(_ message: String) async {
-        await delegate?.connection(central, log: message)
+    private func log(_ message: String) {
+        delegate?.connection(central, log: message)
     }
     
     private func configureServer() async {
@@ -117,7 +117,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
 
 internal protocol GATTServerConnectionDelegate: AnyObject {
     
-    func connection(_ central: Central, log: String) async
+    func connection(_ central: Central, log: String)
     
     func connection(_ central: Central, didDisconnect error: Error?) async
     

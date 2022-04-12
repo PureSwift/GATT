@@ -16,12 +16,15 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     
     /// Peripheral Options
     public typealias Options = GATTPeripheralOptions
-        
+    
+    /// Peripheral Callback
+    public typealias Callback = GATTPeripheralCallback
+    
     // MARK: - Properties
     
     public let hostController: HostController
     
-    public let options: GATTPeripheralOptions
+    public let options: Options
     
     public var activeConnections: [Central] {
         self.connections.values.map { $0.central }
@@ -34,10 +37,12 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     private let log: ((String) -> ())?
     
     private var database = GATTDatabase()
-        
+    
     private var connections = [UInt: GATTServerConnection<Socket>]()
         
     private var lastConnectionID: UInt = 0
+    
+    private var callback = Callback()
     
     // MARK: - Initialization
     
@@ -59,6 +64,10 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     }
     
     // MARK: - Methods
+    
+    public func setCallbacks(_ callback: Callback) {
+        self.callback = callback
+    }
     
     public func start() async throws {
         // read address
@@ -119,8 +128,19 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     public func write(_ newValue: Data, forCharacteristic handle: UInt16) async {
+        await write(newValue, forCharacteristic: handle, ignore: .none)
+    }
+    
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    private func write(_ newValue: Data, forCharacteristic handle: UInt16, ignore central: Central? = nil) async {
+        // write to master DB
         database.write(newValue, forAttribute: handle)
-        for connection in self.connections.values {
+        // propagate changes to active connections
+        let connections = self.connections
+            .values
+            .lazy
+            .filter { $0.central != central }
+        for connection in connections {
             await connection.writeValue(newValue, forCharacteristic: handle)
         }
     }
@@ -162,32 +182,27 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
 
 extension GATTPeripheral: GATTServerConnectionDelegate {
     
-    nonisolated func connection(_ central: Central, log message: String) async {
-        self.log("[\(connection.central)]: " + message)
+    nonisolated func connection(_ central: Central, log message: String) {
+        self.log?("[\(central)]: " + message)
     }
     
-    func connection(_ central: Central, didDisconnect error: Error?) async {
-        self.connections.values.forEach {
-            if $0.central != write.central {
-                $0.writeValue(write.value, forCharacteristic: write.handle)
-            }
-        }
+    nonisolated func connection(_ central: Central, didDisconnect error: Swift.Error?) async {
+        return
     }
     
-    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
-        
+    nonisolated func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError? {
+        return await callback.willRead?(request)
     }
     
-    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError? {
-        
+    nonisolated func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) async -> ATTError? {
+        return await callback.willWrite?(request)
     }
     
-    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) {
-        
-    }
-    
-    func connection(_ central: Central, access database: inout GATTDatabase) {
-        
+    nonisolated func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async {
+        // update DB and inform other connections
+        await write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
+        // notify delegate
+        await callback.didWrite?(confirmation)
     }
 }
 
@@ -205,6 +220,17 @@ public struct GATTPeripheralOptions {
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.maximumPreparedWrites = maximumPreparedWrites
     }
+}
+
+public struct GATTPeripheralCallback {
+    
+    public var willRead: ((_ request: GATTReadRequest<Central>) async -> ATTError?)?
+    
+    public var willWrite: ((_ request: GATTWriteRequest<Central>) async -> ATTError?)?
+    
+    public var didWrite: ((_ confirmation: GATTWriteConfirmation<Central>) async -> Void)?
+    
+    public init() { }
 }
 
 #endif
