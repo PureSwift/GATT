@@ -185,7 +185,7 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             
             // immediately call completion handler
             if completion == nil {
-                response(.value(())) // success
+                response(.success(())) // success
             }
         }
     }
@@ -318,9 +318,9 @@ public final class GATTClientConnection <L2CAPSocket: L2CAPSocketProtocol> {
             }
             
             switch response {
-            case let .error(error):
+            case let .failure(error):
                 throw error
-            case let .value(value):
+            case let .success(value):
                 return value
             }
         }
