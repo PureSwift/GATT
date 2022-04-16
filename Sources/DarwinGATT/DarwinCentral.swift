@@ -642,27 +642,27 @@ internal extension DarwinCentral.Operation {
     func resume(throwing error: Swift.Error, function: String = #function) {
         switch self {
         case let .connect(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .discoverServices(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .discoverIncludedServices(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .discoverCharacteristics(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .writeCharacteristic(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .readCharacteristic(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .discoverDescriptors(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .readDescriptor(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .writeDescriptor(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .isReadyToWriteWithoutResponse(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         case let .setNotification(operation):
-            operation.continuation.resume(throwing: error, function: function)
+            operation.continuation.resume(throwing: error)
         }
     }
 }

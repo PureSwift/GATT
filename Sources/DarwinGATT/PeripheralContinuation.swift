@@ -30,15 +30,13 @@ internal struct PeripheralContinuation<T, E> where E: Error {
     }
     
     func resume(
-        returning value: T,
-        function: String = #function
+        returning value: T
     ) {
         continuation.resume(returning: value)
     }
     
     func resume(
-        throwing error: E,
-        function: String = #function
+        throwing error: E
     ) {
         continuation.resume(throwing: error)
     }
@@ -46,8 +44,8 @@ internal struct PeripheralContinuation<T, E> where E: Error {
 
 extension PeripheralContinuation where T == Void {
     
-    func resume(function: String = #function) {
-        self.resume(returning: (), function: function)
+    func resume() {
+        self.resume(returning: ())
     }
 }
 
