@@ -12,7 +12,7 @@ import Bluetooth
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system.
-public protocol CentralProtocol: class {
+public protocol CentralProtocol: AnyObject {
     
     associatedtype Peripheral: Peer
     
