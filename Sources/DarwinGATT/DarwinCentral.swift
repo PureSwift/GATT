@@ -20,21 +20,21 @@ public final class DarwinCentral: CentralManager {
     public let options: Options
     
     public var state: DarwinBluetoothState {
-        return unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
+        get async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.async { [unowned self] in
+                    let state = unsafeBitCast(self.centralManager.state, to: DarwinBluetoothState.self)
+                    continuation.resume(returning: state)
+                }
+            }
+        }
     }
-    
-    public let log: AsyncStream<String>
-    
-    public let isScanning: AsyncStream<Bool>
-    
-    public let didDisconnect: AsyncStream<Peripheral>
     
     /// Currently scanned devices, or restored devices.
     public var peripherals: Set<Peripheral> {
         get async {
-            return await withUnsafeContinuation { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.async { [unowned self] in
                     let peripherals = Set(self.cache.peripherals.keys)
                     continuation.resume(returning: peripherals)
                 }
@@ -63,15 +63,6 @@ public final class DarwinCentral: CentralManager {
         queue: DispatchQueue? = nil
     ) {
         let continuation = Continuation()
-        self.log = AsyncStream(String.self, bufferingPolicy: .bufferingNewest(10)) {
-            continuation.log = $0
-        }
-        self.isScanning = AsyncStream(Bool.self, bufferingPolicy: .bufferingNewest(1)) {
-            continuation.isScanning = $0
-        }
-        self.didDisconnect = AsyncStream(Peripheral.self, bufferingPolicy: .bufferingNewest(1)) {
-            continuation.didDisconnect = $0
-        }
         self.options = options
         self.queue = queue
         self.delegate = options.restoreIdentifier == nil ? Delegate(self) : RestorableDelegate(self)
@@ -129,7 +120,7 @@ public final class DarwinCentral: CentralManager {
                     self.centralManager.stopScan()
                     operation.continuation.finish(throwing: nil) // end stream
                     self.log("Discovered \(self.cache.peripherals.count) peripherals")
-                    self.continuation.isScanning.yield(false)
+                    //self.continuation.isScanning.yield(false)
                     continuation.resume()
                 }
             }
@@ -380,7 +371,7 @@ public final class DarwinCentral: CentralManager {
     // MARK - Private Methods
     
     private func log(_ message: String) {
-        continuation.log.yield(message)
+        //continuation.log.yield(message)
     }
     
     private func async(_ body: @escaping () -> ()) {
@@ -593,10 +584,6 @@ private extension DarwinCentral {
     
     final class Continuation {
         
-        var log: AsyncStream<String>.Continuation!
-        var isScanning: AsyncStream<Bool>.Continuation!
-        var didDisconnect: AsyncStream<Peripheral>.Continuation!
-        var state: AsyncStream<DarwinBluetoothState>.Continuation!
         var scan: Queue<Operation.Scan>!
         var peripherals = [DarwinCentral.Peripheral: PeripheralContinuationContext]()
         fileprivate init() { }
@@ -1042,7 +1029,7 @@ internal extension DarwinCentral {
         // reset cache
         self.cache = Cache()
         // start scanning
-        self.continuation.isScanning.yield(true)
+        //self.continuation.isScanning.yield(true)
         self.centralManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
     }
 }
@@ -1161,7 +1148,7 @@ internal extension DarwinCentral {
             assert(self.central?.centralManager === centralManager)
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
             log("Did update state \(state)")
-            self.central.continuation.state.yield(state)
+            //self.central.continuation.state?.yield(state)
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
@@ -1257,7 +1244,7 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            self.central.continuation.didDisconnect.yield(peripheral)
+            //self.central.continuation.didDisconnect.yield(peripheral)
             
             // TODO: Use error from CoreBluetooth
             let disconnectionError = CentralError.disconnected

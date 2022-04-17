@@ -25,9 +25,6 @@ public protocol CentralManager {
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
-    /// Log stream
-    //var log: AsyncStream<String> { get }
-    
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>
     
@@ -47,7 +44,7 @@ public protocol CentralManager {
     func disconnectAll() async
     
     /// Disconnected peripheral callback
-    var didDisconnect: AsyncStream<Peripheral> { get }
+    //var didDisconnect: AsyncStream<Peripheral> { get }
     
     /// Discover Services
     func discoverServices(
