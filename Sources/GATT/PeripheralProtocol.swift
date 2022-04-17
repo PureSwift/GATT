@@ -48,7 +48,7 @@ public protocol PeripheralManager: AnyObject {
     func write(_ newValue: Data, forCharacteristic handle: UInt16) async
     
     /// Read the value of the characteristic with specified handle.
-    func characteristicValue(for handle: UInt16) async -> Data
+    subscript(characteristic handle: UInt16) -> Data { get async }
 }
 
 // MARK: - Supporting Types

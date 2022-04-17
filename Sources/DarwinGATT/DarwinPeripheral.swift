@@ -137,11 +137,14 @@ public final class DarwinPeripheral: PeripheralManager {
         await notify(newValue, forCharacteristic: handle)
     }
     
-    public func characteristicValue(for handle: UInt16) async -> Data {
-        return await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                let value = self.database[characteristic: handle]
-                continuation.resume(returning: value)
+    /// Read the value of the characteristic with specified handle.
+    public subscript(characteristic handle: UInt16) -> Data {
+        get async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.queue.async { [unowned self] in
+                    let value = self.database[characteristic: handle]
+                    continuation.resume(returning: value)
+                }
             }
         }
     }

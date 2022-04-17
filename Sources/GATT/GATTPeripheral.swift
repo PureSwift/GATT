@@ -141,9 +141,12 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             }
         }
     }
-        
-    public func characteristicValue(for handle: UInt16) async -> Data {
-        return await storage.database[handle: handle].value
+    
+    /// Read the value of the characteristic with specified handle.
+    public subscript(characteristic handle: UInt16) -> Data {
+        get async {
+            return await storage.database[handle: handle].value
+        }
     }
     
     // MARK: - Private Methods
