@@ -30,7 +30,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     internal let newConnection: NewConnection
     
-    internal let state = GATTCentralState()
+    internal let storage = Storage()
     
     // MARK: - Initialization
     
@@ -56,7 +56,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             Task(priority: .userInitiated) { [weak self] in
                 guard let self = self else { return }
                 // wait until scanning is possible
-                while await self.state.scanningStream != nil {
+                while await self.storage.scanningStream != nil {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
                 }
                 // start scanning
@@ -66,11 +66,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                     parameters: self.options.scanParameters
                 )
                 // store stream
-                await self.state.startScanning(stream)
+                await self.storage.startScanning(stream)
                 // store
                 do {
                     for try await report in stream {
-                        let scanData = await self.state.found(report)
+                        let scanData = await self.storage.found(report)
                         continuation.yield(scanData)
                     }
                     continuation.finish()
@@ -84,12 +84,12 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func stopScan() async {
         self.log?("Stop scanning")
-        await self.state.stopScanning()
+        await self.storage.stopScanning()
     }
     
     public func connect(to peripheral: Peripheral) async throws {
         // get scan data (bluetooth address) for new connection
-        guard let (scanData, report) = await self.state.scanData[peripheral]
+        guard let (scanData, report) = await self.storage.scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
@@ -110,17 +110,17 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             callback: callback
         )
         // store connection
-        await self.state.didConnect(connection)
+        await self.storage.didConnect(connection)
     }
     
     public func disconnect(_ peripheral: Peripheral) async {
-        await state.removeConnection(peripheral)
+        await storage.removeConnection(peripheral)
         // TODO: Emit notification
         //self.didDisconnect?(peripheral)
     }
     
     public func disconnectAll() async {
-        await state.removeAllConnections()
+        await storage.removeAllConnections()
     }
     
     public func discoverServices(
@@ -199,10 +199,10 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     private func connection(for peripheral: Peripheral) async throws -> GATTClientConnection<Socket> {
         
-        guard await state.scanData.keys.contains(peripheral)
+        guard await storage.scanData.keys.contains(peripheral)
             else { throw CentralError.unknownPeripheral }
         
-        guard let connection = await state.connections[peripheral]
+        guard let connection = await storage.connections[peripheral]
             else { throw CentralError.disconnected }
         
         return connection
@@ -214,7 +214,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTCentral {
     
-    actor GATTCentralState {
+    actor Storage {
         
         var scanningStream: AsyncLowEnergyScanStream?
         
