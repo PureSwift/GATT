@@ -27,9 +27,6 @@ public protocol PeripheralManager: AnyObject {
     /// Stop the peripheral.
     func stop()
     
-    /// The closure to call for logging.
-    var log: ((String) -> ())? { get }
-    
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Attribute handle.
@@ -41,11 +38,11 @@ public protocol PeripheralManager: AnyObject {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
+    //var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
     
-    var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
+    //var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
     
-    var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
+    //var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
     
     /// Write / Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get set }

@@ -8,24 +8,28 @@
 
 #if (os(macOS) || os(iOS)) && canImport(BluetoothGATT)
 import Foundation
+import Dispatch
 import Bluetooth
 import BluetoothGATT
 import GATT
 import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral: NSObject, PeripheralManager, CBPeripheralManagerDelegate {
+public final class DarwinPeripheral /*: PeripheralManager */ {
     
     // MARK: - Properties
     
     public let options: Options
-    
-    public var log: ((String) -> ())?
-    
-    public var stateChanged: (DarwinBluetoothState) -> () = { _ in }
-    
+            
     public var state: DarwinBluetoothState {
-        return unsafeBitCast(internalManager.state, to: DarwinBluetoothState.self)
+        get async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.queue.async { [unowned self] in
+                    let state = unsafeBitCast(self.peripheralManager.state, to: DarwinBluetoothState.self)
+                    continuation.resume(returning: state)
+                }
+            }
+        }
     }
     
     public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
@@ -34,337 +38,127 @@ public final class DarwinPeripheral: NSObject, PeripheralManager, CBPeripheralMa
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
-    // MARK: - Private Properties
-    
-    private lazy var internalManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue, options: self.options.optionsDictionary)
-    
-    private lazy var queue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Internal Queue", attributes: [])
-    
-    private var addServiceState: (semaphore: DispatchSemaphore, error: Error?)?
-    
-    private var startAdvertisingState: (semaphore: DispatchSemaphore, error: Error?)?
-    
     private var database = Database()
     
     private var notifyQueue = [(characteristic: CBMutableCharacteristic, data: Data)]()
     
+    private var peripheralManager: CBPeripheralManager!
+    
+    private var delegate: Delegate!
+    
+    private let queue = DispatchQueue(label: "org.pureswift.DarwinGATT.DarwinPeripheral", attributes: [])
+    
+    private var continuation = Continuation()
+    
     // MARK: - Initialization
     
-    public init(options: Options) {
-        
+    public init(
+        options: Options = Options()
+    ) {
         self.options = options
-        
-        super.init()
-    }
-    
-    public override convenience init() {
-        self.init(options: Options())
+        let delegate = Delegate(self)
+        let peripheralManager = CBPeripheralManager(
+            delegate: delegate,
+            queue: queue,
+            options: options.optionsDictionary
+        )
+        self.delegate = delegate
+        self.peripheralManager = peripheralManager
     }
     
     // MARK: - Methods
     
-    public func start() throws {
+    public func start() async throws {
         let options = AdvertisingOptions()
-        try start(options: options)
+        try await start(options: options)
     }
     
-    public func start(options: AdvertisingOptions) throws {
-        
-        assert(startAdvertisingState == nil, "Already started advertising")
-        let semaphore = DispatchSemaphore(value: 0)
-        startAdvertisingState = (semaphore, nil) // set semaphore
-        internalManager.startAdvertising(options.optionsDictionary)
-        let _ = semaphore.wait(timeout: .distantFuture)
-        let error = startAdvertisingState?.error
-        
-        // clear
-        startAdvertisingState = nil
-        if let error = error {
-            throw error
+    public func start(options: AdvertisingOptions) async throws {
+        let options = options.optionsDictionary
+        return try await withCheckedThrowingContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                self.continuation.startAdvertising = continuation
+                self.peripheralManager.startAdvertising(options)
+            }
         }
     }
     
     public func stop() {
-        
-        internalManager.stopAdvertising()
+        self.queue.async { [unowned self] in
+            peripheralManager.stopAdvertising()
+        }
     }
     
-    public func add(service: GATTAttribute.Service) throws -> UInt16 {
-        
-        assert(addServiceState == nil, "Already adding another Service")
-        
-        /// wait
-        
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        addServiceState = (semaphore, nil) // set semaphore
-        
+    public func add(service: GATTAttribute.Service) async throws -> UInt16 {
+        let serviceObject = service.toCoreBluetooth()
         // add service
-        let coreService = service.toCoreBluetooth()
-        
-        // CB add
-        internalManager.add(coreService)
-        
-        let _ = semaphore.wait(timeout: .distantFuture)
-        
-        let error = addServiceState?.error
-        
-        // clear
-        addServiceState = nil
-        
-        if let error = error {
-            
-            throw error
+        try await withCheckedThrowingContinuation { [unowned self] (continuation: CheckedContinuation<(), Error>) in
+            self.queue.async { [unowned self] in
+                self.continuation.addService = continuation
+                peripheralManager.add(serviceObject)
+            }
         }
-        
-        // DB cache add
-        return database.add(service: service, coreService)
+        // update DB
+        return await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                let handle = database.add(service: service, serviceObject)
+                continuation.resume(returning: handle)
+            }
+        }
     }
     
     public func remove(service handle: UInt16) {
-        
-        // remove from daemon
-        let coreService = database.service(for: handle)
-        internalManager.remove(coreService)
-        
-        // remove from cache
-        database.remove(service: handle)
+        self.queue.async { [unowned self] in
+            // remove from daemon
+            let serviceObject = database.service(for: handle)
+            peripheralManager.remove(serviceObject)
+            // remove from cache
+            database.remove(service: handle)
+        }
     }
     
     public func removeAllServices() {
-        
-        // remove from daemon
-        internalManager.removeAllServices()
-        
-        // clear cache
-        database.removeAll()
-    }
-    
-    /// Return the handles of the characteristics matching the specified UUID.
-    public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
-        
-        return database.characteristics(for: uuid)
+        self.queue.async { [unowned self] in
+            // remove from daemon
+            peripheralManager.removeAllServices()
+            // clear cache
+            database.removeAll()
+        }
     }
     
     // MARK: Subscript
     
     public subscript(characteristic handle: UInt16) -> Data {
-        
         get { return database[characteristic: handle] }
-        
         set { writeValue(newValue, for: handle) }
     }
     
+    // MARK: - Private Methods
+    
     private func writeValue(_ newValue: Data, for handle: UInt16) {
-        
         // update GATT DB
         database[characteristic: handle] = newValue
-        
-        let coreCharacteristic = database.characteristic(for: handle)
-        
-        notify(newValue, for: coreCharacteristic)
+        let characteristicObject = database.characteristic(for: handle)
+        notify(newValue, for: characteristicObject)
     }
     
     private func notify(_ value: Data, for characteristic: CBMutableCharacteristic) {
         
         // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
-        let didNotify = internalManager.updateValue(value,
-                                                    for: characteristic,
-                                                    onSubscribedCentrals: nil)
+        let didNotify = peripheralManager.updateValue(
+            value,
+            for: characteristic,
+            onSubscribedCentrals: nil
+        )
         
         // The underlying transmit queue is full
         if didNotify == false {
-            
             // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
             // when more space in the transmit queue becomes available.
             notifyQueue.append((characteristic, value))
-            
-            log?("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
-            
+            //log("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
         } else {
-            
-            log?("Did send notification for \((characteristic as CBCharacteristic).uuid)")
-        }
-    }
-    
-    // MARK: - CBPeripheralManagerDelegate
-    
-    @objc(peripheralManagerDidUpdateState:)
-    public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        
-        let state = unsafeBitCast(peripheral.state, to: DarwinBluetoothState.self)
-        
-        log?("Did update state \(state)")
-        
-        stateChanged(state)
-    }
-    
-    @objc(peripheralManager:willRestoreState:)
-    public func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState state: [String : Any]) {
-        
-        log?("Will restore state \(state)")
-    }
-    
-    @objc(peripheralManagerDidStartAdvertising:error:)
-    public func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
-        
-        if let error = error {
-            
-            log?("Could not advertise (\(error))")
-            
-        } else {
-            
-            log?("Did start advertising")
-        }
-        
-        guard let semaphore = startAdvertisingState?.semaphore else { fatalError("Did not expect \(#function)") }
-        
-        startAdvertisingState?.error = error
-        
-        semaphore.signal()
-    }
-    
-    @objc(peripheralManager:didAddService:error:)
-    public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
-        
-        if let error = error {
-            
-            log?("Could not add service \(service.uuid) (\(error))")
-            
-        } else {
-            
-            log?("Added service \(service.uuid)")
-        }
-        
-        guard let semaphore = addServiceState?.semaphore else { fatalError("Did not expect \(#function)") }
-        
-        addServiceState?.error = error
-        
-        semaphore.signal()
-    }
-    
-    @objc(peripheralManager:didReceiveReadRequest:)
-    public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
-        
-        log?("Did receive read request for \(request.characteristic.uuid)")
-        
-        let peer = Central(request.central)
-        
-        let characteristic = database[characteristic: request.characteristic]
-        
-        let uuid = BluetoothUUID(request.characteristic.uuid)
-        
-        let value = characteristic.value
-        
-        let readRequest = GATTReadRequest(central: peer,
-                                          maximumUpdateValueLength: request.central.maximumUpdateValueLength,
-                                          uuid: uuid,
-                                          handle: characteristic.handle,
-                                          value: value,
-                                          offset: request.offset)
-        
-        guard request.offset <= value.count
-            else { internalManager.respond(to: request, withResult: .invalidOffset); return }
-        
-        if let error = willRead?(readRequest) {
-            
-            internalManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-            return
-        }
-        
-        let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
-        
-        request.value = requestedValue
-        
-        internalManager.respond(to: request, withResult: .success)
-    }
-    
-    @objc(peripheralManager:didReceiveWriteRequests:)
-    public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
-        
-        log?("Did receive write requests for \(requests.map { $0.characteristic.uuid })")
-        
-        assert(requests.isEmpty == false)
-        
-        var writeRequests = [GATTWriteRequest<Central>]()
-        writeRequests.reserveCapacity(requests.count)
-        
-        // validate write requests
-        for request in requests {
-            
-            let peer = Central(request.central)
-            
-            let characteristic = database[characteristic: request.characteristic]
-            
-            let value = characteristic.value
-            
-            let uuid = BluetoothUUID(request.characteristic.uuid)
-            
-            let newValue = request.value ?? Data()
-            
-            let writeRequest = GATTWriteRequest(central: peer,
-                                                maximumUpdateValueLength: request.central.maximumUpdateValueLength,
-                                                uuid: uuid,
-                                                handle: characteristic.handle,
-                                                value: value,
-                                                newValue: newValue)
-            
-            if let error = willWrite?(writeRequest) {
-                
-                internalManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-                
-                return
-            }
-            
-            // compute new data
-            writeRequests.append(writeRequest)
-        }
-        
-        // write new values
-        for request in writeRequests {
-            
-            // update GATT DB
-            database[characteristic: request.handle] = request.newValue
-            
-            let confirmation = GATTWriteConfirmation(central: request.central,
-                                                     maximumUpdateValueLength: request.maximumUpdateValueLength,
-                                                     uuid: request.uuid,
-                                                     handle: request.handle,
-                                                     value: request.newValue)
-            
-            // did write callback
-            didWrite?(confirmation)
-        }
-        
-        internalManager.respond(to: requests[0], withResult: .success)
-    }
-    
-    @objc(peripheralManager:central:didSubscribeToCharacteristic:)
-    public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
-        
-        log?("Central \(central.id) did subscribe to \(characteristic.uuid)")
-    }
-    
-    @objc
-    public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
-        
-        log?("Central \(central.id) did unsubscribe from \(characteristic.uuid)")
-    }
-    
-    @objc
-    public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
-        
-        log?("Ready to send notifications")
-        
-        // send as many notifications as possible and re-queue if any fail
-        while let pendingNotification = self.notifyQueue.first {
-            
-            self.notifyQueue.removeFirst()
-            
-            self.queue.asyncAfter(deadline: .now(), execute: { [weak self] in
-                
-                self?.notify(pendingNotification.data, for: pendingNotification.characteristic)
-            })
+            //log("Did send notification for \((characteristic as CBCharacteristic).uuid)")
         }
     }
 }
@@ -394,9 +188,10 @@ public extension DarwinPeripheral {
         
         public let restoreIdentifier: String
         
-        public init(showPowerAlert: Bool = false,
-                    restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinPeripheral") {
-            
+        public init(
+            showPowerAlert: Bool = false,
+            restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinPeripheral"
+        ) {
             self.showPowerAlert = showPowerAlert
             self.restoreIdentifier = restoreIdentifier
         }
@@ -470,6 +265,176 @@ public extension DarwinPeripheral {
             #endif
             
             return options
+        }
+    }
+}
+
+internal extension DarwinPeripheral {
+    
+    struct Continuation {
+        
+        var startAdvertising: CheckedContinuation<(), Error>?
+        
+        var addService: CheckedContinuation<(), Error>?
+        
+        fileprivate init() { }
+    }
+}
+
+internal extension DarwinPeripheral {
+    
+    @objc(DarwinPeripheralDelegate)
+    final class Delegate: NSObject, CBPeripheralManagerDelegate {
+        
+        unowned let peripheral: DarwinPeripheral
+        
+        init(_ peripheral: DarwinPeripheral) {
+            self.peripheral = peripheral
+        }
+        
+        private func log(_ message: String) {
+            
+        }
+        
+        // MARK: - CBPeripheralManagerDelegate
+        
+        @objc(peripheralManagerDidUpdateState:)
+        public func peripheralManagerDidUpdateState(_ peripheralManager: CBPeripheralManager) {
+            let state = unsafeBitCast(peripheralManager.state, to: DarwinBluetoothState.self)
+            log("Did update state \(state)")
+            //stateChanged(state)
+        }
+        
+        @objc(peripheralManager:willRestoreState:)
+        public func peripheralManager(_ peripheralManager: CBPeripheralManager, willRestoreState state: [String : Any]) {
+            log("Will restore state \(state)")
+        }
+        
+        @objc(peripheralManagerDidStartAdvertising:error:)
+        public func peripheralManagerDidStartAdvertising(_ peripheralManager: CBPeripheralManager, error: Error?) {
+            if let error = error {
+                log("Could not advertise (\(error))")
+                self.peripheral.continuation.startAdvertising?.resume(throwing: error)
+            } else {
+                log("Did start advertising")
+                self.peripheral.continuation.startAdvertising?.resume()
+            }
+        }
+        
+        @objc(peripheralManager:didAddService:error:)
+        public func peripheralManager(_ peripheralManager: CBPeripheralManager, didAdd service: CBService, error: Error?) {
+            if let error = error {
+                log("Could not add service \(service.uuid) (\(error))")
+                self.peripheral.continuation.addService?.resume(throwing: error)
+            } else {
+                log("Added service \(service.uuid)")
+                self.peripheral.continuation.addService?.resume()
+            }
+        }
+        
+        @objc(peripheralManager:didReceiveReadRequest:)
+        public func peripheralManager(_ peripheralManager: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+            
+            log("Did receive read request for \(request.characteristic.uuid)")
+            
+            let peer = Central(request.central)
+            let characteristic = self.peripheral.database[characteristic: request.characteristic]
+            let uuid = BluetoothUUID(request.characteristic.uuid)
+            let value = characteristic.value
+            let readRequest = GATTReadRequest(
+                central: peer,
+                maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                uuid: uuid,
+                handle: characteristic.handle,
+                value: value,
+                offset: request.offset
+            )
+            
+            guard request.offset <= value.count else {
+                peripheralManager.respond(to: request, withResult: .invalidOffset)
+                return
+            }
+            
+            if let error = self.peripheral.willRead?(readRequest) {
+                peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                return
+            }
+            
+            let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
+            request.value = requestedValue
+            peripheralManager.respond(to: request, withResult: .success)
+        }
+        
+        @objc(peripheralManager:didReceiveWriteRequests:)
+        public func peripheralManager(_ peripheralManager: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+            
+            log("Did receive write requests for \(requests.map { $0.characteristic.uuid })")
+            assert(requests.isEmpty == false)
+            var writeRequests = [GATTWriteRequest<Central>]()
+            writeRequests.reserveCapacity(requests.count)
+            
+            // validate write requests
+            for request in requests {
+                let peer = Central(request.central)
+                let characteristic = self.peripheral.database[characteristic: request.characteristic]
+                let value = characteristic.value
+                let uuid = BluetoothUUID(request.characteristic.uuid)
+                let newValue = request.value ?? Data()
+                let writeRequest = GATTWriteRequest(
+                    central: peer,
+                    maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                    uuid: uuid,
+                    handle: characteristic.handle,
+                    value: value,
+                    newValue: newValue
+                )
+                // check if write is possible
+                if let error = self.peripheral.willWrite?(writeRequest) {
+                    peripheralManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                    return
+                }
+                // compute new data
+                writeRequests.append(writeRequest)
+            }
+            
+            // write new values
+            for request in writeRequests {
+                // update GATT DB
+                self.peripheral.database[characteristic: request.handle] = request.newValue
+                let confirmation = GATTWriteConfirmation(
+                    central: request.central,
+                    maximumUpdateValueLength: request.maximumUpdateValueLength,
+                    uuid: request.uuid,
+                    handle: request.handle,
+                    value: request.newValue
+                )
+                // did write callback
+                self.peripheral.didWrite?(confirmation)
+            }
+            
+            peripheralManager.respond(to: requests[0], withResult: .success)
+        }
+        
+        @objc(peripheralManager:central:didSubscribeToCharacteristic:)
+        public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+            log("Central \(central.id) did subscribe to \(characteristic.uuid)")
+        }
+        
+        @objc
+        public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+            log("Central \(central.id) did unsubscribe from \(characteristic.uuid)")
+        }
+        
+        @objc
+        public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
+            log("Ready to send notifications")
+            // send as many notifications as possible and re-queue if any fail
+            while let pendingNotification = self.peripheral.notifyQueue.first {
+                self.peripheral.notifyQueue.removeFirst()
+                self.peripheral.queue.asyncAfter(deadline: .now() + 0.1, execute: { [weak self] in
+                    self?.peripheral.notify(pendingNotification.data, for: pendingNotification.characteristic)
+                })
+            }
         }
     }
 }
