@@ -19,7 +19,9 @@ public final class DarwinCentral: CentralManager {
     
     public let options: Options
     
-    public let state: AsyncStream<DarwinBluetoothState>
+    public var state: DarwinBluetoothState {
+        return unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
+    }
     
     public let log: AsyncStream<String>
     
@@ -69,9 +71,6 @@ public final class DarwinCentral: CentralManager {
         }
         self.didDisconnect = AsyncStream(Peripheral.self, bufferingPolicy: .bufferingNewest(1)) {
             continuation.didDisconnect = $0
-        }
-        self.state = AsyncStream(DarwinBluetoothState.self, bufferingPolicy: .bufferingNewest(1)) {
-            continuation.state = $0
         }
         self.options = options
         self.queue = queue
