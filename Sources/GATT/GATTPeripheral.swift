@@ -32,8 +32,10 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
-    public var activeConnections: [Central] {
-        self.connections.values.map { $0.central }
+    public var activeConnections: Set<Central> {
+        get async {
+            return await Set(storage.connections.values.map { $0.central })
+        }
     }
     
     private var socket: Socket?
@@ -42,11 +44,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     private let log: ((String) -> ())?
     
-    private var database = GATTDatabase()
-    
-    private var connections = [UInt: GATTServerConnection<Socket>]()
-        
-    private var lastConnectionID: UInt = 0
+    private let storage = Storage()
     
     // MARK: - Initialization
     
@@ -70,6 +68,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     // MARK: - Methods
     
     public func start() async throws {
+        assert(socket == nil)
         // read address
         let address = try await hostController.readDeviceAddress()
         // enable advertising
@@ -86,10 +85,10 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         self.task = Task { [weak self] in
             self?.log?("Started GATT Server")
             do {
-                while let socket = self?.socket {
+                while let socket = self?.socket, let self = self {
                     try Task.checkCancellation()
                     let newSocket = try await socket.accept()
-                    await self?.newConnection(newSocket)
+                    await self.storage.newConnection(newSocket, options: options, delegate: self)
                 }
             }
             catch _ as CancellationError { }
@@ -100,22 +99,23 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
     
     public func stop() {
+        assert(socket != nil)
         self.socket = nil
         self.task?.cancel()
         self.task = nil
         self.log?("Stopped GATT Server")
     }
     
-    public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
-        return database.add(service: service) // TODO: mutate while running
+    public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16 {
+        return await storage.add(service: service)
     }
     
-    public func remove(service handle: UInt16) {
-        database.remove(service: handle)
+    public func remove(service handle: UInt16) async {
+        await storage.remove(service: handle)
     }
     
-    public func removeAllServices() {
-        database.removeAll()
+    public func removeAllServices() async {
+        await storage.removeAllServices()
     }
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
@@ -126,46 +126,31 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     private func write(_ newValue: Data, forCharacteristic handle: UInt16, ignore central: Central? = nil) async {
         // write to master DB
-        database.write(newValue, forAttribute: handle)
+        await storage.write(newValue, forAttribute: handle)
         // propagate changes to active connections
-        let connections = self.connections
+        let connections = await storage.connections
             .values
             .lazy
             .filter { $0.central != central }
-        for connection in connections {
-            await connection.writeValue(newValue, forCharacteristic: handle)
+        // update the DB of each connection, and send notifications concurrently
+        await withTaskGroup(of: Void.self) { taskGroup in
+            for connection in connections {
+                taskGroup.addTask {
+                    await connection.writeValue(newValue, forCharacteristic: handle)
+                }
+            }
         }
     }
-    
-    // MARK: - Subscript
-    
-    public subscript(characteristic handle: UInt16) -> Data {
-        // TODO: Make async safe
-        database[handle: handle].value
+        
+    public func characteristicValue(for handle: UInt16) async -> Data {
+        return await storage.database[handle: handle].value
     }
     
     // MARK: - Private Methods
     
-    private func newConnection(_ socket: Socket) async {
-        let central = Central(id: socket.address)
-        let id = newConnectionID()
-        self.connections[id] = await GATTServerConnection(
-            central: central,
-            socket: socket,
-            maximumTransmissionUnit: options.maximumTransmissionUnit,
-            maximumPreparedWrites: options.maximumPreparedWrites,
-            delegate: self
-        )
-    }
-    
-    private func newConnectionID() -> UInt {
-        lastConnectionID += 1
-        return lastConnectionID
-    }
-    
     private func disconnect(_ connection: UInt, error: Error) async {
         // remove from peripheral, release and close socket
-        self.connections[connection] = nil
+        await storage.remove(connection: connection)
         // enable LE advertising
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
@@ -212,6 +197,57 @@ public struct GATTPeripheralOptions {
         
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.maximumPreparedWrites = maximumPreparedWrites
+    }
+}
+
+internal extension GATTPeripheral {
+    
+    actor Storage {
+        
+        var database = GATTDatabase()
+        
+        var connections = [UInt: GATTServerConnection<Socket>]()
+        
+        private var lastConnectionID: UInt = 0
+        
+        fileprivate init() { }
+        
+        func add(service: BluetoothGATT.GATTAttribute.Service) -> UInt16 {
+            return database.add(service: service)
+        }
+        
+        func remove(service handle: UInt16) {
+            database.remove(service: handle)
+        }
+        
+        func removeAllServices() {
+            database.removeAll()
+        }
+        
+        func write(_ value: Data, forAttribute handle: UInt16) {
+            database.write(value, forAttribute: handle)
+        }
+        
+        func newConnection(_ socket: Socket, options: Options, delegate: GATTServerConnectionDelegate) async {
+            let central = Central(id: socket.address)
+            let id = newConnectionID()
+            connections[id] = await GATTServerConnection(
+                central: central,
+                socket: socket,
+                maximumTransmissionUnit: options.maximumTransmissionUnit,
+                maximumPreparedWrites: options.maximumPreparedWrites,
+                delegate: delegate
+            )
+        }
+        
+        func newConnectionID() -> UInt {
+            lastConnectionID += 1
+            return lastConnectionID
+        }
+        
+        func remove(connection id: UInt) {
+            connections[id] = nil
+        }
     }
 }
 

@@ -33,10 +33,10 @@ public protocol PeripheralManager: AnyObject {
     func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16
     
     /// Removes the service with the specified handle.
-    func remove(service: UInt16)
+    func remove(service: UInt16) async
     
     /// Clears the local GATT database.
-    func removeAllServices()
+    func removeAllServices() async
     
     var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
     
@@ -48,7 +48,7 @@ public protocol PeripheralManager: AnyObject {
     func write(_ newValue: Data, forCharacteristic handle: UInt16) async
     
     /// Read the value of the characteristic with specified handle.
-    subscript(characteristic handle: UInt16) -> Data { get }
+    func characteristicValue(for handle: UInt16) async -> Data
 }
 
 // MARK: - Supporting Types
