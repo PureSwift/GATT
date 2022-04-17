@@ -22,7 +22,7 @@ public protocol PeripheralManager: AnyObject {
     associatedtype Central: Peer
     
     /// Start advertising the peripheral and listening for incoming connections.
-    func start() throws
+    func start() async throws
     
     /// Stop the peripheral.
     func stop()
@@ -30,7 +30,7 @@ public protocol PeripheralManager: AnyObject {
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Attribute handle.
-    func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16
+    func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16
     
     /// Removes the service with the specified handle.
     func remove(service: UInt16)
@@ -38,17 +38,17 @@ public protocol PeripheralManager: AnyObject {
     /// Clears the local GATT database.
     func removeAllServices()
     
-    //var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
+    var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
     
-    //var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
     
-    //var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
+    var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
     
-    /// Write / Read the value of the characteristic with specified handle.
-    subscript(characteristic handle: UInt16) -> Data { get set }
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    func write(_ newValue: Data, forCharacteristic handle: UInt16) async
     
-    /// Return the handles of the characteristics matching the specified UUID.
-    func characteristics(for uuid: BluetoothUUID) -> [UInt16]
+    /// Read the value of the characteristic with specified handle.
+    subscript(characteristic handle: UInt16) -> Data { get }
 }
 
 // MARK: - Supporting Types

@@ -12,19 +12,25 @@ import Foundation
 @_exported import BluetoothHCI
 
 /// GATT Peripheral Manager
-public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> /* : PeripheralManager */ {
+public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: PeripheralManager {
+        
+    /// Central Peer
+    public typealias Central = GATT.Central
     
     /// Peripheral Options
     public typealias Options = GATTPeripheralOptions
-    
-    /// Peripheral Callback
-    public typealias Callback = GATTPeripheralCallback
     
     // MARK: - Properties
     
     public let hostController: HostController
     
     public let options: Options
+    
+    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
+    
+    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
+    
+    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
     public var activeConnections: [Central] {
         self.connections.values.map { $0.central }
@@ -41,8 +47,6 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     private var connections = [UInt: GATTServerConnection<Socket>]()
         
     private var lastConnectionID: UInt = 0
-    
-    private var callback = Callback()
     
     // MARK: - Initialization
     
@@ -65,10 +69,6 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     
     // MARK: - Methods
     
-    public func setCallbacks(_ callback: Callback) {
-        self.callback = callback
-    }
-    
     public func start() async throws {
         // read address
         let address = try await hostController.readDeviceAddress()
@@ -86,7 +86,7 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
         self.task = Task { [weak self] in
             self?.log?("Started GATT Server")
             do {
-                while let socket = await self?.socket {
+                while let socket = self?.socket {
                     try Task.checkCancellation()
                     let newSocket = try await socket.accept()
                     await self?.newConnection(newSocket)
@@ -118,14 +118,6 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
         database.removeAll()
     }
     
-    /// Return the handles of the characteristics matching the specified UUID.
-    public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
-        return database
-            .lazy
-            .filter { $0.uuid == uuid }
-            .map { $0.handle }
-    }
-    
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     public func write(_ newValue: Data, forCharacteristic handle: UInt16) async {
         await write(newValue, forCharacteristic: handle, ignore: .none)
@@ -148,6 +140,7 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
     // MARK: - Subscript
     
     public subscript(characteristic handle: UInt16) -> Data {
+        // TODO: Make async safe
         database[handle: handle].value
     }
     
@@ -182,27 +175,27 @@ public actor GATTPeripheral <HostController: BluetoothHostControllerInterface, S
 
 extension GATTPeripheral: GATTServerConnectionDelegate {
     
-    nonisolated func connection(_ central: Central, log message: String) {
+    func connection(_ central: Central, log message: String) {
         self.log?("[\(central)]: " + message)
     }
     
-    nonisolated func connection(_ central: Central, didDisconnect error: Swift.Error?) async {
+    func connection(_ central: Central, didDisconnect error: Swift.Error?) {
         return
     }
     
-    nonisolated func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError? {
-        return await callback.willRead?(request)
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
+        return willRead?(request)
     }
     
-    nonisolated func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) async -> ATTError? {
-        return await callback.willWrite?(request)
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError? {
+        return willWrite?(request)
     }
     
-    nonisolated func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async {
+    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async {
         // update DB and inform other connections
         await write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
         // notify delegate
-        await callback.didWrite?(confirmation)
+        didWrite?(confirmation)
     }
 }
 
@@ -220,17 +213,6 @@ public struct GATTPeripheralOptions {
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.maximumPreparedWrites = maximumPreparedWrites
     }
-}
-
-public struct GATTPeripheralCallback {
-    
-    public var willRead: ((_ request: GATTReadRequest<Central>) async -> ATTError?)?
-    
-    public var willWrite: ((_ request: GATTWriteRequest<Central>) async -> ATTError?)?
-    
-    public var didWrite: ((_ confirmation: GATTWriteConfirmation<Central>) async -> Void)?
-    
-    public init() { }
 }
 
 #endif

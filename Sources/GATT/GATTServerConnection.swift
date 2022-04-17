@@ -58,7 +58,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     // IO error
     private func error(_ error: Error) async {
         log("Disconnected \(error)")
-        await delegate?.connection(central, didDisconnect: error)
+        delegate?.connection(central, didDisconnect: error)
     }
     
     private func log(_ message: String) {
@@ -88,7 +88,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             value: value,
             offset: offset
         )
-        return await delegate?.connection(central, willRead: request)
+        return delegate?.connection(central, willRead: request)
     }
     
     private func willWrite(uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) async -> ATTError? {
@@ -100,7 +100,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             value: value,
             newValue: newValue
         )
-        return await delegate?.connection(central, willWrite: request)
+        return delegate?.connection(central, willWrite: request)
     }
     
     private func didWrite(uuid: BluetoothUUID, handle: UInt16, value: Data) async {
@@ -119,11 +119,11 @@ internal protocol GATTServerConnectionDelegate: AnyObject {
     
     func connection(_ central: Central, log: String)
     
-    func connection(_ central: Central, didDisconnect error: Error?) async
+    func connection(_ central: Central, didDisconnect error: Error?)
     
-    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError?
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError?
     
-    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) async -> ATTError?
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError?
         
     func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async
 }
