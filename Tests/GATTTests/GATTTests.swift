@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 7/12/18.
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
-/*
+
 import Foundation
 import XCTest
 import Dispatch
@@ -16,16 +16,7 @@ import BluetoothHCI
 
 @available(macOS 10.12, *)
 final class GATTTests: XCTestCase {
-    
-    static var allTests = [
-        ("testScanData", testScanData),
-        ("testMTUExchange", testMTUExchange),
-        ("testServiceDiscovery", testServiceDiscovery),
-        ("testCharacteristicValue", testCharacteristicValue),
-        ("testNotification", testNotification),
-        ("testIndication", testIndication)
-        ]
-    
+    /*
     func testScanData() {
         
         do {
@@ -718,16 +709,7 @@ final class GATTTests: XCTestCase {
         XCTAssertNoThrow(try central.notify(nil, for: foundCharacteristic))
         */
     }
-}
-
-internal extension CentralProtocol {
-    
-    func scan(duration: TimeInterval) throws -> [ScanData<Peripheral, Advertisement>] {
-        var results = [Peripheral: ScanData<Peripheral, Advertisement>]()
-        results.reserveCapacity(2)
-        try scan(duration: duration) { results[$0.peripheral] = $0 }
-        return results.values.sorted(by: { $0.date < $1.date })
-    }
+     */
 }
 
 @available(OSX 10.12, *)
@@ -800,4 +782,3 @@ fileprivate extension ATTOpcodeType {
         }
     }
 }
-*/
