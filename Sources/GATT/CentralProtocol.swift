@@ -14,7 +14,7 @@ import Bluetooth
 ///
 /// Implementation varies by operating system and framework.
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public protocol CentralManager {
+public protocol CentralManager: AnyObject {
     
     /// Central Peripheral Type
     associatedtype Peripheral: Peer
@@ -24,6 +24,9 @@ public protocol CentralManager {
     
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
+    
+    /// Currently scanned devices, or restored devices.
+    var peripherals: Set<Peripheral> { get async }
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>

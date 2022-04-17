@@ -12,7 +12,9 @@ import Foundation
 @_exported import BluetoothHCI
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket> /* : CentralManager */ {
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: CentralManager {
+    
+    public typealias Options = GATTCentralOptions
     
     // MARK: - Properties
     
@@ -20,13 +22,20 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public typealias AttributeID = UInt16
     
-    public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (Socket)
+    public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) async throws -> (Socket)
     
     public let log: ((String) -> ())?
     
     public let hostController: HostController
     
-    public let options: GATTCentralOptions
+    public let options: Options
+    
+    /// Currently scanned devices, or restored devices.
+    public var peripherals: Set<Peripheral> {
+        get async {
+            return await Set(storage.scanData.keys)
+        }
+    }
     
     internal let newConnection: NewConnection
     
@@ -36,7 +45,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public init(
         hostController: HostController,
-        options: GATTCentralOptions = GATTCentralOptions(),
+        options: Options = Options(),
         newConnection: @escaping NewConnection,
         log: ((String) -> ())? = nil
     ) {
@@ -94,7 +103,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
         // open socket
-        let socket = try self.newConnection(scanData, report)
+        let socket = try await self.newConnection(scanData, report)
         // configure connection object
         let callback = GATTClientConnectionCallback(
             log: self.log,
@@ -183,6 +192,18 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func stopNotifications(for characteristic: Characteristic<Peripheral, UInt16>) async throws {
         try await connection(for: characteristic.peripheral)
             .notify(characteristic, notification: nil)
+    }
+    
+    public func discoverDescriptors(for characteristic: Characteristic<Peripheral, UInt16>) async throws -> [Descriptor<Peripheral, UInt16>] {
+        fatalError()
+    }
+    
+    public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
+        fatalError()
+    }
+    
+    public func writeValue(_ data: Data, for descriptor: Descriptor<Peripheral, UInt16>) async throws {
+        fatalError()
     }
     
     /// Read MTU
