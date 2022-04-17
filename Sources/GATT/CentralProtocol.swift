@@ -29,13 +29,10 @@ public protocol CentralManager: AnyObject {
     var peripherals: Set<Peripheral> { get async }
     
     /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error>
+    func scan(filterDuplicates: Bool) -> AsyncCentralScan<Self>
     
-    /// Stops scanning for peripherals.
-    func stopScan() async
-    
-    /// Scanning status
-    //var isScanning: AsyncStream<Bool> { get }
+    /// Disconnected peripheral callback
+    //var didDisconnect: AsyncStream<Peripheral> { get }
     
     /// Connect to the specified device
     func connect(to peripheral: Peripheral) async throws
@@ -45,9 +42,6 @@ public protocol CentralManager: AnyObject {
     
     /// Disconnect all connected devices.
     func disconnectAll() async
-    
-    /// Disconnected peripheral callback
-    //var didDisconnect: AsyncStream<Peripheral> { get }
     
     /// Discover Services
     func discoverServices(

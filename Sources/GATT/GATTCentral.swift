@@ -60,40 +60,19 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     /// Scans for peripherals that are advertising services.
     public func scan(
         filterDuplicates: Bool
-    ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Swift.Error> {
-        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(30)) { continuation in
-            Task(priority: .userInitiated) { [weak self] in
-                guard let self = self else { return }
-                // wait until scanning is possible
-                while await self.storage.scanningStream != nil {
-                    try await Task.sleep(nanoseconds: 1_000_000_000)
-                }
-                // start scanning
-                self.log?("Scanning...")
-                let stream = self.hostController.lowEnergyScan(
-                    filterDuplicates: filterDuplicates,
-                    parameters: self.options.scanParameters
-                )
-                // store stream
-                await self.storage.startScanning(stream)
-                // store
-                do {
-                    for try await report in stream {
-                        let scanData = await self.storage.found(report)
-                        continuation.yield(scanData)
-                    }
-                    continuation.finish()
-                }
-                catch {
-                    continuation.finish(throwing: error)
-                }
+    ) -> AsyncCentralScan<GATTCentral> {
+        return AsyncCentralScan { [unowned self] continuation in
+            // start scanning
+            self.log?("Scanning...")
+            let stream = self.hostController.lowEnergyScan(
+                filterDuplicates: filterDuplicates,
+                parameters: self.options.scanParameters
+            )
+            for try await report in stream {
+                let scanData = await self.storage.found(report)
+                continuation.yield(scanData)
             }
         }
-    }
-    
-    public func stopScan() async {
-        self.log?("Stop scanning")
-        await self.storage.stopScanning()
     }
     
     public func connect(to peripheral: Peripheral) async throws {
@@ -236,16 +215,6 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
 internal extension GATTCentral {
     
     actor Storage {
-        
-        var scanningStream: AsyncLowEnergyScanStream?
-        
-        func startScanning(_ stream: AsyncLowEnergyScanStream) {
-            self.scanningStream = stream
-        }
-        
-        func stopScanning() {
-            self.scanningStream?.stop()
-        }
         
         var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
         

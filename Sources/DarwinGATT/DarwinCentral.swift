@@ -81,7 +81,7 @@ public final class DarwinCentral: CentralManager {
     /// Scans for peripherals that are advertising services.
     public func scan(
         filterDuplicates: Bool = true
-    ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
+    ) -> AsyncCentralScan<DarwinCentral> {
         return scan(with: [], filterDuplicates: filterDuplicates)
     }
     
@@ -89,8 +89,27 @@ public final class DarwinCentral: CentralManager {
     public func scan(
         with services: Set<BluetoothUUID>,
         filterDuplicates: Bool = true
+    ) -> AsyncCentralScan<DarwinCentral> {
+        return AsyncCentralScan { [unowned self] continuation in
+            let stream = self._scan(with: services, filterDuplicates: filterDuplicates)
+            do {
+                for try await scanData in stream {
+                    continuation.yield(scanData)
+                }
+            }
+            catch {
+                await self.stopScan()
+                throw error
+            }
+        }
+    }
+    
+    /// Scans for peripherals that are advertising services.
+    internal func _scan(
+        with services: Set<BluetoothUUID>,
+        filterDuplicates: Bool = true
     ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
-        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) {  [weak self] continuation in
+        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
                 // disconnect all first
@@ -106,7 +125,7 @@ public final class DarwinCentral: CentralManager {
         }
     }
     
-    public func stopScan() async {
+    internal func stopScan() async {
         return await withCheckedContinuation { [weak self] continuation in
             guard let self = self else { return }
             self.async {
