@@ -15,7 +15,7 @@ import GATT
 import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral /*: PeripheralManager */ {
+public final class DarwinPeripheral: PeripheralManager {
     
     // MARK: - Properties
     
@@ -39,8 +39,6 @@ public final class DarwinPeripheral /*: PeripheralManager */ {
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
     private var database = Database()
-    
-    private var notifyQueue = [(characteristic: CBMutableCharacteristic, data: Data)]()
     
     private var peripheralManager: CBPeripheralManager!
     
@@ -126,39 +124,69 @@ public final class DarwinPeripheral /*: PeripheralManager */ {
         }
     }
     
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16) async {
+        await withUnsafeContinuation { [unowned self] (continuation: UnsafeContinuation<(), Never>) in
+            self.queue.async { [unowned self] in
+                // update GATT DB
+                database[characteristic: handle] = newValue
+                continuation.resume()
+            }
+        }
+        // send notifications
+        await notify(newValue, forCharacteristic: handle)
+    }
+    
     // MARK: Subscript
     
     public subscript(characteristic handle: UInt16) -> Data {
-        get { return database[characteristic: handle] }
-        set { writeValue(newValue, for: handle) }
+        return self.queue.sync { [unowned self] in
+            self.database[characteristic: handle]
+        }
     }
     
     // MARK: - Private Methods
     
-    private func writeValue(_ newValue: Data, for handle: UInt16) {
-        // update GATT DB
-        database[characteristic: handle] = newValue
-        let characteristicObject = database.characteristic(for: handle)
-        notify(newValue, for: characteristicObject)
+    private func notify(_ value: Data, forCharacteristic handle: UInt16) async {
+        
+        // attempt to write notifications
+        var didNotify = await updateValue(value, forCharacteristic: handle)
+        while didNotify == false {
+            await waitPeripheralReadyUpdateSubcribers()
+            didNotify = await updateValue(value, forCharacteristic: handle)
+        }
     }
     
-    private func notify(_ value: Data, for characteristic: CBMutableCharacteristic) {
-        
-        // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
-        let didNotify = peripheralManager.updateValue(
-            value,
-            for: characteristic,
-            onSubscribedCentrals: nil
-        )
-        
-        // The underlying transmit queue is full
-        if didNotify == false {
-            // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
-            // when more space in the transmit queue becomes available.
-            notifyQueue.append((characteristic, value))
-            //log("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
-        } else {
-            //log("Did send notification for \((characteristic as CBCharacteristic).uuid)")
+    private func waitPeripheralReadyUpdateSubcribers() async {
+        await withCheckedContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                self.continuation.canNotify = continuation
+            }
+        }
+    }
+    
+    private func updateValue(_ value: Data, forCharacteristic handle: UInt16) async -> Bool {
+        return await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                let characteristicObject = database.characteristic(for: handle)
+                // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
+                let didNotify = peripheralManager.updateValue(
+                    value,
+                    for: characteristicObject,
+                    onSubscribedCentrals: nil
+                )
+                
+                // The underlying transmit queue is full
+                if didNotify == false {
+                    // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
+                    // when more space in the transmit queue becomes available.
+                    //log("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
+                } else {
+                    //log("Did send notification for \((characteristic as CBCharacteristic).uuid)")
+                }
+                
+                continuation.resume(returning: didNotify)
+            }
         }
     }
 }
@@ -276,6 +304,8 @@ internal extension DarwinPeripheral {
         var startAdvertising: CheckedContinuation<(), Error>?
         
         var addService: CheckedContinuation<(), Error>?
+        
+        var canNotify: CheckedContinuation<(), Never>?
         
         fileprivate init() { }
     }
@@ -428,20 +458,14 @@ internal extension DarwinPeripheral {
         @objc
         public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
             log("Ready to send notifications")
-            // send as many notifications as possible and re-queue if any fail
-            while let pendingNotification = self.peripheral.notifyQueue.first {
-                self.peripheral.notifyQueue.removeFirst()
-                self.peripheral.queue.asyncAfter(deadline: .now() + 0.1, execute: { [weak self] in
-                    self?.peripheral.notify(pendingNotification.data, for: pendingNotification.characteristic)
-                })
-            }
+            self.peripheral.continuation.canNotify?.resume()
         }
     }
 }
 
 private extension DarwinPeripheral {
     
-    final class Database {
+    struct Database {
         
         struct Service {
             
@@ -465,7 +489,7 @@ private extension DarwinPeripheral {
         private var lastHandle: UInt16 = 0x0000
         
         /// Simulate a GATT database.
-        private func newHandle() -> UInt16 {
+        private mutating func newHandle() -> UInt16 {
             
             assert(lastHandle != .max)
             
@@ -475,7 +499,7 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> UInt16 {
+        mutating func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> UInt16 {
             
             let serviceHandle = newHandle()
             
@@ -495,7 +519,7 @@ private extension DarwinPeripheral {
             return serviceHandle
         }
         
-        func remove(service handle: UInt16) {
+        mutating func remove(service handle: UInt16) {
             
             let coreService = service(for: handle)
             
@@ -509,7 +533,7 @@ private extension DarwinPeripheral {
             }
         }
         
-        func removeAll() {
+        mutating func removeAll() {
             
             services.removeAll()
             characteristics.removeAll()
