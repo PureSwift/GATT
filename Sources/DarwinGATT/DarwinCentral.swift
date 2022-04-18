@@ -306,11 +306,16 @@ public final class DarwinCentral: CentralManager {
         try await self.setNotification(true, for: characteristic)
         // central
         return AsyncCentralNotifications(onTermination: {
-            Task(priority: .userInitiated) { [weak self] in
+            Task(priority: .high) { [weak self] in
                 guard let self = self else { return }
                 // disable notifications
                 do { try await self.setNotification(false, for: characteristic) }
-                catch { self.log?("Unable to stop notifications for \(characteristic.uuid)") }
+                catch CentralError.disconnected {
+                    return
+                }
+                catch {
+                    self.log?("Unable to stop notifications for \(characteristic.uuid). \(error.localizedDescription)")
+                }
                 // remove notification stream
                 self.async { [weak self] in
                     guard let self = self else { return }
