@@ -316,6 +316,13 @@ public final class DarwinCentral: CentralManager {
                 }
             }
         }, { continuation in
+            // store continuation
+            self.async {
+                let context = self.continuation(for: characteristic.peripheral)
+                assert(context.notificationStream[characteristic.id] == nil)
+                context.notificationStream[characteristic.id] = continuation
+            }
+            // enable notifications
             Task(priority: .userInitiated) { [weak self] in
                 guard let self = self else { return }
                 do {
@@ -324,11 +331,6 @@ public final class DarwinCentral: CentralManager {
                 catch {
                     continuation.finish(throwing: error)
                     return
-                }
-                self.async {
-                    let context = self.continuation(for: characteristic.peripheral)
-                    assert(context.notificationStream[characteristic.id] == nil)
-                    context.notificationStream[characteristic.id] = continuation
                 }
             }
         })
