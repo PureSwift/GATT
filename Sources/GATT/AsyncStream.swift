@@ -21,6 +21,14 @@ public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
         self.stream = .init(bufferSize: bufferSize, build)
     }
     
+    public init(
+        bufferSize: Int = 100,
+        onTermination: @escaping () -> (),
+        _ build: (AsyncIndefiniteStream<Element>.Continuation) -> ()
+    ) {
+        self.stream = .init(bufferSize: bufferSize, onTermination: onTermination, build)
+    }
+    
     public func makeAsyncIterator() -> AsyncIndefiniteStream<Element>.AsyncIterator {
         stream.makeAsyncIterator()
     }
@@ -47,7 +55,11 @@ public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence
         self.stream = .init(bufferSize: bufferSize, build)
     }
     
-    public init(bufferSize: Int = 100, onTermination: @escaping () -> (), build: (AsyncIndefiniteStream<Element>.Continuation) -> ()) {
+    public init(
+        bufferSize: Int = 100,
+        onTermination: @escaping () -> (),
+        _ build: (AsyncIndefiniteStream<Element>.Continuation) -> ()
+    ) {
         self.stream = .init(bufferSize: bufferSize, onTermination: onTermination, build)
     }
     

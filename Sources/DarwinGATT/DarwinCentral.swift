@@ -90,27 +90,20 @@ public final class DarwinCentral: CentralManager {
         with services: Set<BluetoothUUID>,
         filterDuplicates: Bool = true
     ) -> AsyncCentralScan<DarwinCentral> {
-        return AsyncCentralScan { [unowned self] continuation in
-            let stream = self._scan(with: services, filterDuplicates: filterDuplicates)
-            do {
-                for try await scanData in stream {
-                    continuation(scanData)
+        return AsyncCentralScan(onTermination: { [weak self] in
+            guard let self = self else { return }
+            self.async {
+                guard let _ = self.continuation.scan.current else {
+                    return // not currently scanning
+                }
+                self.continuation.scan.pop { operation in
+                    self.centralManager.stopScan()
+                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
+                    //self.continuation.isScanning.yield(false)
                 }
             }
-            catch {
-                await self.stopScan()
-                throw error
-            }
-        }
-    }
-    
-    /// Scans for peripherals that are advertising services.
-    internal func _scan(
-        with services: Set<BluetoothUUID>,
-        filterDuplicates: Bool = true
-    ) -> AsyncThrowingStream<ScanData<Peripheral, Advertisement>, Error> {
-        return AsyncThrowingStream(ScanData<Peripheral, Advertisement>.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
-            guard let self = self else { return }
+            
+        }) { continuation in
             self.async {
                 // disconnect all first
                 self._disconnectAll()
@@ -121,25 +114,6 @@ public final class DarwinCentral: CentralManager {
                     continuation: continuation
                 )
                 self.continuation.scan.push(operations)
-            }
-        }
-    }
-    
-    internal func stopScan() async {
-        return await withCheckedContinuation { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                guard let _ = self.continuation.scan.current else {
-                    continuation.resume() // not currently scanning
-                    return
-                }
-                self.continuation.scan.pop { operation in
-                    self.centralManager.stopScan()
-                    operation.continuation.finish(throwing: nil) // end stream
-                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
-                    //self.continuation.isScanning.yield(false)
-                    continuation.resume()
-                }
             }
         }
     }
@@ -334,8 +308,14 @@ public final class DarwinCentral: CentralManager {
                 guard let self = self else { return }
                 do { try await self.setNotification(false, for: characteristic) }
                 catch { self.log("Unable to stop notifications for \(characteristic.uuid)") }
+                self.async { [weak self] in
+                    guard let self = self else { return }
+                    let context = self.continuation(for: characteristic.peripheral)
+                    assert(context.notificationStream[characteristic.id] != nil)
+                    context.notificationStream[characteristic.id] = nil
+                }
             }
-        }, build: { continuation in
+        }, { continuation in
             Task(priority: .userInitiated) { [weak self] in
                 guard let self = self else { return }
                 do {
@@ -352,18 +332,6 @@ public final class DarwinCentral: CentralManager {
                 }
             }
         })
-    }
-    
-    internal func stopNotifications(
-        for characteristic: DarwinCentral.Characteristic
-    ) async throws {
-        try await setNotification(false, for: characteristic)
-        self.async { [weak self] in
-            guard let self = self else { return }
-            let context = self.continuation(for: characteristic.peripheral)
-            assert(context.notificationStream[characteristic.id] != nil)
-            context.notificationStream[characteristic.id] = nil
-        }
     }
     
     public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
@@ -757,7 +725,7 @@ internal extension DarwinCentral.Operation {
     struct Scan {
         let services: Set<BluetoothUUID>
         let filterDuplicates: Bool
-        let continuation: AsyncThrowingStream<ScanData<DarwinCentral.Peripheral, DarwinCentral.Advertisement>, Error>.Continuation
+        let continuation: AsyncIndefiniteStream<ScanData<DarwinCentral.Peripheral, DarwinCentral.Advertisement>>.Continuation
     }
 }
 
