@@ -25,6 +25,9 @@ public protocol CentralManager: AnyObject {
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
+    /// Logging
+    var log: ((String) -> ())? { get set }
+    
     /// Currently scanned devices, or restored devices.
     var peripherals: Set<Peripheral> { get async }
     
