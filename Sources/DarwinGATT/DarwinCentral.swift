@@ -375,14 +375,9 @@ public final class DarwinCentral: CentralManager {
         //continuation.log.yield(message)
     }
     
+    @inline(__always)
     private func async(_ body: @escaping () -> ()) {
-        let queue = self.queue ?? .main
-        if self.queue == nil, Thread.isMainThread {
-            // run on main thread directly
-            body()
-        } else {
-            queue.async(execute: body)
-        }
+        queue.async(execute: body)
     }
     
     private func continuation(for peripheral: Peripheral) -> PeripheralContinuationContext {
