@@ -58,14 +58,14 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     /// Scans for peripherals that are advertising services.
     public func scan(
         filterDuplicates: Bool
-    ) -> AsyncCentralScan<GATTCentral> {
+    ) async throws -> AsyncCentralScan<GATTCentral> {
+        self.log?("Scanning...")
+        let stream = try await self.hostController.lowEnergyScan(
+            filterDuplicates: filterDuplicates,
+            parameters: self.options.scanParameters
+        )
         return AsyncCentralScan { [unowned self] continuation in
             // start scanning
-            self.log?("Scanning...")
-            let stream = self.hostController.lowEnergyScan(
-                filterDuplicates: filterDuplicates,
-                parameters: self.options.scanParameters
-            )
             for try await report in stream {
                 let scanData = await self.storage.found(report)
                 continuation(scanData)
