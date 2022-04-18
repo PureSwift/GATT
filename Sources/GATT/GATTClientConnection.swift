@@ -148,18 +148,6 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
     }
     
     public func notify(
-        for characteristic: Characteristic<Peripheral, UInt16>
-    ) -> AsyncThrowingStream<Data, Swift.Error> {
-        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) { [weak self] continuation in
-            guard let self = self else { return }
-            Task {
-                do { try await self.notify(characteristic) { continuation.yield($0) } }
-                catch { continuation.finish(throwing: error) }
-            }
-        }
-    }
-    
-    public func notify(
         _ characteristic: Characteristic<Peripheral, UInt16>,
         notification: (GATTClient.Notification)?
     ) async throws {

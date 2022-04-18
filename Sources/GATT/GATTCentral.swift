@@ -70,7 +70,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             )
             for try await report in stream {
                 let scanData = await self.storage.found(report)
-                continuation.yield(scanData)
+                continuation(scanData)
             }
         }
     }
@@ -149,28 +149,31 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     /// Start Notifications
     public func notify(
         for characteristic: Characteristic<Peripheral, UInt16>
-    ) async -> AsyncThrowingStream<Data, Swift.Error> {
-        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(1000)) { continuation in
+    ) -> AsyncCentralNotifications<GATTCentral> {
+        return AsyncCentralNotifications(onTermination: {
+            Task(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                do {
+                    // start notifications
+                    try await self.connection(for: characteristic.peripheral)
+                        .notify(characteristic, notification: .none)
+                }
+                catch {
+                    self.log?("Unable to stop notifications for \(characteristic.uuid)")
+                }
+            }
+        }) { [unowned self] continuation in
             Task(priority: .userInitiated) {
                 do {
-                    let stream = try await connection(for: characteristic.peripheral)
-                        .notify(for: characteristic)
-                    for try await notification in stream {
-                        continuation.yield(notification)
-                    }
-                    continuation.finish()
+                    // start notifications
+                    try await connection(for: characteristic.peripheral)
+                        .notify(characteristic) { continuation.yield($0) }
                 }
                 catch {
                     continuation.finish(throwing: error)
                 }
             }
         }
-    }
-    
-    // Stop Notifications
-    public func stopNotifications(for characteristic: Characteristic<Peripheral, UInt16>) async throws {
-        try await connection(for: characteristic.peripheral)
-            .notify(characteristic, notification: nil)
     }
     
     public func discoverDescriptors(for characteristic: Characteristic<Peripheral, UInt16>) async throws -> [Descriptor<Peripheral, UInt16>] {

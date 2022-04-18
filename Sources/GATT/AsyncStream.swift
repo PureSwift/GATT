@@ -8,28 +8,15 @@
 import Foundation
 import Bluetooth
 
-public final class AsyncCentralScan <Central: CentralManager>: AsyncSequence {
+public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
 
     public typealias Element = ScanData<Central.Peripheral, Central.Advertisement>
     
     let stream: AsyncIndefiniteStream<Element>
     
-    deinit {
-        if stream.didStop == false {
-            stream.stop()
-        }
-    }
-    
     public init(
         bufferSize: Int = 100,
-        unfolding produce: @escaping () async throws -> Element
-    ) {
-        self.stream = .init(bufferSize: bufferSize, unfolding: produce)
-    }
-    
-    public init(
-        bufferSize: Int = 100,
-        _ build: @escaping (AsyncIndefiniteStream<Element>.Continuation) async throws -> ()
+        _ build: @escaping ((Element) -> ()) async throws -> ()
     ) {
         self.stream = .init(bufferSize: bufferSize, build)
     }
@@ -43,11 +30,11 @@ public final class AsyncCentralScan <Central: CentralManager>: AsyncSequence {
     }
     
     public var isScanning: Bool {
-        return stream.didStop == false
+        return stream.isExecuting
     }
 }
 
-public final class AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
+public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
 
     public typealias Element = Data
     
@@ -55,16 +42,13 @@ public final class AsyncCentralNotifications <Central: CentralManager>: AsyncSeq
     
     public init(
         bufferSize: Int = 100,
-        unfolding produce: @escaping () async throws -> Element
-    ) {
-        self.stream = .init(bufferSize: bufferSize, unfolding: produce)
-    }
-    
-    public init(
-        bufferSize: Int = 100,
-        _ build: @escaping (AsyncIndefiniteStream<Element>.Continuation) async throws -> ()
+        _ build: @escaping ((Element) -> ()) async throws -> ()
     ) {
         self.stream = .init(bufferSize: bufferSize, build)
+    }
+    
+    public init(bufferSize: Int = 100, onTermination: @escaping () -> (), build: (AsyncIndefiniteStream<Element>.Continuation) -> ()) {
+        self.stream = .init(bufferSize: bufferSize, onTermination: onTermination, build)
     }
     
     public func makeAsyncIterator() -> AsyncIndefiniteStream<Element>.AsyncIterator {
@@ -76,6 +60,6 @@ public final class AsyncCentralNotifications <Central: CentralManager>: AsyncSeq
     }
     
     public var isNotifying: Bool {
-        return stream.didStop == false
+        return stream.isExecuting
     }
 }

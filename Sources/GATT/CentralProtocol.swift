@@ -86,10 +86,7 @@ public protocol CentralManager: AnyObject {
     /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws -> AsyncThrowingStream<Data, Error>
-    
-    // Stop Notifications
-    func stopNotifications(for characteristic: Characteristic<Peripheral, AttributeID>) async throws
+    ) -> AsyncCentralNotifications<Self>
     
     /// Read MTU
     func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit

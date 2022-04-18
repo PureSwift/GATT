@@ -94,7 +94,7 @@ public final class DarwinCentral: CentralManager {
             let stream = self._scan(with: services, filterDuplicates: filterDuplicates)
             do {
                 for try await scanData in stream {
-                    continuation.yield(scanData)
+                    continuation(scanData)
                 }
             }
             catch {
@@ -328,19 +328,33 @@ public final class DarwinCentral: CentralManager {
     
     public func notify(
         for characteristic: DarwinCentral.Characteristic
-    ) async throws -> AsyncThrowingStream<Data, Error> {
-        try await setNotification(true, for: characteristic)
-        return AsyncThrowingStream(Data.self, bufferingPolicy: .bufferingNewest(100)) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                let context = self.continuation(for: characteristic.peripheral)
-                assert(context.notificationStream[characteristic.id] == nil)
-                context.notificationStream[characteristic.id] = continuation
+    ) -> AsyncCentralNotifications<DarwinCentral> {
+        return AsyncCentralNotifications(onTermination: {
+            Task(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                do { try await self.setNotification(false, for: characteristic) }
+                catch { self.log("Unable to stop notifications for \(characteristic.uuid)") }
             }
-        }
+        }, build: { continuation in
+            Task(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                do {
+                    try await self.setNotification(true, for: characteristic)
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                    return
+                }
+                self.async {
+                    let context = self.continuation(for: characteristic.peripheral)
+                    assert(context.notificationStream[characteristic.id] == nil)
+                    context.notificationStream[characteristic.id] = continuation
+                }
+            }
+        })
     }
     
-    public func stopNotifications(
+    internal func stopNotifications(
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
         try await setNotification(false, for: characteristic)
@@ -609,7 +623,7 @@ private extension DarwinCentral {
     final class PeripheralContinuationContext {
         
         var queue: Queue<Operation>
-        var notificationStream = [AttributeID: AsyncThrowingStream<Data, Error>.Continuation]()
+        var notificationStream = [AttributeID: AsyncIndefiniteStream<Data>.Continuation]()
         var readRSSI: Queue<Operation.ReadRSSI>
         
         fileprivate init(_ central: DarwinCentral) {
