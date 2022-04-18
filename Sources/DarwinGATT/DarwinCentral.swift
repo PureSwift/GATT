@@ -306,8 +306,10 @@ public final class DarwinCentral: CentralManager {
         return AsyncCentralNotifications(onTermination: {
             Task(priority: .userInitiated) { [weak self] in
                 guard let self = self else { return }
+                // disable notifications
                 do { try await self.setNotification(false, for: characteristic) }
                 catch { self.log("Unable to stop notifications for \(characteristic.uuid)") }
+                // remove notification stream
                 self.async { [weak self] in
                     guard let self = self else { return }
                     let context = self.continuation(for: characteristic.peripheral)
@@ -316,21 +318,21 @@ public final class DarwinCentral: CentralManager {
                 }
             }
         }, { continuation in
-            // store continuation
             self.async {
+                // store continuation
                 let context = self.continuation(for: characteristic.peripheral)
                 assert(context.notificationStream[characteristic.id] == nil)
                 context.notificationStream[characteristic.id] = continuation
-            }
-            // enable notifications
-            Task(priority: .userInitiated) { [weak self] in
-                guard let self = self else { return }
-                do {
-                    try await self.setNotification(true, for: characteristic)
-                }
-                catch {
-                    continuation.finish(throwing: error)
-                    return
+                // enable notifications
+                Task(priority: .userInitiated) { [weak self] in
+                    guard let self = self else { return }
+                    do {
+                        try await self.setNotification(true, for: characteristic)
+                    }
+                    catch {
+                        continuation.finish(throwing: error)
+                        return
+                    }
                 }
             }
         })
