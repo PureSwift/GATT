@@ -24,7 +24,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) async throws -> (Socket)
     
-    public let log: ((String) -> ())?
+    public var log: ((String) -> ())?
     
     public let hostController: HostController
     
@@ -46,13 +46,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public init(
         hostController: HostController,
         options: Options = Options(),
-        newConnection: @escaping NewConnection,
-        log: ((String) -> ())? = nil
+        newConnection: @escaping NewConnection
     ) {
         self.hostController = hostController
         self.options = options
         self.newConnection = newConnection
-        self.log = log
     }
     
     // MARK: - Methods

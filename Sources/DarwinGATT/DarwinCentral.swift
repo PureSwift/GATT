@@ -17,6 +17,8 @@ public final class DarwinCentral: CentralManager {
     
     // MARK: - Properties
     
+    public var log: ((String) -> ())?
+    
     public let options: Options
     
     public var state: DarwinBluetoothState {
@@ -96,7 +98,7 @@ public final class DarwinCentral: CentralManager {
                 }
                 self.continuation.scan.pop { operation in
                     self.centralManager.stopScan()
-                    self.log("Discovered \(self.cache.peripherals.count) peripherals")
+                    self.log?("Discovered \(self.cache.peripherals.count) peripherals")
                     //self.continuation.isScanning.yield(false)
                 }
             }
@@ -147,7 +149,7 @@ public final class DarwinCentral: CentralManager {
         self.async { [weak self] in
             guard let self = self else { return }
             if self._disconnect(peripheral) {
-                self.log("Will disconnect \(peripheral)")
+                self.log?("Will disconnect \(peripheral)")
             }
         }
     }
@@ -161,7 +163,7 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func disconnectAll() {
-        self.log("Will disconnect all")
+        self.log?("Will disconnect all")
         self.async { [weak self] in
             guard let self = self else { return }
             self._disconnectAll()
@@ -306,7 +308,7 @@ public final class DarwinCentral: CentralManager {
                 guard let self = self else { return }
                 // disable notifications
                 do { try await self.setNotification(false, for: characteristic) }
-                catch { self.log("Unable to stop notifications for \(characteristic.uuid)") }
+                catch { self.log?("Unable to stop notifications for \(characteristic.uuid)") }
                 // remove notification stream
                 self.async { [weak self] in
                     guard let self = self else { return }
@@ -337,20 +339,16 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
-        self.log("Will read MTU for \(peripheral)")
-        if queue == nil, Thread.isMainThread {
-            return try _maximumTransmissionUnit(for: peripheral) // optimization
-        } else {
-            return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    do {
-                        let mtu = try self._maximumTransmissionUnit(for: peripheral)
-                        continuation.resume(returning: mtu)
-                    }
-                    catch {
-                        continuation.resume(throwing: error)
-                    }
+        self.log?("Will read MTU for \(peripheral)")
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                do {
+                    let mtu = try self._maximumTransmissionUnit(for: peripheral)
+                    continuation.resume(returning: mtu)
+                }
+                catch {
+                    continuation.resume(throwing: error)
                 }
             }
         }
@@ -370,10 +368,6 @@ public final class DarwinCentral: CentralManager {
     }
     
     // MARK - Private Methods
-    
-    private func log(_ message: String) {
-        //continuation.log.yield(message)
-    }
     
     @inline(__always)
     private func async(_ body: @escaping () -> ()) {
@@ -486,7 +480,6 @@ public final class DarwinCentral: CentralManager {
     }
     
     private func _maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
-        assert(queue != nil || Thread.isMainThread, "Should only run on main thread")
         // get peripheral
         guard let peripheralObject = self.cache.peripherals[peripheral] else {
             throw CentralError.unknownPeripheral
@@ -758,7 +751,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.Connect) -> Bool {
-        log("Will connect to \(operation.peripheral)")
+        log?("Will connect to \(operation.peripheral)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -773,7 +766,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverServices) -> Bool {
-        log("Peripheral \(operation.peripheral) will discover services")
+        log?("Peripheral \(operation.peripheral) will discover services")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -793,7 +786,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverIncludedServices) -> Bool {
-        log("Peripheral \(operation.service.peripheral) will discover included services of service \(operation.service.uuid)")
+        log?("Peripheral \(operation.service.peripheral) will discover included services of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -816,7 +809,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverCharacteristics) -> Bool {
-        log("Peripheral \(operation.service.peripheral) will discover characteristics of service \(operation.service.uuid)")
+        log?("Peripheral \(operation.service.peripheral) will discover characteristics of service \(operation.service.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -840,7 +833,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.ReadCharacteristic) -> Bool {
-        log("Peripheral \(operation.characteristic.peripheral) will read characteristic \(operation.characteristic.uuid)")
+        log?("Peripheral \(operation.characteristic.peripheral) will read characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -863,7 +856,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.WriteCharacteristic) -> Bool {
-        log("Peripheral \(operation.characteristic.peripheral) will write characteristic \(operation.characteristic.uuid)")
+        log?("Peripheral \(operation.characteristic.peripheral) will write characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -893,7 +886,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.DiscoverDescriptors) -> Bool {
-        log("Peripheral \(operation.characteristic.peripheral) will discover descriptors of characteristic \(operation.characteristic.uuid)")
+        log?("Peripheral \(operation.characteristic.peripheral) will discover descriptors of characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -916,7 +909,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.ReadDescriptor) -> Bool {
-        log("Peripheral \(operation.descriptor.peripheral) will read descriptor \(operation.descriptor.uuid)")
+        log?("Peripheral \(operation.descriptor.peripheral) will read descriptor \(operation.descriptor.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -939,7 +932,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.WriteDescriptor) -> Bool {
-        log("Peripheral \(operation.descriptor.peripheral) will write descriptor \(operation.descriptor.uuid)")
+        log?("Peripheral \(operation.descriptor.peripheral) will write descriptor \(operation.descriptor.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -975,7 +968,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.NotificationState) -> Bool {
-        log("Peripheral \(operation.characteristic.peripheral) will \(operation.isEnabled ? "enable" : "disable") notifications for characteristic \(operation.characteristic.uuid)")
+        log?("Peripheral \(operation.characteristic.peripheral) will \(operation.isEnabled ? "enable" : "disable") notifications for characteristic \(operation.characteristic.uuid)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -998,7 +991,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.ReadRSSI) -> Bool {
-        self.log("Will read RSSI for \(operation.peripheral)")
+        self.log?("Will read RSSI for \(operation.peripheral)")
         // check power on
         guard validateState(.poweredOn, for: operation.continuation) else {
             return false
@@ -1017,7 +1010,7 @@ internal extension DarwinCentral {
     }
     
     func execute(_ operation: Operation.Scan) {
-        log("Will scan for nearby devices")
+        log?("Will scan for nearby devices")
         let serviceUUIDs: [CBUUID]? = operation.services.isEmpty ? nil : operation.services.map { CBUUID($0) }
         let options: [String: Any] = [
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: operation.filterDuplicates == false)
@@ -1133,7 +1126,7 @@ internal extension DarwinCentral {
         }
         
         fileprivate func log(_ message: String) {
-            self.central.log(message)
+            self.central.log?(message)
         }
         
         // MARK: - CBCentralManagerDelegate
