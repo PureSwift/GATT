@@ -315,7 +315,6 @@ public final class DarwinCentral: CentralManager {
                 self.async { [weak self] in
                     guard let self = self else { return }
                     let context = self.continuation(for: characteristic.peripheral)
-                    assert(context.notificationStream[characteristic.id] != nil)
                     context.notificationStream[characteristic.id] = nil
                 }
             }
