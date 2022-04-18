@@ -46,7 +46,7 @@ public final class DarwinCentral: CentralManager {
     
     private var delegate: Delegate!
     
-    private let queue: DispatchQueue?
+    private let queue = DispatchQueue(label: "org.pureswift.DarwinGATT.DarwinCentral")
     
     fileprivate var cache = Cache()
     
@@ -59,11 +59,9 @@ public final class DarwinCentral: CentralManager {
     /// - Parameter options: An optional dictionary containing initialization options for a central manager.
     /// For available options, see [Central Manager Initialization Options](apple-reference-documentation://ts1667590).
     public init(
-        options: Options = Options(),
-        queue: DispatchQueue? = nil
+        options: Options = Options()
     ) {
         self.options = options
-        self.queue = queue
         self.delegate = options.restoreIdentifier == nil ? Delegate(self) : RestorableDelegate(self)
         self.centralManager = CBCentralManager(
             delegate: self.delegate,
