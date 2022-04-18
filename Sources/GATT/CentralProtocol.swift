@@ -32,7 +32,7 @@ public protocol CentralManager: AnyObject {
     var peripherals: Set<Peripheral> { get async }
     
     /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool) -> AsyncCentralScan<Self>
+    func scan(filterDuplicates: Bool) async throws -> AsyncCentralScan<Self>
     
     /// Disconnected peripheral callback
     //var didDisconnect: AsyncStream<Peripheral> { get }
@@ -89,7 +89,7 @@ public protocol CentralManager: AnyObject {
     /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) -> AsyncCentralNotifications<Self>
+    ) async throws -> AsyncCentralNotifications<Self>
     
     /// Read MTU
     func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit

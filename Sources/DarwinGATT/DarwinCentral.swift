@@ -81,7 +81,7 @@ public final class DarwinCentral: CentralManager {
     /// Scans for peripherals that are advertising services.
     public func scan(
         filterDuplicates: Bool = true
-    ) -> AsyncCentralScan<DarwinCentral> {
+    ) async throws -> AsyncCentralScan<DarwinCentral> {
         return scan(with: [], filterDuplicates: filterDuplicates)
     }
     
@@ -99,7 +99,6 @@ public final class DarwinCentral: CentralManager {
                 self.continuation.scan.pop { operation in
                     self.centralManager.stopScan()
                     self.log?("Discovered \(self.cache.peripherals.count) peripherals")
-                    //self.continuation.isScanning.yield(false)
                 }
             }
             
@@ -302,7 +301,10 @@ public final class DarwinCentral: CentralManager {
     
     public func notify(
         for characteristic: DarwinCentral.Characteristic
-    ) -> AsyncCentralNotifications<DarwinCentral> {
+    ) async throws -> AsyncCentralNotifications<DarwinCentral> {
+        // enable notifications
+        try await self.setNotification(true, for: characteristic)
+        // central
         return AsyncCentralNotifications(onTermination: {
             Task(priority: .userInitiated) { [weak self] in
                 guard let self = self else { return }
@@ -318,18 +320,7 @@ public final class DarwinCentral: CentralManager {
                 }
             }
         }, { continuation in
-            // enable notifications
-            Task(priority: .high) { [weak self] in
-                guard let self = self else { return }
-                do {
-                    try await self.setNotification(true, for: characteristic)
-                }
-                catch {
-                    continuation.finish(throwing: error)
-                    return
-                }
-            }
-            self.async {
+            self.async { [unowned self] in
                 // store continuation
                 let context = self.continuation(for: characteristic.peripheral)
                 assert(context.notificationStream[characteristic.id] == nil)
