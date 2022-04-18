@@ -318,22 +318,22 @@ public final class DarwinCentral: CentralManager {
                 }
             }
         }, { continuation in
+            // enable notifications
+            Task(priority: .high) { [weak self] in
+                guard let self = self else { return }
+                do {
+                    try await self.setNotification(true, for: characteristic)
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                    return
+                }
+            }
             self.async {
                 // store continuation
                 let context = self.continuation(for: characteristic.peripheral)
                 assert(context.notificationStream[characteristic.id] == nil)
                 context.notificationStream[characteristic.id] = continuation
-                // enable notifications
-                Task(priority: .userInitiated) { [weak self] in
-                    guard let self = self else { return }
-                    do {
-                        try await self.setNotification(true, for: characteristic)
-                    }
-                    catch {
-                        continuation.finish(throwing: error)
-                        return
-                    }
-                }
             }
         })
     }
