@@ -21,9 +21,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public typealias Advertisement = LowEnergyAdvertisingData
     
     public typealias AttributeID = UInt16
-    
-    public typealias NewConnection = (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) async throws -> (Socket)
-    
+        
     public var log: ((String) -> ())?
     
     public let hostController: HostController
@@ -37,20 +35,16 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         }
     }
     
-    internal let newConnection: NewConnection
-    
     internal let storage = Storage()
     
     // MARK: - Initialization
     
     public init(
         hostController: HostController,
-        options: Options = Options(),
-        newConnection: @escaping NewConnection
+        options: Options = Options()
     ) {
         self.hostController = hostController
         self.options = options
-        self.newConnection = newConnection
     }
     
     // MARK: - Methods
@@ -80,7 +74,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
         // open socket
-        let socket = try await self.newConnection(scanData, report)
+        let localAddress = try await hostController.readDeviceAddress()
+        let socket = try await Socket.lowEnergyClient(
+            address: localAddress,
+            destination: report
+        )
         // configure connection object
         let callback = GATTClientConnectionCallback(
             log: self.log,
