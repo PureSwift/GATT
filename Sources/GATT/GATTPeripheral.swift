@@ -75,7 +75,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         // create server socket
-        let socket = try Socket.lowEnergyServer(
+        let socket = try await Socket.lowEnergyServer(
             address: address,
             isRandom: false,
             backlog: 10
