@@ -73,8 +73,9 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             else { throw CentralError.unknownPeripheral }
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
+        // load cache device address
+        let localAddress = try await storage.readAddress(hostController)
         // open socket
-        let localAddress = try await hostController.readDeviceAddress()
         let socket = try await Socket.lowEnergyClient(
             address: localAddress,
             destination: report
@@ -228,6 +229,18 @@ internal extension GATTCentral {
             )
             self.scanData[peripheral] = (scanData, report)
             return scanData
+        }
+        
+        var address: BluetoothAddress?
+        
+        func readAddress(_ hostController: HostController) async throws -> BluetoothAddress {
+            if let cachedAddress = self.address {
+                return cachedAddress
+            } else {
+                let address = try await hostController.readDeviceAddress()
+                self.address = address
+                return address
+            }
         }
         
         var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 2)
