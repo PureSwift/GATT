@@ -91,7 +91,7 @@ final class GATTTests: XCTestCase {
         test(testPDUs)
         
         // host controller
-        let serverHostController = TestHostController(address: .max)
+        let serverHostController = TestHostController(address: BluetoothAddress(rawValue: "94:E3:6D:62:1E:01")!)
         let clientHostController = TestHostController(address: .min)
         
         // peripheral
@@ -132,6 +132,11 @@ final class GATTTests: XCTestCase {
         
         //XCTAssertEqual(serverSocket.cache, mockData.server)
         //XCTAssertEqual(clientSocket.cache, mockData.client)
+        
+        // sleep until MTU is negotiated
+        while try await central.maximumTransmissionUnit(for: device.peripheral) != finalMTU {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
         
         await central.disconnectAll()
     }

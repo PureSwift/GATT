@@ -24,10 +24,11 @@ internal actor TestL2CAPSocket: L2CAPSocket {
             address: address,
             name: "Client"
         )
+        print("Client \(address) will connect to \(destination)")
         // append to pending clients
         pendingClients[destination, default: []].append(socket)
         // wait until client has connected
-        while pendingClients.isEmpty == false {
+        while (pendingClients[destination] ?? []).isEmpty == false {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         return socket
@@ -78,17 +79,14 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     // MARK: - Methods
     
     func accept() async throws -> TestL2CAPSocket {
-        repeat {
-            guard let client = Self.pendingClients[address]?.first else {
-                try await Task.sleep(nanoseconds: 10_000_000)
-                continue
-            }
-            Self.pendingClients[address]?.removeFirst()
-            // connect sockets
-            self.target = client
-            await client.setTarget(self)
-            return client
-        } while true
+        while (Self.pendingClients[address] ?? []).isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let client = Self.pendingClients[address]!.removeFirst()
+        // connect sockets
+        self.target = client
+        await client.setTarget(self)
+        return client
     }
     
     /// Write to the socket.
