@@ -22,6 +22,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     // MARK: - Properties
     
+    /// Logging
+    public var log: ((String) -> ())?
+    
     public let hostController: HostController
     
     public let options: Options
@@ -41,9 +44,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     private var socket: Socket?
     
     private var task: Task<(), Never>?
-    
-    private let log: ((String) -> ())?
-    
+        
     private let storage = Storage()
     
     // MARK: - Initialization
@@ -51,12 +52,10 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     public init(
         hostController: HostController,
         options: GATTPeripheralOptions = GATTPeripheralOptions(),
-        socket: Socket.Type,
-        log: ((String) -> ())? = nil
+        socket: Socket.Type
     ) {
         self.hostController = hostController
         self.options = options
-        self.log = log
     }
     
     deinit {
