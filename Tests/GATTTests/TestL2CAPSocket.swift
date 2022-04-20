@@ -11,7 +11,38 @@ import Bluetooth
 import GATT
 
 /// Test L2CAP socket
-internal final class TestL2CAPSocket {
+internal actor TestL2CAPSocket: L2CAPSocket {
+    
+    private static var pendingClients = [BluetoothAddress: [TestL2CAPSocket]]()
+    
+    static func lowEnergyClient(
+        address: BluetoothAddress,
+        destination: BluetoothAddress,
+        isRandom: Bool
+    ) async throws -> TestL2CAPSocket {
+        let socket = TestL2CAPSocket(
+            address: address,
+            name: "Client"
+        )
+        // append to pending clients
+        pendingClients[destination, default: []].append(socket)
+        // wait until client has connected
+        while pendingClients.isEmpty == false {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return socket
+    }
+    
+    static func lowEnergyServer(
+        address: BluetoothAddress,
+        isRandom: Bool,
+        backlog: Int
+    ) async throws -> TestL2CAPSocket {
+        return TestL2CAPSocket(
+            address: address,
+            name: "Server"
+        )
+    }
     
     // MARK: - Properties
     
@@ -24,65 +55,80 @@ internal final class TestL2CAPSocket {
     
     /// Attempts to change the socket's security level.
     func setSecurityLevel(_ securityLevel: SecurityLevel) throws {
-        
         self.securityLevel = securityLevel
     }
     
     /// Target socket.
-    weak var target: TestL2CAPSocket?
+    private weak var target: TestL2CAPSocket?
     
-    fileprivate(set) var receivedData = Data() {
-        
-        didSet { if receivedData.isEmpty == false { print("L2CAP Socket \(name) \([UInt8](receivedData))") } }
-    }
+    fileprivate(set) var receivedData = Data()
     
     private(set) var cache = [Data]()
     
-    init(address: BluetoothAddress = .zero,
-         name: String = "") {
-        
+    // MARK: - Initialization
+    
+    private init(
+        address: BluetoothAddress = .zero,
+        name: String
+    ) {
         self.address = address
         self.name = name
     }
     
     // MARK: - Methods
     
+    func accept() async throws -> TestL2CAPSocket {
+        repeat {
+            guard let client = Self.pendingClients[address]?.first else {
+                try await Task.sleep(nanoseconds: 10_000_000)
+                continue
+            }
+            Self.pendingClients[address]?.removeFirst()
+            // connect sockets
+            self.target = client
+            await client.setTarget(self)
+            return client
+        } while true
+    }
+    
     /// Write to the socket.
-    func send(_ data: Data) throws {
+    func send(_ data: Data) async throws {
         
         guard let target = self.target
             else { throw POSIXError(.ECONNRESET) }
         
-        target.receivedData.append(data)
+        await target.append(data)
     }
     
     /// Reads from the socket.
-    func recieve(_ bufferSize: Int) throws -> Data? {
+    func recieve(_ bufferSize: Int) async throws -> Data {
         
-        if self.receivedData.isEmpty {
-            
-            return nil
+        while self.receivedData.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
         }
         
         let data = Data(receivedData.prefix(bufferSize))
         
         // slice buffer
         if data.isEmpty == false {
-            
             let suffixIndex = data.count
-            
             if receivedData.count >= suffixIndex {
-                
                 receivedData = Data(receivedData.suffix(from: data.count))
-                
             } else {
-                
                 receivedData = Data(receivedData.suffix(from: data.count))
             }
         }
         
         cache.append(data)
-        
         return data
+    }
+    
+    fileprivate func append(_ data: Data) {
+        receivedData.append(data)
+        print("L2CAP Socket \(name) \([UInt8](receivedData))")
+    }
+    
+    fileprivate func setTarget(_ socket: TestL2CAPSocket) {
+        self.target = socket
     }
 }

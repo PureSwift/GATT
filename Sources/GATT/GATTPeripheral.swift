@@ -239,7 +239,11 @@ internal extension GATTPeripheral {
             database.write(value, forAttribute: handle)
         }
         
-        func newConnection(_ socket: Socket, options: Options, delegate: GATTServerConnectionDelegate) async {
+        func newConnection(
+            _ socket: Socket,
+            options: Options,
+            delegate: GATTServerConnectionDelegate
+        ) async {
             let central = Central(id: socket.address)
             let id = newConnectionID()
             connections[id] = await GATTServerConnection(
