@@ -42,6 +42,17 @@ public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
     }
 }
 
+public extension AsyncCentralScan {
+    
+    func first() async throws -> Element? {
+        for try await element in self {
+            self.stop()
+            return element
+        }
+        return nil
+    }
+}
+
 public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
 
     public typealias Element = Data
