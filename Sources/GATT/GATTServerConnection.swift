@@ -27,6 +27,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
         socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
         maximumPreparedWrites: Int,
+        database: GATTDatabase,
         delegate: GATTServerConnectionDelegate
     ) async {
         self.central = central
@@ -35,6 +36,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
             maximumPreparedWrites: maximumPreparedWrites,
+            database: database,
             log: { message in
                 delegate.connection(central, log: message)
             }

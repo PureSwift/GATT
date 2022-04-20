@@ -247,6 +247,7 @@ internal extension GATTPeripheral {
                 socket: socket,
                 maximumTransmissionUnit: options.maximumTransmissionUnit,
                 maximumPreparedWrites: options.maximumPreparedWrites,
+                database: database,
                 delegate: delegate
             )
         }
