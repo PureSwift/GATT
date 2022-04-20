@@ -85,21 +85,25 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         let client = Self.pendingClients[address]!.removeFirst()
         // connect sockets
         self.target = client
-        await client.setTarget(self)
+        await client.connect(to: self)
         return client
     }
     
     /// Write to the socket.
     func send(_ data: Data) async throws {
         
+        print("L2CAP Socket: \(name) will send \(data.count) bytes")
+        
         guard let target = self.target
             else { throw POSIXError(.ECONNRESET) }
         
-        await target.append(data)
+        await target.receive(data)
     }
     
     /// Reads from the socket.
     func recieve(_ bufferSize: Int) async throws -> Data {
+        
+        print("L2CAP Socket: \(name) will read \(bufferSize) bytes")
         
         while self.receivedData.isEmpty {
             try await Task.sleep(nanoseconds: 10_000_000)
@@ -121,12 +125,12 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         return data
     }
     
-    fileprivate func append(_ data: Data) {
+    fileprivate func receive(_ data: Data) {
         receivedData.append(data)
-        print("L2CAP Socket \(name) \([UInt8](receivedData))")
+        print("L2CAP Socket: \(name) recieved \([UInt8](receivedData))")
     }
     
-    fileprivate func setTarget(_ socket: TestL2CAPSocket) {
+    fileprivate func connect(to socket: TestL2CAPSocket) {
         self.target = socket
     }
 }
