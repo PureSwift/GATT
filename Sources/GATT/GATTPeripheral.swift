@@ -37,7 +37,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public var activeConnections: Set<Central> {
         get async {
-            return await Set(storage.connections.values.map { $0.central })
+            return await Set(storage.connections.values.lazy.map { $0.central })
         }
     }
     
