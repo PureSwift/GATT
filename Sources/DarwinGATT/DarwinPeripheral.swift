@@ -19,6 +19,9 @@ public final class DarwinPeripheral: PeripheralManager {
         
     // MARK: - Properties
     
+    /// Logging
+    public var log: ((String) -> ())?
+    
     public let options: Options
             
     public var state: DarwinBluetoothState {
@@ -337,7 +340,7 @@ internal extension DarwinPeripheral {
         }
         
         private func log(_ message: String) {
-            
+            peripheral.log?(message)
         }
         
         // MARK: - CBPeripheralManagerDelegate
