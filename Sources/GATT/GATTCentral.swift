@@ -41,7 +41,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public init(
         hostController: HostController,
-        options: Options = Options()
+        options: Options = Options(),
+        socket: Socket.Type
     ) {
         self.hostController = hostController
         self.options = options

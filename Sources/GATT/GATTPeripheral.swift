@@ -51,7 +51,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public init(
         hostController: HostController,
-        options: GATTPeripheralOptions = GATTPeripheralOptions(),
+        options: Options = Options(),
         socket: Socket.Type
     ) {
         self.hostController = hostController
