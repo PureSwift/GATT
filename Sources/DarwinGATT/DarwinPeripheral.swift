@@ -16,7 +16,7 @@ import CoreBluetooth
 import CoreLocation
 
 public final class DarwinPeripheral: PeripheralManager {
-    
+        
     // MARK: - Properties
     
     public let options: Options
@@ -145,6 +145,16 @@ public final class DarwinPeripheral: PeripheralManager {
                     let value = self.database[characteristic: handle]
                     continuation.resume(returning: value)
                 }
+            }
+        }
+    }
+    
+    /// Return the handles of the characteristics matching the specified UUID.
+    public func characteristics(for uuid: BluetoothUUID) async -> [UInt16] {
+        return await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                let handles = database.characteristics(for: uuid)
+                continuation.resume(returning: handles)
             }
         }
     }

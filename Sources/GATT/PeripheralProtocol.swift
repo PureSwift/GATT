@@ -49,6 +49,9 @@ public protocol PeripheralManager: AnyObject {
     
     /// Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get async }
+    
+    /// Return the handles of the characteristics matching the specified UUID.
+    func characteristics(for uuid: BluetoothUUID) async -> [UInt16]
 }
 
 // MARK: - Supporting Types

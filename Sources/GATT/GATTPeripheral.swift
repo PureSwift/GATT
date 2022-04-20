@@ -149,6 +149,14 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         }
     }
     
+    /// Return the handles of the characteristics matching the specified UUID.
+    public func characteristics(for uuid: BluetoothUUID) async -> [UInt16] {
+        return await storage.database
+            .lazy
+            .filter { $0.uuid == uuid }
+            .map { $0.handle }
+    }
+    
     // MARK: - Private Methods
     
     private func disconnect(_ connection: UInt, error: Error) async {
