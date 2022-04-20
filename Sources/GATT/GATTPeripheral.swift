@@ -87,6 +87,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
                 while let socket = self?.socket, let self = self {
                     try Task.checkCancellation()
                     let newSocket = try await socket.accept()
+                    self.log?("[\(socket.address)]: New connection")
                     await self.storage.newConnection(newSocket, options: options, delegate: self)
                 }
             }
