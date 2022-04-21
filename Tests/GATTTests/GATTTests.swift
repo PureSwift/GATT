@@ -97,9 +97,8 @@ final class GATTTests: XCTestCase {
             ),
             clientOptions: GATTCentralOptions(
                 maximumTransmissionUnit: clientMTU
-            ), server: { peripheral in
-                
-            }, client: { (central, peripheral) in
+            ),
+            client: { (central, peripheral) in
                 // sleep until MTU is negotiated
                 while try await central.maximumTransmissionUnit(for: peripheral) != finalMTU {
                     try await Task.sleep(nanoseconds: 10_000_000)
@@ -210,9 +209,11 @@ final class GATTTests: XCTestCase {
             clientOptions: GATTCentralOptions(
                 maximumTransmissionUnit: clientMTU
             ), server: { peripheral in
-                let serviceAttribute = try await peripheral.add(service: service)
+                _ = try await peripheral.add(service: service)
             }, client: { (central, peripheral) in
                 let services = try await central.discoverServices(for: peripheral)
+                let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
+                XCTAssertEqual(clientMTU, finalMTU)
                 guard let foundService = services.first,
                     services.count == 1
                     else { XCTFail(); return }
@@ -252,8 +253,7 @@ final class GATTTests: XCTestCase {
             primary: true,
             characteristics: characteristics
         )
-        
-        // write value
+
         let newValue = GATTBatteryLevel(level: .min)
         
         var serviceAttribute: UInt16!
@@ -281,6 +281,8 @@ final class GATTTests: XCTestCase {
             },
             client: { (central, peripheral) in
                 let services = try await central.discoverServices(for: peripheral)
+                let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
+                XCTAssertEqual(clientMTU, .max)
                 guard let foundService = services.first,
                     services.count == 1
                     else { XCTFail(); return }
@@ -571,8 +573,7 @@ extension GATTTests {
         serverOptions: GATTPeripheralOptions = .init(),
         clientOptions: GATTCentralOptions = .init(),
         advertisingReports: [Data] = [
-            Data([0x3E, 0x2A, 0x02, 0x01, 0x00, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1E, 0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02, 0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25, 0x27, 0x12, 0x0B, 0x86, 0xBE, 0xBF]),
-            Data([0x3E, 0x2B, 0x02, 0x01, 0x04, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1F, 0x0A, 0x09, 0x47, 0x68, 0x6F, 0x73, 0x74, 0x79, 0x75, 0x00, 0x00, 0x13, 0x16, 0x0A, 0x18, 0x47, 0x59, 0x94, 0xE3, 0x6D, 0x62, 0x1E, 0x01, 0x27, 0x12, 0x0B, 0x86, 0x5F, 0xFF, 0xFF, 0xFF, 0xBF])
+            Data([0x3E, 0x2A, 0x02, 0x01, 0x00, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1E, 0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02, 0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25, 0x27, 0x12, 0x0B, 0x86, 0xBE, 0xBF])
         ],
         server: (TestPeripheral) async throws -> () = { _ in },
         client: (TestCentral, Peripheral) async throws -> (),
@@ -615,9 +616,12 @@ extension GATTTests {
         guard let device = try await scan.first()
             else { XCTFail("No devices scanned"); return }
         
+        // connect and execute
         try await central.connect(to: device.peripheral)
-        // run code
         try await client(central, device.peripheral)
+        // cleanup
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        
     }
     
     func test(
