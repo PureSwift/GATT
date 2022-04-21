@@ -310,7 +310,7 @@ final class GATTTests: XCTestCase {
         )
     }
     
-    func _testNotification() async throws {
+    func testNotification() async throws {
         
         // service
         let batteryLevel = GATTBatteryLevel(level: .max)
@@ -319,9 +319,9 @@ final class GATTTests: XCTestCase {
             GATTAttribute.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
                 value: batteryLevel.data,
-                permissions: [.read, .write],
-                properties: [.read, .write],
-                descriptors: []
+                permissions: [.read],
+                properties: [.read, .notify],
+                descriptors: [GATTClientCharacteristicConfiguration().descriptor]
             )
         ]
         
@@ -359,7 +359,7 @@ final class GATTTests: XCTestCase {
                     foundCharacteristics.count == 1
                     else { XCTFail(); return }
                 XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
-                XCTAssertEqual(foundCharacteristic.properties, [.read, .write])
+                XCTAssertEqual(foundCharacteristic.properties, [.read, .notify])
                 // wait for notifications
                 let stream = central.notify(for: foundCharacteristic)
                 for try await notification in stream {
@@ -373,135 +373,71 @@ final class GATTTests: XCTestCase {
                 }
             }
         )
-        
-        
     }
     
-    func testIndication() {
-        
-        // FIXME: Fix mock indication
-        /*
-        
-        // setup sockets
-        let serverSocket = TestL2CAPSocket(name: "Server")
-        let clientSocket = TestL2CAPSocket(name: "Client")
-        clientSocket.target = serverSocket
-        serverSocket.target = clientSocket
-        
-        // host controller
-        let serverHostController = PeripheralHostController(address: .max)
-        let clientHostController = CentralHostController(address: .min)
-        
-        // peripheral
-        typealias TestPeripheral = GATTPeripheral<PeripheralHostController, TestL2CAPSocket>
-        let options = GATTPeripheralOptions(maximumTransmissionUnit: .default, maximumPreparedWrites: .max)
-        let peripheral = TestPeripheral(controller: serverHostController, options: options)
-        peripheral.log = { print("Peripheral:", $0) }
-        
-        var incomingConnections = [(serverSocket, Central(identifier: serverSocket.address))]
-        
-        peripheral.newConnection = {
-            
-            repeat {
-                if let newConnecion = incomingConnections.popFirst() {
-                    return newConnecion
-                } else {
-                    sleep(1)
-                }
-            } while true
-        }
+    func testIndication() async throws {
         
         // service
-        let batteryLevel = GATTBatteryLevel(level: .min)
+        let batteryLevel = GATTBatteryLevel(level: .max)
         
         let characteristics = [
-            GATTAttribute.Characteristic(uuid: type(of: batteryLevel).uuid,
-                                value: batteryLevel.data,
-                                permissions: [.read],
-                                properties: [.read, .indicate],
-                                descriptors: [GATTClientCharacteristicConfiguration().descriptor]),
-            ]
+            GATTAttribute.Characteristic(
+                uuid: type(of: batteryLevel).uuid,
+                value: batteryLevel.data,
+                permissions: [.read],
+                properties: [.read, .indicate],
+                descriptors: [GATTClientCharacteristicConfiguration().descriptor]
+            )
+        ]
         
         let service = GATTAttribute.Service(
             uuid: .batteryService,
             primary: true,
             characteristics: characteristics
         )
-        
-        let serviceAttribute = try! peripheral.add(service: service)
-        defer { peripheral.remove(service: serviceAttribute) }
-        
-        let characteristicValueHandle = peripheral.characteristics(for: .batteryLevel)[0]
-        
-        // start server
-        XCTAssertNoThrow(try peripheral.start())
-        defer { peripheral.stop() }
-        
-        // central
-        typealias TestCentral = GATTCentral<CentralHostController, TestL2CAPSocket>
-        let central = TestCentral(hostController: clientHostController)
-        central.log = { print("Central:", $0) }
-        central.newConnection = { (scanData, report) in
-            return clientSocket
-        }
-        central.hostController.advertisingReports = [
-            Data([0x3E, 0x2A, 0x02, 0x01, 0x00, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1E, 0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02, 0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25, 0x27, 0x12, 0x0B, 0x86, 0xBE, 0xBF]),
-            Data([0x3E, 0x2B, 0x02, 0x01, 0x04, 0x00, 0x01, 0x1E, 0x62, 0x6D, 0xE3, 0x94, 0x1F, 0x0A, 0x09, 0x47, 0x68, 0x6F, 0x73, 0x74, 0x79, 0x75, 0x00, 0x00, 0x13, 0x16, 0x0A, 0x18, 0x47, 0x59, 0x94, 0xE3, 0x6D, 0x62, 0x1E, 0x01, 0x27, 0x12, 0x0B, 0x86, 0x5F, 0xFF, 0xFF, 0xFF, 0xBF])
-        ]
-        
-        // scan for devices
-        var foundDevices = [Peripheral]()
-        XCTAssertNoThrow(foundDevices = try central.scan(duration: 0.001).map { $0.peripheral })
-        
-        guard let device = foundDevices.first
-            else { XCTFail("No peripherals scanned"); return }
-        
-        XCTAssertNoThrow(try central.connect(to: device))
-        defer { central.disconnect(peripheral: device) }
-        
-        var services = [Service<Peripheral, UInt16>]()
-        XCTAssertNoThrow(services = try central.discoverServices(for: device))
-        
-        guard let foundService = services.first,
-            services.count == 1
-            else { XCTFail(); return }
-        
-        XCTAssertEqual(foundService.uuid, .batteryService)
-        XCTAssertEqual(foundService.isPrimary, true)
-        
-        var foundCharacteristics = [Characteristic<Peripheral, UInt16>]()
-        XCTAssertNoThrow(foundCharacteristics = try central.discoverCharacteristics(for: foundService))
-        
-        guard let foundCharacteristic = foundCharacteristics.first,
-            foundCharacteristics.count == 1
-            else { XCTFail(); return }
-        
-        XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
-        XCTAssertEqual(foundCharacteristic.properties, [.read, .indicate])
-        
-        let notificationExpectation = self.expectation(description: "Notification")
-        
-        var notificationValue: GATTBatteryLevel?
-        XCTAssertNoThrow(try central.notify({
-            notificationValue = GATTBatteryLevel(data: $0)
-            notificationExpectation.fulfill()
-        }, for: foundCharacteristic))
-        
-        let newValue = GATTBatteryLevel(level: .max)
-        
-        // write new value, emit notifications
-        peripheral[characteristic: characteristicValueHandle] = newValue.data
-        
-        // wait
-        waitForExpectations(timeout: 2.0, handler: nil)
-        
-        // validate notification
-        XCTAssertEqual(peripheral[characteristic: characteristicValueHandle], newValue.data, "Value not updated on peripheral")
-        XCTAssertEqual(notificationValue, newValue, "Notification not recieved")
-        
-        // stop notifications
-        XCTAssertNoThrow(try central.notify(nil, for: foundCharacteristic))
-        */
+
+        let newValue = GATTBatteryLevel(level: .min)
+                
+        try await connect(
+            serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
+            clientOptions: .init(maximumTransmissionUnit: .max, scanParameters: .gattCentralDefault),
+            server: { peripheral in
+                let serviceAttribute = try await peripheral.add(service: service)
+                XCTAssertEqual(serviceAttribute, 1)
+                let characteristicValueHandle = await peripheral.characteristics(for: .batteryLevel)[0]
+                Task {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
+                    await peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
+                }
+            },
+            client: { (central, peripheral) in
+                let services = try await central.discoverServices(for: peripheral)
+                let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
+                XCTAssertEqual(clientMTU, .default)
+                guard let foundService = services.first,
+                    services.count == 1
+                    else { XCTFail(); return }
+                XCTAssertEqual(foundService.uuid, .batteryService)
+                XCTAssertEqual(foundService.isPrimary, true)
+                let foundCharacteristics = try await central.discoverCharacteristics(for: foundService)
+                guard let foundCharacteristic = foundCharacteristics.first,
+                    foundCharacteristics.count == 1
+                    else { XCTFail(); return }
+                XCTAssertEqual(foundCharacteristic.uuid, .batteryLevel)
+                XCTAssertEqual(foundCharacteristic.properties, [.read, .indicate])
+                // wait for notifications
+                let stream = central.notify(for: foundCharacteristic)
+                for try await notification in stream {
+                    guard let notificationValue = GATTBatteryLevel(data: notification) else {
+                        XCTFail();
+                        return
+                    }
+                    XCTAssertEqual(notificationValue, newValue)
+                    stream.stop()
+                    break
+                }
+            }
+        )
     }
 }
 
