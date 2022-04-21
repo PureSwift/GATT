@@ -621,7 +621,8 @@ extension GATTTests {
         try await client(central, device.peripheral)
         // cleanup
         try await Task.sleep(nanoseconds: 1_000_000_000)
-        
+        //await central.disconnectAll()
+        await peripheral.removeAllServices()
     }
     
     func test(
