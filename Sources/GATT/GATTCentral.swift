@@ -5,242 +5,267 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
+#if swift(>=5.5) && canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
-import Dispatch
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: CentralProtocol {
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: CentralManager {
+    
+    public typealias Options = GATTCentralOptions
     
     // MARK: - Properties
     
     public typealias Advertisement = LowEnergyAdvertisingData
     
+    public typealias AttributeID = UInt16
+        
     public var log: ((String) -> ())?
     
     public let hostController: HostController
     
-    public let options: GATTCentralOptions
+    public let options: Options
     
-    public private(set) var isScanning: Bool = false
+    /// Currently scanned devices, or restored devices.
+    public var peripherals: Set<Peripheral> {
+        get async {
+            return await Set(storage.scanData.keys)
+        }
+    }
     
-    public var didDisconnect: ((Peripheral) -> ())?
-    
-    public var newConnection: ((ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report) throws -> (L2CAPSocket))?
-    
-    internal lazy var asyncQueue: DispatchQueue = DispatchQueue(label: "\(type(of: self)) Operation Queue")
-    
-    internal private(set) var scanData: [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)] = [:]
-    
-    internal private(set) var connections = [Peripheral: GATTClientConnection<L2CAPSocket>](minimumCapacity: 1)
-    
-    private var lastConnectionID = 0
+    internal let storage = Storage()
     
     // MARK: - Initialization
     
-    public init(hostController: HostController,
-                options: GATTCentralOptions = GATTCentralOptions()) {
-        
+    public init(
+        hostController: HostController,
+        options: Options = Options(),
+        socket: Socket.Type
+    ) {
         self.hostController = hostController
         self.options = options
     }
     
     // MARK: - Methods
     
-    public func scan(filterDuplicates: Bool = true,
-                     foundDevice: @escaping (ScanData<Peripheral, Advertisement>) -> ()) throws {
-                
+    /// Scans for peripherals that are advertising services.
+    public func scan(
+        filterDuplicates: Bool
+    ) async throws -> AsyncCentralScan<GATTCentral> {
         self.log?("Scanning...")
-        
-        self.isScanning = true
-        
-        do {
-            
-            try hostController.lowEnergyScan(filterDuplicates: filterDuplicates, parameters: options.scanParameters, shouldContinue: { [unowned self] in self.isScanning }) { [unowned self] (report) in
-                
-                let peripheral = Peripheral(identifier: report.address)
-                
-                let isConnectable = report.event.isConnectable
-                
-                let scanData = ScanData(peripheral: peripheral,
-                                        date: Date(),
-                                        rssi: Double(report.rssi?.rawValue ?? 0),
-                                        advertisementData: report.responseData,
-                                        isConnectable: isConnectable)
-                
-                self.scanData[peripheral] = (scanData, report)
-                
-                foundDevice(scanData)
+        let stream = try await self.hostController.lowEnergyScan(
+            filterDuplicates: filterDuplicates,
+            parameters: self.options.scanParameters
+        )
+        return AsyncCentralScan { [unowned self] continuation in
+            // start scanning
+            for try await report in stream {
+                let scanData = await self.storage.found(report)
+                continuation(scanData)
             }
-        } catch {
-            self.isScanning = false
-            throw error
         }
-        
-        self.log?("Did discover \(self.scanData.count) peripherals")
-        assert(isScanning == false, "Invalid scanning state: \(isScanning)")
     }
     
-    public func stopScan() {
-        
-        self.log?("Stop scanning")
-        self.isScanning = false
-    }
-    
-    public func connect(to peripheral: Peripheral, timeout: TimeInterval = .gattDefaultTimeout) throws {
-        
-        guard let (scanData, report) = scanData[peripheral]
+    public func connect(to peripheral: Peripheral) async throws {
+        // get scan data (bluetooth address) for new connection
+        guard let (scanData, report) = await self.storage.scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
-        
-        guard let newConnection = self.newConnection
-            else { return }
-        
         // log
         self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
-        
+        // load cache device address
+        let localAddress = try await storage.readAddress(hostController)
         // open socket
-        let socket = try async(timeout: timeout) { try newConnection(scanData, report) }
-        
+        let socket = try await Socket.lowEnergyClient(
+            address: localAddress,
+            destination: report
+        )
         // configure connection object
         let callback = GATTClientConnectionCallback(
             log: self.log,
             didDisconnect: { [weak self] _ in
-                self?.disconnect(peripheral: peripheral)
+                //self?.disconnect(peripheral)
             }
         )
-        
         // keep connection open and store for future use
-        let connection = GATTClientConnection(peripheral: peripheral,
-                                              socket: socket,
-                                              maximumTransmissionUnit: options.maximumTransmissionUnit,
-                                              callback: callback)
-        
+        let connection = await GATTClientConnection<Socket>(
+            peripheral: peripheral,
+            socket: socket,
+            maximumTransmissionUnit: self.options.maximumTransmissionUnit,
+            callback: callback
+        )
         // store connection
-        self.connections[peripheral] = connection
+        await self.storage.didConnect(connection)
     }
     
-    public func disconnect(peripheral: Peripheral) {
-        
-        self.connections[peripheral] = nil
-        
-        // L2CAP socket may be retained by background thread
-        sleep(1)
-        
-        didDisconnect?(peripheral)
+    public func disconnect(_ peripheral: Peripheral) async {
+        await storage.removeConnection(peripheral)
+        // TODO: Emit notification
+        //self.didDisconnect?(peripheral)
     }
     
-    public func disconnectAll() {
-        
-        let peripherals = self.didDisconnect != nil ? Array(self.connections.keys) : []
-        
-        self.connections.removeAll(keepingCapacity: true)
-        
-        sleep(1)
-        
-        if let didDisconnect = self.didDisconnect {
-            peripherals.forEach { didDisconnect($0) }
+    public func disconnectAll() async {
+        await storage.removeAllConnections()
+    }
+    
+    public func discoverServices(
+        _ services: Set<BluetoothUUID> = [],
+        for peripheral: Peripheral
+    ) async throws -> [Service<Peripheral, UInt16>] {
+        return try await connection(for: peripheral)
+            .discoverServices(services)
+    }
+    
+    /// Discover Characteristics for service
+    public func discoverCharacteristics(
+        _ characteristics: Set<BluetoothUUID> = [],
+        for service: Service<Peripheral, UInt16>
+    ) async throws -> [Characteristic<Peripheral, UInt16>] {
+        return try await connection(for: service.peripheral)
+            .discoverCharacteristics(characteristics, for: service)
+    }
+    
+    /// Read Characteristic Value
+    public func readValue(
+        for characteristic: Characteristic<Peripheral, UInt16>
+    ) async throws -> Data {
+        return try await connection(for: characteristic.peripheral)
+            .readValue(for: characteristic)
+    }
+    
+    /// Write Characteristic Value
+    public func writeValue(
+        _ data: Data,
+        for characteristic: Characteristic<Peripheral, UInt16>,
+        withResponse: Bool = true
+    ) async throws {
+        try await connection(for: characteristic.peripheral)
+            .writeValue(data, for: characteristic, withResponse: withResponse)
+    }
+    
+    /// Start Notifications
+    public func notify(
+        for characteristic: Characteristic<Peripheral, UInt16>
+    ) -> AsyncCentralNotifications<GATTCentral> {
+        return AsyncCentralNotifications(onTermination: {
+            Task(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                do {
+                    // start notifications
+                    try await self.connection(for: characteristic.peripheral)
+                        .notify(characteristic, notification: .none)
+                }
+                catch {
+                    self.log?("Unable to stop notifications for \(characteristic.uuid)")
+                }
+            }
+        }) { [unowned self] continuation in
+            Task(priority: .userInitiated) {
+                do {
+                    // start notifications
+                    try await connection(for: characteristic.peripheral)
+                        .notify(characteristic) { continuation.yield($0) }
+                }
+                catch {
+                    continuation.finish(throwing: error)
+                }
+            }
         }
     }
     
-    public func discoverServices(_ services: [BluetoothUUID] = [],
-                                 for peripheral: Peripheral,
-                                 timeout: TimeInterval = .gattDefaultTimeout) throws -> [Service<Peripheral>] {
-        
-        return try connection(for: peripheral)
-            .discoverServices(services, for: peripheral, timeout: timeout)
+    public func discoverDescriptors(for characteristic: Characteristic<Peripheral, UInt16>) async throws -> [Descriptor<Peripheral, UInt16>] {
+        fatalError()
     }
     
-    public func discoverCharacteristics(_ characteristics: [BluetoothUUID] = [],
-                                        for service: Service<Peripheral>,
-                                        timeout: TimeInterval = .gattDefaultTimeout) throws -> [Characteristic<Peripheral>] {
-        
-        return try connection(for: service.peripheral)
-            .discoverCharacteristics(characteristics, for: service, timeout: timeout)
+    public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
+        fatalError()
     }
     
-    public func readValue(for characteristic: Characteristic<Peripheral>,
-                          timeout: TimeInterval = .gattDefaultTimeout) throws -> Data {
-        
-        return try connection(for: characteristic.peripheral)
-            .readValue(for: characteristic, timeout: timeout)
+    public func writeValue(_ data: Data, for descriptor: Descriptor<Peripheral, UInt16>) async throws {
+        fatalError()
     }
     
-    public func writeValue(_ data: Data,
-                           for characteristic: Characteristic<Peripheral>,
-                           withResponse: Bool = true,
-                           timeout: TimeInterval = .gattDefaultTimeout) throws {
-        
-        return try connection(for: characteristic.peripheral)
-            .writeValue(data, for: characteristic, withResponse: withResponse, timeout: timeout)
+    /// Read MTU
+    public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
+        return try await connection(for: peripheral).client.maximumTransmissionUnit
     }
     
-    public func notify(_ notification: ((Data) -> ())?,
-                       for characteristic: Characteristic<Peripheral>,
-                       timeout: TimeInterval = .gattDefaultTimeout) throws {
-        
-        return try connection(for: characteristic.peripheral)
-            .notify(notification, for: characteristic, timeout: timeout)
-    }
-    
-    public func maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
-        return try connection(for: peripheral).client.maximumTransmissionUnit
+    // Read RSSI
+    public func rssi(for peripheral: Peripheral) async throws -> RSSI {
+        RSSI(rawValue: +20)!
     }
     
     // MARK: - Private Methods
     
-    private func newConnectionID() -> Int {
+    private func connection(for peripheral: Peripheral) async throws -> GATTClientConnection<Socket> {
         
-        lastConnectionID += 1
-        
-        return lastConnectionID
-    }
-    
-    private func connection(for peripheral: Peripheral) throws -> GATTClientConnection<L2CAPSocket> {
-        
-        guard let _ = scanData[peripheral]
+        guard await storage.scanData.keys.contains(peripheral)
             else { throw CentralError.unknownPeripheral }
         
-        guard let connection = connections[peripheral]
+        guard let connection = await storage.connections[peripheral]
             else { throw CentralError.disconnected }
         
         return connection
     }
-    
-    private func async <T> (timeout: TimeInterval, _ operation: @escaping () throws -> (T)) throws -> (T) {
-        
-        var result: ErrorValue<T>?
-        
-        asyncQueue.async {
-            
-            do { result = .value(try operation()) }
-                
-            catch { result = .error(error) }
-        }
-        
-        let endDate = Date() + timeout
-        
-        while Date() < endDate {
-            
-            guard let response = result
-                else { usleep(100); continue }
-            
-            switch response {
-            case let .error(error):
-                throw error
-            case let .value(value):
-                return value
-            }
-        }
-        
-        // did timeout
-        throw CentralError.timeout
-    }
 }
 
 // MARK: - Supporting Types
+
+@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+internal extension GATTCentral {
+    
+    actor Storage {
+        
+        var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
+        
+        func found(_ report: HCILEAdvertisingReport.Report) -> ScanData<Peripheral, Advertisement> {
+            let peripheral = Peripheral(id: report.address)
+            let scanData = ScanData(
+                peripheral: peripheral,
+                date: Date(),
+                rssi: Double(report.rssi?.rawValue ?? 0),
+                advertisementData: report.responseData,
+                isConnectable: report.event.isConnectable
+            )
+            self.scanData[peripheral] = (scanData, report)
+            return scanData
+        }
+        
+        var address: BluetoothAddress?
+        
+        func readAddress(_ hostController: HostController) async throws -> BluetoothAddress {
+            if let cachedAddress = self.address {
+                return cachedAddress
+            } else {
+                let address = try await hostController.readDeviceAddress()
+                self.address = address
+                return address
+            }
+        }
+        
+        var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 2)
+        
+        func didConnect(_ connection: GATTClientConnection<Socket>) {
+            self.connections[connection.peripheral] = connection
+        }
+        
+        func removeConnection(_ peripheral: Peripheral) {
+            self.connections[peripheral] = nil
+        }
+        
+        func removeAllConnections() {
+            self.connections.removeAll(keepingCapacity: true)
+        }
+        
+        var lastConnectionID: UInt = 0
+        
+        func newConnectionID() -> UInt {
+            lastConnectionID += 1
+            return lastConnectionID
+        }
+    }
+}
 
 public struct GATTCentralOptions {
     
@@ -268,13 +293,6 @@ public extension HCILESetScanParameters {
             filterPolicy: .accept
         )
     }
-}
-
-/// Basic wrapper for error / value pairs.
-private enum ErrorValue<T> {
-    
-    case error(Error)
-    case value(T)
 }
 
 #endif

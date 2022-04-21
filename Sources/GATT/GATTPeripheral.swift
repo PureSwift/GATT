@@ -7,21 +7,27 @@
 
 #if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 import Foundation
-import Dispatch
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
-public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, L2CAPSocket: L2CAPSocketProtocol>: PeripheralProtocol {
+/// GATT Peripheral Manager
+public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: PeripheralManager {
+        
+    /// Central Peer
+    public typealias Central = GATT.Central
+    
+    /// Peripheral Options
+    public typealias Options = GATTPeripheralOptions
     
     // MARK: - Properties
     
+    /// Logging
     public var log: ((String) -> ())?
     
-    public let options: GATTPeripheralOptions
+    public let hostController: HostController
     
-    public let controller: HostController
+    public let options: Options
     
     public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
     
@@ -29,193 +35,167 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
     
-    public var newConnection: (() throws -> (socket: L2CAPSocket, central: Central))?
-    
-    public var activeConnections: [Central] {
-        
-        return connectionsQueue.sync { [unowned self] in
-            self.connections.values.map { $0.central }
+    public var activeConnections: Set<Central> {
+        get async {
+            return await Set(storage.connections.values.lazy.map { $0.central })
         }
     }
     
-    // MARK: - Private Properties
+    private var socket: Socket?
     
-    internal lazy var databaseQueue: DispatchQueue = DispatchQueue(label: "\(self) Database Queue")
-    
-    internal lazy var readQueue: DispatchQueue = DispatchQueue(label: "\(self) Read Queue")
-    
-    internal lazy var connectionsQueue: DispatchQueue = DispatchQueue(label: "\(self) Connections Queue")
-    
-    internal private(set) var database = GATTDatabase()
-    
-    internal private(set) var isServerRunning = false
-    
-    internal private(set) var connections = [UInt: GATTServerConnection<L2CAPSocket>]()
-    
-    private var serverThread: Thread?
-    
-    private var lastConnectionID: UInt = 0
+    private var task: Task<(), Never>?
+        
+    private let storage = Storage()
     
     // MARK: - Initialization
     
-    public init(controller: HostController,
-                options: GATTPeripheralOptions = GATTPeripheralOptions()) {
-        
-        self.controller = controller
+    public init(
+        hostController: HostController,
+        options: Options = Options(),
+        socket: Socket.Type
+    ) {
+        self.hostController = hostController
         self.options = options
+    }
+    
+    deinit {
+        if socket != nil {
+            stop()
+        }
     }
     
     // MARK: - Methods
     
-    public func start() throws {
-        
-        guard isServerRunning == false else { return }
-        
+    public func start() async throws {
+        assert(socket == nil)
+        // read address
+        let address = try await hostController.readDeviceAddress()
         // enable advertising
-        do { try controller.enableLowEnergyAdvertising() }
+        do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
-        
-        /*
-         let serverSocket = try L2CAPSocket.lowEnergyServer(controllerAddress: controller.address,
-         isRandom: false,
-         securityLevel: .low)
-         */
-        
-        isServerRunning = true
-        
-        log?("Started GATT Server")
-        
-        let serverThread = Thread { [weak self] in self?.main() }
-        
-        self.serverThread = serverThread
-        
-        serverThread.start()
+        // create server socket
+        let socket = try await Socket.lowEnergyServer(
+            address: address,
+            isRandom: false,
+            backlog: 10
+        )
+        // start listening for connections
+        self.socket = socket
+        self.task = Task { [weak self] in
+            self?.log?("Started GATT Server")
+            do {
+                while let socket = self?.socket, let self = self {
+                    try Task.checkCancellation()
+                    let newSocket = try await socket.accept()
+                    self.log?("[\(newSocket.address)]: New connection")
+                    await self.storage.newConnection(newSocket, options: options, delegate: self)
+                }
+            }
+            catch _ as CancellationError { }
+            catch {
+                self?.log?("Error waiting for new connection: \(error)")
+            }
+        }
     }
     
     public func stop() {
-        
-        guard isServerRunning else { return }
-        
-        self.isServerRunning = false
-        self.serverThread = nil
+        assert(socket != nil)
+        self.socket = nil
+        self.task?.cancel()
+        self.task = nil
+        self.log?("Stopped GATT Server")
     }
     
-    public func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16 {
-        return database.add(service: service)
+    public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16 {
+        return await storage.add(service: service)
     }
     
-    public func remove(service handle: UInt16) {
-        database.remove(service: handle)
+    public func remove(service handle: UInt16) async {
+        await storage.remove(service: handle)
     }
     
-    public func removeAllServices() {
-        database.removeAll()
+    public func removeAllServices() async {
+        await storage.removeAllServices()
+    }
+    
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16) async {
+        await write(newValue, forCharacteristic: handle, ignore: .none)
+    }
+    
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    private func write(_ newValue: Data, forCharacteristic handle: UInt16, ignore central: Central? = nil) async {
+        // write to master DB
+        await storage.write(newValue, forAttribute: handle)
+        // propagate changes to active connections
+        let connections = await storage.connections
+            .values
+            .lazy
+            .filter { $0.central != central }
+        // update the DB of each connection, and send notifications concurrently
+        await withTaskGroup(of: Void.self) { taskGroup in
+            for connection in connections {
+                taskGroup.addTask {
+                    await connection.writeValue(newValue, forCharacteristic: handle)
+                }
+            }
+        }
+    }
+    
+    /// Read the value of the characteristic with specified handle.
+    public subscript(characteristic handle: UInt16) -> Data {
+        get async {
+            return await storage.database[handle: handle].value
+        }
     }
     
     /// Return the handles of the characteristics matching the specified UUID.
-    public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
-        
-        return writeDatabase { $0.filter { $0.uuid == uuid }.map { $0.handle } }
-    }
-    
-    // MARK: - Subscript
-    
-    public subscript(characteristic handle: UInt16) -> Data {
-        
-        get { return writeDatabase { $0[handle: handle].value } }
-        
-        set {
-            writeDatabase { $0.write(newValue, forAttribute: handle) }
-            connectionsQueue
-                .sync { [unowned self] in self.connections.values }
-                .forEach { $0.writeValue(newValue, forCharacteristic: handle) }
-        }
+    public func characteristics(for uuid: BluetoothUUID) async -> [UInt16] {
+        return await storage.database
+            .lazy
+            .filter { $0.uuid == uuid }
+            .map { $0.handle }
     }
     
     // MARK: - Private Methods
     
-    private func main() {
-        
-        // wait for new connections
-        while isServerRunning, let newConnection = self.newConnection {
-            
-            do {
-                
-                let (newSocket, central) = try newConnection()
-                
-                guard isServerRunning else { return }
-                
-                let connectionIdentifier = newConnectionID()
-                let connection = GATTServerConnection(central: central,
-                                                      socket: newSocket,
-                                                      maximumTransmissionUnit: options.maximumTransmissionUnit,
-                                                      maximumPreparedWrites: options.maximumPreparedWrites)
-                
-                connection.callback.log = { [unowned self] in self.log?("[\(connection.central)]: " + $0) }
-                connection.callback.didWrite = { [unowned self] (write) in
-                    
-                    // notify other connected centrals
-                    self.connectionsQueue.sync { [unowned self] in
-                        self.connections.values.forEach {
-                            if $0.central != write.central {
-                                $0.writeValue(write.value, forCharacteristic: write.handle)
-                            }
-                        }
-                    }
-                    
-                    self.didWrite?(write) // notify delegate
-                }
-                connection.callback.willWrite = { [unowned self] in self.willWrite?($0) }
-                connection.callback.willRead = { [unowned self] in self.willRead?($0) }
-                connection.callback.writeDatabase = { [unowned self] in self.writeDatabase($0) }
-                connection.callback.readConnection = { [unowned self] in self.readConnection($0) }
-                connection.callback.didDisconnect = { [unowned self] in self.disconnect(connectionIdentifier, error: $0) }
-                
-                // hold strong reference to connection
-                connectionsQueue.sync { [unowned self] in
-                    self.connections[connectionIdentifier] = connection
-                }
-            }
-                
-            catch { log?("Error waiting for new connection: \(error)") }
-        }
-        
-        log?("Stopped GATT Server")
-    }
-    
-    @inline(__always)
-    private func newConnectionID() -> UInt {
-        
-        lastConnectionID += 1
-        
-        return lastConnectionID
-    }
-    
-    private func disconnect(_ connection: UInt, error: Error) {
-        
+    private func disconnect(_ connection: UInt, error: Error) async {
         // remove from peripheral, release and close socket
-        connectionsQueue.sync { [unowned self] in
-            self.connections[connection] = nil
-        }
-        
+        await storage.remove(connection: connection)
         // enable LE advertising
-        do { try controller.enableLowEnergyAdvertising() }
+        do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         catch { log?("Could not enable advertising. \(error)") }
     }
+}
+
+extension GATTPeripheral: GATTServerConnectionDelegate {
     
-    @inline(__always)
-    private func writeDatabase <T> (_ block: (inout GATTDatabase) -> (T)) -> T {
-        
-        return databaseQueue.sync { block(&self.database) }
+    func connection(_ central: Central, log message: String) {
+        self.log?("[\(central)]: " + message)
     }
     
-    @inline(__always)
-    private func readConnection(_ block: () -> ()) {
-        
-        return readQueue.sync(execute: block)
+    func connection(_ central: Central, didDisconnect error: Swift.Error?) {
+        return
+    }
+    
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
+        return willRead?(request)
+    }
+    
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError? {
+        return willWrite?(request)
+    }
+    
+    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async {
+        // update DB and inform other connections
+        await write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
+        // notify delegate
+        didWrite?(confirmation)
     }
 }
+
+// MARK: - Supporting Types
 
 public struct GATTPeripheralOptions {
     
@@ -228,6 +208,62 @@ public struct GATTPeripheralOptions {
         
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.maximumPreparedWrites = maximumPreparedWrites
+    }
+}
+
+internal extension GATTPeripheral {
+    
+    actor Storage {
+        
+        var database = GATTDatabase()
+        
+        var connections = [UInt: GATTServerConnection<Socket>]()
+        
+        private var lastConnectionID: UInt = 0
+        
+        fileprivate init() { }
+        
+        func add(service: BluetoothGATT.GATTAttribute.Service) -> UInt16 {
+            return database.add(service: service)
+        }
+        
+        func remove(service handle: UInt16) {
+            database.remove(service: handle)
+        }
+        
+        func removeAllServices() {
+            database.removeAll()
+        }
+        
+        func write(_ value: Data, forAttribute handle: UInt16) {
+            database.write(value, forAttribute: handle)
+        }
+        
+        func newConnection(
+            _ socket: Socket,
+            options: Options,
+            delegate: GATTServerConnectionDelegate
+        ) async {
+            let central = Central(id: socket.address)
+            let id = newConnectionID()
+            connections[id] = await GATTServerConnection(
+                central: central,
+                socket: socket,
+                maximumTransmissionUnit: options.maximumTransmissionUnit,
+                maximumPreparedWrites: options.maximumPreparedWrites,
+                database: database,
+                delegate: delegate
+            )
+        }
+        
+        func newConnectionID() -> UInt {
+            lastConnectionID += 1
+            return lastConnectionID
+        }
+        
+        func remove(connection id: UInt) {
+            connections[id] = nil
+        }
     }
 }
 

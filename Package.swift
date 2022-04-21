@@ -1,10 +1,16 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.5
 import PackageDescription
 
 let libraryType: PackageDescription.Product.Library.LibraryType = .static
 
 let package = Package(
     name: "GATT",
+    platforms: [
+        .macOS(.v10_15),
+        .iOS(.v13),
+        .watchOS(.v6),
+        .tvOS(.v13),
+    ],
     products: [
         .library(
             name: "GATT",
@@ -13,7 +19,6 @@ let package = Package(
         ),
         .library(
             name: "DarwinGATT",
-            type: libraryType,
             targets: ["DarwinGATT"]
         )
     ],
@@ -27,20 +32,58 @@ let package = Package(
         .target(
             name: "GATT",
             dependencies: [
-                "Bluetooth"
+                .product(
+                    name: "Bluetooth",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
+                .product(
+                    name: "BluetoothGAP",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
+                .product(
+                    name: "BluetoothHCI",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
+                ),
             ]
         ),
         .target(
             name: "DarwinGATT",
             dependencies: [
-                "GATT"
+                "GATT",
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS])
+                )
             ]
         ),
         .testTarget(
             name: "GATTTests",
             dependencies: [
                 "GATT",
-                "Bluetooth"
+                .product(
+                    name: "Bluetooth",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGATT",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothGAP",
+                    package: "Bluetooth"
+                ),
+                .product(
+                    name: "BluetoothHCI",
+                    package: "Bluetooth"
+                )
             ]
         )
     ]

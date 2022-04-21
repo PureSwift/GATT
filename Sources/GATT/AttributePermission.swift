@@ -59,7 +59,6 @@ public extension AttributePermission {
 extension AttributePermission: CustomStringConvertible {
     
     public var description: String {
-        
         return name
     }
 }

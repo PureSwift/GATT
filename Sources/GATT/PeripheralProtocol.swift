@@ -14,7 +14,7 @@ import Foundation
 /// GATT Peripheral Manager
 ///
 /// Implementation varies by operating system.
-public protocol PeripheralProtocol: AnyObject {
+public protocol PeripheralManager: AnyObject {
     
     /// Central Peer
     ///
@@ -22,24 +22,21 @@ public protocol PeripheralProtocol: AnyObject {
     associatedtype Central: Peer
     
     /// Start advertising the peripheral and listening for incoming connections.
-    func start() throws
+    func start() async throws
     
     /// Stop the peripheral.
     func stop()
     
-    /// The closure to call for logging.
-    var log: ((String) -> ())? { get }
-    
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Attribute handle.
-    func add(service: BluetoothGATT.GATTAttribute.Service) throws -> UInt16
+    func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16
     
     /// Removes the service with the specified handle.
-    func remove(service: UInt16)
+    func remove(service: UInt16) async
     
     /// Clears the local GATT database.
-    func removeAllServices()
+    func removeAllServices() async
     
     var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
     
@@ -47,11 +44,14 @@ public protocol PeripheralProtocol: AnyObject {
     
     var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
     
-    /// Write / Read the value of the characteristic with specified handle.
-    subscript(characteristic handle: UInt16) -> Data { get set }
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
+    func write(_ newValue: Data, forCharacteristic handle: UInt16) async
+    
+    /// Read the value of the characteristic with specified handle.
+    subscript(characteristic handle: UInt16) -> Data { get async }
     
     /// Return the handles of the characteristics matching the specified UUID.
-    func characteristics(for uuid: BluetoothUUID) -> [UInt16]
+    func characteristics(for uuid: BluetoothUUID) async -> [UInt16]
 }
 
 // MARK: - Supporting Types
