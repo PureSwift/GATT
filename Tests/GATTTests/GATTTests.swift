@@ -310,7 +310,7 @@ final class GATTTests: XCTestCase {
         )
     }
     
-    func testNotification() async throws {
+    func _testNotification() async throws {
         
         // service
         let batteryLevel = GATTBatteryLevel(level: .max)
