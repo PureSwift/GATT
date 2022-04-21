@@ -13,7 +13,26 @@ import GATT
 /// Test L2CAP socket
 internal actor TestL2CAPSocket: L2CAPSocket {
     
-    private static var pendingClients = [BluetoothAddress: [TestL2CAPSocket]]()
+    private actor Cache {
+        
+        static let shared = Cache()
+        
+        private init() { }
+        
+        var pendingClients = [BluetoothAddress: [TestL2CAPSocket]]()
+        
+        func queue(client socket: TestL2CAPSocket, server: BluetoothAddress) {
+            pendingClients[server, default: []].append(socket)
+        }
+        
+        func dequeue(server: BluetoothAddress) -> TestL2CAPSocket? {
+            guard let socket = pendingClients[server]?.first else {
+                return nil
+            }
+            pendingClients[server]?.removeFirst()
+            return socket
+        }
+    }
     
     static func lowEnergyClient(
         address: BluetoothAddress,
@@ -26,9 +45,9 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         )
         print("Client \(address) will connect to \(destination)")
         // append to pending clients
-        pendingClients[destination, default: []].append(socket)
+        await Cache.shared.queue(client: socket, server: destination)
         // wait until client has connected
-        while (pendingClients[destination] ?? []).isEmpty == false {
+        while await (Cache.shared.pendingClients[destination] ?? []).contains(where: { $0 === socket }) {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         return socket
@@ -79,10 +98,11 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     // MARK: - Methods
     
     func accept() async throws -> TestL2CAPSocket {
-        while (Self.pendingClients[address] ?? []).isEmpty {
+        // sleep until a client socket is created
+        while (await Cache.shared.pendingClients[address] ?? []).isEmpty {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
-        let client = Self.pendingClients[address]!.removeFirst()
+        let client = await Cache.shared.dequeue(server: address)!
         let newConnection = TestL2CAPSocket(address: client.address, name: "Server connection")
         // connect sockets
         await newConnection.connect(to: client)
