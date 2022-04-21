@@ -83,10 +83,11 @@ internal actor TestL2CAPSocket: L2CAPSocket {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         let client = Self.pendingClients[address]!.removeFirst()
+        let newConnection = TestL2CAPSocket(address: client.address, name: "Server connection")
         // connect sockets
-        self.target = client
-        await client.connect(to: self)
-        return client
+        await newConnection.connect(to: client)
+        await client.connect(to: newConnection)
+        return newConnection
     }
     
     /// Write to the socket.
