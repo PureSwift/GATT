@@ -51,10 +51,12 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
         await server.writeValue(value, forCharacteristic: handle)
     }
-        
-    private func maximumUpdateValueLength() async -> Int {
-        // ATT_MTU-3
-        return await Int(server.maximumTransmissionUnit.rawValue) - 3
+    
+    var maximumUpdateValueLength: Int {
+        get async {
+            // ATT_MTU-3
+            return await Int(server.maximumTransmissionUnit.rawValue) - 3
+        }
     }
     
     // IO error
@@ -84,7 +86,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     private func willRead(uuid: BluetoothUUID, handle: UInt16, value: Data, offset: Int) async -> ATTError? {
         let request = GATTReadRequest(
             central: central,
-            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            maximumUpdateValueLength: await maximumUpdateValueLength,
             uuid: uuid,
             handle: handle,
             value: value,
@@ -96,7 +98,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     private func willWrite(uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) async -> ATTError? {
         let request = GATTWriteRequest(
             central: central,
-            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            maximumUpdateValueLength: await maximumUpdateValueLength,
             uuid: uuid,
             handle: handle,
             value: value,
@@ -108,7 +110,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     private func didWrite(uuid: BluetoothUUID, handle: UInt16, value: Data) async {
         let confirmation = GATTWriteConfirmation(
             central: central,
-            maximumUpdateValueLength: await maximumUpdateValueLength(),
+            maximumUpdateValueLength: await maximumUpdateValueLength,
             uuid: uuid,
             handle: handle,
             value: value
