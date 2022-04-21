@@ -138,7 +138,7 @@ final class GATTTests: XCTestCase {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         
-        await central.disconnectAll()
+        //await central.disconnectAll()
     }
     /*
     func testServiceDiscovery() {
