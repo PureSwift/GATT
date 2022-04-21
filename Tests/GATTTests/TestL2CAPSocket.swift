@@ -81,7 +81,7 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     /// Target socket.
     private weak var target: TestL2CAPSocket?
     
-    fileprivate(set) var receivedData = Data()
+    fileprivate(set) var receivedData = [Data]()
     
     private(set) var cache = [Data]()
     
@@ -130,25 +130,14 @@ internal actor TestL2CAPSocket: L2CAPSocket {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         
-        let data = Data(receivedData.prefix(bufferSize))
-        
-        // slice buffer
-        if data.isEmpty == false {
-            let suffixIndex = data.count
-            if receivedData.count >= suffixIndex {
-                receivedData = Data(receivedData.suffix(from: data.count))
-            } else {
-                receivedData = Data(receivedData.suffix(from: data.count))
-            }
-        }
-        
+        let data = self.receivedData.removeFirst()
         cache.append(data)
         return data
     }
     
     fileprivate func receive(_ data: Data) {
         receivedData.append(data)
-        print("L2CAP Socket: \(name) recieved \([UInt8](receivedData))")
+        print("L2CAP Socket: \(name) recieved \([UInt8](data))")
     }
     
     fileprivate func connect(to socket: TestL2CAPSocket) {
