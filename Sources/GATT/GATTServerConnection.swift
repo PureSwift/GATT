@@ -16,9 +16,16 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     let central: Central
     
-    weak var delegate: GATTServerConnectionDelegate?
+    private weak var delegate: GATTServerConnectionDelegate?
     
-    private let server: GATTServer
+    let server: GATTServer
+    
+    var maximumUpdateValueLength: Int {
+        get async {
+            // ATT_MTU-3
+            return await Int(server.maximumTransmissionUnit.rawValue) - 3
+        }
+    }
     
     // MARK: - Initialization
     
@@ -37,8 +44,10 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             maximumTransmissionUnit: maximumTransmissionUnit,
             maximumPreparedWrites: maximumPreparedWrites,
             database: database,
-            log: { message in
-                delegate.connection(central, log: message)
+            log: { [weak delegate] message in
+                delegate?.connection(central, log: message)
+            }, didDisconnect: { [weak delegate] error in
+                delegate?.connection(central, didDisconnect: error)
             }
         )
         // setup callbacks
@@ -50,13 +59,6 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     func writeValue(_ value: Data, forCharacteristic handle: UInt16) async {
         await server.writeValue(value, forCharacteristic: handle)
-    }
-    
-    var maximumUpdateValueLength: Int {
-        get async {
-            // ATT_MTU-3
-            return await Int(server.maximumTransmissionUnit.rawValue) - 3
-        }
     }
     
     private func log(_ message: String) {

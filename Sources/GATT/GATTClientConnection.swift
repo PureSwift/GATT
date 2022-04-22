@@ -11,41 +11,42 @@ import Bluetooth
 import BluetoothGATT
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-internal actor GATTClientConnection <Socket: L2CAPSocket> {
+internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     // MARK: - Properties
     
-    public let peripheral: Peripheral
+    let peripheral: Peripheral
     
-    public weak var delegate: GATTServerConnectionDelegate? // TODO: delegate API
+    private weak var delegate: GATTClientConnectionDelegate?
     
-    public let callback: GATTClientConnectionCallback
+    let client: GATTClient
+        
+    private let cache = Cache()
     
-    internal let client: GATTClient
-    
-    public private(set) var error: Swift.Error?
-    
-    internal private(set) var cache = GATTClientConnectionCache()
-    
-    internal func maximumUpdateValueLength() async -> Int {
-        // ATT_MTU-3
-        return await Int(client.maximumTransmissionUnit.rawValue) - 3
+    var maximumUpdateValueLength: Int {
+        get async {
+            // ATT_MTU-3
+            return await Int(client.maximumTransmissionUnit.rawValue) - 3
+        }
     }
     
     // MARK: - Initialization
     
-    public init(
+    init(
         peripheral: Peripheral,
-        socket: L2CAPSocket,
+        socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
-        callback: GATTClientConnectionCallback
+        delegate: GATTClientConnectionDelegate
     ) async {
         self.peripheral = peripheral
-        self.callback = callback
         self.client = await GATTClient(
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
-            log: { callback.log?("[\(peripheral)]: " + $0) }
+            log: { [weak delegate] message in
+                delegate?.connection(peripheral, log: message)
+            }, didDisconnect: { [weak delegate] error in
+                delegate?.connection(peripheral, didDisconnect: error)
+            }
         )
     }
     
@@ -55,8 +56,8 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         _ services: Set<BluetoothUUID>
     ) async throws -> [Service<Peripheral, UInt16>] {
         let foundServices = try await client.discoverAllPrimaryServices()
-        cache.insert(foundServices)
-        return cache.services.map {
+        await cache.insert(foundServices)
+        return await cache.services.map {
             Service(
                 id: $0.key,
                 uuid: $0.value.attribute.uuid,
@@ -74,15 +75,15 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         assert(service.peripheral == peripheral)
         
         // get service
-        guard let gattService = cache.service(for: service.id)?.attribute
+        guard let gattService = await cache.service(for: service.id)?.attribute
             else { throw CentralError.invalidAttribute(service.uuid) }
         
         // GATT request
         let foundCharacteristics = try await self.client.discoverAllCharacteristics(of: gattService)
         
         // store in cache
-        cache.insert(foundCharacteristics, for: service.id)
-        return cache.service(for: service.id)?.characteristics.map {
+        await cache.insert(foundCharacteristics, for: service.id)
+        return await cache.service(for: service.id)?.characteristics.map {
             Characteristic(id: $0.key,
                            uuid: $0.value.attribute.uuid,
                            peripheral: peripheral,
@@ -95,7 +96,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
@@ -111,7 +112,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
@@ -125,7 +126,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (gattService, gattCharacteristic) = cache.characteristic(for: characteristic.id)
+        guard let (gattService, gattCharacteristic) = await cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         let service = (declaration: gattService.attribute,
@@ -135,8 +136,8 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         let foundDescriptors = try await client.discoverDescriptors(of: gattCharacteristic.attribute, service: service)
         
         // update cache
-        cache.insert(foundDescriptors, for: characteristic.id)
-        return cache.characteristic(for: characteristic.id)?.1.descriptors.map {
+        await cache.insert(foundDescriptors, for: characteristic.id)
+        return await cache.characteristic(for: characteristic.id)?.1.descriptors.map {
             Descriptor(
                 id: $0.key,
                 uuid: $0.value.attribute.uuid,
@@ -153,7 +154,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // Gatt Descriptors
@@ -164,7 +165,7 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
             // fetch descriptors
             let _ = try await self.discoverDescriptors(for: characteristic)
             // get updated cache
-            if let cache = self.cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
+            if let cache = await cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
                 descriptors = Array(cache)
             } else {
                 descriptors = []
@@ -198,25 +199,27 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
             descriptors: descriptors
         )
     }
+    
+    private func log(_ message: String) {
+        delegate?.connection(peripheral, log: message)
+    }
 }
 
 // MARK: - Supporting Types
 
-internal struct GATTClientConnectionCallback {
+internal protocol GATTClientConnectionDelegate: AnyObject {
     
-    public let log: ((String) -> ())?
+    func connection(_ peripheral: Peripheral, log: String)
     
-    public let didDisconnect: ((Error) -> ())
-    
-    public init(log: ((String) -> ())? = nil,
-                didDisconnect: @escaping ((Error) -> ())) {
-        
-        self.log = log
-        self.didDisconnect = didDisconnect
-    }
+    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?)
 }
 
-internal struct GATTClientConnectionCache {
+internal extension GATTClientConnection {
+    
+    typealias Cache = GATTClientConnectionCache
+}
+
+internal actor GATTClientConnectionCache {
     
     fileprivate init() { }
     
@@ -250,14 +253,14 @@ internal struct GATTClientConnectionCache {
         return nil
     }
     
-    mutating func insert(_ newValues: [GATTClient.Service]) {
+    func insert(_ newValues: [GATTClient.Service]) {
         services.removeAll(keepingCapacity: true)
         newValues.forEach {
             services[$0.handle] = GATTClientConnectionServiceCache(attribute: $0, characteristics: [:])
         }
     }
     
-    mutating func insert(
+    func insert(
         _ newValues: [GATTClient.Characteristic],
         for service: UInt16
     ) {
@@ -270,7 +273,7 @@ internal struct GATTClientConnectionCache {
         }
     }
     
-    mutating func insert(_ newValues: [GATTClient.Descriptor],
+    func insert(_ newValues: [GATTClient.Descriptor],
                          for characteristic: UInt16) {
         
         var descriptorsCache = [UInt16: GATTClientConnectionDescriptorCache](minimumCapacity: newValues.count)

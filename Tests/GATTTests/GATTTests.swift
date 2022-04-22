@@ -496,7 +496,7 @@ extension GATTTests {
         try await client(central, device.peripheral)
         // cleanup
         //await central.disconnectAll()
-        //await peripheral.removeAllServices()
+        await peripheral.removeAllServices()
     }
     
     func test(

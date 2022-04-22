@@ -81,19 +81,12 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             address: localAddress,
             destination: report
         )
-        // configure connection object
-        let callback = GATTClientConnectionCallback(
-            log: self.log,
-            didDisconnect: { [weak self] _ in
-                //self?.disconnect(peripheral)
-            }
-        )
         // keep connection open and store for future use
-        let connection = await GATTClientConnection<Socket>(
+        let connection = await GATTClientConnection(
             peripheral: peripheral,
             socket: socket,
             maximumTransmissionUnit: self.options.maximumTransmissionUnit,
-            callback: callback
+            delegate: self
         )
         // store connection
         await self.storage.didConnect(connection)
@@ -101,8 +94,6 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     
     public func disconnect(_ peripheral: Peripheral) async {
         await storage.removeConnection(peripheral)
-        // TODO: Emit notification
-        //self.didDisconnect?(peripheral)
     }
     
     public func disconnectAll() async {
@@ -207,6 +198,17 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             else { throw CentralError.disconnected }
         
         return connection
+    }
+}
+
+extension GATTCentral: GATTClientConnectionDelegate {
+    
+    func connection(_ peripheral: Peripheral, log message: String) {
+        log?("[\(peripheral)]: " + message)
+    }
+    
+    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) {
+        log?("[\(peripheral)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
 }
 

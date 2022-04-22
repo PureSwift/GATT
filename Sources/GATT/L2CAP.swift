@@ -16,7 +16,7 @@ internal extension L2CAPSocket {
     static func lowEnergyClient(
         address localAddress: BluetoothAddress,
         destination: HCILEAdvertisingReport.Report
-    ) async throws -> L2CAPSocket {
+    ) async throws -> Self {
         try await lowEnergyClient(
             address: localAddress,
             destination: destination.address,

@@ -172,11 +172,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
 extension GATTPeripheral: GATTServerConnectionDelegate {
     
     func connection(_ central: Central, log message: String) {
-        self.log?("[\(central)]: " + message)
+        log?("[\(central)]: " + message)
     }
     
     func connection(_ central: Central, didDisconnect error: Swift.Error?) {
-        return
+        log?("[\(central)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
     
     func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
