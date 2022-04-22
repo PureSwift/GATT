@@ -59,12 +59,6 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
         }
     }
     
-    // IO error
-    private func error(_ error: Error) async {
-        log("Disconnected \(error)")
-        delegate?.connection(central, didDisconnect: error)
-    }
-    
     private func log(_ message: String) {
         delegate?.connection(central, log: message)
     }

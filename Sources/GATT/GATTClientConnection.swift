@@ -17,6 +17,8 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
     
     public let peripheral: Peripheral
     
+    public weak var delegate: GATTServerConnectionDelegate? // TODO: delegate API
+    
     public let callback: GATTClientConnectionCallback
     
     internal let client: GATTClient
@@ -31,10 +33,6 @@ internal actor GATTClientConnection <Socket: L2CAPSocket> {
     }
     
     // MARK: - Initialization
-    
-    deinit {
-        self.callback.log?("[\(self.peripheral)]: Disconnected")
-    }
     
     public init(
         peripheral: Peripheral,
