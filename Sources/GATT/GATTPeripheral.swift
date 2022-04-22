@@ -165,9 +165,12 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
     }
     
     func connection(_ central: Central, didDisconnect error: Swift.Error?) async {
+        // try advertising again
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         catch { log?("Could not enable advertising. \(error)") }
+        // remove connection cache
+        await storage.removeConnection(central)
         // log
         log?("[\(central)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
@@ -244,6 +247,10 @@ internal extension GATTPeripheral {
                 database: database,
                 delegate: delegate
             )
+        }
+        
+        func removeConnection(_ central: Central) {
+            self.connections[central] = nil
         }
     }
 }
