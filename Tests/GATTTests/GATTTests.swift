@@ -99,10 +99,10 @@ final class GATTTests: XCTestCase {
                 maximumTransmissionUnit: clientMTU
             ),
             client: { (central, peripheral) in
-                // sleep until MTU is negotiated
-                while try await central.maximumTransmissionUnit(for: peripheral) != finalMTU {
-                    try await Task.sleep(nanoseconds: 10_000_000)
-                }
+                let services = try await central.discoverServices(for: peripheral)
+                XCTAssertEqual(services.count, 0)
+                let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
+                XCTAssertEqual(clientMTU, finalMTU)
             }
         )
 

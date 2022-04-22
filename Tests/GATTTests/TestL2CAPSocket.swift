@@ -12,7 +12,7 @@ import GATT
 
 /// Test L2CAP socket
 internal actor TestL2CAPSocket: L2CAPSocket {
-    
+        
     private actor Cache {
         
         static let shared = Cache()
@@ -70,6 +70,12 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     
     let address: BluetoothAddress
     
+    private(set) var event: ((L2CAPSocketEvent) async -> ()) = { _ in }
+    
+    func setEvent(_ event: @escaping ((L2CAPSocketEvent) async -> ())) async {
+        self.event = event
+    }
+    
     /// The socket's security level.
     private(set) var securityLevel: SecurityLevel = .sdp
     
@@ -119,6 +125,9 @@ internal actor TestL2CAPSocket: L2CAPSocket {
             else { throw POSIXError(.ECONNRESET) }
         
         await target.receive(data)
+        Task.detached(priority: .high) { [weak self] in
+            await self?.event(.write(data.count))
+        }
     }
     
     /// Reads from the socket.
@@ -127,17 +136,25 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         print("L2CAP Socket: \(name) will read \(bufferSize) bytes")
         
         while self.receivedData.isEmpty {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            guard self.target != nil
+                else { throw POSIXError(.ECONNRESET) }
+            try await Task.sleep(nanoseconds: 100_000_000)
         }
         
         let data = self.receivedData.removeFirst()
         cache.append(data)
+        Task.detached(priority: .high) { [weak self] in
+            await self?.event(.read(data.count))
+        }
         return data
     }
     
     fileprivate func receive(_ data: Data) {
         receivedData.append(data)
         print("L2CAP Socket: \(name) recieved \([UInt8](data))")
+        Task.detached(priority: .high) { [weak self] in
+            await self?.event(.pendingRead)
+        }
     }
     
     fileprivate func connect(to socket: TestL2CAPSocket) {
