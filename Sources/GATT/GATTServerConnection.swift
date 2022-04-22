@@ -47,7 +47,7 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
             log: { [weak delegate] message in
                 delegate?.connection(central, log: message)
             }, didDisconnect: { [weak delegate] error in
-                delegate?.connection(central, didDisconnect: error)
+                await delegate?.connection(central, didDisconnect: error)
             }
         )
         // setup callbacks
@@ -119,7 +119,7 @@ internal protocol GATTServerConnectionDelegate: AnyObject {
     
     func connection(_ central: Central, log: String)
     
-    func connection(_ central: Central, didDisconnect error: Error?)
+    func connection(_ central: Central, didDisconnect error: Error?) async
     
     func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError?
     

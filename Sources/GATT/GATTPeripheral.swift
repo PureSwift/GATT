@@ -156,17 +156,6 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             .filter { $0.uuid == uuid }
             .map { $0.handle }
     }
-    
-    // MARK: - Private Methods
-    
-    private func disconnect(_ connection: UInt, error: Error) async {
-        // remove from peripheral, release and close socket
-        await storage.remove(connection: connection)
-        // enable LE advertising
-        do { try await hostController.enableLowEnergyAdvertising() }
-        catch HCIError.commandDisallowed { /* ignore */ }
-        catch { log?("Could not enable advertising. \(error)") }
-    }
 }
 
 extension GATTPeripheral: GATTServerConnectionDelegate {
@@ -175,7 +164,11 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
         log?("[\(central)]: " + message)
     }
     
-    func connection(_ central: Central, didDisconnect error: Swift.Error?) {
+    func connection(_ central: Central, didDisconnect error: Swift.Error?) async {
+        do { try await hostController.enableLowEnergyAdvertising() }
+        catch HCIError.commandDisallowed { /* ignore */ }
+        catch { log?("Could not enable advertising. \(error)") }
+        // log
         log?("[\(central)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
     
@@ -217,10 +210,8 @@ internal extension GATTPeripheral {
         
         var database = GATTDatabase()
         
-        var connections = [UInt: GATTServerConnection<Socket>]()
-        
-        private var lastConnectionID: UInt = 0
-        
+        var connections = [Central: GATTServerConnection<Socket>](minimumCapacity: 2)
+                
         fileprivate init() { }
         
         func add(service: BluetoothGATT.GATTAttribute.Service) -> UInt16 {
@@ -245,8 +236,7 @@ internal extension GATTPeripheral {
             delegate: GATTServerConnectionDelegate
         ) async {
             let central = Central(id: socket.address)
-            let id = newConnectionID()
-            connections[id] = await GATTServerConnection(
+            connections[central] = await GATTServerConnection(
                 central: central,
                 socket: socket,
                 maximumTransmissionUnit: options.maximumTransmissionUnit,
@@ -254,15 +244,6 @@ internal extension GATTPeripheral {
                 database: database,
                 delegate: delegate
             )
-        }
-        
-        func newConnectionID() -> UInt {
-            lastConnectionID += 1
-            return lastConnectionID
-        }
-        
-        func remove(connection id: UInt) {
-            connections[id] = nil
         }
     }
 }

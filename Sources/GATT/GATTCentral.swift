@@ -207,7 +207,8 @@ extension GATTCentral: GATTClientConnectionDelegate {
         log?("[\(peripheral)]: " + message)
     }
     
-    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) {
+    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) async {
+        await storage.removeConnection(peripheral)
         log?("[\(peripheral)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
 }
@@ -258,13 +259,6 @@ internal extension GATTCentral {
         
         func removeAllConnections() {
             self.connections.removeAll(keepingCapacity: true)
-        }
-        
-        var lastConnectionID: UInt = 0
-        
-        func newConnectionID() -> UInt {
-            lastConnectionID += 1
-            return lastConnectionID
         }
     }
 }

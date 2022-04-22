@@ -45,7 +45,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
             log: { [weak delegate] message in
                 delegate?.connection(peripheral, log: message)
             }, didDisconnect: { [weak delegate] error in
-                delegate?.connection(peripheral, didDisconnect: error)
+                await delegate?.connection(peripheral, didDisconnect: error)
             }
         )
     }
@@ -211,7 +211,7 @@ internal protocol GATTClientConnectionDelegate: AnyObject {
     
     func connection(_ peripheral: Peripheral, log: String)
     
-    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?)
+    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) async
 }
 
 internal extension GATTClientConnection {
