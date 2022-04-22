@@ -67,14 +67,14 @@ internal final class GATTServerConnection <Socket: L2CAPSocket> {
     
     private func configureServer() async {
         var callback = GATTServer.Callback()
-        callback.willRead = { [unowned self] in
-            await self.willRead(uuid: $0, handle: $1, value: $2, offset: $3)
+        callback.willRead = { [weak self] in
+            await self?.willRead(uuid: $0, handle: $1, value: $2, offset: $3)
         }
-        callback.willWrite = { [unowned self] in
-            await self.willWrite(uuid: $0, handle: $1, value: $2, newValue: $3)
+        callback.willWrite = { [weak self] in
+            await self?.willWrite(uuid: $0, handle: $1, value: $2, newValue: $3)
         }
-        callback.didWrite = { [unowned self] in
-            await self.didWrite(uuid: $0, handle: $1, value: $2)
+        callback.didWrite = { [weak self] in
+            await self?.didWrite(uuid: $0, handle: $1, value: $2)
         }
         await self.server.setCallbacks(callback)
     }
