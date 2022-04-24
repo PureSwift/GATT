@@ -172,7 +172,7 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
         // remove connection cache
         await storage.removeConnection(central)
         // log
-        log?("[\(central)]: " + "did disconnect \(error?.localizedDescription ?? "")")
+        log?("[\(central)]: " + "Did disconnect. \(error?.localizedDescription ?? "")")
     }
     
     func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
