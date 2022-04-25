@@ -70,11 +70,9 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     
     let address: BluetoothAddress
     
-    private(set) var event: ((L2CAPSocketEvent) async -> ()) = { _ in }
+    public let event: L2CAPSocketEventStream
     
-    func setEvent(_ event: @escaping ((L2CAPSocketEvent) async -> ())) async {
-        self.event = event
-    }
+    private var eventContinuation: L2CAPSocketEventStream.Continuation!
     
     /// The socket's security level.
     private(set) var securityLevel: SecurityLevel = .sdp
@@ -99,6 +97,11 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     ) {
         self.address = address
         self.name = name
+        var continuation: L2CAPSocketEventStream.Continuation!
+        self.event = L2CAPSocketEventStream {
+            continuation = $0
+        }
+        self.eventContinuation = continuation
     }
     
     // MARK: - Methods
@@ -125,9 +128,7 @@ internal actor TestL2CAPSocket: L2CAPSocket {
             else { throw POSIXError(.ECONNRESET) }
         
         await target.receive(data)
-        Task.detached(priority: .high) { [weak self] in
-            await self?.event(.write(data.count))
-        }
+        eventContinuation.yield(.write(data.count))
     }
     
     /// Reads from the socket.
@@ -143,18 +144,14 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         
         let data = self.receivedData.removeFirst()
         cache.append(data)
-        Task.detached(priority: .high) { [weak self] in
-            await self?.event(.read(data.count))
-        }
+        eventContinuation.yield(.read(data.count))
         return data
     }
     
     fileprivate func receive(_ data: Data) {
         receivedData.append(data)
         print("L2CAP Socket: \(name) recieved \([UInt8](data))")
-        Task.detached(priority: .high) { [weak self] in
-            await self?.event(.pendingRead)
-        }
+        eventContinuation.yield(.pendingRead)
     }
     
     fileprivate func connect(to socket: TestL2CAPSocket) {
