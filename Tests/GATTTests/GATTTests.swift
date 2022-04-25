@@ -8,10 +8,9 @@
 
 import Foundation
 import XCTest
-import Dispatch
 import Bluetooth
-import BluetoothGATT
 import BluetoothHCI
+@testable import BluetoothGATT
 @testable import GATT
 
 final class GATTTests: XCTestCase {
@@ -90,6 +89,7 @@ final class GATTTests: XCTestCase {
         
         // decode and validate bytes
         test(testPDUs)
+        let mockData = split(pdu: testPDUs.map { $0.1 })
         
         try await connect(
             serverOptions: GATTPeripheralOptions(
@@ -104,18 +104,12 @@ final class GATTTests: XCTestCase {
                 XCTAssertEqual(services.count, 0)
                 let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
                 XCTAssertEqual(clientMTU, finalMTU)
+                let maximumUpdateValueLength = await central.storage.connections.values.first?.maximumUpdateValueLength
+                XCTAssertEqual(maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
+                let clientCache = await (central.storage.connections.values.first?.client.connection.socket as? TestL2CAPSocket)?.cache
+                XCTAssertEqual(clientCache?.prefix(1), mockData.client.prefix(1)) // not same because extra service discovery request
             }
         )
-
-                
-        //XCTAssertEqual(peripheral.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
-        //XCTAssertEqual(central.connections.values.first?.maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
-        
-        // validate GATT PDUs
-        //let mockData = split(pdu: testPDUs.map { $0.1 })
-        
-        //XCTAssertEqual(serverSocket.cache, mockData.server)
-        //XCTAssertEqual(clientSocket.cache, mockData.client)
     }
     
     func testServiceDiscovery() async throws {
@@ -183,6 +177,7 @@ final class GATTTests: XCTestCase {
         
         // decode and validate bytes
         test(testPDUs)
+        let mockData = split(pdu: testPDUs.map { $0.1 })
         
         // service
         let batteryLevel = GATTBatteryLevel(level: .min)
@@ -220,6 +215,8 @@ final class GATTTests: XCTestCase {
                     else { XCTFail(); return }
                 XCTAssertEqual(foundService.uuid, .batteryService)
                 XCTAssertEqual(foundService.isPrimary, true)
+                let clientCache = await (central.storage.connections.values.first?.client.connection.socket as? TestL2CAPSocket)?.cache
+                XCTAssertEqual(clientCache, mockData.client)
             }
         )
         
