@@ -10,6 +10,7 @@ import Foundation
 import Bluetooth
 import GATT
 
+#if swift(>=5.6)
 /// Test L2CAP socket
 internal actor TestL2CAPSocket: L2CAPSocket {
         
@@ -158,3 +159,4 @@ internal actor TestL2CAPSocket: L2CAPSocket {
         self.target = socket
     }
 }
+#endif
