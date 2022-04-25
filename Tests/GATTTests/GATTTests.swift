@@ -14,7 +14,7 @@ import BluetoothGATT
 import BluetoothHCI
 @testable import GATT
 
-@available(macOS 10.12, *)
+#if swift(>=5.6) && canImport(BluetoothGATT)
 final class GATTTests: XCTestCase {
     
     typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPSocket>
@@ -562,3 +562,4 @@ fileprivate extension ATTOpcodeType {
         }
     }
 }
+#endif
