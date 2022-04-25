@@ -78,7 +78,7 @@ internal actor TestL2CAPSocket: L2CAPSocket {
     private(set) var securityLevel: SecurityLevel = .sdp
     
     /// Attempts to change the socket's security level.
-    func setSecurityLevel(_ securityLevel: SecurityLevel) throws {
+    func setSecurityLevel(_ securityLevel: SecurityLevel) async throws {
         self.securityLevel = securityLevel
     }
     

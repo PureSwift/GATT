@@ -16,9 +16,10 @@ import BluetoothHCI
 
 final class GATTTests: XCTestCase {
     
+    #if swift(>=5.6)
     typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPSocket>
-    
     typealias TestCentral = GATTCentral<TestHostController, TestL2CAPSocket>
+    #endif
     
     func testScanData() {
         
