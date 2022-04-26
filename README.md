@@ -78,7 +78,7 @@ for try await scanData in stream {
 
 ## Documentation
 
-Read the documentation [here](http://pureswift.github.io/GATT/documentation/GATT/).
+Read the documentation [here](http://pureswift.github.io/GATT/documentation/gatt/).
 Documentation can be generated with [DocC](https://github.com/apple/swift-docc).
 
 ## See Also
