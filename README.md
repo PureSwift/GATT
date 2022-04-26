@@ -15,7 +15,7 @@ Bluetooth Generic Attribute Profile (GATT) for Swift
 import Bluetooth
 #if canImport(Darwin)
 import DarwinGATT
-#elseif canImport(BluetoothLinux)
+#elseif os(Linux)
 import BluetoothLinux
 #endif
 
@@ -40,7 +40,7 @@ let peripheral = DarwinPeripheral()
 #endif
 
 // start advertising
-peripheral.start()
+try await peripheral.start()
 
 ```
 
@@ -50,7 +50,7 @@ peripheral.start()
 import Bluetooth
 #if canImport(Darwin)
 import DarwinGATT
-#elseif canImport(BluetoothLinux)
+#elseif os(Linux)
 import BluetoothLinux
 #endif
 
@@ -68,7 +68,7 @@ let central = DarwinCentral()
 #endif
 
 // start scanning
-let stream = central.scan(filterDuplicates: true)
+let stream = try await central.scan(filterDuplicates: true)
 for try await scanData in stream {
     print(scanData)
     stream.stop()
