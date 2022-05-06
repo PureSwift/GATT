@@ -6,7 +6,7 @@ import class Foundation.ProcessInfo
 let dynamicLibrary = ProcessInfo.processInfo.environment["SWIFT_BUILD_DYNAMIC_LIBRARY"] != nil
 let libraryType: PackageDescription.Product.Library.LibraryType? = dynamicLibrary ? .dynamic : nil
 
-let package = Package(
+var package = Package(
     name: "GATT",
     platforms: [
         .macOS(.v10_15),
