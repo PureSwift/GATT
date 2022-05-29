@@ -151,7 +151,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
                     self.log?("Unable to stop notifications for \(characteristic.uuid)")
                 }
             }
-        }) { [unowned self] continuation in
+        }) { continuation in
             Task(priority: .userInitiated) {
                 do {
                     // start notifications
