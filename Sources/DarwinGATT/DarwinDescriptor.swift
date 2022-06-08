@@ -124,6 +124,7 @@ extension DarwinDescriptor {
     }
 }
 
+#if (os(macOS) || os(iOS)) && canImport(BluetoothGATT)
 internal extension CBMutableDescriptor {
     
     /// Only the characteristic user description descriptor and the characteristic format descriptor
@@ -153,5 +154,5 @@ internal extension CBMutableDescriptor {
         self.init(descriptor)
     }
 }
-
+#endif
 #endif
