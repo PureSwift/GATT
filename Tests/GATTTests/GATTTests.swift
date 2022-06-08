@@ -494,7 +494,7 @@ extension GATTTests {
         try await central.connect(to: device.peripheral)
         try await client(central, device.peripheral)
         // cleanup
-        //await central.disconnectAll()
+        await central.disconnectAll()
         await peripheral.removeAllServices()
     }
     #endif
