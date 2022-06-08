@@ -294,7 +294,7 @@ public extension DarwinPeripheral {
             if let beacon = self.beacon {
                 
                 let beaconRegion = CLBeaconRegion(
-                    proximityUUID: beacon.uuid,
+                    uuid: beacon.uuid,
                     major: beacon.major,
                     minor: beacon.minor,
                     identifier: beacon.uuid.uuidString
