@@ -35,11 +35,11 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
+    public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
     
-    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
+    public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
     
     private var database = Database()
     
@@ -402,14 +402,19 @@ internal extension DarwinPeripheral {
                 return
             }
             
-            if let error = self.peripheral.willRead?(readRequest) {
-                peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-                return
+            Task {
+                if let error = await self.peripheral.willRead?(readRequest) {
+                    peripheral.queue.async {
+                        peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                    }
+                    return
+                }
+                peripheral.queue.async {
+                    let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
+                    request.value = requestedValue
+                    peripheralManager.respond(to: request, withResult: .success)
+                }
             }
-            
-            let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
-            request.value = requestedValue
-            peripheralManager.respond(to: request, withResult: .success)
         }
         
         @objc(peripheralManager:didReceiveWriteRequests:)
@@ -417,49 +422,55 @@ internal extension DarwinPeripheral {
             
             log("Did receive write requests for \(requests.map { $0.characteristic.uuid })")
             assert(requests.isEmpty == false)
-            var writeRequests = [GATTWriteRequest<Central>]()
-            writeRequests.reserveCapacity(requests.count)
             
-            // validate write requests
-            for request in requests {
-                let peer = Central(request.central)
-                let characteristic = self.peripheral.database[characteristic: request.characteristic]
-                let value = characteristic.value
-                let uuid = BluetoothUUID(request.characteristic.uuid)
-                let newValue = request.value ?? Data()
-                let writeRequest = GATTWriteRequest(
-                    central: peer,
-                    maximumUpdateValueLength: request.central.maximumUpdateValueLength,
-                    uuid: uuid,
-                    handle: characteristic.handle,
-                    value: value,
-                    newValue: newValue
-                )
-                // check if write is possible
-                if let error = self.peripheral.willWrite?(writeRequest) {
-                    peripheralManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-                    return
+            Task {
+                var writeRequests = [GATTWriteRequest<Central>]()
+                writeRequests.reserveCapacity(requests.count)
+                // validate write requests
+                for request in requests {
+                    let peer = Central(request.central)
+                    let characteristic = self.peripheral.database[characteristic: request.characteristic]
+                    let value = characteristic.value
+                    let uuid = BluetoothUUID(request.characteristic.uuid)
+                    let newValue = request.value ?? Data()
+                    let writeRequest = GATTWriteRequest(
+                        central: peer,
+                        maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                        uuid: uuid,
+                        handle: characteristic.handle,
+                        value: value,
+                        newValue: newValue
+                    )
+                    // check if write is possible
+                    if let error = await self.peripheral.willWrite?(writeRequest) {
+                        peripheral.queue.async {
+                            peripheralManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                        }
+                        return
+                    }
+                    // compute new data
+                    writeRequests.append(writeRequest)
                 }
-                // compute new data
-                writeRequests.append(writeRequest)
+                
+                // write new values
+                for request in writeRequests {
+                    // update GATT DB
+                    self.peripheral.database[characteristic: request.handle] = request.newValue
+                    let confirmation = GATTWriteConfirmation(
+                        central: request.central,
+                        maximumUpdateValueLength: request.maximumUpdateValueLength,
+                        uuid: request.uuid,
+                        handle: request.handle,
+                        value: request.newValue
+                    )
+                    // did write callback
+                    await self.peripheral.didWrite?(confirmation)
+                }
+                
+                peripheral.queue.async {
+                    peripheralManager.respond(to: requests[0], withResult: .success)
+                }
             }
-            
-            // write new values
-            for request in writeRequests {
-                // update GATT DB
-                self.peripheral.database[characteristic: request.handle] = request.newValue
-                let confirmation = GATTWriteConfirmation(
-                    central: request.central,
-                    maximumUpdateValueLength: request.maximumUpdateValueLength,
-                    uuid: request.uuid,
-                    handle: request.handle,
-                    value: request.newValue
-                )
-                // did write callback
-                self.peripheral.didWrite?(confirmation)
-            }
-            
-            peripheralManager.respond(to: requests[0], withResult: .success)
         }
         
         @objc(peripheralManager:central:didSubscribeToCharacteristic:)

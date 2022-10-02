@@ -29,11 +29,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public let options: Options
     
-    public var willRead: ((GATTReadRequest<Central>) -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)?
+    public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
     
-    public var didWrite: ((GATTWriteConfirmation<Central>) -> ())?
+    public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
     
     public var activeConnections: Set<Central> {
         get async {
@@ -175,19 +175,19 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
         log?("[\(central)]: " + "Did disconnect. \(error?.localizedDescription ?? "")")
     }
     
-    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) -> ATTError? {
-        return willRead?(request)
+    func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError? {
+        return await willRead?(request)
     }
     
-    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) -> ATTError? {
-        return willWrite?(request)
+    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central>) async -> ATTError? {
+        return await willWrite?(request)
     }
     
     func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central>) async {
         // update DB and inform other connections
         await write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
         // notify delegate
-        didWrite?(confirmation)
+        await didWrite?(confirmation)
     }
 }
 

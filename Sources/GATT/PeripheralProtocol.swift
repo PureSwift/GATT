@@ -38,11 +38,11 @@ public protocol PeripheralManager: AnyObject {
     /// Clears the local GATT database.
     func removeAllServices() async
     
-    var willRead: ((GATTReadRequest<Central>) -> ATTError?)? { get set }
+    var willRead: ((GATTReadRequest<Central>) async -> ATTError?)? { get set }
     
-    var willWrite: ((GATTWriteRequest<Central>) -> ATTError?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)? { get set }
     
-    var didWrite: ((GATTWriteConfirmation<Central>) -> ())? { get set }
+    var didWrite: ((GATTWriteConfirmation<Central>) async -> ())? { get set }
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     func write(_ newValue: Data, forCharacteristic handle: UInt16) async
