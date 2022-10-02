@@ -333,7 +333,7 @@ final class GATTTests: XCTestCase {
                 
         try await connect(
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
-            clientOptions: .init(maximumTransmissionUnit: .max, scanParameters: .gattCentralDefault),
+            clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
                 let serviceAttribute = try await peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
@@ -395,10 +395,10 @@ final class GATTTests: XCTestCase {
         )
 
         let newValue = GATTBatteryLevel(level: .min)
-                
+        
         try await connect(
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
-            clientOptions: .init(maximumTransmissionUnit: .max, scanParameters: .gattCentralDefault),
+            clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
                 let serviceAttribute = try await peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)

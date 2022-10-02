@@ -54,10 +54,25 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public func scan(
         filterDuplicates: Bool
     ) async throws -> AsyncCentralScan<GATTCentral> {
+        let scanParameters = HCILESetScanParameters(
+            type: .active,
+            interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
+            window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
+            addressType: .public,
+            filterPolicy: .accept
+        )
+        return try await scan(filterDuplicates: filterDuplicates, parameters: scanParameters)
+    }
+    
+    /// Scans for peripherals that are advertising services.
+    public func scan(
+        filterDuplicates: Bool,
+        parameters: HCILESetScanParameters
+    ) async throws -> AsyncCentralScan<GATTCentral> {
         self.log?("Scanning...")
         let stream = try await self.hostController.lowEnergyScan(
             filterDuplicates: filterDuplicates,
-            parameters: self.options.scanParameters
+            parameters: parameters
         )
         return AsyncCentralScan { [unowned self] continuation in
             // start scanning
@@ -266,28 +281,9 @@ internal extension GATTCentral {
 public struct GATTCentralOptions {
     
     public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
-    
-    public let scanParameters: HCILESetScanParameters
-    
-    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
-                scanParameters: HCILESetScanParameters = .gattCentralDefault) {
         
+    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .default) {
         self.maximumTransmissionUnit = maximumTransmissionUnit
-        self.scanParameters = scanParameters
-    }
-}
-
-public extension HCILESetScanParameters {
-    
-    static var gattCentralDefault: HCILESetScanParameters {
-        
-        return HCILESetScanParameters(
-            type: .active,
-            interval: LowEnergyScanTimeInterval(rawValue: 0x01E0)!,
-            window: LowEnergyScanTimeInterval(rawValue: 0x0030)!,
-            addressType: .public,
-            filterPolicy: .accept
-        )
     }
 }
 
