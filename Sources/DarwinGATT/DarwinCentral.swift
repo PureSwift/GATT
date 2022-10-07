@@ -150,8 +150,9 @@ public final class DarwinCentral: CentralManager {
                         options: options,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .connect(operation)
+                    context.operation = .connect(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -208,8 +209,9 @@ public final class DarwinCentral: CentralManager {
                         services: services,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .discoverServices(operation)
+                    context.operation = .discoverServices(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -233,8 +235,9 @@ public final class DarwinCentral: CentralManager {
                         services: services,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .discoverIncludedServices(operation)
+                    context.operation = .discoverIncludedServices(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -258,8 +261,9 @@ public final class DarwinCentral: CentralManager {
                         characteristics: characteristics,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .discoverCharacteristics(operation)
+                    context.operation = .discoverCharacteristics(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -281,8 +285,9 @@ public final class DarwinCentral: CentralManager {
                         characteristic: characteristic,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .readCharacteristic(operation)
+                    context.operation = .readCharacteristic(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -317,8 +322,9 @@ public final class DarwinCentral: CentralManager {
                         characteristic: characteristic,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .discoverDescriptors(operation)
+                    context.operation = .discoverDescriptors(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -340,8 +346,9 @@ public final class DarwinCentral: CentralManager {
                         descriptor: descriptor,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .readDescriptor(operation)
+                    context.operation = .readDescriptor(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -365,8 +372,9 @@ public final class DarwinCentral: CentralManager {
                         data: data,
                         continuation: continuation
                     )
-                    if self.execute(operation) {
-                        context.operation = .writeDescriptor(operation)
+                    context.operation = .writeDescriptor(operation)
+                    if !self.execute(operation) {
+                        context.operation = nil
                     }
                 }
             }
@@ -435,8 +443,9 @@ public final class DarwinCentral: CentralManager {
                 let context = self.continuation(for: peripheral)
                 context.readRSSI?.continuation.resume(throwing: CancellationError())
                 context.readRSSI = nil
-                if self.execute(operation) {
-                    context.readRSSI = operation
+                context.readRSSI = operation
+                if !self.execute(operation) {
+                    context.readRSSI = nil
                 }
             }
         }
@@ -508,8 +517,9 @@ public final class DarwinCentral: CentralManager {
                     withResponse: withResponse,
                     continuation: continuation
                 )
-                if self.execute(operation) {
-                    context.operation = .writeCharacteristic(operation)
+                context.operation = .writeCharacteristic(operation)
+                if !self.execute(operation) {
+                    context.operation = nil
                 }
             }
         }
@@ -529,8 +539,9 @@ public final class DarwinCentral: CentralManager {
                     peripheral: peripheral,
                     continuation: continuation
                 )
-                if self.execute(operation) {
-                    context.operation = .isReadyToWriteWithoutResponse(operation)
+                context.operation = .isReadyToWriteWithoutResponse(operation)
+                if !self.execute(operation) {
+                    context.operation = nil
                 }
             }
         }
@@ -552,8 +563,9 @@ public final class DarwinCentral: CentralManager {
                     isEnabled: isEnabled,
                     continuation: continuation
                 )
-                if self.execute(operation) {
-                    context.operation = .setNotification(operation)
+                context.operation = .setNotification(operation)
+                if !self.execute(operation) {
+                    context.operation = nil
                 }
             }
         }
