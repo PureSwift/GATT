@@ -29,9 +29,13 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public let options: Options
     
     /// Currently scanned devices, or restored devices.
-    public var peripherals: Set<Peripheral> {
+    public var peripherals: [Peripheral: Bool] {
         get async {
-            return await Set(storage.scanData.keys)
+            let peripherals = await storage.scanData.keys
+            let connections = await storage.connections.keys
+            var result = [Peripheral: Bool]()
+            result.reserveCapacity(peripherals.count)
+            return peripherals.reduce(into: result, { $0[$1] = connections.contains($1) })
         }
     }
     

@@ -29,7 +29,7 @@ public protocol CentralManager: AnyObject {
     var log: ((String) -> ())? { get set }
     
     /// Currently scanned devices, or restored devices.
-    var peripherals: Set<Peripheral> { get async }
+    var peripherals: [Peripheral: Bool] { get async }
     
     /// Scans for peripherals that are advertising services.
     func scan(filterDuplicates: Bool) async throws -> AsyncCentralScan<Self>

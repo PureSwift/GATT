@@ -33,11 +33,15 @@ public final class DarwinCentral: CentralManager {
     }
     
     /// Currently scanned devices, or restored devices.
-    public var peripherals: Set<Peripheral> {
+    public var peripherals: [Peripheral: Bool] {
         get async {
             return await withUnsafeContinuation { [unowned self] continuation in
                 self.async { [unowned self] in
-                    let peripherals = Set(self.cache.peripherals.keys)
+                    var peripherals = [Peripheral: Bool]()
+                    peripherals.reserveCapacity(self.cache.peripherals.count)
+                    for (peripheral, coreBluetoothPeripheral) in self.cache.peripherals {
+                        peripherals[peripheral] = coreBluetoothPeripheral.state == .connected
+                    }
                     continuation.resume(returning: peripherals)
                 }
             }
@@ -1457,7 +1461,6 @@ internal extension DarwinCentral {
             if let error = error {
                 operation.continuation.resume(throwing: error)
             } else {
-                assert(characteristicObject.isNotifying == operation.isEnabled)
                 operation.continuation.resume()
             }
         }
