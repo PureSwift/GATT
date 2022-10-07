@@ -1430,7 +1430,6 @@ internal extension DarwinCentral {
                 assertionFailure("Missing context")
                 return
             }
-            defer { context.operation = nil }
             // either read operation or notification
             if case let .readCharacteristic(operation) = context.operation {
                 if let error = error {
@@ -1438,6 +1437,7 @@ internal extension DarwinCentral {
                 } else {
                     operation.continuation.resume(returning: data)
                 }
+                context.operation = nil
             } else if characteristicObject.isNotifying {
                 guard let stream = context.notificationStream[characteristic.id] else {
                     assertionFailure("Missing notification stream")
