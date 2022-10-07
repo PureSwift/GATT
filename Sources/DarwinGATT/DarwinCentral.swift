@@ -134,8 +134,10 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
                 let context = self.continuation(for: peripheral)
                 context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.Connect(
                     peripheral: peripheral,
                     options: options,
@@ -188,13 +190,15 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.DiscoverServices(
                     peripheral: peripheral,
                     services: services,
                     continuation: continuation
                 )
-                let context = self.continuation(for: peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .discoverServices(operation)
                 }
@@ -209,13 +213,15 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: service.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.DiscoverIncludedServices(
                     service: service,
                     services: services,
                     continuation: continuation
                 )
-                let context = self.continuation(for: service.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .discoverIncludedServices(operation)
                 }
@@ -230,13 +236,15 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: service.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.DiscoverCharacteristics(
                     service: service,
                     characteristics: characteristics,
                     continuation: continuation
                 )
-                let context = self.continuation(for: service.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .discoverCharacteristics(operation)
                 }
@@ -250,12 +258,14 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: characteristic.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.ReadCharacteristic(
                     characteristic: characteristic,
                     continuation: continuation
                 )
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .readCharacteristic(operation)
                 }
@@ -280,12 +290,14 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: characteristic.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.DiscoverDescriptors(
                     characteristic: characteristic,
                     continuation: continuation
                 )
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .discoverDescriptors(operation)
                 }
@@ -299,12 +311,14 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: descriptor.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.ReadDescriptor(
                     descriptor: descriptor,
                     continuation: continuation
                 )
-                let context = self.continuation(for: descriptor.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .readDescriptor(operation)
                 }
@@ -319,13 +333,15 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: descriptor.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.WriteDescriptor(
                     descriptor: descriptor,
                     data: data,
                     continuation: continuation
                 )
-                let context = self.continuation(for: descriptor.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .writeDescriptor(operation)
                 }
@@ -425,36 +441,19 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: characteristic.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.WriteCharacteristic(
                     characteristic: characteristic,
                     data: data,
                     withResponse: withResponse,
                     continuation: continuation
                 )
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .writeCharacteristic(operation)
                 }
-            }
-        }
-    }
-    
-    @available(*, deprecated)
-    private func canSendWriteWithoutResponse(
-        for peripheral: Peripheral
-    ) async throws -> Bool {
-        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                // get peripheral
-                guard let peripheralObject = self.validatePeripheral(peripheral, for: continuation) else {
-                    continuation.resume(throwing: CentralError.unknownPeripheral)
-                    return
-                }
-                // yield value
-                let value = peripheralObject.canSendWriteWithoutResponse
-                continuation.resume(returning: value)
             }
         }
     }
@@ -465,12 +464,14 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.WriteWithoutResponseReady(
                     peripheral: peripheral,
                     continuation: continuation
                 )
-                let context = self.continuation(for: peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .isReadyToWriteWithoutResponse(operation)
                 }
@@ -485,13 +486,15 @@ public final class DarwinCentral: CentralManager {
         return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
             guard let self = self else { return }
             self.async {
+                self.stopScan()
+                let context = self.continuation(for: characteristic.peripheral)
+                context.operation?.cancel()
+                context.operation = nil
                 let operation = Operation.NotificationState(
                     characteristic: characteristic,
                     isEnabled: isEnabled,
                     continuation: continuation
                 )
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
                 if self.execute(operation) {
                     context.operation = .setNotification(operation)
                 }
@@ -1219,11 +1222,13 @@ internal extension DarwinCentral {
             assert(self.central != nil)
             assert(self.central?.centralManager === centralManager)
             let peripheral = Peripheral(corePeripheral)
-            guard case let .connect(operation) = self.central.continuation(for: peripheral).operation else {
+            let context = self.central.continuation(for: peripheral)
+            guard case let .connect(operation) = context.operation else {
                 assertionFailure("Invalid continuation")
                 return
             }
             operation.continuation.resume()
+            context.operation = nil
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
@@ -1237,11 +1242,13 @@ internal extension DarwinCentral {
             assert(self.central?.centralManager === centralManager)
             assert(corePeripheral.state != .connected)
             let peripheral = Peripheral(corePeripheral)
-            guard case let .connect(operation) = self.central.continuation(for: peripheral).operation else {
+            let context = self.central.continuation(for: peripheral)
+            guard case let .connect(operation) = context.operation else {
                 assertionFailure("Invalid continuation")
                 return
             }
             operation.continuation.resume(throwing: error ?? CentralError.disconnected)
+            context.operation = nil
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
@@ -1281,10 +1288,15 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            guard case let .discoverServices(operation) = self.central.continuation(for: peripheral).operation else {
+            guard let context = self.central.continuation.peripherals[peripheral] else {
+                assertionFailure("Missing context")
+                return
+            }
+            guard case let .discoverServices(operation) = context.operation else {
                 assertionFailure("Invalid continuation")
                 return
             }
+            defer { context.operation = nil }
             if let error = error {
                 operation.continuation.resume(throwing: error)
             } else {
@@ -1592,11 +1604,6 @@ internal extension DarwinCentral {
             } else {
                 log("Peripheral \(peripheralObject.id.uuidString) did write value for descriptor \(descriptorObject.uuid.uuidString)")
             }
-            
-            let descriptor = Descriptor(
-                descriptor: descriptorObject,
-                peripheral: peripheralObject
-            )
             
             let peripheral = Peripheral(peripheralObject)
             guard let context = self.central.continuation.peripherals[peripheral] else {
