@@ -376,26 +376,27 @@ public final class DarwinCentral: CentralManager {
     public func notify(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> AsyncCentralNotifications<DarwinCentral> {
+        let priority = Task.currentPriority
         // enable notifications
-        try await self.setNotification(true, for: characteristic)
+        try await self.queue(for: characteristic.peripheral) {
+            try await self.setNotification(true, for: characteristic)
+        }
         // central
-        return AsyncCentralNotifications(onTermination: {
-            Task(priority: .userInitiated) {
-                try await self.queue(for: characteristic.peripheral) {
-                    // disable notifications
-                    do { try await self.setNotification(false, for: characteristic) }
-                    catch CentralError.disconnected {
-                        return
-                    }
-                    catch {
-                        self.log?("Unable to stop notifications for \(characteristic.uuid). \(error.localizedDescription)")
-                    }
-                    // remove notification stream
-                    self.async { [weak self] in
-                        guard let self = self else { return }
-                        let context = self.continuation(for: characteristic.peripheral)
-                        context.notificationStream[characteristic.id] = nil
-                    }
+        return AsyncCentralNotifications(onTermination: { [unowned self] in
+            self.queue(for: characteristic.peripheral, priority: priority) {
+                // disable notifications
+                do { try await self.setNotification(false, for: characteristic) }
+                catch CentralError.disconnected {
+                    return
+                }
+                catch {
+                    self.log?("Unable to stop notifications for \(characteristic.uuid). \(error.localizedDescription)")
+                }
+                // remove notification stream
+                self.async { [weak self] in
+                    guard let self = self else { return }
+                    let context = self.continuation(for: characteristic.peripheral)
+                    context.notificationStream[characteristic.id] = nil
                 }
             }
         }, { continuation in
@@ -453,6 +454,17 @@ public final class DarwinCentral: CentralManager {
         _ task: @escaping () async throws -> (T)
     ) async throws -> T {
         let priority = Task.currentPriority
+        let newTask = queue(for: peripheral, priority: priority, task)
+        return try await newTask.value
+    }
+    
+    @discardableResult
+    private func queue<T>(
+        for peripheral: Peripheral,
+        priority: TaskPriority,
+        _ task: @escaping () async throws -> (T)
+    ) -> Task<T, Error> {
+        let priority = Task.currentPriority
         let newTask = queue.sync { [unowned self] in
             let previousTask = self.tasks[peripheral]
             let newTask = Task(priority: priority) {
@@ -465,7 +477,7 @@ public final class DarwinCentral: CentralManager {
             }
             return newTask
         }
-        return try await newTask.value
+        return newTask
     }
     
     private func continuation(for peripheral: Peripheral) -> PeripheralContinuationContext {
