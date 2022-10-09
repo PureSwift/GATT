@@ -13,7 +13,7 @@ import Bluetooth
 import GATT
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public final class DarwinCentral: CentralManager {
+public final class DarwinCentral: CentralManager, ObservableObject {
     
     // MARK: - Properties
     
@@ -54,11 +54,10 @@ public final class DarwinCentral: CentralManager {
     
     private let queue = DispatchQueue(label: "org.pureswift.DarwinGATT.DarwinCentral")
     
+    @Published
     fileprivate var cache = Cache()
     
     fileprivate var continuation = Continuation()
-    
-    fileprivate var tasks = [Peripheral: Task<(), Never>]()
     
     // MARK: - Initialization
     
@@ -137,25 +136,12 @@ public final class DarwinCentral: CentralManager {
         to peripheral: Peripheral,
         options: [String: Any]?
     ) async throws {
-        try await queue(for: peripheral) {
-            try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.Connect(
-                        peripheral: peripheral,
-                        options: options,
-                        continuation: continuation
-                    )
-                    context.operation = .connect(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        try await queue(for: peripheral) { continuation in
+            Operation.Connect(
+                peripheral: peripheral,
+                options: options,
+                continuation: continuation
+            )
         }
     }
     
@@ -196,25 +182,12 @@ public final class DarwinCentral: CentralManager {
         _ services: Set<BluetoothUUID> = [],
         for peripheral: Peripheral
     ) async throws -> [DarwinCentral.Service] {
-        try await queue(for: peripheral) {
-            try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.DiscoverServices(
-                        peripheral: peripheral,
-                        services: services,
-                        continuation: continuation
-                    )
-                    context.operation = .discoverServices(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: peripheral) { continuation in
+            Operation.DiscoverServices(
+                peripheral: peripheral,
+                services: services,
+                continuation: continuation
+            )
         }
     }
     
@@ -222,25 +195,12 @@ public final class DarwinCentral: CentralManager {
         _ services: Set<BluetoothUUID> = [],
         for service: DarwinCentral.Service
     ) async throws -> [DarwinCentral.Service] {
-        try await queue(for: service.peripheral) {
-            try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: service.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.DiscoverIncludedServices(
-                        service: service,
-                        services: services,
-                        continuation: continuation
-                    )
-                    context.operation = .discoverIncludedServices(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: service.peripheral) { continuation in
+            Operation.DiscoverIncludedServices(
+                service: service,
+                services: services,
+                continuation: continuation
+            )
         }
     }
     
@@ -248,49 +208,23 @@ public final class DarwinCentral: CentralManager {
         _ characteristics: Set<BluetoothUUID> = [],
         for service: DarwinCentral.Service
     ) async throws -> [DarwinCentral.Characteristic] {
-        try await queue(for: service.peripheral) {
-            try await withThrowingContinuation(for: service.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: service.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.DiscoverCharacteristics(
-                        service: service,
-                        characteristics: characteristics,
-                        continuation: continuation
-                    )
-                    context.operation = .discoverCharacteristics(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: service.peripheral) { continuation in
+            Operation.DiscoverCharacteristics(
+                service: service,
+                characteristics: characteristics,
+                continuation: continuation
+            )
         }
     }
     
     public func readValue(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> Data {
-        try await queue(for: characteristic.peripheral) {
-            try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: characteristic.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.ReadCharacteristic(
-                        characteristic: characteristic,
-                        continuation: continuation
-                    )
-                    context.operation = .readCharacteristic(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: characteristic.peripheral) { continuation in
+            Operation.ReadCharacteristic(
+                characteristic: characteristic,
+                continuation: continuation
+            )
         }
     }
     
@@ -299,59 +233,31 @@ public final class DarwinCentral: CentralManager {
         for characteristic: DarwinCentral.Characteristic,
         withResponse: Bool = true
     ) async throws {
-        try await queue(for: characteristic.peripheral) { [unowned self] in
-            if withResponse == false  {
-                try await self.waitUntilCanSendWriteWithoutResponse(for: characteristic.peripheral)
-            }
-            try await self.write(data, withResponse: withResponse, for: characteristic)
+        if withResponse == false  {
+            try await self.waitUntilCanSendWriteWithoutResponse(for: characteristic.peripheral)
         }
+        try await self.write(data, withResponse: withResponse, for: characteristic)
     }
     
     public func discoverDescriptors(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> [DarwinCentral.Descriptor] {
-        try await queue(for: characteristic.peripheral) {
-            try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: characteristic.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.DiscoverDescriptors(
-                        characteristic: characteristic,
-                        continuation: continuation
-                    )
-                    context.operation = .discoverDescriptors(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: characteristic.peripheral) { continuation in
+            Operation.DiscoverDescriptors(
+                characteristic: characteristic,
+                continuation: continuation
+            )
         }
     }
     
     public func readValue(
         for descriptor: DarwinCentral.Descriptor
     ) async throws -> Data {
-        try await queue(for: descriptor.peripheral) {
-            try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: descriptor.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.ReadDescriptor(
-                        descriptor: descriptor,
-                        continuation: continuation
-                    )
-                    context.operation = .readDescriptor(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        return try await queue(for: descriptor.peripheral) { continuation in
+            Operation.ReadDescriptor(
+                descriptor: descriptor,
+                continuation: continuation
+            )
         }
     }
     
@@ -359,39 +265,23 @@ public final class DarwinCentral: CentralManager {
         _ data: Data,
         for descriptor: DarwinCentral.Descriptor
     ) async throws {
-        try await queue(for: descriptor.peripheral) {
-            try await withThrowingContinuation(for: descriptor.peripheral) { [weak self] continuation in
-                guard let self = self else { return }
-                self.async {
-                    self.stopScan()
-                    let context = self.continuation(for: descriptor.peripheral)
-                    context.operation?.cancel()
-                    context.operation = nil
-                    let operation = Operation.WriteDescriptor(
-                        descriptor: descriptor,
-                        data: data,
-                        continuation: continuation
-                    )
-                    context.operation = .writeDescriptor(operation)
-                    if !self.execute(operation) {
-                        context.operation = nil
-                    }
-                }
-            }
+        try await queue(for: descriptor.peripheral) { continuation in
+            Operation.WriteDescriptor(
+                descriptor: descriptor,
+                data: data,
+                continuation: continuation
+            )
         }
     }
     
     public func notify(
         for characteristic: DarwinCentral.Characteristic
     ) async throws -> AsyncCentralNotifications<DarwinCentral> {
-        let priority = Task.currentPriority
         // enable notifications
-        try await self.queue(for: characteristic.peripheral) {
-            try await self.setNotification(true, for: characteristic)
-        }
+        try await self.setNotification(true, for: characteristic)
         // central
         return AsyncCentralNotifications(onTermination: { [unowned self] in
-            self.queue(for: characteristic.peripheral, priority: priority) {
+            Task {
                 // disable notifications
                 do { try await self.setNotification(false, for: characteristic) }
                 catch CentralError.disconnected {
@@ -401,8 +291,7 @@ public final class DarwinCentral: CentralManager {
                     self.log?("Unable to stop notifications for \(characteristic.uuid). \(error.localizedDescription)")
                 }
                 // remove notification stream
-                self.async { [weak self] in
-                    guard let self = self else { return }
+                self.async { [unowned self] in
                     let context = self.continuation(for: characteristic.peripheral)
                     context.notificationStream[characteristic.id] = nil
                 }
@@ -433,21 +322,11 @@ public final class DarwinCentral: CentralManager {
     }
     
     public func rssi(for peripheral: Peripheral) async throws -> RSSI {
-        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                let operation = Operation.ReadRSSI(
-                    peripheral: peripheral,
-                    continuation: continuation
-                )
-                let context = self.continuation(for: peripheral)
-                context.readRSSI?.continuation.resume(throwing: CancellationError())
-                context.readRSSI = nil
-                context.readRSSI = operation
-                if !self.execute(operation) {
-                    context.readRSSI = nil
-                }
-            }
+        try await queue(for: peripheral) { continuation in
+            Operation.ReadRSSI(
+                peripheral: peripheral,
+                continuation: continuation
+            )
         }
     }
     
@@ -458,35 +337,46 @@ public final class DarwinCentral: CentralManager {
         queue.async(execute: body)
     }
     
-    private func queue<T>(
+    private func queue<Operation>(
         for peripheral: Peripheral,
-        _ task: @escaping () async throws -> (T)
-    ) async throws -> T {
-        let priority = Task.currentPriority
-        let newTask = queue(for: peripheral, priority: priority, task)
-        return try await newTask.value
+        function: String = #function,
+        _ operation: (PeripheralContinuation<Operation.Success, Error>) -> Operation
+    ) async throws -> Operation.Success where Operation: DarwinCentralOperation {
+        #if DEBUG
+        log?("Queue \(function) for peripheral \(peripheral)")
+        #endif
+        return try await withThrowingContinuation(for: peripheral, function: function) { continuation in
+            let queuedOperation = QueuedOperation(operation: operation(continuation))
+            self.async {
+                let context = self.continuation(for: peripheral)
+                context.operations.append(queuedOperation)
+            }
+        }
     }
     
-    @discardableResult
-    private func queue<T>(
+    private func dequeue<Operation>(
         for peripheral: Peripheral,
-        priority: TaskPriority,
-        _ task: @escaping () async throws -> (T)
-    ) -> Task<T, Error> {
-        let priority = Task.currentPriority
-        let newTask = queue.sync { [unowned self] in
-            let previousTask = self.tasks[peripheral]
-            let newTask = Task(priority: priority) {
-                _ = await previousTask?.result // wait for previous task
-                return try await task() // actually execute task
+        function: String = #function,
+        result: Result<Operation.Success, Error>,
+        filter: (DarwinCentral.Operation) -> (Operation?)
+    ) where Operation: DarwinCentralOperation {
+        #if DEBUG
+        log?("Dequeue \(function) for peripheral \(peripheral) with \(result)")
+        #endif
+        let context = self.continuation(for: peripheral)
+        let operations = context.operations.enumerated()
+        for (index, queuedOperation) in operations {
+            guard let operation = filter(queuedOperation.operation) else {
+                continue
             }
-            // type erased task
-            self.tasks[peripheral] = Task(priority: priority) {
-                _ = await newTask.result
+            // execute completion
+            if !queuedOperation.isCancelled {
+                operation.continuation.resume(with: result)
             }
-            return newTask
+            context.operations.remove(at: index) // remove finished task
+            return
         }
-        return newTask
+        assertionFailure("Missing continuation for \(function)")
     }
     
     private func continuation(for peripheral: Peripheral) -> PeripheralContinuationContext {
@@ -504,46 +394,24 @@ public final class DarwinCentral: CentralManager {
         withResponse: Bool,
         for characteristic: DarwinCentral.Characteristic
     ) async throws {
-        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                self.stopScan()
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
-                context.operation = nil
-                let operation = Operation.WriteCharacteristic(
-                    characteristic: characteristic,
-                    data: data,
-                    withResponse: withResponse,
-                    continuation: continuation
-                )
-                context.operation = .writeCharacteristic(operation)
-                if !self.execute(operation) {
-                    context.operation = nil
-                }
-            }
+        try await queue(for: characteristic.peripheral) { continuation in
+            Operation.WriteCharacteristic(
+                characteristic: characteristic,
+                data: data,
+                withResponse: withResponse,
+                continuation: continuation
+            )
         }
     }
     
     private func waitUntilCanSendWriteWithoutResponse(
         for peripheral: Peripheral
     ) async throws {
-        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                self.stopScan()
-                let context = self.continuation(for: peripheral)
-                context.operation?.cancel()
-                context.operation = nil
-                let operation = Operation.WriteWithoutResponseReady(
-                    peripheral: peripheral,
-                    continuation: continuation
-                )
-                context.operation = .isReadyToWriteWithoutResponse(operation)
-                if !self.execute(operation) {
-                    context.operation = nil
-                }
-            }
+        try await queue(for: peripheral) { continuation in
+            Operation.WriteWithoutResponseReady(
+                peripheral: peripheral,
+                continuation: continuation
+            )
         }
     }
     
@@ -551,24 +419,13 @@ public final class DarwinCentral: CentralManager {
         _ isEnabled: Bool,
         for characteristic: Characteristic
     ) async throws {
-        return try await withThrowingContinuation(for: characteristic.peripheral) { [weak self] continuation in
-            guard let self = self else { return }
-            self.async {
-                self.stopScan()
-                let context = self.continuation(for: characteristic.peripheral)
-                context.operation?.cancel()
-                context.operation = nil
-                let operation = Operation.NotificationState(
-                    characteristic: characteristic,
-                    isEnabled: isEnabled,
-                    continuation: continuation
-                )
-                context.operation = .setNotification(operation)
-                if !self.execute(operation) {
-                    context.operation = nil
-                }
-            }
-        }
+        try await queue(for: characteristic.peripheral, { continuation in
+            Operation.NotificationState(
+                characteristic: characteristic,
+                isEnabled: isEnabled,
+                continuation: continuation
+            )
+        })
     }
     
     private func _maximumTransmissionUnit(for peripheral: Peripheral) throws -> MaximumTransmissionUnit {
@@ -667,14 +524,17 @@ private extension DarwinCentral {
         
         var scan: Operation.Scan?
         var peripherals = [DarwinCentral.Peripheral: PeripheralContinuationContext]()
+        
         fileprivate init() { }
     }
     
     final class PeripheralContinuationContext {
         
-        var operation: Operation?
+        var operations = [QueuedOperation]()
         var notificationStream = [AttributeID: AsyncIndefiniteStream<Data>.Continuation]()
         var readRSSI: Operation.ReadRSSI?
+        
+        fileprivate init() { }
     }
 }
 
@@ -682,14 +542,37 @@ fileprivate extension DarwinCentral.PeripheralContinuationContext {
     
     func didDisconnect() {
         let error = CentralError.disconnected
-        operation?.resume(throwing: error)
-        operation = nil
-        readRSSI?.continuation.resume(throwing: error)
-        readRSSI = nil
+        operations.forEach {
+            $0.cancel()
+        }
+        operations.removeAll(keepingCapacity: true)
         notificationStream.values.forEach {
             $0.finish(throwing: error)
         }
         notificationStream.removeAll(keepingCapacity: true)
+    }
+}
+
+internal extension DarwinCentral {
+    
+    final class QueuedOperation {
+        
+        let operation: DarwinCentral.Operation
+        
+        var isCancelled = false
+        
+        fileprivate init<T: DarwinCentralOperation>(operation: T) {
+            self.operation = operation.operation
+            self.isCancelled = false
+        }
+        
+        func cancel() {
+            guard !isCancelled else {
+                return
+            }
+            isCancelled = true
+            operation.cancel()
+        }
     }
 }
 
@@ -707,12 +590,13 @@ internal extension DarwinCentral {
         case writeDescriptor(WriteDescriptor)
         case isReadyToWriteWithoutResponse(WriteWithoutResponseReady)
         case setNotification(NotificationState)
+        case readRSSI(ReadRSSI)
     }
 }
 
 internal extension DarwinCentral.Operation {
     
-    func resume(throwing error: Swift.Error, function: String = #function) {
+    func resume(throwing error: Swift.Error) {
         switch self {
         case let .connect(operation):
             operation.continuation.resume(throwing: error)
@@ -736,82 +620,116 @@ internal extension DarwinCentral.Operation {
             operation.continuation.resume(throwing: error)
         case let .setNotification(operation):
             operation.continuation.resume(throwing: error)
+        case let .readRSSI(operation):
+            operation.continuation.resume(throwing: error)
         }
     }
     
-    func cancel(function: String = #function) {
-        resume(throwing: CancellationError(), function: function)
+    func cancel() {
+        resume(throwing: CancellationError())
+    }
+}
+
+internal protocol DarwinCentralOperation {
+    
+    associatedtype Success
+        
+    var continuation: PeripheralContinuation<Success, Error> { get }
+    
+    var operation: DarwinCentral.Operation { get }
+}
+
+internal extension DarwinCentralOperation {
+    
+    func resume(throwing error: Swift.Error) {
+        continuation.resume(throwing: error)
+    }
+    
+    func cancel() {
+        resume(throwing: CancellationError())
     }
 }
 
 internal extension DarwinCentral.Operation {
     
-    struct Connect {
+    struct Connect: DarwinCentralOperation {
         let peripheral: DarwinCentral.Peripheral
         let options: [String: Any]?
         let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .connect(self) }
     }
     
-    struct DiscoverServices {
+    struct DiscoverServices: DarwinCentralOperation {
         let peripheral: DarwinCentral.Peripheral
         let services: Set<BluetoothUUID>
         let continuation: PeripheralContinuation<[DarwinCentral.Service], Error>
+        var operation: DarwinCentral.Operation { .discoverServices(self) }
     }
     
-    struct DiscoverIncludedServices {
+    struct DiscoverIncludedServices: DarwinCentralOperation {
         let service: DarwinCentral.Service
         let services: Set<BluetoothUUID>
         let continuation: PeripheralContinuation<[DarwinCentral.Service], Error>
+        var operation: DarwinCentral.Operation { .discoverIncludedServices(self) }
     }
     
-    struct DiscoverCharacteristics {
+    struct DiscoverCharacteristics: DarwinCentralOperation {
         let service: DarwinCentral.Service
         let characteristics: Set<BluetoothUUID>
         let continuation: PeripheralContinuation<[DarwinCentral.Characteristic], Error>
+        var operation: DarwinCentral.Operation { .discoverCharacteristics(self) }
     }
     
-    struct ReadCharacteristic {
+    struct ReadCharacteristic: DarwinCentralOperation {
         let characteristic: DarwinCentral.Characteristic
         let continuation: PeripheralContinuation<Data, Error>
+        var operation: DarwinCentral.Operation { .readCharacteristic(self) }
     }
     
-    struct WriteCharacteristic {
+    struct WriteCharacteristic: DarwinCentralOperation {
         let characteristic: DarwinCentral.Characteristic
         let data: Data
         let withResponse: Bool
         let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .writeCharacteristic(self) }
     }
     
-    struct DiscoverDescriptors {
+    struct DiscoverDescriptors: DarwinCentralOperation {
         let characteristic: DarwinCentral.Characteristic
         let continuation: PeripheralContinuation<[DarwinCentral.Descriptor], Error>
+        var operation: DarwinCentral.Operation { .discoverDescriptors(self) }
     }
     
-    struct ReadDescriptor {
+    struct ReadDescriptor: DarwinCentralOperation {
         let descriptor: DarwinCentral.Descriptor
         let continuation: PeripheralContinuation<Data, Error>
+        var operation: DarwinCentral.Operation { .readDescriptor(self) }
     }
     
-    struct WriteDescriptor {
+    struct WriteDescriptor: DarwinCentralOperation {
         let descriptor: DarwinCentral.Descriptor
         let data: Data
         let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .writeDescriptor(self) }
     }
     
-    struct WriteWithoutResponseReady {
+    struct WriteWithoutResponseReady: DarwinCentralOperation {
         let peripheral: DarwinCentral.Peripheral
         let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .isReadyToWriteWithoutResponse(self) }
     }
     
-    struct NotificationState {
+    struct NotificationState: DarwinCentralOperation {
         let characteristic: DarwinCentral.Characteristic
         let isEnabled: Bool
         let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .setNotification(self) }
     }
     
-    struct ReadRSSI {
+    struct ReadRSSI: DarwinCentralOperation {
         let peripheral: DarwinCentral.Peripheral
         let continuation: PeripheralContinuation<RSSI, Error>
+        var operation: DarwinCentral.Operation { .readRSSI(self) }
     }
     
     struct Scan {
@@ -848,6 +766,8 @@ internal extension DarwinCentral {
         case let .setNotification(operation):
             return execute(operation)
         case let .isReadyToWriteWithoutResponse(operation):
+            return execute(operation)
+        case let .readRSSI(operation):
             return execute(operation)
         }
     }
@@ -1121,7 +1041,10 @@ internal extension DarwinCentral {
         self.cache = Cache()
         // start scanning
         //self.continuation.isScanning.yield(true)
-        self.centralManager.scanForPeripherals(withServices: serviceUUIDs, options: options)
+        self.centralManager.scanForPeripherals(
+            withServices: serviceUUIDs,
+            options: options
+        )
     }
 }
 
@@ -1289,13 +1212,12 @@ internal extension DarwinCentral {
             assert(corePeripheral.state != .disconnected, "Should be connected")
             assert(self.central.centralManager === centralManager)
             let peripheral = Peripheral(corePeripheral)
-            let context = self.central.continuation(for: peripheral)
-            guard case let .connect(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            operation.continuation.resume()
-            context.operation = nil
+            central.dequeue(for: peripheral, result: .success(()), filter: { (operation: DarwinCentral.Operation) -> (Operation.Connect?) in
+                guard case let .connect(operation) = operation else {
+                    return nil
+                }
+                return operation
+            })
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
@@ -1308,13 +1230,13 @@ internal extension DarwinCentral {
             assert(self.central.centralManager === centralManager)
             assert(corePeripheral.state != .connected)
             let peripheral = Peripheral(corePeripheral)
-            let context = self.central.continuation(for: peripheral)
-            guard case let .connect(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            operation.continuation.resume(throwing: error ?? CentralError.disconnected)
-            context.operation = nil
+            let error = error ?? CentralError.disconnected
+            central.dequeue(for: peripheral, result: .failure(error), filter: { (operation: DarwinCentral.Operation) -> (Operation.Connect?) in
+                guard case let .connect(operation) = operation else {
+                    return nil
+                }
+                return operation
+            })
         }
         
         @objc(centralManager:didDisconnectPeripheral:error:)
@@ -1330,13 +1252,12 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            //self.central.continuation.didDisconnect.yield(peripheral)
-             
             guard let context = self.central.continuation.peripherals[peripheral] else {
                 assertionFailure("Missing context")
                 return
             }
             context.didDisconnect()
+            self.central.objectWillChange.send()
         }
         
         // MARK: - CBPeripheralDelegate
@@ -1346,7 +1267,6 @@ internal extension DarwinCentral {
             _ corePeripheral: CBPeripheral,
             didDiscoverServices error: Swift.Error?
         ) {
-            
             if let error = error {
                 log("Peripheral \(corePeripheral.id.uuidString) failed discovering services (\(error))")
             } else {
@@ -1354,17 +1274,10 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(corePeripheral)
-            guard let context = self.central.continuation.peripherals[peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .discoverServices(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            
+            let result: Result<[DarwinCentral.Service], Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
                 let serviceObjects = corePeripheral.services ?? []
                 let services = serviceObjects.map { serviceObject in
@@ -1376,8 +1289,15 @@ internal extension DarwinCentral {
                 for (index, service) in services.enumerated() {
                     self.central.cache.services[service] = serviceObjects[index]
                 }
-                operation.continuation.resume(returning: services)
+                result = .success(services)
             }
+            
+            central.dequeue(for: peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.DiscoverServices?) in
+                guard case let .discoverServices(discoverServices) = operation else {
+                    return nil
+                }
+                return discoverServices
+            })
         }
         
         @objc(peripheral:didDiscoverCharacteristicsForService:error:)
@@ -1397,14 +1317,9 @@ internal extension DarwinCentral {
                 service: serviceObject,
                 peripheral: peripheralObject
             )
-            let context = self.central.continuation(for: service.peripheral)
-            guard case let .discoverCharacteristics(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<[DarwinCentral.Characteristic], Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
                 let characteristicObjects = serviceObject.characteristics ?? []
                 let characteristics = characteristicObjects.map { characteristicObject in
@@ -1416,8 +1331,15 @@ internal extension DarwinCentral {
                 for (index, characteristic) in characteristics.enumerated() {
                     self.central.cache.characteristics[characteristic] = characteristicObjects[index]
                 }
-                operation.continuation.resume(returning: characteristics)
+                result = .success(characteristics)
             }
+            
+            central.dequeue(for: service.peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.DiscoverCharacteristics?) in
+                guard case let .discoverCharacteristics(discoverCharacteristics) = operation else {
+                    return nil
+                }
+                return discoverCharacteristics
+            })
         }
         
         @objc(peripheral:didUpdateValueForCharacteristic:error:)
@@ -1443,13 +1365,15 @@ internal extension DarwinCentral {
                 return
             }
             // either read operation or notification
-            if case let .readCharacteristic(operation) = context.operation {
+            if let queuedOperation = context.operations.first,
+                !queuedOperation.isCancelled,
+                case let .readCharacteristic(operation) = queuedOperation.operation {
                 if let error = error {
                     operation.continuation.resume(throwing: error)
                 } else {
                     operation.continuation.resume(returning: data)
                 }
-                context.operation = nil
+                context.operations.removeFirst()
             } else if characteristicObject.isNotifying {
                 guard let stream = context.notificationStream[characteristic.id] else {
                     assertionFailure("Missing notification stream")
@@ -1477,22 +1401,20 @@ internal extension DarwinCentral {
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
             )
-            guard let context = self.central.continuation.peripherals[characteristic.peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .writeCharacteristic(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
             // should only be called for write with response
-            assert(operation.withResponse)
+            let result: Result<(), Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
-                operation.continuation.resume()
+                result = .success(())
             }
+            central.dequeue(for: characteristic.peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.WriteCharacteristic?) in
+                guard case let .writeCharacteristic(operation) = operation else {
+                    return nil
+                }
+                assert(operation.withResponse)
+                return operation
+            })
         }
         
         @objc
@@ -1511,33 +1433,31 @@ internal extension DarwinCentral {
                 characteristic: characteristicObject,
                 peripheral: peripheralObject
             )
-            guard let context = self.central.continuation.peripherals[characteristic.peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .setNotification(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<(), Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
-                assert(characteristicObject.isNotifying == operation.isEnabled)
-                operation.continuation.resume()
+                result = .success(())
             }
+            central.dequeue(for: characteristic.peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.NotificationState?) in
+                guard case let .setNotification(notificationOperation) = operation else {
+                    return nil
+                }
+                assert(characteristicObject.isNotifying == notificationOperation.isEnabled)
+                return notificationOperation
+            })
         }
         
         func peripheralIsReady(toSendWriteWithoutResponse peripheralObject: CBPeripheral) {
             
             log("Peripheral \(peripheralObject.id.uuidString) is ready to send write without response")
             let peripheral = Peripheral(peripheralObject)
-            guard let context = self.central.continuation.peripherals[peripheral],
-                  case let .isReadyToWriteWithoutResponse(operation) = context.operation else {
-                return
-            }
-            operation.continuation.resume()
-            context.operation = nil
+            central.dequeue(for: peripheral, result: .success(()), filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.WriteWithoutResponseReady?) in
+                guard case let .isReadyToWriteWithoutResponse(writeWithoutResponseReady) = operation else {
+                    return nil
+                }
+                return writeWithoutResponseReady
+            })
         }
         
         func peripheralDidUpdateName(_ peripheralObject: CBPeripheral) {
@@ -1559,7 +1479,6 @@ internal extension DarwinCentral {
                 assertionFailure("Invalid continuation")
                 return
             }
-            defer { context.operation = nil }
             if let error = error {
                 operation.continuation.resume(throwing: error)
             } else {
@@ -1582,22 +1501,13 @@ internal extension DarwinCentral {
             } else {
                 log("Peripheral \(peripheralObject.id.uuidString) did discover \(serviceObject.includedServices?.count ?? 0) included services for service \(serviceObject.uuid.uuidString)")
             }
-                        
             let service = Service(
                 service: serviceObject,
                 peripheral: peripheralObject
             )
-            guard let context = self.central.continuation.peripherals[service.peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .discoverIncludedServices(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<[DarwinCentral.Service], Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
                 let serviceObjects = (serviceObject.includedServices ?? [])
                 let services = serviceObjects.map { serviceObject in
@@ -1609,8 +1519,14 @@ internal extension DarwinCentral {
                 for (index, service) in services.enumerated() {
                     self.central.cache.services[service] = serviceObjects[index]
                 }
-                operation.continuation.resume(returning: services)
+                result = .success(services)
             }
+            central.dequeue(for: service.peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.DiscoverIncludedServices?) in
+                guard case let .discoverIncludedServices(writeWithoutResponseReady) = operation else {
+                    return nil
+                }
+                return writeWithoutResponseReady
+            })
         }
         
         @objc
@@ -1632,17 +1548,9 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(peripheralObject)
-            guard let context = self.central.continuation.peripherals[peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .discoverDescriptors(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<[DarwinCentral.Descriptor], Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
                 let descriptorObjects = (characteristicObject.descriptors ?? [])
                 let descriptors = descriptorObjects.map { descriptorObject in
@@ -1656,8 +1564,15 @@ internal extension DarwinCentral {
                     self.central.cache.descriptors[descriptor] = descriptorObjects[index]
                 }
                 // resume
-                operation.continuation.resume(returning: descriptors)
+                result = .success(descriptors)
             }
+            
+            central.dequeue(for: peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.DiscoverDescriptors?) in
+                guard case let .discoverDescriptors(discoverDescriptors) = operation else {
+                    return nil
+                }
+                return discoverDescriptors
+            })
         }
         
         func peripheral(
@@ -1672,20 +1587,18 @@ internal extension DarwinCentral {
             }
             
             let peripheral = Peripheral(peripheralObject)
-            guard let context = self.central.continuation.peripherals[peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .writeDescriptor(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<(), Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
-                operation.continuation.resume()
+                result = .success(())
             }
+            central.dequeue(for: peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.WriteDescriptor?) in
+                guard case let .writeDescriptor(writeDescriptor) = operation else {
+                    return nil
+                }
+                return writeDescriptor
+            })
         }
         
         func peripheral(
@@ -1703,17 +1616,9 @@ internal extension DarwinCentral {
                 descriptor: descriptorObject,
                 peripheral: peripheralObject
             )
-            guard let context = self.central.continuation.peripherals[descriptor.peripheral] else {
-                assertionFailure("Missing context")
-                return
-            }
-            guard case let .readDescriptor(operation) = context.operation else {
-                assertionFailure("Invalid continuation")
-                return
-            }
-            defer { context.operation = nil }
+            let result: Result<Data, Error>
             if let error = error {
-                operation.continuation.resume(throwing: error)
+                result = .failure(error)
             } else {
                 let data: Data
                 if let descriptor = DarwinDescriptor(descriptorObject) {
@@ -1723,8 +1628,14 @@ internal extension DarwinCentral {
                 } else {
                     data = Data()
                 }
-                operation.continuation.resume(returning: data)
+                result = .success(data)
             }
+            central.dequeue(for: descriptor.peripheral, result: result, filter: { (operation: DarwinCentral.Operation) -> (DarwinCentral.Operation.ReadDescriptor?) in
+                guard case let .readDescriptor(readDescriptor) = operation else {
+                    return nil
+                }
+                return readDescriptor
+            })
         }
     }
 }

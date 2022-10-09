@@ -40,6 +40,12 @@ internal struct PeripheralContinuation<T, E> where E: Error {
     ) {
         continuation.resume(throwing: error)
     }
+    
+    func resume(
+        with result: Result<T, E>
+    ) {
+        continuation.resume(with: result)
+    }
 }
 
 extension PeripheralContinuation where T == Void {
