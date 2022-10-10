@@ -161,7 +161,6 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         let connected = await self.peripherals
             .filter { $0.value }
             .keys
-        
         for peripheral in connected {
             await disconnect(peripheral)
         }
@@ -334,7 +333,7 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         #if DEBUG
         log?("Queue \(function) for peripheral \(peripheral)")
         #endif
-        return try await withThrowingContinuation(for: peripheral, function: function) { continuation in
+        let value = try await withThrowingContinuation(for: peripheral, function: function) { continuation in
             let queuedOperation = QueuedOperation(operation: operation(continuation))
             self.async { [unowned self] in
                 self.stopScan() // stop scanning
@@ -342,6 +341,8 @@ public final class DarwinCentral: CentralManager, ObservableObject {
                 context.operations.push(queuedOperation)
             }
         }
+        try Task.checkCancellation()
+        return value
     }
     
     private func dequeue<Operation>(
@@ -351,7 +352,7 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         filter: (DarwinCentral.Operation) -> (Operation?)
     ) where Operation: DarwinCentralOperation {
         #if DEBUG
-        log?("Dequeue \(function) for peripheral \(peripheral) with \(result)")
+        log?("Dequeue \(function) for peripheral \(peripheral)")
         #endif
         let context = self.continuation(for: peripheral)
         context.operations.popFirst(where: { filter($0.operation) }) { (queuedOperation, operation) in
@@ -803,7 +804,11 @@ internal extension DarwinCentral {
         guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
             return false
         }
-        // connect
+        // disconnect
+        guard peripheralObject.state != .disconnected else {
+            operation.continuation.resume() // already disconnected
+            return false
+        }
         self.centralManager.cancelPeripheralConnection(peripheralObject)
         return true
     }
@@ -1182,7 +1187,6 @@ internal extension DarwinCentral {
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
             log("Did update state \(state)")
             self.central.objectWillChange.send()
-            //self.central.continuation.state?.yield(state)
         }
         
         @objc(centralManager:didDiscoverPeripheral:advertisementData:RSSI:)
