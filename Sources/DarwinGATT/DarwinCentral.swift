@@ -541,7 +541,7 @@ fileprivate extension DarwinCentral.PeripheralContinuationContext {
         let error = CentralError.disconnected
         while operations.isEmpty == false {
             operations.pop {
-                $0.cancel()
+                $0.operation.resume(throwing: error)
             }
         }
         notificationStream.values.forEach {
