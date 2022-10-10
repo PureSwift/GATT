@@ -98,18 +98,21 @@ public final class DarwinCentral: CentralManager, ObservableObject {
                 self.log?("Discovered \(self.cache.peripherals.count) peripherals")
             }
         }) { continuation in
-            self.async {
+            self.async { [unowned self] in
                 self.stopScan()
-                // disconnect all first
-                self._disconnectAll()
-                // queue scan operation
-                let operation = Operation.Scan(
-                    services: services,
-                    filterDuplicates: filterDuplicates,
-                    continuation: continuation
-                )
-                self.continuation.scan = operation
-                self.execute(operation)
+            }
+            Task {
+                await self.disconnectAll()
+                self.async { [unowned self] in
+                    // queue scan operation
+                    let operation = Operation.Scan(
+                        services: services,
+                        filterDuplicates: filterDuplicates,
+                        continuation: continuation
+                    )
+                    self.continuation.scan = operation
+                    self.execute(operation)
+                }
             }
         }
     }
@@ -145,36 +148,22 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         }
     }
     
-    public func disconnect(_ peripheral: Peripheral) {
-        self.async { [weak self] in
-            guard let self = self else { return }
-            if self._disconnect(peripheral) {
-                self.log?("Will disconnect \(peripheral)")
-            }
+    public func disconnect(_ peripheral: Peripheral) async {
+        try? await queue(for: peripheral) { continuation in
+            Operation.Disconnect(
+                peripheral: peripheral,
+                continuation: continuation
+            )
         }
     }
     
-    private func _disconnect(_ peripheral: Peripheral) -> Bool {
-        guard let peripheralObject = self.cache.peripherals[peripheral] else {
-            return false
-        }
-        self.continuation.peripherals[peripheral]?.didDisconnect()
-        self.centralManager.cancelPeripheralConnection(peripheralObject)
-        return true
-    }
-    
-    public func disconnectAll() {
-        self.log?("Will disconnect all")
-        self.async { [weak self] in
-            guard let self = self else { return }
-            self._disconnectAll()
-        }
-    }
-    
-    private func _disconnectAll() {
-        for (peripheral, peripheralObject) in self.cache.peripherals {
-            self.continuation.peripherals[peripheral]?.didDisconnect()
-            self.centralManager.cancelPeripheralConnection(peripheralObject)
+    public func disconnectAll() async {
+        let connected = await self.peripherals
+            .filter { $0.value }
+            .keys
+        
+        for peripheral in connected {
+            await disconnect(peripheral)
         }
     }
     
@@ -347,7 +336,8 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         #endif
         return try await withThrowingContinuation(for: peripheral, function: function) { continuation in
             let queuedOperation = QueuedOperation(operation: operation(continuation))
-            self.async {
+            self.async { [unowned self] in
+                self.stopScan() // stop scanning
                 let context = self.continuation(for: peripheral)
                 context.operations.push(queuedOperation)
             }
@@ -537,13 +527,15 @@ private extension DarwinCentral {
 
 fileprivate extension DarwinCentral.PeripheralContinuationContext {
     
-    func didDisconnect() {
-        let error = CentralError.disconnected
+    func didDisconnect(_ error: Swift.Error? = nil) {
+        let error = error ?? CentralError.disconnected
+        // resume all pending operations
         while operations.isEmpty == false {
             operations.pop {
                 $0.operation.resume(throwing: error)
             }
         }
+        // end all notifications with disconnect error
         notificationStream.values.forEach {
             $0.finish(throwing: error)
         }
@@ -578,6 +570,7 @@ internal extension DarwinCentral {
     
     enum Operation {
         case connect(Connect)
+        case disconnect(Disconnect)
         case discoverServices(DiscoverServices)
         case discoverIncludedServices(DiscoverIncludedServices)
         case discoverCharacteristics(DiscoverCharacteristics)
@@ -597,6 +590,8 @@ internal extension DarwinCentral.Operation {
     func resume(throwing error: Swift.Error) {
         switch self {
         case let .connect(operation):
+            operation.continuation.resume(throwing: error)
+        case let .disconnect(operation):
             operation.continuation.resume(throwing: error)
         case let .discoverServices(operation):
             operation.continuation.resume(throwing: error)
@@ -655,6 +650,12 @@ internal extension DarwinCentral.Operation {
         let options: [String: Any]?
         let continuation: PeripheralContinuation<(), Error>
         var operation: DarwinCentral.Operation { .connect(self) }
+    }
+    
+    struct Disconnect: DarwinCentralOperation {
+        let peripheral: DarwinCentral.Peripheral
+        let continuation: PeripheralContinuation<(), Error>
+        var operation: DarwinCentral.Operation { .disconnect(self) }
     }
     
     struct DiscoverServices: DarwinCentralOperation {
@@ -750,6 +751,8 @@ internal extension DarwinCentral {
         switch operation {
         case let .connect(operation):
             return execute(operation)
+        case let .disconnect(operation):
+            return execute(operation)
         case let .discoverServices(operation):
             return execute(operation)
         case let .discoverIncludedServices(operation):
@@ -787,6 +790,21 @@ internal extension DarwinCentral {
         }
         // connect
         self.centralManager.connect(peripheralObject, options: operation.options)
+        return true
+    }
+    
+    func execute(_ operation: Operation.Disconnect) -> Bool {
+        log?("Will disconnect \(operation.peripheral)")
+        // check power on
+        guard validateState(.poweredOn, for: operation.continuation) else {
+            return false
+        }
+        // get peripheral
+        guard let peripheralObject = validatePeripheral(operation.peripheral, for: operation.continuation) else {
+            return false
+        }
+        // connect
+        self.centralManager.cancelPeripheralConnection(peripheralObject)
         return true
     }
     
@@ -1246,7 +1264,7 @@ internal extension DarwinCentral {
         
         @objc(centralManager:didDisconnectPeripheral:error:)
         func centralManager(
-            _ central: CBCentralManager,
+            _ centralManager: CBCentralManager,
             didDisconnectPeripheral corePeripheral: CBPeripheral,
             error: Swift.Error?
         ) {
@@ -1261,7 +1279,16 @@ internal extension DarwinCentral {
                 assertionFailure("Missing context")
                 return
             }
-            context.didDisconnect()
+            // user requested disconnection
+            if error == nil {
+                self.central.dequeue(for: peripheral, result: .success(()), filter: { (operation: DarwinCentral.Operation) -> (Operation.Disconnect?) in
+                    guard case let .disconnect(disconnectOperation) = operation else {
+                        return nil
+                    }
+                    return disconnectOperation
+                })
+            }
+            context.didDisconnect(error)
             self.central.objectWillChange.send()
         }
         
