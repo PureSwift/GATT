@@ -349,7 +349,7 @@ public final class DarwinCentral: CentralManager, ObservableObject {
             let queuedOperation = QueuedOperation(operation: operation(continuation))
             self.async {
                 let context = self.continuation(for: peripheral)
-                context.operations.append(queuedOperation)
+                context.operations.push(queuedOperation)
             }
         }
     }
@@ -364,26 +364,19 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         log?("Dequeue \(function) for peripheral \(peripheral) with \(result)")
         #endif
         let context = self.continuation(for: peripheral)
-        let operations = context.operations.enumerated()
-        for (index, queuedOperation) in operations {
-            guard let operation = filter(queuedOperation.operation) else {
-                continue
-            }
-            // execute completion
-            if !queuedOperation.isCancelled {
+        context.operations.popFirst(where: { filter($0.operation) }) { (queuedOperation, operation) in
+            // resume continuation
+            if queuedOperation.isCancelled == false {
                 operation.continuation.resume(with: result)
             }
-            context.operations.remove(at: index) // remove finished task
-            return
         }
-        assertionFailure("Missing continuation for \(function)")
     }
-    
+     
     private func continuation(for peripheral: Peripheral) -> PeripheralContinuationContext {
         if let context = self.continuation.peripherals[peripheral] {
             return context
         } else {
-            let context = PeripheralContinuationContext()
+            let context = PeripheralContinuationContext(self)
             self.continuation.peripherals[peripheral] = context
             return context
         }
@@ -530,11 +523,15 @@ private extension DarwinCentral {
     
     final class PeripheralContinuationContext {
         
-        var operations = [QueuedOperation]()
+        var operations: Queue<QueuedOperation>
         var notificationStream = [AttributeID: AsyncIndefiniteStream<Data>.Continuation]()
         var readRSSI: Operation.ReadRSSI?
         
-        fileprivate init() { }
+        fileprivate init(_ central: DarwinCentral) {
+            operations = .init({ [unowned central] in
+                central.execute($0)
+            })
+        }
     }
 }
 
@@ -542,10 +539,11 @@ fileprivate extension DarwinCentral.PeripheralContinuationContext {
     
     func didDisconnect() {
         let error = CentralError.disconnected
-        operations.forEach {
-            $0.cancel()
+        while operations.isEmpty == false {
+            operations.pop {
+                $0.cancel()
+            }
         }
-        operations.removeAll(keepingCapacity: true)
         notificationStream.values.forEach {
             $0.finish(throwing: error)
         }
@@ -741,6 +739,11 @@ internal extension DarwinCentral.Operation {
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
+    
+    /// Executes a queued operation and informs whether a continuation is pending.
+    func execute(_ operation: QueuedOperation) -> Bool {
+        return operation.isCancelled ? false : execute(operation.operation)
+    }
     
     /// Executes an operation and informs whether a continuation is pending.
     func execute(_ operation: DarwinCentral.Operation) -> Bool {
@@ -1160,6 +1163,7 @@ internal extension DarwinCentral {
             assert(self.central.centralManager === centralManager)
             let state = unsafeBitCast(centralManager.state, to: DarwinBluetoothState.self)
             log("Did update state \(state)")
+            self.central.objectWillChange.send()
             //self.central.continuation.state?.yield(state)
         }
         
@@ -1218,6 +1222,7 @@ internal extension DarwinCentral {
                 }
                 return operation
             })
+            self.central.objectWillChange.send()
         }
         
         @objc(centralManager:didFailToConnectPeripheral:error:)
@@ -1365,15 +1370,17 @@ internal extension DarwinCentral {
                 return
             }
             // either read operation or notification
-            if let queuedOperation = context.operations.first,
-                !queuedOperation.isCancelled,
-                case let .readCharacteristic(operation) = queuedOperation.operation {
+            if let queuedOperation = context.operations.current,
+               case let .readCharacteristic(operation) = queuedOperation.operation {
+                if queuedOperation.isCancelled {
+                    return
+                }
                 if let error = error {
                     operation.continuation.resume(throwing: error)
                 } else {
                     operation.continuation.resume(returning: data)
                 }
-                context.operations.removeFirst()
+                context.operations.pop({ _ in }) // remove first
             } else if characteristicObject.isNotifying {
                 guard let stream = context.notificationStream[characteristic.id] else {
                     assertionFailure("Missing notification stream")
