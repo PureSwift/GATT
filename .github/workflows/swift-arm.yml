@@ -1,0 +1,67 @@
+name: Swift ARM
+
+on: [push]
+
+jobs:
+
+    linux-swift-arm64-build:
+      name: Build for Linux Arm64
+      runs-on: [Linux, ARM64]
+      strategy:
+        matrix:
+          swift: [5.6.3-focal, 5.7.1-jammy]
+      container: swift:${{ matrix.swift }}
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Swift Version
+        run: swift --version
+      - name: Build (Debug)
+        run: swift build -c debug -j 1
+      - name: Build (Release)
+        run: swift build -c release -j 1
+
+    linux-swift-arm64-test:
+      name: Test for Linux Arm64
+      runs-on: [Linux, ARM64]
+      strategy:
+        matrix:
+          swift: [5.6.3-focal, 5.7.1-jammy]
+      container: swift:${{ matrix.swift }}
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Swift Version
+        run: swift --version
+      - name: Test (Debug)
+        run: swift test --configuration debug -j 1
+      - name: Test (Release)
+        run: swift test --configuration release -Xswiftc -enable-testing -j 1
+      
+    linux-swift-armv7-build:
+      name: Build for Linux Armv7
+      runs-on: [self-hosted, Linux, ARM]
+      container: colemancda/swift-armv7:latest-runtime
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Swift Version
+        run: swift --version
+      - name: Build (Debug)
+        run: swift build -c debug -j 1
+      - name: Build (Release)
+        run: swift build -c release -j 1
+
+    linux-swift-armv7-test:
+      name: Test for Linux Armv7
+      runs-on: [self-hosted, Linux, ARM]
+      container: colemancda/swift-armv7:latest-runtime
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Swift Version
+        run: swift --version
+      - name: Test (Debug)
+        run: swift test --configuration debug -j 1
+      - name: Test (Release)
+        run: swift test --configuration release -Xswiftc -enable-testing -j 1
