@@ -1,7 +1,5 @@
 name: Swift
-
 on: [push]
-
 jobs:
 
     macOS-swift:
@@ -26,8 +24,8 @@ jobs:
 
     linux-swift:
         name: Linux
-        runs-on: ubuntu-20.04
-        container: swift:5.7.1-focal
+        runs-on: ubuntu-latest
+        container: swift:5.7.1-jammy
         steps:
         - name: Checkout
           uses: actions/checkout@v2
