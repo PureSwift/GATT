@@ -77,15 +77,18 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
                 ),
                 .product(
                     name: "BluetoothGAP",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(platforms: [.macOS, .linux])
                 )
             ]
         )

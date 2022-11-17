@@ -6,11 +6,11 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if !os(WASI)
 import Foundation
 import Bluetooth
 import GATT
 
-#if swift(>=5.6)
 /// Test L2CAP socket
 internal actor TestL2CAPSocket: L2CAPSocket {
         

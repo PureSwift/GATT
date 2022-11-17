@@ -6,6 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(BluetoothGATT)
 import Foundation
 import XCTest
 import Bluetooth
@@ -562,3 +563,4 @@ fileprivate extension ATTOpcodeType {
     }
 }
 
+#endif
