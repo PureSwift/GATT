@@ -281,7 +281,7 @@ final class GATTTests: XCTestCase {
             client: { (central, peripheral) in
                 let services = try await central.discoverServices(for: peripheral)
                 let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
-                XCTAssertEqual(clientMTU, .max)
+                XCTAssertEqual(clientMTU, .default)
                 guard let foundService = services.first,
                     services.count == 1
                     else { XCTFail(); return }
