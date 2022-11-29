@@ -47,7 +47,7 @@ var package = Package(
                 .product(
                     name: "BluetoothGAP",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .linux, .android])
                 ),
                 .product(
                     name: "BluetoothHCI",
