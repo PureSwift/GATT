@@ -54,14 +54,14 @@ public final class DarwinPeripheral: PeripheralManager {
     // MARK: - Initialization
     
     public init(
-        options: Options = Options()
+        options: Options = Options(showPowerAlert: false)
     ) {
         self.options = options
         let delegate = Delegate(self)
         let peripheralManager = CBPeripheralManager(
             delegate: delegate,
             queue: queue,
-            options: options.optionsDictionary
+            options: options.options
         )
         self.delegate = delegate
         self.peripheralManager = peripheralManager
@@ -75,11 +75,10 @@ public final class DarwinPeripheral: PeripheralManager {
     }
     
     public func start(options: AdvertisingOptions) async throws {
-        let options = options.optionsDictionary
         return try await withCheckedThrowingContinuation { [unowned self] continuation in
             self.queue.async { [unowned self] in
                 self.continuation.startAdvertising = continuation
-                self.peripheralManager.startAdvertising(options)
+                self.peripheralManager.startAdvertising(options.options)
             }
         }
     }
@@ -227,90 +226,116 @@ public extension DarwinPeripheral {
 
 public extension DarwinPeripheral {
     
-    struct Options {
+    struct Options: Equatable, Hashable {
         
-        public let showPowerAlert: Bool
+        internal let options: [String: NSObject]
         
-        public let restoreIdentifier: String
-        
-        public init(
-            showPowerAlert: Bool = false,
-            restoreIdentifier: String = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinPeripheral"
-        ) {
-            self.showPowerAlert = showPowerAlert
-            self.restoreIdentifier = restoreIdentifier
-        }
-        
-        internal var optionsDictionary: [String: Any] {
-            var options = [String: Any](minimumCapacity: 2)
-            if showPowerAlert {
-                options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
-            }
-            options[CBPeripheralManagerOptionRestoreIdentifierKey] = self.restoreIdentifier
-            return options
+        public init() {
+            self.options = [:]
         }
     }
+}
+
+public extension DarwinPeripheral.Options {
     
-    struct AdvertisingOptions {
-        
-        /// The local name of the peripheral.
-        public let localName: String?
-        
-        /// An array of service UUIDs.
-        public let serviceUUIDs: [BluetoothUUID]
-        
-        #if os(iOS)
-        public let beacon: AppleBeacon?
-        #endif
-        
-        #if os(iOS)
-        public init(localName: String? = nil,
-                    serviceUUIDs: [BluetoothUUID] = [],
-                    beacon: AppleBeacon? = nil) {
-            
-            self.localName = localName
-            self.beacon = beacon
-            self.serviceUUIDs = serviceUUIDs
+    var showPowerAlert: Bool {
+        (options[CBPeripheralManagerOptionShowPowerAlertKey] as? Bool) ?? false
+    }
+    
+    var restoreIdentifier: String? {
+        options[CBPeripheralManagerOptionRestoreIdentifierKey] as? String
+    }
+    
+    init(
+        showPowerAlert: Bool,
+        restoreIdentifier: String? = Bundle.main.bundleIdentifier ?? "org.pureswift.GATT.DarwinPeripheral"
+    ) {
+        var options = [String: NSObject](minimumCapacity: 2)
+        if showPowerAlert {
+            options[CBPeripheralManagerOptionShowPowerAlertKey] = showPowerAlert as NSNumber
         }
-        #else
-        public init(localName: String? = nil,
-                    serviceUUIDs: [BluetoothUUID] = []) {
-            
-            self.localName = localName
-            self.serviceUUIDs = serviceUUIDs
-        }
-        #endif
+        options[CBPeripheralManagerOptionRestoreIdentifierKey] = restoreIdentifier as NSString?
+        self.options = options
+    }
+}
+
+extension DarwinPeripheral.Options: ExpressibleByDictionaryLiteral {
+    
+    public init(dictionaryLiteral elements: (String, NSObject)...) {
+        self.options = .init(uniqueKeysWithValues: elements)
+    }
+}
+
+extension DarwinPeripheral.Options: CustomStringConvertible {
+    
+    public var description: String {
+        return (options as NSDictionary).description
+    }
+}
+
+public extension DarwinPeripheral {
+    
+    struct AdvertisingOptions: Equatable, Hashable {
         
-        internal var optionsDictionary: [String: Any] {
-            var options = [String: Any](minimumCapacity: 2)
-            if let localName = self.localName {
-                options[CBAdvertisementDataLocalNameKey] = localName
-            }
-            if serviceUUIDs.isEmpty == false {
-                options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID($0) }
-            }
-            
-            #if os(iOS)
-            if let beacon = self.beacon {
-                
-                let beaconRegion = CLBeaconRegion(
-                    uuid: beacon.uuid,
-                    major: beacon.major,
-                    minor: beacon.minor,
-                    identifier: beacon.uuid.uuidString
-                )
-                
-                let peripheralData = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi))
-                
-                // copy key values
-                peripheralData.forEach { (key, value) in
-                    options[key as! String] = value
-                }
-            }
-            #endif
-            
-            return options
+        internal let options: [String: NSObject]
+        
+        public init() {
+            self.options = [:]
         }
+    }
+}
+
+extension DarwinPeripheral.AdvertisingOptions: ExpressibleByDictionaryLiteral {
+    
+    public init(dictionaryLiteral elements: (String, NSObject)...) {
+        self.options = .init(uniqueKeysWithValues: elements)
+    }
+}
+
+extension DarwinPeripheral.AdvertisingOptions: CustomStringConvertible {
+    
+    public var description: String {
+        return (options as NSDictionary).description
+    }
+}
+
+public extension DarwinPeripheral.AdvertisingOptions {
+    
+    /// The local name of the peripheral.
+    var localName: String? {
+        options[CBAdvertisementDataLocalNameKey] as? String
+    }
+    
+    /// An array of service UUIDs.
+    var serviceUUIDs: [BluetoothUUID] {
+        (options[CBAdvertisementDataLocalNameKey] as? [CBUUID])?.map { BluetoothUUID($0) } ?? []
+    }
+    
+    init(
+        localName: String? = nil,
+        serviceUUIDs: [BluetoothUUID] = [],
+        beacon: AppleBeacon? = nil
+    ) {
+        var options = [String: NSObject](minimumCapacity: 5)
+        if let localName = localName {
+            options[CBAdvertisementDataLocalNameKey] = localName as NSString
+        }
+        if serviceUUIDs.isEmpty == false {
+            options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID($0) } as NSArray
+        }
+        if let beacon = beacon {
+            let beaconRegion = CLBeaconRegion(
+                uuid: beacon.uuid,
+                major: beacon.major,
+                minor: beacon.minor,
+                identifier: beacon.uuid.uuidString
+            )
+            let peripheralData = beaconRegion.peripheralData(withMeasuredPower: NSNumber(value: beacon.rssi)) as! [String: NSObject]
+            peripheralData.forEach { (key, value) in
+                options[key] = value
+            }
+        }
+        self.options = options
     }
 }
 
