@@ -81,6 +81,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     public func start(options: GATTPeripheralAdvertisingOptions) async throws {
         let isAdvertising = await self.isAdvertising
         assert(isAdvertising == false)
+        
         // read address
         let address: BluetoothAddress
         if let randomAddress = options.randomAddress {
@@ -89,6 +90,19 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         } else {
             address = try await hostController.readDeviceAddress()
         }
+        
+        // set advertising data
+        if options.advertisingData != nil || options.scanResponse != nil {
+            do { try await hostController.enableLowEnergyAdvertising(false) }
+            catch HCIError.commandDisallowed { /* ignore */ }
+        }
+        if let advertisingData = options.advertisingData {
+            try await hostController.setLowEnergyAdvertisingData(advertisingData)
+        }
+        if let scanResponse = options.scanResponse {
+            try await hostController.setLowEnergyScanResponse(scanResponse)
+        }
+        
         // enable advertising
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
@@ -98,6 +112,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             isRandom: options.randomAddress == nil,
             backlog: Int(self.options.socketBacklog)
         )
+        
         // start listening for connections
         let task = Task.init(priority: .userInitiated, operation: { [weak self] in
             self?.log?("Started GATT Server")
