@@ -117,13 +117,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         await self.storage.start(socket, task)
     }
     
-    public func stop() {
-        let log = self.log
-        let storage = self.storage
-        Task {
-            await storage.stop()
-            log?("Stopped GATT Server")
-        }
+    public func stop() async {
+        await storage.stop()
+        log?("Stopped GATT Server")
     }
     
     public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16 {

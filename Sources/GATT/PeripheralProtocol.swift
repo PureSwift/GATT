@@ -25,7 +25,7 @@ public protocol PeripheralManager: AnyObject {
     func start() async throws
     
     /// Stop the peripheral.
-    func stop()
+    func stop() async
     
     /// A Boolean value that indicates whether the peripheral is advertising data.
     var isAdvertising: Bool { get async }

@@ -94,9 +94,12 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public func stop() {
-        self.queue.async { [unowned self] in
-            peripheralManager.stopAdvertising()
+    public func stop() async {
+        return await withCheckedContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                peripheralManager.stopAdvertising()
+                continuation.resume()
+            }
         }
     }
     

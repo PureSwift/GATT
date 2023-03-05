@@ -476,7 +476,7 @@ extension GATTTests {
         try await server(peripheral)
         
         try await peripheral.start()
-        defer { peripheral.stop() }
+        defer { Task { await peripheral.stop() } }
         
         // central
         let central = TestCentral(
