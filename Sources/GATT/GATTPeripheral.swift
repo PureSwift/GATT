@@ -110,7 +110,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         let socket = try await Socket.lowEnergyServer(
             address: address,
             isRandom: options.randomAddress == nil,
-            backlog: Int(self.options.socketBacklog)
+            backlog: self.options.socketBacklog
         )
         
         // start listening for connections

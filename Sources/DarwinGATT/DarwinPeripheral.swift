@@ -121,22 +121,28 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public func remove(service handle: UInt16) {
-        self.queue.async { [unowned self] in
-            // remove from daemon
-            let serviceObject = database.service(for: handle)
-            peripheralManager.remove(serviceObject)
-            // remove from cache
-            database.remove(service: handle)
+    public func remove(service handle: UInt16) async {
+        await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                // remove from daemon
+                let serviceObject = database.service(for: handle)
+                peripheralManager.remove(serviceObject)
+                // remove from cache
+                database.remove(service: handle)
+                continuation.resume()
+            }
         }
     }
     
-    public func removeAllServices() {
-        self.queue.async { [unowned self] in
-            // remove from daemon
-            peripheralManager.removeAllServices()
-            // clear cache
-            database.removeAll()
+    public func removeAllServices() async {
+        await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                // remove from daemon
+                peripheralManager.removeAllServices()
+                // clear cache
+                database.removeAll()
+                continuation.resume()
+            }
         }
     }
     
