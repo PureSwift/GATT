@@ -75,35 +75,46 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     // MARK: - Methods
     
     public func start() async throws {
-        assert(socket == nil)
+        try await start(options: AdvertisingOptions())
+    }
+    
+    public func start(options: GATTPeripheralAdvertisingOptions) async throws {
+        let isAdvertising = await self.isAdvertising
+        assert(isAdvertising == false)
         // read address
-        let address = try await hostController.readDeviceAddress()
+        let address: BluetoothAddress
+        if let randomAddress = options.randomAddress {
+            address = randomAddress
+            try await hostController.lowEnergySetRandomAddress(randomAddress)
+        } else {
+            address = try await hostController.readDeviceAddress()
+        }
         // enable advertising
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         // create server socket
         let socket = try await Socket.lowEnergyServer(
             address: address,
-            isRandom: false,
-            backlog: 10
+            isRandom: options.randomAddress == nil,
+            backlog: Int(self.options.socketBacklog)
         )
         // start listening for connections
-        self.socket = socket
-        self.task = Task { [weak self] in
+        let task = Task.init(priority: .userInitiated, operation: { [weak self] in
             self?.log?("Started GATT Server")
             do {
-                while let socket = self?.socket, let self = self {
+                while let socket = await self?.storage.socket, let self = self {
                     try Task.checkCancellation()
                     let newSocket = try await socket.accept()
                     self.log?("[\(newSocket.address)]: New connection")
-                    await self.storage.newConnection(newSocket, options: options, delegate: self)
+                    await self.storage.newConnection(newSocket, options: self.options, delegate: self)
                 }
             }
             catch _ as CancellationError { }
             catch {
                 self?.log?("Error waiting for new connection: \(error)")
             }
-        }
+        })
+        await self.storage.start(socket, task)
     }
     
     public func stop() {
