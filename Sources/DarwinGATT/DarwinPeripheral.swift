@@ -35,6 +35,17 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
+    public var isAdvertising: Bool {
+        get async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.queue.async { [unowned self] in
+                    let isAdvertising = self.peripheralManager.isAdvertising
+                    continuation.resume(returning: isAdvertising)
+                }
+            }
+        }
+    }
+    
     public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
     public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?

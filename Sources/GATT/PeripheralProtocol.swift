@@ -27,6 +27,9 @@ public protocol PeripheralManager: AnyObject {
     /// Stop the peripheral.
     func stop()
     
+    /// A Boolean value that indicates whether the peripheral is advertising data.
+    var isAdvertising: Bool { get async }
+    
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Attribute handle.

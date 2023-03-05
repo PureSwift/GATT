@@ -20,6 +20,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     /// Peripheral Options
     public typealias Options = GATTPeripheralOptions
     
+    /// Peripheral Advertising Options
+    public typealias AdvertisingOptions = GATTPeripheralAdvertisingOptions
+    
     // MARK: - Properties
     
     /// Logging
@@ -41,9 +44,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         }
     }
     
-    private var socket: Socket?
-    
-    private var task: Task<(), Never>?
+    public var isAdvertising: Bool {
+        get async {
+            return await storage.isAdvertising
+        }
+    }
         
     private let storage = Storage()
     
@@ -59,8 +64,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
     
     deinit {
-        if socket != nil {
-            stop()
+        let storage = self.storage
+        Task {
+            if await storage.isAdvertising {
+                await storage.stop()
+            }
         }
     }
     
@@ -99,11 +107,12 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
     
     public func stop() {
-        assert(socket != nil)
-        self.socket = nil
-        self.task?.cancel()
-        self.task = nil
-        self.log?("Stopped GATT Server")
+        let log = self.log
+        let storage = self.storage
+        Task {
+            await storage.stop()
+            log?("Stopped GATT Server")
+        }
     }
     
     public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16 {
@@ -193,17 +202,43 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
 
 // MARK: - Supporting Types
 
-public struct GATTPeripheralOptions {
+public struct GATTPeripheralOptions: Equatable, Hashable {
     
-    public let maximumTransmissionUnit: ATTMaximumTransmissionUnit
+    public var maximumTransmissionUnit: ATTMaximumTransmissionUnit
     
-    public let maximumPreparedWrites: Int
+    public var maximumPreparedWrites: Int
     
-    public init(maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
-                maximumPreparedWrites: Int = 100) {
-        
+    public var socketBacklog: Int
+    
+    public init(
+        maximumTransmissionUnit: ATTMaximumTransmissionUnit = .max,
+        maximumPreparedWrites: Int = 100,
+        socketBacklog: Int = 20
+    ) {
+        assert(maximumPreparedWrites > 0)
+        assert(socketBacklog > 0)
         self.maximumTransmissionUnit = maximumTransmissionUnit
         self.maximumPreparedWrites = maximumPreparedWrites
+        self.socketBacklog = socketBacklog
+    }
+}
+
+public struct GATTPeripheralAdvertisingOptions: Equatable, Hashable {
+    
+    public var advertisingData: LowEnergyAdvertisingData?
+    
+    public var scanResponse: LowEnergyAdvertisingData?
+    
+    public var randomAddress: BluetoothAddress?
+    
+    public init(
+        advertisingData: LowEnergyAdvertisingData? = nil,
+        scanResponse: LowEnergyAdvertisingData? = nil,
+        randomAddress: BluetoothAddress? = nil
+    ) {
+        self.advertisingData = advertisingData
+        self.scanResponse = scanResponse
+        self.randomAddress = randomAddress
     }
 }
 
@@ -213,9 +248,29 @@ internal extension GATTPeripheral {
         
         var database = GATTDatabase()
         
+        var socket: Socket?
+        
+        var task: Task<(), Never>?
+        
         var connections = [Central: GATTServerConnection<Socket>](minimumCapacity: 2)
                 
         fileprivate init() { }
+        
+        var isAdvertising: Bool {
+            socket != nil
+        }
+        
+        func stop() {
+            assert(socket != nil)
+            socket = nil
+            task?.cancel()
+            task = nil
+        }
+        
+        func start(_ socket: Socket, _ task: Task<(), Never>) {
+            self.socket = socket
+            self.task = task
+        }
         
         func add(service: BluetoothGATT.GATTAttribute.Service) -> UInt16 {
             return database.add(service: service)
