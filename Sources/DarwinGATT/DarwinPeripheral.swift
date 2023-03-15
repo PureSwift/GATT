@@ -328,7 +328,7 @@ public extension DarwinPeripheral.AdvertisingOptions {
     
     /// An array of service UUIDs.
     var serviceUUIDs: [BluetoothUUID] {
-        (options[CBAdvertisementDataLocalNameKey] as? [CBUUID])?.map { BluetoothUUID($0) } ?? []
+        (options[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map { BluetoothUUID($0) } ?? []
     }
     
     init(
@@ -356,6 +356,8 @@ public extension DarwinPeripheral.AdvertisingOptions {
             }
         }
         self.options = options
+        assert(localName == self.localName)
+        assert(serviceUUIDs == self.serviceUUIDs)
     }
 }
 
