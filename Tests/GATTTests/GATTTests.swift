@@ -261,9 +261,10 @@ final class GATTTests: XCTestCase {
         
         try await connect(
             server: { peripheral in
-                serviceAttribute = try await peripheral.add(service: service)
+                let (serviceAttributeHandle, characteristicValueHandles) = try await peripheral.add(service: service)
+                serviceAttribute = serviceAttributeHandle
                 XCTAssertEqual(serviceAttribute, 1)
-                characteristicValueHandle = await peripheral.characteristics(for: .batteryLevel)[0]
+                characteristicValueHandle = characteristicValueHandles[0]
                 peripheralDatabaseValue = { await peripheral[characteristic: characteristicValueHandle] }
                 let currentValue = await peripheralDatabaseValue()
                 XCTAssertEqual(currentValue, characteristics[0].value)
@@ -336,9 +337,9 @@ final class GATTTests: XCTestCase {
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
-                let serviceAttribute = try await peripheral.add(service: service)
+                let (serviceAttribute, characteristicValueHandles) = try await peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
-                let characteristicValueHandle = await peripheral.characteristics(for: .batteryLevel)[0]
+                let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
                     await peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
@@ -401,9 +402,9 @@ final class GATTTests: XCTestCase {
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
-                let serviceAttribute = try await peripheral.add(service: service)
+                let (serviceAttribute, characteristicValueHandles) = try await peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
-                let characteristicValueHandle = await peripheral.characteristics(for: .batteryLevel)[0]
+                let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
                     await peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)

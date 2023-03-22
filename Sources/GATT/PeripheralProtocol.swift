@@ -32,8 +32,8 @@ public protocol PeripheralManager: AnyObject {
     
     /// Attempts to add the specified service to the GATT database.
     ///
-    /// - Returns: Attribute handle.
-    func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16
+    /// - Returns: Handle for service declaration and handles for characteristic value handles.
+    func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> (UInt16, [UInt16])
     
     /// Removes the service with the specified handle.
     func remove(service: UInt16) async

@@ -82,7 +82,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         let isAdvertising = await self.isAdvertising
         assert(isAdvertising == false)
         
-        // read address
+        // use public or random address
         let address: BluetoothAddress
         if let randomAddress = options.randomAddress {
             address = randomAddress
@@ -91,7 +91,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             address = try await hostController.readDeviceAddress()
         }
         
-        // set advertising data
+        // set advertising data and scan response
         if options.advertisingData != nil || options.scanResponse != nil {
             do { try await hostController.enableLowEnergyAdvertising(false) }
             catch HCIError.commandDisallowed { /* ignore */ }
@@ -137,7 +137,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         log?("Stopped GATT Server")
     }
     
-    public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> UInt16 {
+    public func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> (UInt16, [UInt16]) {
         return await storage.add(service: service)
     }
     
@@ -294,8 +294,19 @@ internal extension GATTPeripheral {
             self.task = task
         }
         
-        func add(service: BluetoothGATT.GATTAttribute.Service) -> UInt16 {
-            return database.add(service: service)
+        func add(service: GATTAttribute.Service) -> (UInt16, [UInt16]) {
+            var includedServicesHandles = [UInt16]()
+            var characteristicDeclarationHandles = [UInt16]()
+            var characteristicValueHandles = [UInt16]()
+            var descriptorHandles = [[UInt16]]()
+            let serviceHandle = database.add(
+                service: service,
+                includedServicesHandles: &includedServicesHandles,
+                characteristicDeclarationHandles: &characteristicDeclarationHandles,
+                characteristicValueHandles: &characteristicValueHandles,
+                descriptorHandles: &descriptorHandles
+            )
+            return (serviceHandle, characteristicValueHandles)
         }
         
         func remove(service handle: UInt16) {

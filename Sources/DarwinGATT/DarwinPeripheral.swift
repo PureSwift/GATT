@@ -103,7 +103,7 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public func add(service: GATTAttribute.Service) async throws -> UInt16 {
+    public func add(service: GATTAttribute.Service) async throws -> (UInt16, [UInt16]) {
         let serviceObject = service.toCoreBluetooth()
         // add service
         try await withCheckedThrowingContinuation { [unowned self] (continuation: CheckedContinuation<(), Error>) in
@@ -574,24 +574,23 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        mutating func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> UInt16 {
+        mutating func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> (UInt16, [UInt16]) {
             
             let serviceHandle = newHandle()
-            
+            var characteristicHandles = [UInt16]()
+            characteristicHandles.reserveCapacity((coreService.characteristics ?? []).count)
             services[coreService] = Service(handle: serviceHandle)
-            
             for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
-                
                 let data = service.characteristics[index].value
-                
                 let characteristicHandle = newHandle()
-                
-                characteristics[characteristic] = Characteristic(handle: characteristicHandle,
-                                                                 serviceHandle: serviceHandle,
-                                                                 value: data)
+                characteristics[characteristic] = Characteristic(
+                    handle: characteristicHandle,
+                    serviceHandle: serviceHandle,
+                    value: data
+                )
+                characteristicHandles.append(characteristicHandle)
             }
-            
-            return serviceHandle
+            return (serviceHandle, characteristicHandles)
         }
         
         mutating func remove(service handle: UInt16) {
