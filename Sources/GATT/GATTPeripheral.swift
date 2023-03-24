@@ -32,10 +32,6 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public let options: Options
     
-    public var didConnect: ((Central) async -> ())?
-    
-    public var didDisconnect: ((Central) async -> ())?
-    
     public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
     public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?

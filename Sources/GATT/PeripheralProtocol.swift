@@ -41,12 +41,6 @@ public protocol PeripheralManager: AnyObject {
     /// Clears the local GATT database.
     func removeAllServices() async
     
-    /// Callback for new connection.
-    var didConnect: ((Central) async -> ())? { get set }
-    
-    /// Callback for disconnection.
-    var didDisconnect: ((Central) async -> ())? { get set }
-    
     /// Callback to handle GATT read requests.
     var willRead: ((GATTReadRequest<Central>) async -> ATTError?)? { get set }
     

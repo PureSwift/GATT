@@ -52,10 +52,6 @@ public final class DarwinPeripheral: PeripheralManager {
     
     public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
     
-    public var didConnect: ((Central) async -> ())?
-    
-    public var didDisconnect: ((Central) async -> ())?
-    
     public var stateChanged: ((DarwinBluetoothState) -> ())?
     
     private var database = Database()
