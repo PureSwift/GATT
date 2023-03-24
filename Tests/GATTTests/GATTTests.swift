@@ -442,53 +442,34 @@ final class GATTTests: XCTestCase {
     
     func testDescriptors() async throws {
         
-        // service
-        let batteryLevel = GATTBatteryLevel(level: .max)
-        let characteristicUUID = BluetoothUUID()
-        let descriptorUUID = BluetoothUUID()
-        
-        let characteristics = [
-            GATTAttribute.Characteristic(
-                uuid: type(of: batteryLevel).uuid,
-                value: batteryLevel.data,
-                permissions: [.read],
-                properties: [.read],
-                descriptors: [
-                    GATTAttribute.Descriptor(
-                        uuid: descriptorUUID,
-                        value: Data("Test Descriptor".utf8),
-                        permissions: [.read, .write]
-                    )
-                ]
-            ),
-            GATTAttribute.Characteristic(
-                uuid: characteristicUUID,
-                value: Data("Test Characteristic".utf8),
-                permissions: [.read, .write],
-                properties: [.read, .write],
-                descriptors: [
-                    GATTAttribute.Descriptor(
-                        uuid: descriptorUUID,
-                        value: Data("Test Descriptor".utf8),
-                        permissions: [.read, .write]
-                    ),
-                    GATTAttribute.Descriptor(
-                        uuid: .init(),
-                        value: Data("Test Descriptor".utf8),
-                        permissions: [.read, .write]
-                    )
-                ]
-            )
+        let descriptors = [
+            GATTClientCharacteristicConfiguration().descriptor,
+            //GATTUserDescription(userDescription: "Characteristic").descriptor,
+            GATTAttribute.Descriptor(uuid: BluetoothUUID(),
+                                     value: Data("UInt128 Descriptor".utf8),
+                                     permissions: [.read, .write]),
+            GATTAttribute.Descriptor(uuid: .savantSystems,
+                                         value: Data("Savant".utf8),
+                                         permissions: [.read]),
+            GATTAttribute.Descriptor(uuid: .savantSystems2,
+                                         value: Data("Savant2".utf8),
+                                         permissions: [.write])
         ]
         
+        let characteristic = GATTAttribute.Characteristic(uuid: BluetoothUUID(),
+                                                 value: Data(),
+                                                 permissions: [.read],
+                                                 properties: [.read],
+                                                 descriptors: descriptors)
+        
         let service = GATTAttribute.Service(
-            uuid: .batteryService,
+            uuid: BluetoothUUID(),
             primary: true,
-            characteristics: characteristics
+            characteristics: [characteristic]
         )
         
         try await connect(
-            serverOptions: .init(maximumTransmissionUnit: .max, maximumPreparedWrites: 1000),
+            serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .default),
             server: { peripheral in
                 let (serviceAttribute, _) = try await peripheral.add(service: service)
@@ -501,29 +482,33 @@ final class GATTTests: XCTestCase {
                 guard let foundService = services.first,
                     services.count == 1
                     else { XCTFail(); return }
-                XCTAssertEqual(foundService.uuid, .batteryService)
+                XCTAssertEqual(foundService.uuid, service.uuid)
                 XCTAssertEqual(foundService.isPrimary, true)
                 
                 let foundCharacteristics = try await central.discoverCharacteristics(for: foundService)
-                guard let batteryLevelCharacteristic = foundCharacteristics.first(where: { $0.uuid == .batteryLevel }),
-                      let foundCharacteristic = foundCharacteristics.first(where: { $0.uuid == characteristicUUID }),
-                    foundCharacteristics.count == 2
-                    else { XCTFail(); return }
-                XCTAssertEqual(batteryLevelCharacteristic.uuid, .batteryLevel)
-                XCTAssertEqual(foundCharacteristic.uuid, characteristicUUID)
+                XCTAssertEqual(foundCharacteristics.count, 1)
+                guard let foundCharacteristic = foundCharacteristics.first else { XCTFail(); return }
+                XCTAssertEqual(foundCharacteristic.uuid, characteristic.uuid)
+                let foundDescriptors = try await central.discoverDescriptors(for: foundCharacteristic)
+                XCTAssertEqual(foundDescriptors.count, descriptors.count)
+                XCTAssertEqual(foundDescriptors.map { $0.uuid }, descriptors.map { $0.uuid })
                 
-                let characteristicDescriptors = try await central.discoverDescriptors(for: foundCharacteristic)
-                XCTAssertEqual(characteristicDescriptors.count, 1)
-                let batteryDescriptors = try await central.discoverDescriptors(for: batteryLevelCharacteristic)
-                XCTAssertEqual(batteryDescriptors.count, 1)
-                /*
-                guard let batteryUserDescriptionDescriptor = batteryDescriptors.first
-                    else { XCTFail(); return }
-                let batteryUserDescriptionDescriptorData = try await central.readValue(for: batteryUserDescriptionDescriptor)
-                guard let batteryUserDescription = GATTUserDescription(data: batteryUserDescriptionDescriptorData)
-                    else { XCTFail(); return }
-                XCTAssertEqual(batteryUserDescription.userDescription, "Battery Level")
-                 */
+                for (index, descriptor) in foundDescriptors.enumerated() {
+                    let expectedValue = descriptors[index].value
+                    let descriptorPermissions = descriptors[index].permissions
+                    if descriptorPermissions.contains(.read) {
+                        let readValue = try await central.readValue(for: descriptor)
+                        XCTAssertEqual(readValue, expectedValue)
+                    }
+                    if descriptorPermissions.contains(.write) {
+                        let newValue = Data("new value".utf8)
+                        try await central.writeValue(newValue, for: descriptor)
+                        if descriptorPermissions.contains(.read) {
+                            let newServerValue = try await central.readValue(for: descriptor)
+                            XCTAssertEqual(newValue, newServerValue)
+                        }
+                    }
+                }
             }
         )
     }
