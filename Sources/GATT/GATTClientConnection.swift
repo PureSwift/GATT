@@ -146,6 +146,22 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         } ?? []
     }
     
+    public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
+        assert(descriptor.peripheral == peripheral)
+        guard let (_, _, gattDescriptor) = await cache.descriptor(for: descriptor.id) else {
+            throw CentralError.invalidAttribute(descriptor.uuid)
+        }
+        return try await client.readDescriptor(gattDescriptor.attribute)
+    }
+    
+    public func writeValue(_ data: Data, for descriptor: Descriptor<Peripheral, UInt16>) async throws {
+        assert(descriptor.peripheral == peripheral)
+        guard let (_, _, gattDescriptor) = await cache.descriptor(for: descriptor.id) else {
+            throw CentralError.invalidAttribute(descriptor.uuid)
+        }
+        try await client.writeDescriptor(gattDescriptor.attribute, data: data)
+    }
+    
     public func notify(
         _ characteristic: Characteristic<Peripheral, UInt16>,
         notification: (GATTClient.Notification)?
@@ -240,13 +256,13 @@ internal actor GATTClientConnectionCache {
         return nil
     }
     
-    func descriptor(for identifier: UInt) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache, GATTClientConnectionDescriptorCache)? {
+    func descriptor(for identifier: UInt16) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache, GATTClientConnectionDescriptorCache)? {
         
         for service in services.values {
             for characteristic in service.characteristics.values {
-                for descriptor in characteristic.descriptors.values {
-                    return (service, characteristic, descriptor)
-                }
+                guard let descriptor = characteristic.descriptors[identifier]
+                    else { continue }
+                return (service, characteristic, descriptor)
             }
         }
         

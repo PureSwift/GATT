@@ -185,20 +185,24 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     }
     
     public func discoverDescriptors(for characteristic: Characteristic<Peripheral, UInt16>) async throws -> [Descriptor<Peripheral, UInt16>] {
-        fatalError()
+        try await connection(for: characteristic.peripheral)
+            .discoverDescriptors(for: characteristic)
     }
     
     public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
-        fatalError()
+        try await connection(for: descriptor.peripheral)
+            .readValue(for: descriptor)
     }
     
     public func writeValue(_ data: Data, for descriptor: Descriptor<Peripheral, UInt16>) async throws {
-        fatalError()
+        try await connection(for: descriptor.peripheral)
+            .writeValue(data, for: descriptor)
     }
     
     /// Read MTU
     public func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit {
-        return try await connection(for: peripheral).client.maximumTransmissionUnit
+        return try await connection(for: peripheral)
+            .client.maximumTransmissionUnit
     }
     
     // Read RSSI
