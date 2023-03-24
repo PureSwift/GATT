@@ -453,7 +453,13 @@ final class GATTTests: XCTestCase {
                 value: batteryLevel.data,
                 permissions: [.read],
                 properties: [.read],
-                descriptors: [GATTUserDescription(userDescription: "Battery Level").descriptor]
+                descriptors: [
+                    GATTAttribute.Descriptor(
+                        uuid: descriptorUUID,
+                        value: Data("Test Descriptor".utf8),
+                        permissions: [.read, .write]
+                    )
+                ]
             ),
             GATTAttribute.Characteristic(
                 uuid: characteristicUUID,
@@ -461,9 +467,13 @@ final class GATTTests: XCTestCase {
                 permissions: [.read, .write],
                 properties: [.read, .write],
                 descriptors: [
-                    GATTUserDescription(userDescription: "Test Characteristic User Description").descriptor,
                     GATTAttribute.Descriptor(
                         uuid: descriptorUUID,
+                        value: Data("Test Descriptor".utf8),
+                        permissions: [.read, .write]
+                    ),
+                    GATTAttribute.Descriptor(
+                        uuid: .init(),
                         value: Data("Test Descriptor".utf8),
                         permissions: [.read, .write]
                     )
@@ -493,6 +503,7 @@ final class GATTTests: XCTestCase {
                     else { XCTFail(); return }
                 XCTAssertEqual(foundService.uuid, .batteryService)
                 XCTAssertEqual(foundService.isPrimary, true)
+                
                 let foundCharacteristics = try await central.discoverCharacteristics(for: foundService)
                 guard let batteryLevelCharacteristic = foundCharacteristics.first(where: { $0.uuid == .batteryLevel }),
                       let foundCharacteristic = foundCharacteristics.first(where: { $0.uuid == characteristicUUID }),
@@ -500,10 +511,11 @@ final class GATTTests: XCTestCase {
                     else { XCTFail(); return }
                 XCTAssertEqual(batteryLevelCharacteristic.uuid, .batteryLevel)
                 XCTAssertEqual(foundCharacteristic.uuid, characteristicUUID)
+                
+                let characteristicDescriptors = try await central.discoverDescriptors(for: foundCharacteristic)
+                XCTAssertEqual(characteristicDescriptors.count, 1)
                 let batteryDescriptors = try await central.discoverDescriptors(for: batteryLevelCharacteristic)
                 XCTAssertEqual(batteryDescriptors.count, 1)
-                //let characteristicDescriptors = try await central.discoverDescriptors(for: foundCharacteristic)
-                //XCTAssertEqual(characteristicDescriptors.count, 2)
                 /*
                 guard let batteryUserDescriptionDescriptor = batteryDescriptors.first
                     else { XCTFail(); return }
@@ -511,8 +523,7 @@ final class GATTTests: XCTestCase {
                 guard let batteryUserDescription = GATTUserDescription(data: batteryUserDescriptionDescriptorData)
                     else { XCTFail(); return }
                 XCTAssertEqual(batteryUserDescription.userDescription, "Battery Level")
-                
-                */
+                 */
             }
         )
     }
