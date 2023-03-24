@@ -129,8 +129,14 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         guard let (gattService, gattCharacteristic) = await cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
-        let service = (declaration: gattService.attribute,
-                       characteristics: Array(gattService.characteristics.values.map { $0.attribute }))
+        let service = (
+            declaration: gattService.attribute,
+            characteristics: gattService.characteristics
+                .values
+                .lazy
+                .sorted { $0.attribute.handle.declaration < $1.attribute.handle.declaration }
+                .map { $0.attribute }
+        )
         
         // GATT request
         let foundDescriptors = try await client.discoverDescriptors(of: gattCharacteristic.attribute, service: service)
