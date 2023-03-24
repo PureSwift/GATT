@@ -46,16 +46,6 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public var connections: Set<Central> {
-        get async {
-            return await withUnsafeContinuation { [unowned self] continuation in
-                self.queue.async { [unowned self] in
-                    let isAdvertising = self.peripheralManager
-                }
-            }
-        }
-    }
-    
     public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
     public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
@@ -77,7 +67,7 @@ public final class DarwinPeripheral: PeripheralManager {
     private let queue = DispatchQueue(label: "org.pureswift.DarwinGATT.DarwinPeripheral", attributes: [])
     
     private var continuation = Continuation()
-    
+        
     // MARK: - Initialization
     
     public init(
@@ -207,6 +197,17 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
+    public func setDesiredConnectionLatency(_ latency: CBPeripheralManagerConnectionLatency, for central: Central) async {
+        return await withUnsafeContinuation { [unowned self] continuation in
+            self.queue.async { [unowned self] in
+                if let central = central.central {
+                    self.peripheralManager.setDesiredConnectionLatency(latency, for: central)
+                }
+                continuation.resume()
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func notify(_ value: Data, forCharacteristic handle: UInt16) async {
@@ -227,7 +228,7 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    private func updateValue(_ value: Data, forCharacteristic handle: UInt16) async -> Bool {
+    private func updateValue(_ value: Data, forCharacteristic handle: UInt16, centrals: [Central] = []) async -> Bool {
         return await withUnsafeContinuation { [unowned self] continuation in
             self.queue.async { [unowned self] in
                 let characteristicObject = database.characteristic(for: handle)
@@ -235,7 +236,7 @@ public final class DarwinPeripheral: PeripheralManager {
                 let didNotify = peripheralManager.updateValue(
                     value,
                     for: characteristicObject,
-                    onSubscribedCentrals: nil
+                    onSubscribedCentrals: centrals.isEmpty ? nil : centrals.compactMap { $0.central }
                 )
                 
                 // The underlying transmit queue is full
@@ -264,8 +265,11 @@ public extension DarwinPeripheral {
         
         public let id: UUID
         
+        internal weak var central: CBCentral?
+        
         init(_ central: CBCentral) {
             self.id = central.id
+            self.central = central
         }
     }
 }
