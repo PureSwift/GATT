@@ -41,20 +41,34 @@ public protocol PeripheralManager: AnyObject {
     /// Clears the local GATT database.
     func removeAllServices() async
     
+    /// Callback for new connection.
+    var didConnect: ((Central) async -> ())? { get set }
+    
+    /// Callback for disconnection.
+    var didDisconnect: ((Central) async -> ())? { get set }
+    
+    /// Callback to handle GATT read requests.
     var willRead: ((GATTReadRequest<Central>) async -> ATTError?)? { get set }
     
+    /// Callback to handle GATT write requests.
     var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)? { get set }
     
+    /// Callback to handle post-write actions for GATT write requests.
     var didWrite: ((GATTWriteConfirmation<Central>) async -> ())? { get set }
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     func write(_ newValue: Data, forCharacteristic handle: UInt16) async
     
+    /// Modify the value of a characteristic, optionally emiting notifications if configured on the specified connection.
+    ///
+    /// Throws error if central is unknown or disconnected.
+    func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) async throws
+    
     /// Read the value of the characteristic with specified handle.
     subscript(characteristic handle: UInt16) -> Data { get async }
     
-    /// Return the handles of the characteristics matching the specified UUID.
-    func characteristics(for uuid: BluetoothUUID) async -> [UInt16]
+    /// Read the value of the characteristic with specified handle for the specified connection.
+    subscript(characteristic handle: UInt16, central: Central) -> Data { get async throws }
 }
 
 // MARK: - Supporting Types

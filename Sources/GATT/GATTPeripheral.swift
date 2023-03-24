@@ -13,7 +13,7 @@ import Foundation
 
 /// GATT Peripheral Manager
 public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: PeripheralManager {
-        
+    
     /// Central Peer
     public typealias Central = GATT.Central
     
@@ -32,13 +32,17 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public let options: Options
     
+    public var didConnect: ((Central) async -> ())?
+    
+    public var didDisconnect: ((Central) async -> ())?
+    
     public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
     public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
     
-    public var activeConnections: Set<Central> {
+    public var connections: Set<Central> {
         get async {
             return await Set(storage.connections.values.lazy.map { $0.central })
         }
@@ -154,6 +158,15 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         await write(newValue, forCharacteristic: handle, ignore: .none)
     }
     
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) async throws {
+        guard let connection = await storage.connections[central] else {
+            throw CentralError.disconnected
+        }
+        await connection.server.updateDatabase { database in
+            database.write(newValue, forAttribute: handle)
+        }
+    }
+    
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     private func write(_ newValue: Data, forCharacteristic handle: UInt16, ignore central: Central? = nil) async {
         // write to master DB
@@ -180,12 +193,26 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         }
     }
     
+    public subscript(characteristic handle: UInt16, central: Central) -> Data {
+        get async throws {
+            guard let connection = await storage.connections[central] else {
+                throw CentralError.disconnected
+            }
+            return await connection.server.database[handle: handle].value
+        }
+    }
+    
     /// Return the handles of the characteristics matching the specified UUID.
     public func characteristics(for uuid: BluetoothUUID) async -> [UInt16] {
         return await storage.database
             .lazy
             .filter { $0.uuid == uuid }
             .map { $0.handle }
+    }
+    
+    // TODO: Get connection handle
+    internal func connectionHandle(for central: Central) async -> UInt16 {
+        fatalError()
     }
 }
 
