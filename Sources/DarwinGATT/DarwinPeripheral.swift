@@ -46,11 +46,27 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
+    public var connections: Set<Central> {
+        get async {
+            return await withUnsafeContinuation { [unowned self] continuation in
+                self.queue.async { [unowned self] in
+                    let isAdvertising = self.peripheralManager
+                }
+            }
+        }
+    }
+    
     public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
     
     public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
+    
+    public var didConnect: ((Central) async -> ())?
+    
+    public var didDisconnect: ((Central) async -> ())?
+    
+    public var stateChanged: ((DarwinBluetoothState) -> ())?
     
     private var database = Database()
     
@@ -159,6 +175,10 @@ public final class DarwinPeripheral: PeripheralManager {
         await notify(newValue, forCharacteristic: handle)
     }
     
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) async throws {
+        await write(newValue, forCharacteristic: handle) // per-connection database not supported on Darwin
+    }
+    
     /// Read the value of the characteristic with specified handle.
     public subscript(characteristic handle: UInt16) -> Data {
         get async {
@@ -168,6 +188,12 @@ public final class DarwinPeripheral: PeripheralManager {
                     continuation.resume(returning: value)
                 }
             }
+        }
+    }
+    
+    public subscript(characteristic handle: UInt16, central: Central) -> Data {
+        get async throws {
+            await self[characteristic: handle] // per-connection database not supported on Darwin
         }
     }
     
@@ -396,7 +422,7 @@ internal extension DarwinPeripheral {
         public func peripheralManagerDidUpdateState(_ peripheralManager: CBPeripheralManager) {
             let state = unsafeBitCast(peripheralManager.state, to: DarwinBluetoothState.self)
             log("Did update state \(state)")
-            //stateChanged(state)
+            self.peripheral.stateChanged?(state)
         }
         
         @objc(peripheralManager:willRestoreState:)
