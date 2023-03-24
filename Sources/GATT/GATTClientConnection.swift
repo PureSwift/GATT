@@ -143,13 +143,13 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         
         // update cache
         await cache.insert(foundDescriptors, for: characteristic.id)
-        return await cache.characteristic(for: characteristic.id)?.1.descriptors.map {
+        return foundDescriptors.map {
             Descriptor(
-                id: $0.key,
-                uuid: $0.value.attribute.uuid,
-                peripheral: peripheral
+                id: $0.handle,
+                uuid: $0.uuid,
+                peripheral: characteristic.peripheral
             )
-        } ?? []
+        }
     }
     
     public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
