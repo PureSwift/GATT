@@ -318,6 +318,25 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         }
     }
     
+    /// Use this method to retrieve a human-readable name of the peripheral.
+    ///
+    /// A peripheral may have two different name types: one that the device advertises and another that the device publishes in its database as its Bluetooth low energy Generic Access Profile (GAP) device name.
+    /// If a peripheral has both types of names, this property returns its GAP device name.
+    public func name(for peripheral: Peripheral) async throws -> String? {
+        return try await withThrowingContinuation(for: peripheral) { [weak self] continuation in
+            guard let self = self else { return }
+            self.async {
+                do {
+                    let name = try self._name(for: peripheral)
+                    continuation.resume(returning: name)
+                }
+                catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
     // MARK - Private Methods
     
     @inline(__always)
@@ -425,6 +444,15 @@ public final class DarwinCentral: CentralManager, ObservableObject {
             return .default
         }
         return mtu
+    }
+    
+    private func _name(for peripheral: Peripheral) throws -> String? {
+        // get peripheral
+        guard let peripheralObject = self.cache.peripherals[peripheral] else {
+            throw CentralError.unknownPeripheral
+        }
+        // return cached value
+        return peripheralObject.name
     }
 }
 
