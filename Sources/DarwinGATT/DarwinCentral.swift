@@ -1187,6 +1187,7 @@ internal extension DarwinCentral {
             // An array of peripherals for use when restoring the state of a central manager.
             if let peripherals = state[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
                 for peripheralObject in peripherals {
+                    peripheralObject.delegate = self
                     self.central.cache.peripherals[Peripheral(peripheralObject)] = peripheralObject
                 }
             }
