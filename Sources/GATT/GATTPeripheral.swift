@@ -121,6 +121,20 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
                     try Task.checkCancellation()
                     let newSocket = try await socket.accept()
                     self.log?("[\(newSocket.address)]: New connection")
+                    let central = Central(id: socket.address)
+                    Task.detached { [weak self] in
+                        for await event in newSocket.event {
+                            switch event {
+                            case let .error(error):
+                                self?.log(central, error.localizedDescription)
+                            case .close:
+                                break
+                            default:
+                                break
+                            }
+                        }
+                        await self?.didDisconnect(central)
+                    }
                     await self.storage.newConnection(newSocket, options: self.options, delegate: self)
                 }
             }
@@ -210,15 +224,8 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     internal func connectionHandle(for central: Central) async -> UInt16 {
         fatalError()
     }
-}
-
-extension GATTPeripheral: GATTServerConnectionDelegate {
     
-    func connection(_ central: Central, log message: String) {
-        log?("[\(central)]: " + message)
-    }
-    
-    func connection(_ central: Central, didDisconnect error: Swift.Error?) async {
+    private func didDisconnect(_ central: Central) async {
         // try advertising again
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
@@ -226,7 +233,18 @@ extension GATTPeripheral: GATTServerConnectionDelegate {
         // remove connection cache
         await storage.removeConnection(central)
         // log
-        log?("[\(central)]: " + "Did disconnect. \(error?.localizedDescription ?? "")")
+        log(central, "Did disconnect.")
+    }
+    
+    private func log(_ central: Central, _ message: String) {
+        log?("[\(central)]: " + message)
+    }
+}
+
+extension GATTPeripheral: GATTServerConnectionDelegate {
+    
+    func connection(_ central: Central, log message: String) {
+        log?("[\(central)]: " + message)
     }
     
     func connection(_ central: Central, willRead request: GATTReadRequest<Central>) async -> ATTError? {
