@@ -16,10 +16,8 @@ import BluetoothHCI
 
 final class GATTTests: XCTestCase {
     
-    #if swift(>=5.6)
     typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPSocket>
     typealias TestCentral = GATTCentral<TestHostController, TestL2CAPSocket>
-    #endif
     
     func testScanData() {
         
@@ -63,7 +61,6 @@ final class GATTTests: XCTestCase {
         }
     }
     
-    #if swift(>=5.6)
     func testMTUExchange() async throws {
         
         /**
@@ -513,12 +510,10 @@ final class GATTTests: XCTestCase {
         )
     }
     
-    #endif
 }
 
 extension GATTTests {
     
-    #if swift(>=5.6)
     func connect(
         serverOptions: GATTPeripheralOptions = .init(),
         clientOptions: GATTCentralOptions = .init(),
@@ -573,7 +568,7 @@ extension GATTTests {
         await central.disconnectAll()
         await peripheral.removeAllServices()
     }
-    #endif
+    
     func test(
         _ testPDUs: [(ATTProtocolDataUnit, [UInt8])],
         file: StaticString = #filePath,

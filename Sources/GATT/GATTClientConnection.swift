@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if swift(>=5.6) && canImport(BluetoothGATT)
+#if canImport(BluetoothGATT)
 import Foundation
 import Bluetooth
 import BluetoothGATT

@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 4/3/16.
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
-#if swift(>=5.5) && canImport(CoreBluetooth)
+#if canImport(CoreBluetooth)
 import Foundation
 import Dispatch
 import CoreBluetooth

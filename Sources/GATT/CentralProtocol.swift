@@ -6,7 +6,6 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if swift(>=5.5)
 import Foundation
 import Bluetooth
 
@@ -97,5 +96,3 @@ public protocol CentralManager: AnyObject {
     // Read RSSI
     func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
-
-#endif
