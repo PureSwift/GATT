@@ -88,11 +88,11 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     }
     
     public func connect(to peripheral: Peripheral) async throws {
-        // get scan data (bluetooth address) for new connection
+        // get scan data (Bluetooth address) for new connection
         guard let (scanData, report) = await self.storage.scanData[peripheral]
             else { throw CentralError.unknownPeripheral }
         // log
-        self.log?("[\(scanData.peripheral)]: Open connection (\(report.addressType))")
+        self.log(scanData.peripheral, "Open connection (\(report.addressType))")
         // load cache device address
         let localAddress = try await storage.readAddress(hostController)
         // open socket
@@ -100,22 +100,42 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
             address: localAddress,
             destination: report
         )
-        // keep connection open and store for future use
+        Task.detached { [weak self] in
+            for await event in socket.event {
+                switch event {
+                case let .error(error):
+                    self?.log(peripheral, error.localizedDescription)
+                case .close:
+                    self?.log(peripheral, "Did disconnect.")
+                default:
+                    break
+                }
+            }
+            await self?.storage.removeConnection(peripheral)
+        }
         let connection = await GATTClientConnection(
             peripheral: peripheral,
             socket: socket,
             maximumTransmissionUnit: self.options.maximumTransmissionUnit,
-            delegate: self
+            log: { [weak self] in
+                self?.log(peripheral, $0)
+            }
         )
         // store connection
-        await self.storage.didConnect(connection)
+        await self.storage.didConnect(connection, socket)
     }
     
     public func disconnect(_ peripheral: Peripheral) async {
+        if let (_, socket) = await storage.connections[peripheral] {
+            await socket.close()
+        }
         await storage.removeConnection(peripheral)
     }
     
     public func disconnectAll() async {
+        for (_, socket) in await storage.connections.values {
+            await socket.close()
+        }
         await storage.removeAllConnections()
     }
     
@@ -217,22 +237,14 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         guard await storage.scanData.keys.contains(peripheral)
             else { throw CentralError.unknownPeripheral }
         
-        guard let connection = await storage.connections[peripheral]
+        guard let (connection, _) = await storage.connections[peripheral]
             else { throw CentralError.disconnected }
         
         return connection
     }
-}
-
-extension GATTCentral: GATTClientConnectionDelegate {
     
-    func connection(_ peripheral: Peripheral, log message: String) {
+    private func log(_ peripheral: Peripheral, _ message: String) {
         log?("[\(peripheral)]: " + message)
-    }
-    
-    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) async {
-        await storage.removeConnection(peripheral)
-        log?("[\(peripheral)]: " + "did disconnect \(error?.localizedDescription ?? "")")
     }
 }
 
@@ -243,7 +255,11 @@ internal extension GATTCentral {
     
     actor Storage {
         
+        var address: BluetoothAddress?
+        
         var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
+        
+        var connections = [Peripheral: (connection: GATTClientConnection<Socket>, socket: Socket)](minimumCapacity: 2)
         
         func found(_ report: HCILEAdvertisingReport.Report) -> ScanData<Peripheral, Advertisement> {
             let peripheral = Peripheral(id: report.address)
@@ -258,8 +274,6 @@ internal extension GATTCentral {
             return scanData
         }
         
-        var address: BluetoothAddress?
-        
         func readAddress(_ hostController: HostController) async throws -> BluetoothAddress {
             if let cachedAddress = self.address {
                 return cachedAddress
@@ -270,17 +284,15 @@ internal extension GATTCentral {
             }
         }
         
-        var connections = [Peripheral: GATTClientConnection<Socket>](minimumCapacity: 2)
-        
-        func didConnect(_ connection: GATTClientConnection<Socket>) {
-            self.connections[connection.peripheral] = connection
+        func didConnect(_ connection: GATTClientConnection<Socket>, _ socket: Socket) {
+            self.connections[connection.peripheral] = (connection, socket)
         }
         
-        func removeConnection(_ peripheral: Peripheral) {
+        func removeConnection(_ peripheral: Peripheral) async {
             self.connections[peripheral] = nil
         }
         
-        func removeAllConnections() {
+        func removeAllConnections() async {
             self.connections.removeAll(keepingCapacity: true)
         }
     }

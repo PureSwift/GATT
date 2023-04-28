@@ -102,9 +102,9 @@ final class GATTTests: XCTestCase {
                 XCTAssertEqual(services.count, 0)
                 let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
                 XCTAssertEqual(clientMTU, finalMTU)
-                let maximumUpdateValueLength = await central.storage.connections.values.first?.maximumUpdateValueLength
+                let maximumUpdateValueLength = await central.storage.connections.first?.value.connection.maximumUpdateValueLength
                 XCTAssertEqual(maximumUpdateValueLength, Int(finalMTU.rawValue) - 3)
-                let clientCache = await (central.storage.connections.values.first?.client.connection.socket as? TestL2CAPSocket)?.cache
+                let clientCache = await (central.storage.connections.values.first?.connection.client.connection.socket as? TestL2CAPSocket)?.cache
                 XCTAssertEqual(clientCache?.prefix(1), mockData.client.prefix(1)) // not same because extra service discovery request
             }
         )
@@ -213,7 +213,7 @@ final class GATTTests: XCTestCase {
                     else { XCTFail(); return }
                 XCTAssertEqual(foundService.uuid, .batteryService)
                 XCTAssertEqual(foundService.isPrimary, true)
-                let clientCache = await (central.storage.connections.values.first?.client.connection.socket as? TestL2CAPSocket)?.cache
+                let clientCache = await (central.storage.connections.values.first?.connection.client.connection.socket as? TestL2CAPSocket)?.cache
                 XCTAssertEqual(clientCache, mockData.client)
             }
         )

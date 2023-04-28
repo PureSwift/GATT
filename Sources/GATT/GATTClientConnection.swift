@@ -17,12 +17,10 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     let peripheral: Peripheral
     
-    private weak var delegate: GATTClientConnectionDelegate?
-    
     let client: GATTClient
         
     private let cache = Cache()
-    
+        
     var maximumUpdateValueLength: Int {
         get async {
             // ATT_MTU-3
@@ -36,17 +34,13 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         peripheral: Peripheral,
         socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
-        delegate: GATTClientConnectionDelegate
+        log: ((String) -> ())? = nil
     ) async {
         self.peripheral = peripheral
         self.client = await GATTClient(
             socket: socket,
             maximumTransmissionUnit: maximumTransmissionUnit,
-            log: { [weak delegate] message in
-                delegate?.connection(peripheral, log: message)
-            }, didDisconnect: { [weak delegate] error in
-                await delegate?.connection(peripheral, didDisconnect: error)
-            }
+            log: log
         )
     }
     
@@ -221,20 +215,9 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
             descriptors: descriptors
         )
     }
-    
-    private func log(_ message: String) {
-        delegate?.connection(peripheral, log: message)
-    }
 }
 
 // MARK: - Supporting Types
-
-internal protocol GATTClientConnectionDelegate: AnyObject {
-    
-    func connection(_ peripheral: Peripheral, log: String)
-    
-    func connection(_ peripheral: Peripheral, didDisconnect error: Swift.Error?) async
-}
 
 internal extension GATTClientConnection {
     
