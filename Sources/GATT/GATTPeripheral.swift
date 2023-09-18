@@ -109,7 +109,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         // create server socket
         let socket = try await Socket.lowEnergyServer(
             address: address,
-            isRandom: options.randomAddress == nil,
+            isRandom: options.randomAddress != nil,
             backlog: self.options.socketBacklog
         )
         
