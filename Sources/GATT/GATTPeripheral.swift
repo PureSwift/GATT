@@ -118,29 +118,34 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             self?.log?("Started GATT Server")
             do {
                 while let socket = await self?.storage.socket, let self = self {
-                    try Task.checkCancellation()
-                    let newSocket = try await socket.accept()
-                    self.log?("[\(newSocket.address)]: New connection")
-                    let central = Central(id: socket.address)
-                    Task.detached { [weak self] in
-                        for await event in newSocket.event {
-                            switch event {
-                            case let .error(error):
-                                self?.log(central, error.localizedDescription)
-                            case .close:
-                                break
-                            default:
-                                break
+                    do {
+                        try Task.checkCancellation()
+                        let newSocket = try await socket.accept()
+                        self.log?("[\(newSocket.address)]: New connection")
+                        let central = Central(id: socket.address)
+                        Task.detached { [weak self] in
+                            for await event in newSocket.event {
+                                switch event {
+                                case let .error(error):
+                                    self?.log(central, error.localizedDescription)
+                                case .close:
+                                    break
+                                default:
+                                    break
+                                }
                             }
+                            await self?.didDisconnect(central)
                         }
-                        await self?.didDisconnect(central)
+                        await self.storage.newConnection(newSocket, options: self.options, delegate: self)
                     }
-                    await self.storage.newConnection(newSocket, options: self.options, delegate: self)
+                    catch _ as CancellationError {
+                        return
+                    }
+                    catch {
+                        self.log?("Error waiting for new connection: \(error)")
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                    }
                 }
-            }
-            catch _ as CancellationError { }
-            catch {
-                self?.log?("Error waiting for new connection: \(error)")
             }
         })
         await self.storage.start(socket, task)
