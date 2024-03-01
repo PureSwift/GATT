@@ -439,6 +439,7 @@ internal extension DarwinPeripheral {
                 log("Did start advertising")
                 self.peripheral.continuation.startAdvertising?.resume()
             }
+            self.peripheral.continuation.startAdvertising = nil
         }
         
         @objc(peripheralManager:didAddService:error:)
@@ -450,6 +451,7 @@ internal extension DarwinPeripheral {
                 log("Added service \(service.uuid)")
                 self.peripheral.continuation.addService?.resume()
             }
+            self.peripheral.continuation.addService = nil
         }
         
         @objc(peripheralManager:didReceiveReadRequest:)
@@ -560,6 +562,7 @@ internal extension DarwinPeripheral {
         public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
             log("Ready to send notifications")
             self.peripheral.continuation.canNotify?.resume()
+            self.peripheral.continuation.canNotify = nil
         }
     }
 }
