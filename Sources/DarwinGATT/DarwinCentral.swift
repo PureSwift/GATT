@@ -438,7 +438,7 @@ public final class DarwinCentral: CentralManager, ObservableObject {
         }
         // get MTU
         let rawValue = peripheralObject.maximumWriteValueLength(for: .withoutResponse) + 3
-        assert(peripheralObject.mtuLength.intValue == rawValue)
+        assert(peripheralObject.mtuLength.intValue >= rawValue)
         guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(rawValue)) else {
             assertionFailure("Invalid MTU \(rawValue)")
             return .default
@@ -1309,7 +1309,6 @@ internal extension DarwinCentral {
             
             let peripheral = Peripheral(corePeripheral)
             guard let context = self.central.continuation.peripherals[peripheral] else {
-                assertionFailure("Missing context")
                 return
             }
             // user requested disconnection
