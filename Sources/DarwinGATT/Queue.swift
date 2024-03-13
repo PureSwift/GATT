@@ -57,7 +57,6 @@ internal struct Queue<Operation> {
             executeCurrent()
             return
         }
-        assertionFailure()
     }
     
     private mutating func executeCurrent() {
