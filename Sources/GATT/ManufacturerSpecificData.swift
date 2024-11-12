@@ -5,14 +5,13 @@
 //  Created by Alsey Coleman Miller on 10/23/20.
 //
 
-import Foundation
 @_exported import Bluetooth
 #if canImport(BluetoothGAP)
 @_exported import BluetoothGAP
 public typealias ManufacturerSpecificData = GAPManufacturerSpecificData
 #else
 /// GATT Manufacturer Specific Data
-public struct ManufacturerSpecificData: Equatable, Hashable {
+public struct ManufacturerSpecificData<Data: DataConvertible>: Equatable, Hashable, Sendable {
     
     internal let data: Data // Optimize for CoreBluetooth / iOS
     
