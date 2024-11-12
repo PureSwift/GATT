@@ -5,7 +5,6 @@
 //  Created by Alsey Coleman Miller on 1/11/21.
 //
 
-import Foundation
 import Bluetooth
 
 /// GATT Central Attribute protocol
@@ -25,7 +24,7 @@ public protocol GATTCentralAttribute: Identifiable {
     var peripheral: Peripheral { get }
 }
 
-public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
+public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable, Sendable where ID: Sendable {
     
     public let id: ID
     
@@ -48,9 +47,9 @@ public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, H
     }
 }
 
-public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable {
+public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable, Sendable where ID: Sendable {
     
-    public typealias Property = CharacteristicProperty
+    public typealias Properties = CharacteristicProperties
     
     public let id: ID
     
@@ -58,13 +57,14 @@ public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttri
     
     public let peripheral: Peripheral
     
-    public let properties: BitMaskOptionSet<Property>
+    public let properties: Properties
     
-    public init(id: ID,
-                uuid: BluetoothUUID,
-                peripheral: Peripheral,
-                properties: BitMaskOptionSet<Property>) {
-        
+    public init(
+        id: ID,
+        uuid: BluetoothUUID,
+        peripheral: Peripheral,
+        properties: Properties
+    ) {
         self.id = id
         self.uuid = uuid
         self.peripheral = peripheral
@@ -72,7 +72,7 @@ public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttri
     }
 }
 
-public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute, Hashable {
+public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute, Hashable, Sendable where ID: Sendable {
     
     public let id: ID
     
@@ -89,4 +89,3 @@ public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute,
         self.peripheral = peripheral
     }
 }
-
