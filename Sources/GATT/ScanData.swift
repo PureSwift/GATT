@@ -6,17 +6,25 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(Foundation)
 import Foundation
+#endif
 import Bluetooth
 
 /// The data for a scan result.
-public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equatable, Hashable {
+public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equatable, Hashable, Sendable {
+    
+    #if hasFeature(Embedded)
+    public typealias Timestamp = UInt64
+    #else
+    public typealias Timestamp = Foundation.Date
+    #endif
     
     /// The discovered peripheral.
     public let peripheral: Peripheral
     
     /// Timestamp for when device was scanned.
-    public let date: Date
+    public let date: Timestamp
     
     /// The current received signal strength indicator (RSSI) of the peripheral, in decibels.
     public let rssi: Double
@@ -43,9 +51,11 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equ
 
 // MARK: - Codable
 
+#if !hasFeature(Embedded)
 extension ScanData: Encodable where Peripheral: Encodable, Advertisement: Encodable { }
 
 extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decodable { }
+#endif
 
 // MARK: - Identifiable
 
