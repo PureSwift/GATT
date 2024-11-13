@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import Foundation
+#if !hasFeature(Embedded)
 import Bluetooth
 
 /// GATT Central Manager
@@ -23,6 +23,8 @@ public protocol CentralManager: AnyObject {
     
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
+    
+    associatedtype Data: DataContainer
     
     /// Logging
     var log: ((String) -> ())? { get set }
@@ -96,3 +98,5 @@ public protocol CentralManager: AnyObject {
     // Read RSSI
     func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
+
+#endif
