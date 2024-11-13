@@ -6,31 +6,40 @@
 //
 
 #if !hasFeature(Embedded)
+import Foundation
 import Bluetooth
-import AsyncAlgorithms
 
 public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
 
     public typealias Element = ScanData<Central.Peripheral, Central.Advertisement>
     
-    public typealias Channel = AsyncThrowingChannel<Element, Swift.Error>
+    let stream: AsyncIndefiniteStream<Element>
     
-    let channel: Channel
-    
-    public init() {
-        self.channel = .init()
+    public init(
+        bufferSize: Int = 100,
+        _ build: @escaping @Sendable ((Element) -> ()) async throws -> ()
+    ) {
+        self.stream = .init(bufferSize: bufferSize, build)
     }
     
-    public func append(_ element: Element) async {
-        await channel.send(element)
+    public init(
+        bufferSize: Int = 100,
+        onTermination: @escaping () -> (),
+        _ build: (AsyncIndefiniteStream<Element>.Continuation) -> ()
+    ) {
+        self.stream = .init(bufferSize: bufferSize, onTermination: onTermination, build)
     }
     
-    public func makeAsyncIterator() -> Channel.AsyncIterator {
-        channel.makeAsyncIterator()
+    public func makeAsyncIterator() -> AsyncIndefiniteStream<Element>.AsyncIterator {
+        stream.makeAsyncIterator()
     }
     
     public func stop() {
-        channel.finish()
+        stream.stop()
+    }
+    
+    public var isScanning: Bool {
+        return stream.isExecuting
     }
 }
 
@@ -47,27 +56,35 @@ public extension AsyncCentralScan {
 
 public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
 
-    public typealias Element = Central.Data
+    public typealias Element = Data
     
-    public typealias Channel = AsyncThrowingChannel<Element, Swift.Error>
+    let stream: AsyncIndefiniteStream<Element>
     
-    let channel: Channel
-    
-    public init() {
-        self.channel = .init()
+    public init(
+        bufferSize: Int = 100,
+        _ build: @escaping @Sendable ((Element) -> ()) async throws -> ()
+    ) {
+        self.stream = .init(bufferSize: bufferSize, build)
     }
     
-    public func append(_ element: Element) async {
-        await channel.send(element)
+    public init(
+        bufferSize: Int = 100,
+        onTermination: @escaping () -> (),
+        _ build: (AsyncIndefiniteStream<Element>.Continuation) -> ()
+    ) {
+        self.stream = .init(bufferSize: bufferSize, onTermination: onTermination, build)
     }
     
-    public func makeAsyncIterator() -> Channel.AsyncIterator {
-        channel.makeAsyncIterator()
+    public func makeAsyncIterator() -> AsyncIndefiniteStream<Element>.AsyncIterator {
+        stream.makeAsyncIterator()
     }
     
     public func stop() {
-        channel.finish()
+        stream.stop()
+    }
+    
+    public var isNotifying: Bool {
+        return stream.isExecuting
     }
 }
-
 #endif
