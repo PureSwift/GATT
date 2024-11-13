@@ -5,14 +5,13 @@
 //  Created by Alsey Coleman Miller on 10/23/20.
 //
 
-import Foundation
 @_exported import Bluetooth
 #if canImport(BluetoothGATT)
 @_exported import BluetoothGATT
 public typealias MaximumTransmissionUnit = ATTMaximumTransmissionUnit
 #else
 /// GATT Maximum Transmission Unit
-public struct MaximumTransmissionUnit: RawRepresentable, Equatable, Hashable {
+public struct MaximumTransmissionUnit: RawRepresentable, Equatable, Hashable, Sendable {
     
     public let rawValue: UInt16
     
