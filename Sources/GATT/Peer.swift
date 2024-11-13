@@ -6,8 +6,10 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+import Bluetooth
+
 /// Bluetooth LE Peer (Central, Peripheral)
-public protocol Peer: Hashable, CustomStringConvertible {
+public protocol Peer: Hashable, CustomStringConvertible, Sendable {
     
     associatedtype ID: Hashable, CustomStringConvertible
     
