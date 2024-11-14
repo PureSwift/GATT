@@ -43,10 +43,10 @@ public protocol PeripheralManager: AnyObject {
     func removeAllServices() async
     
     /// Callback to handle GATT read requests.
-    var willRead: ((GATTReadRequest<Central, Data>) async -> ATTError?)? { get set }
+    var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)? { get set }
     
     /// Callback to handle GATT write requests.
-    var willWrite: ((GATTWriteRequest<Central, Data>) async -> ATTError?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)? { get set }
     
     /// Callback to handle post-write actions for GATT write requests.
     var didWrite: ((GATTWriteConfirmation<Central, Data>) async -> ())? { get set }

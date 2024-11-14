@@ -6,12 +6,13 @@
 //
 
 #if canImport(BluetoothGATT) && canImport(BluetoothHCI)
+import Foundation
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
 /// GATT Peripheral Manager
-public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPServer>: PeripheralManager where Socket: Sendable, HostController: Sendable {
+public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPServer>: PeripheralManager, @unchecked Sendable where Socket: Sendable, HostController: Sendable {
     
     /// Central Peer
     public typealias Central = GATT.Central
@@ -33,9 +34,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     public let options: Options
     
-    public var willRead: ((GATTReadRequest<Central, Data>) async -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central, Data>) async -> ATTError?)?
+    public var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central, Data>) async -> ())?
     
@@ -52,6 +53,10 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
         
     private let storage: Storage
+    
+    private var maximumUpdateValueLength = [Central: Int]()
+    
+    private let lock = NSLock()
     
     // MARK: - Initialization
     
@@ -120,10 +125,18 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         )
         
         // start listening for connections
-        await self.storage.start(
-            socket: socket,
-            log: log
-        )
+        let task = Task.detached(priority: .userInitiated) { [weak self] in
+            // wait for property to set
+            while await self?.storage.task == nil {
+                try? await Task.sleep(nanoseconds: 100_000)
+            }
+            self?.log?("Started GATT Server")
+            // listen for
+            while let self = self, await self.storage.isAdvertising, let socket = await self.storage.socket {
+                await self.accept(socket)
+            }
+        }
+        await self.storage.didStart(socket: socket, task: task)
     }
     
     public func stop() async {
@@ -198,11 +211,6 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
             .map { $0.handle }
     }
     
-    // TODO: Get connection handle
-    internal func connectionHandle(for central: Central) async -> UInt16 {
-        fatalError()
-    }
-    
     private func log(_ central: Central, _ message: String) {
         log?("[\(central)]: " + message)
     }
@@ -210,59 +218,112 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
 
 extension GATTPeripheral {
     
-    func connection(_ central: Central, log message: String) {
-        log?("[\(central)]: " + message)
+    func callback(for central: Central) -> GATTServer<Socket.Connection>.Callback {
+        var callback = GATTServer<Socket.Connection>.Callback()
+        callback.willRead = { [weak self] in
+            self?.willRead(central: central, uuid: $0, handle: $1, value: $2, offset: $3)
+        }
+        callback.willWrite = { [weak self] in
+            self?.willWrite(central: central, uuid: $0, handle: $1, value: $2, newValue: $3)
+        }
+        callback.didWrite = { [weak self] (uuid, handle, value) in
+            Task {
+                await self?.didWrite(central: central, uuid: uuid, handle: handle, value: value)
+            }
+        }
+        return callback
     }
     
-    func connection(_ central: Central, willRead request: GATTReadRequest<Central, Data>) async -> ATTError? {
-        return await willRead?(request)
+    func updateMaximumUpdateValueLength(_ newValue: Int, for central: Central) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.maximumUpdateValueLength[central] = newValue
     }
     
-    func connection(_ central: Central, willWrite request: GATTWriteRequest<Central, Data>) async -> ATTError? {
-        return await willWrite?(request)
+    func maximumUpdateValueLength(for central: Central) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let maximumUpdateValueLength = self.maximumUpdateValueLength[central] else {
+            assertionFailure()
+            return Int(ATTMaximumTransmissionUnit.min.rawValue - 3)
+        }
+        return maximumUpdateValueLength
     }
     
-    func connection(_ central: Central, didWrite confirmation: GATTWriteConfirmation<Central, Data>) async {
+    func willRead(central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data, offset: Int) -> ATTError? {
+        let maximumUpdateValueLength = maximumUpdateValueLength(for: central)
+        let request = GATTReadRequest(
+            central: central,
+            maximumUpdateValueLength: maximumUpdateValueLength,
+            uuid: uuid,
+            handle: handle,
+            value: value,
+            offset: offset
+        )
+        return willRead?(request)
+    }
+    
+    func willWrite(central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) -> ATTError? {
+        let maximumUpdateValueLength = maximumUpdateValueLength(for: central)
+        let request = GATTWriteRequest(
+            central: central,
+            maximumUpdateValueLength: maximumUpdateValueLength,
+            uuid: uuid,
+            handle: handle,
+            value: value,
+            newValue: newValue
+        )
+        return willWrite?(request)
+    }
+    
+    func didWrite(central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data) async {
+        let maximumUpdateValueLength = maximumUpdateValueLength(for: central)
+        let confirmation = GATTWriteConfirmation(
+            central: central,
+            maximumUpdateValueLength: maximumUpdateValueLength,
+            uuid: uuid,
+            handle: handle,
+            value: value
+        )
         // update DB and inform other connections
         await write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
         // notify delegate
         await didWrite?(confirmation)
     }
-}
-
-internal extension GATTPeripheral.Storage {
     
-    private func run(
-        socket: Socket,
-        log: (@Sendable (String) -> ())?
+    func accept(
+        _ socket: Socket
     ) async {
+        let log = self.log
         do {
             try Task.checkCancellation()
             // wait for pending socket
-            while socket.status.accept == false {
-                try await Task.sleep(nanoseconds: 10_000_000)
+            while socket.status.accept == false, socket.status.error == nil {
+                try await Task.sleep(nanoseconds: 1_000_000)
             }
             let newSocket = try socket.accept()
             log?("[\(newSocket.address)]: New connection")
             let central = Central(id: socket.address)
-            var delegate = GATTServer<Socket.Connection>.Callback()
-            
             let connection = GATTServerConnection(
                 central: central,
                 socket: newSocket,
                 maximumTransmissionUnit: options.maximumTransmissionUnit,
                 maximumPreparedWrites: options.maximumPreparedWrites,
-                database: database,
-                delegate: delegate,
+                database: await storage.database,
+                delegate: callback(for: central),
                 log: {
                     log?("[\(central)]: " + $0)
                 }
             )
-            self.newConnection(connection)
+            await storage.newConnection(connection)
             Task.detached { [weak connection, weak self] in
                 do {
-                    while let connection {
+                    while let connection, let self {
                         try await Task.sleep(nanoseconds: 10_000)
+                        // update cached MTU
+                        let maximumUpdateValueLength = await connection.maximumUpdateValueLength
+                        self.updateMaximumUpdateValueLength(maximumUpdateValueLength, for: central)
+                        // read and write
                         try await connection.run()
                     }
                 }
@@ -291,7 +352,7 @@ internal extension GATTPeripheral.Storage {
         catch HCIError.commandDisallowed { /* ignore */ }
         catch { log?("Could not enable advertising. \(error)") }
         // remove connection cache
-        await removeConnection(central)
+        await storage.removeConnection(central)
         // log
         log?("[\(central)]: " + "Did disconnect.")
     }
@@ -374,17 +435,12 @@ internal extension GATTPeripheral {
             task = nil
         }
         
-        func start(
+        func didStart(
             socket: Socket,
-            log: (@Sendable (String) -> ())?
+            task: Task<(), Never>?
         ) {
             self.socket = socket
-            self.task = Task.detached(priority: .userInitiated) { [weak self] in
-                log?("Started GATT Server")
-                while let self = self, await self.isAdvertising, let socket = await self.socket {
-                    await self.run(socket: socket, log: log)
-                }
-            }
+            self.task = task
         }
         
         func add(service: GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {
@@ -422,6 +478,10 @@ internal extension GATTPeripheral {
         
         func removeConnection(_ central: Central) {
             self.connections[central] = nil
+        }
+        
+        func maximumUpdateValueLength(for central: Central) async -> Int? {
+            await connections[central]?.maximumUpdateValueLength
         }
     }
 }
