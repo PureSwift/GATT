@@ -13,7 +13,7 @@ import CoreBluetooth
 /// Darwin Bluetooth State
 ///
 /// - SeeAlso: [CBManagerState](https://developer.apple.com/documentation/corebluetooth/cbmanagerstate).
-@objc public enum DarwinBluetoothState: Int {
+@objc public enum DarwinBluetoothState: Int, Sendable, CaseIterable {
     
     case unknown
     case resetting

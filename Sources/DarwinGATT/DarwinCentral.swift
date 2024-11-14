@@ -13,7 +13,7 @@ import Bluetooth
 import GATT
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public final class DarwinCentral: CentralManager, ObservableObject {
+public final class DarwinCentral: CentralManager, ObservableObject, @unchecked Sendable {
     
     // MARK: - Properties
     
@@ -340,7 +340,7 @@ public final class DarwinCentral: CentralManager, ObservableObject {
     // MARK - Private Methods
     
     @inline(__always)
-    private func async(_ body: @escaping () -> ()) {
+    private func async(_ body: @escaping @Sendable () -> ()) {
         queue.async(execute: body)
     }
     
@@ -574,7 +574,7 @@ fileprivate extension DarwinCentral.PeripheralContinuationContext {
 
 internal extension DarwinCentral {
     
-    final class QueuedOperation {
+    final class QueuedOperation: @unchecked Sendable {
         
         let operation: DarwinCentral.Operation
         
@@ -654,7 +654,7 @@ internal extension DarwinCentral.Operation {
 
 internal protocol DarwinCentralOperation {
     
-    associatedtype Success
+    associatedtype Success: Sendable
         
     var continuation: PeripheralContinuation<Success, Error> { get }
     

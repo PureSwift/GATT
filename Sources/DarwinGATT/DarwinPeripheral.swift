@@ -12,10 +12,10 @@ import Dispatch
 import Bluetooth
 import BluetoothGATT
 import GATT
-import CoreBluetooth
+@preconcurrency import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral: PeripheralManager {
+public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
         
     // MARK: - Properties
     
@@ -46,11 +46,11 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public var willRead: ((GATTReadRequest<Central>) async -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central, Data>) async -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)?
+    public var willWrite: ((GATTWriteRequest<Central, Data>) async -> ATTError?)?
     
-    public var didWrite: ((GATTWriteConfirmation<Central>) async -> ())?
+    public var didWrite: ((GATTWriteConfirmation<Central, Data>) async -> ())?
     
     public var stateChanged: ((DarwinBluetoothState) -> ())?
     
@@ -105,7 +105,7 @@ public final class DarwinPeripheral: PeripheralManager {
         }
     }
     
-    public func add(service: GATTAttribute.Service) async throws -> (UInt16, [UInt16]) {
+    public func add(service: GATTAttribute<Data>.Service) async throws -> (UInt16, [UInt16]) {
         let serviceObject = service.toCoreBluetooth()
         // add service
         try await withCheckedThrowingContinuation { [unowned self] (continuation: CheckedContinuation<(), Error>) in
@@ -321,7 +321,7 @@ extension DarwinPeripheral.Options: CustomStringConvertible {
 
 public extension DarwinPeripheral {
     
-    struct AdvertisingOptions: Equatable, Hashable {
+    struct AdvertisingOptions: Equatable, Hashable, @unchecked Sendable {
         
         internal let options: [String: NSObject]
         
@@ -403,8 +403,9 @@ internal extension DarwinPeripheral {
 
 internal extension DarwinPeripheral {
     
+    @preconcurrency
     @objc(DarwinPeripheralDelegate)
-    final class Delegate: NSObject, CBPeripheralManagerDelegate {
+    final class Delegate: NSObject, CBPeripheralManagerDelegate, @unchecked Sendable {
         
         unowned let peripheral: DarwinPeripheral
         
@@ -498,33 +499,40 @@ internal extension DarwinPeripheral {
             log("Did receive write requests for \(requests.map { $0.characteristic.uuid })")
             assert(requests.isEmpty == false)
             
-            Task {
-                var writeRequests = [GATTWriteRequest<Central>]()
-                writeRequests.reserveCapacity(requests.count)
+            guard let firstRequest = requests.first else {
+                assertionFailure()
+                return
+            }
+            
+            let writeRequests: [GATTWriteRequest<Central, Data>] = requests.map { request in
+                let peer = Central(request.central)
+                let characteristic = self.peripheral.database[characteristic: request.characteristic]
+                let value = characteristic.value
+                let uuid = BluetoothUUID(request.characteristic.uuid)
+                let newValue = request.value ?? Data()
+                return GATTWriteRequest(
+                    central: peer,
+                    maximumUpdateValueLength: request.central.maximumUpdateValueLength,
+                    uuid: uuid,
+                    handle: characteristic.handle,
+                    value: value,
+                    newValue: newValue
+                )
+            }
+            
+            let task = Task {
+                
                 // validate write requests
-                for request in requests {
-                    let peer = Central(request.central)
-                    let characteristic = self.peripheral.database[characteristic: request.characteristic]
-                    let value = characteristic.value
-                    let uuid = BluetoothUUID(request.characteristic.uuid)
-                    let newValue = request.value ?? Data()
-                    let writeRequest = GATTWriteRequest(
-                        central: peer,
-                        maximumUpdateValueLength: request.central.maximumUpdateValueLength,
-                        uuid: uuid,
-                        handle: characteristic.handle,
-                        value: value,
-                        newValue: newValue
-                    )
+                for writeRequest in writeRequests {
+                    
                     // check if write is possible
                     if let error = await self.peripheral.willWrite?(writeRequest) {
-                        peripheral.queue.async {
-                            peripheralManager.respond(to: requests[0], withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                        guard let code = CBATTError.Code(rawValue: Int(error.rawValue)) else {
+                            assertionFailure("Invalid CBATTError: \(error.rawValue)")
+                            return CBATTError.Code.unlikelyError
                         }
-                        return
+                        return code
                     }
-                    // compute new data
-                    writeRequests.append(writeRequest)
                 }
                 
                 // write new values
@@ -542,8 +550,14 @@ internal extension DarwinPeripheral {
                     await self.peripheral.didWrite?(confirmation)
                 }
                 
-                peripheral.queue.async {
-                    peripheralManager.respond(to: requests[0], withResult: .success)
+                return CBATTError.Code.success
+            }
+            
+            let queue = self.peripheral.queue
+            Task {
+                let result = await task.value
+                queue.async {
+                    peripheralManager.respond(to: firstRequest, withResult: result)
                 }
             }
         }
@@ -569,14 +583,14 @@ internal extension DarwinPeripheral {
 
 private extension DarwinPeripheral {
     
-    struct Database {
+    struct Database: Sendable {
         
-        struct Service {
+        struct Service: Sendable {
             
             let handle: UInt16
         }
         
-        struct Characteristic {
+        struct Characteristic: Sendable {
             
             let handle: UInt16
             
@@ -603,7 +617,7 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        mutating func add(service: GATTAttribute.Service, _ coreService: CBMutableService) -> (UInt16, [UInt16]) {
+        mutating func add(service: GATTAttribute<Data>.Service, _ coreService: CBMutableService) -> (UInt16, [UInt16]) {
             
             let serviceHandle = newHandle()
             var characteristicHandles = [UInt16]()

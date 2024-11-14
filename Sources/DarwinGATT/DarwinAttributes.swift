@@ -20,17 +20,17 @@ internal protocol CoreBluetoothAttributeConvertible {
     func toCoreBluetooth() -> CoreBluetoothPeripheralType
 }
 
-extension GATTAttribute.Service: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Service: CoreBluetoothAttributeConvertible where Data == Foundation.Data {
     
     func toCoreBluetooth() -> CBMutableService {
         
-        let service = CBMutableService(type: CBUUID(uuid), primary: primary)
+        let service = CBMutableService(type: CBUUID(uuid), primary: isPrimary)
         service.characteristics = characteristics.map { $0.toCoreBluetooth() }
         return service
     }
 }
 
-extension GATTAttribute.Characteristic: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Characteristic: CoreBluetoothAttributeConvertible where Data == Foundation.Data {
     
     func toCoreBluetooth() -> CBMutableCharacteristic {
         
@@ -53,7 +53,7 @@ extension GATTAttribute.Characteristic: CoreBluetoothAttributeConvertible {
     }
 }
 
-extension GATTAttribute.Descriptor: CoreBluetoothAttributeConvertible {
+extension GATTAttribute.Descriptor: CoreBluetoothAttributeConvertible where Data == Foundation.Data {
     
     func toCoreBluetooth() -> CBMutableDescriptor {
         

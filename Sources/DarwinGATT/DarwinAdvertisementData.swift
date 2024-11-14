@@ -5,16 +5,17 @@
 //  Created by Alsey Coleman Miller on 7/15/18.
 //
 
-import Foundation
+@preconcurrency import Foundation
 import Bluetooth
 import GATT
 
 #if canImport(CoreBluetooth)
-
 import CoreBluetooth
 
 /// CoreBluetooth Adverisement Data
 public struct DarwinAdvertisementData: AdvertisementData {
+    
+    public typealias Data = Foundation.Data
     
     // MARK: - Properties
     
@@ -69,10 +70,10 @@ public extension DarwinAdvertisementData {
     }
     
     /// The Manufacturer data of a peripheral.
-    var manufacturerData: ManufacturerSpecificData? {
+    var manufacturerData: ManufacturerSpecificData<Foundation.Data>? {
         
         guard let manufacturerDataBytes = data[CBAdvertisementDataManufacturerDataKey] as? Data,
-            let manufacturerData = ManufacturerSpecificData(data: manufacturerDataBytes)
+            let manufacturerData = ManufacturerSpecificData<Data>(data: manufacturerDataBytes)
             else { return nil }
         
         return manufacturerData

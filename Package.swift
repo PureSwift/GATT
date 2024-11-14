@@ -73,7 +73,8 @@ var package = Package(
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS])
                 )
-            ]
+            ],
+            swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(
             name: "GATTTests",

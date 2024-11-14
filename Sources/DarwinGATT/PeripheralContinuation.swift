@@ -11,7 +11,7 @@ import Bluetooth
 import GATT
 
 #if DEBUG
-internal struct PeripheralContinuation<T, E> where E: Error {
+internal struct PeripheralContinuation<T, E> where T: Sendable, E: Error {
     
     private let function: String
     
