@@ -6,20 +6,21 @@
 //
 
 #if canImport(BluetoothGATT)
-import Foundation
 import Bluetooth
 import BluetoothGATT
 
 @available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-internal final class GATTClientConnection <Socket: L2CAPSocket> {
+internal actor GATTClientConnection <Socket: L2CAPConnection> where Socket: Sendable {
+    
+    typealias Data = Socket.Data
     
     // MARK: - Properties
     
     let peripheral: Peripheral
     
-    let client: GATTClient
-        
-    private let cache = Cache()
+    let client: GATTClient<Socket>
+    
+    private var cache = Cache()
         
     var maximumUpdateValueLength: Int {
         get async {
@@ -34,7 +35,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         peripheral: Peripheral,
         socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
-        log: ((String) -> ())? = nil
+        log: (@Sendable (String) -> ())? = nil
     ) async {
         self.peripheral = peripheral
         self.client = await GATTClient(
@@ -46,12 +47,16 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     // MARK: - Methods
     
+    public func run() async throws {
+        try await client.run()
+    }
+    
     public func discoverServices(
         _ services: Set<BluetoothUUID>
     ) async throws -> [Service<Peripheral, UInt16>] {
         let foundServices = try await client.discoverAllPrimaryServices()
-        await cache.insert(foundServices)
-        return await cache.services.map {
+        cache.insert(foundServices)
+        return cache.services.map {
             Service(
                 id: $0.key,
                 uuid: $0.value.attribute.uuid,
@@ -69,15 +74,15 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         assert(service.peripheral == peripheral)
         
         // get service
-        guard let gattService = await cache.service(for: service.id)?.attribute
+        guard let gattService = cache.service(for: service.id)?.attribute
             else { throw CentralError.invalidAttribute(service.uuid) }
         
         // GATT request
         let foundCharacteristics = try await self.client.discoverAllCharacteristics(of: gattService)
         
         // store in cache
-        await cache.insert(foundCharacteristics, for: service.id)
-        return await cache.service(for: service.id)?.characteristics.map {
+        cache.insert(foundCharacteristics, for: service.id)
+        return cache.service(for: service.id)?.characteristics.map {
             Characteristic(id: $0.key,
                            uuid: $0.value.attribute.uuid,
                            peripheral: peripheral,
@@ -90,7 +95,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
@@ -106,7 +111,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // GATT request
@@ -120,7 +125,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (gattService, gattCharacteristic) = await cache.characteristic(for: characteristic.id)
+        guard let (gattService, gattCharacteristic) = cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         let service = (
@@ -136,7 +141,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
         let foundDescriptors = try await client.discoverDescriptors(of: gattCharacteristic.attribute, service: service)
         
         // update cache
-        await cache.insert(foundDescriptors, for: characteristic.id)
+        cache.insert(foundDescriptors, for: characteristic.id)
         return foundDescriptors.map {
             Descriptor(
                 id: $0.handle,
@@ -148,7 +153,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     public func readValue(for descriptor: Descriptor<Peripheral, UInt16>) async throws -> Data {
         assert(descriptor.peripheral == peripheral)
-        guard let (_, _, gattDescriptor) = await cache.descriptor(for: descriptor.id) else {
+        guard let (_, _, gattDescriptor) = cache.descriptor(for: descriptor.id) else {
             throw CentralError.invalidAttribute(descriptor.uuid)
         }
         return try await client.readDescriptor(gattDescriptor.attribute)
@@ -156,7 +161,7 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     public func writeValue(_ data: Data, for descriptor: Descriptor<Peripheral, UInt16>) async throws {
         assert(descriptor.peripheral == peripheral)
-        guard let (_, _, gattDescriptor) = await cache.descriptor(for: descriptor.id) else {
+        guard let (_, _, gattDescriptor) = cache.descriptor(for: descriptor.id) else {
             throw CentralError.invalidAttribute(descriptor.uuid)
         }
         try await client.writeDescriptor(gattDescriptor.attribute, data: data)
@@ -164,32 +169,32 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
     
     public func notify(
         _ characteristic: Characteristic<Peripheral, UInt16>,
-        notification: (GATTClient.Notification)?
+        notification: (GATTClient<Socket>.Notification)?
     ) async throws {
         
         assert(characteristic.peripheral == peripheral)
         
         // GATT characteristic
-        guard let (_ , gattCharacteristic) = await cache.characteristic(for: characteristic.id)
+        guard let (_ , gattCharacteristic) = cache.characteristic(for: characteristic.id)
             else { throw CentralError.invalidAttribute(characteristic.uuid) }
         
         // Gatt Descriptors
-        let descriptors: [GATTClient.Descriptor]
+        let descriptors: [GATTClient<Socket>.Descriptor]
         if gattCharacteristic.descriptors.values.contains(where: { $0.attribute.uuid == .clientCharacteristicConfiguration }) {
             descriptors = Array(gattCharacteristic.descriptors.values.map { $0.attribute })
         } else {
             // fetch descriptors
             let _ = try await self.discoverDescriptors(for: characteristic)
             // get updated cache
-            if let cache = await cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
+            if let cache = cache.characteristic(for: characteristic.id)?.1.descriptors.values.map({ $0.attribute }) {
                 descriptors = Array(cache)
             } else {
                 descriptors = []
             }
         }
         
-        let notify: GATTClient.Notification?
-        let indicate: GATTClient.Notification?
+        let notify: GATTClient<Socket>.Notification?
+        let indicate: GATTClient<Socket>.Notification?
         
         /**
          If the specified characteristic is configured to allow both notifications and indications, calling this method enables notifications only. You can disable notifications and indications for a characteristic’s value by calling this method with the enabled parameter set to false.
@@ -221,20 +226,21 @@ internal final class GATTClientConnection <Socket: L2CAPSocket> {
 
 internal extension GATTClientConnection {
     
-    typealias Cache = GATTClientConnectionCache
+    struct Cache {
+        
+        fileprivate init() { }
+        
+        private(set) var services = [UInt16: Cache.Service](minimumCapacity: 1)
+    }
 }
 
-internal actor GATTClientConnectionCache {
+internal extension GATTClientConnection.Cache {
     
-    fileprivate init() { }
-    
-    private(set) var services = [UInt16: GATTClientConnectionServiceCache](minimumCapacity: 1)
-    
-    func service(for identifier: UInt16) -> GATTClientConnectionServiceCache? {
+    func service(for identifier: UInt16) -> Service? {
         return services[identifier]
     }
     
-    func characteristic(for identifier: UInt16) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache)? {
+    func characteristic(for identifier: UInt16) -> (Service, Characteristic)? {
         
         for service in services.values {
             guard let characteristic = service.characteristics[identifier]
@@ -245,7 +251,7 @@ internal actor GATTClientConnectionCache {
         return nil
     }
     
-    func descriptor(for identifier: UInt16) -> (GATTClientConnectionServiceCache, GATTClientConnectionCharacteristicCache, GATTClientConnectionDescriptorCache)? {
+    func descriptor(for identifier: UInt16) -> (Service, Characteristic, Descriptor)? {
         
         for service in services.values {
             for characteristic in service.characteristics.values {
@@ -258,15 +264,15 @@ internal actor GATTClientConnectionCache {
         return nil
     }
     
-    func insert(_ newValues: [GATTClient.Service]) {
+    mutating func insert(_ newValues: [GATTClient<Socket>.Service]) {
         services.removeAll(keepingCapacity: true)
         newValues.forEach {
-            services[$0.handle] = GATTClientConnectionServiceCache(attribute: $0, characteristics: [:])
+            services[$0.handle] = Service(attribute: $0, characteristics: [:])
         }
     }
     
-    func insert(
-        _ newValues: [GATTClient.Characteristic],
+    mutating func insert(
+        _ newValues: [GATTClient<Socket>.Characteristic],
         for service: UInt16
     ) {
         
@@ -274,16 +280,16 @@ internal actor GATTClientConnectionCache {
         services[service]?.characteristics.removeAll(keepingCapacity: true)
         // insert new values
         newValues.forEach {
-            services[service]?.characteristics[$0.handle.declaration] = GATTClientConnectionCharacteristicCache(attribute: $0, notification: nil, descriptors: [:])
+            services[service]?.characteristics[$0.handle.declaration] = Characteristic(attribute: $0, notification: nil, descriptors: [:])
         }
     }
     
-    func insert(_ newValues: [GATTClient.Descriptor],
+    mutating func insert(_ newValues: [GATTClient<Socket>.Descriptor],
                          for characteristic: UInt16) {
         
-        var descriptorsCache = [UInt16: GATTClientConnectionDescriptorCache](minimumCapacity: newValues.count)
+        var descriptorsCache = [UInt16: Descriptor](minimumCapacity: newValues.count)
         newValues.forEach {
-            descriptorsCache[$0.handle] = GATTClientConnectionDescriptorCache(attribute: $0)
+            descriptorsCache[$0.handle] = Descriptor(attribute: $0)
         }
         for (serviceIdentifier, service) in services {
             guard let _ = service.characteristics[characteristic]
@@ -293,58 +299,27 @@ internal actor GATTClientConnectionCache {
     }
 }
 
-internal struct GATTClientConnectionServiceCache {
+internal extension GATTClientConnection.Cache {
     
-    let attribute: GATTClient.Service
-    
-    var characteristics = [UInt16: GATTClientConnectionCharacteristicCache]()
-}
-
-internal struct GATTClientConnectionCharacteristicCache {
-    
-    let attribute: GATTClient.Characteristic
-    
-    var notification: GATTClient.Notification?
-    
-    var descriptors = [UInt16: GATTClientConnectionDescriptorCache]()
-}
-
-internal struct GATTClientConnectionDescriptorCache {
-    
-    let attribute: GATTClient.Descriptor
-}
-
-internal extension CharacteristicProperty {
-    
-    init?(_ property: GATTCharacteristicProperty) {
-        switch property {
-        case .broadcast:
-            self = .broadcast
-        case .read:
-            self = .read
-        case .writeWithoutResponse:
-            self = .writeWithoutResponse
-        case .write:
-            self = .write
-        case .notify:
-            self = .notify
-        case .indicate:
-            self = .indicate
-        default:
-            return nil
-        }
-    }
-    
-    static func from(_ properties: BitMaskOptionSet<GATTCharacteristicProperty>) -> Set<CharacteristicProperty> {
+    struct Service {
         
-        var propertiesSet = Set<CharacteristicProperty>()
-        propertiesSet.reserveCapacity(properties.count)
-        properties
-            .lazy
-            .compactMap { CharacteristicProperty($0) }
-            .forEach { propertiesSet.insert($0) }
-        assert(propertiesSet.count == properties.count)
-        return propertiesSet
+        let attribute: GATTClient<Socket>.Service
+        
+        var characteristics = [UInt16: Characteristic]()
+    }
+
+    struct Characteristic {
+        
+        let attribute: GATTClient<Socket>.Characteristic
+        
+        var notification: GATTClient<Socket>.Notification?
+        
+        var descriptors = [UInt16: Descriptor]()
+    }
+
+    struct Descriptor {
+        
+        let attribute: GATTClient<Socket>.Descriptor
     }
 }
 
