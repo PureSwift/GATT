@@ -35,12 +35,13 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equ
     /// A Boolean value that indicates whether the advertising event type is connectable.
     public let isConnectable: Bool
     
-    public init(peripheral: Peripheral,
-                date: Date = Date(),
-                rssi: Double,
-                advertisementData: Advertisement,
-                isConnectable: Bool) {
-        
+    public init(
+        peripheral: Peripheral,
+        date: Timestamp,
+        rssi: Double,
+        advertisementData: Advertisement,
+        isConnectable: Bool
+    ) {
         self.peripheral = peripheral
         self.date = date
         self.rssi = rssi
