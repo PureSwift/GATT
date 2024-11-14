@@ -12,6 +12,8 @@ import Bluetooth
 import BluetoothHCI
 
 final class TestHostController: BluetoothHostControllerInterface {
+        
+    typealias Data = Foundation.Data
     
     /// All controllers on the host.
     static var controllers: [TestHostController] { return [TestHostController(address: .min)] }
@@ -83,7 +85,7 @@ final class TestHostController: BluetoothHostControllerInterface {
     /// Sends a command to the device and waits for a response with return parameter values.
     func deviceRequest <Return: HCICommandReturnParameter> (_ commandReturnType : Return.Type, timeout: HCICommandTimeout) throws -> Return {
         if commandReturnType == HCIReadDeviceAddress.self {
-            return HCIReadDeviceAddress(data: self.address.littleEndian.data)! as! Return
+            return HCIReadDeviceAddress(data: Data(self.address.littleEndian))! as! Return
         }
         fatalError("\(commandReturnType) not mocked")
     }
@@ -96,10 +98,9 @@ final class TestHostController: BluetoothHostControllerInterface {
     }
     
     /// Polls and waits for events.
-    /// Polls and waits for events.
-    func recieve<Event>(_ eventType: Event.Type) async throws -> Event where Event : HCIEventParameter, Event.HCIEventType == HCIGeneralEvent {
+    func receive<Event>(_ eventType: Event.Type) async throws -> Event where Event : BluetoothHCI.HCIEventParameter, Event.HCIEventType == BluetoothHCI.HCIGeneralEvent {
         
-        guard eventType == HCILowEnergyMetaEvent.self
+        guard eventType == HCILowEnergyMetaEvent<Data>.self
             else { fatalError("Invalid event parameter type") }
         
         while self.advertisingReports.isEmpty {
@@ -120,6 +121,8 @@ final class TestHostController: BluetoothHostControllerInterface {
         assert(eventHeader?.event.rawValue == Event.event.rawValue)
         return eventParameter
     }
+    
+    
 }
 
 internal extension Array {

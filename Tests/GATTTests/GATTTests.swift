@@ -16,7 +16,7 @@ import BluetoothHCI
 
 final class GATTTests: XCTestCase {
     
-    typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPSocket>
+    typealias TestPeripheral = GATTPeripheral<TestHostController, TestL2CAPServer>
     typealias TestCentral = GATTCentral<TestHostController, TestL2CAPSocket>
     
     func testScanData() {
@@ -150,7 +150,7 @@ final class GATTTests: XCTestCase {
             (ATTReadByGroupTypeResponse(attributeData: [
                 ATTReadByGroupTypeResponse.AttributeData(attributeHandle: 0x001,
                                                          endGroupHandle: 0x0004,
-                                                         value: BluetoothUUID.batteryService.littleEndian.data)
+                                                         value: Data(BluetoothUUID.batteryService.littleEndian))
                 ])!,
             [0x11, 0x06, 0x01, 0x00, 0x04, 0x00, 0x0F, 0x18]),
             /**
@@ -181,17 +181,17 @@ final class GATTTests: XCTestCase {
         let batteryLevel = GATTBatteryLevel(level: .min)
         
         let characteristics = [
-            GATTAttribute.Characteristic(
+            GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
                 value: batteryLevel.data,
                 permissions: [.read],
                 properties: [.read, .notify],
-                descriptors: [GATTClientCharacteristicConfiguration().descriptor])
+                descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])])
         ]
         
-        let service = GATTAttribute.Service(
+        let service = GATTAttribute<Data>.Service(
             uuid: .batteryService,
-            primary: true,
+            isPrimary: true,
             characteristics: characteristics
         )
         
@@ -235,7 +235,7 @@ final class GATTTests: XCTestCase {
         let batteryLevel = GATTBatteryLevel(level: .max)
         
         let characteristics = [
-            GATTAttribute.Characteristic(
+            GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
                 value: batteryLevel.data,
                 permissions: [.read, .write],
@@ -244,9 +244,9 @@ final class GATTTests: XCTestCase {
             )
         ]
         
-        let service = GATTAttribute.Service(
+        let service = GATTAttribute<Data>.Service(
             uuid: .batteryService,
-            primary: true,
+            isPrimary: true,
             characteristics: characteristics
         )
 
@@ -313,18 +313,18 @@ final class GATTTests: XCTestCase {
         let batteryLevel = GATTBatteryLevel(level: .max)
         
         let characteristics = [
-            GATTAttribute.Characteristic(
+            GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
                 value: batteryLevel.data,
                 permissions: [.read],
                 properties: [.read, .notify],
-                descriptors: [GATTClientCharacteristicConfiguration().descriptor]
+                descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])]
             )
         ]
         
-        let service = GATTAttribute.Service(
+        let service = GATTAttribute<Data>.Service(
             uuid: .batteryService,
-            primary: true,
+            isPrimary: true,
             characteristics: characteristics
         )
 
@@ -378,18 +378,18 @@ final class GATTTests: XCTestCase {
         let batteryLevel = GATTBatteryLevel(level: .max)
         
         let characteristics = [
-            GATTAttribute.Characteristic(
+            GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
                 value: batteryLevel.data,
                 permissions: [.read],
                 properties: [.read, .indicate],
-                descriptors: [GATTClientCharacteristicConfiguration().descriptor]
+                descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])]
             )
         ]
         
-        let service = GATTAttribute.Service(
+        let service = GATTAttribute<Data>.Service(
             uuid: .batteryService,
-            primary: true,
+            isPrimary: true,
             characteristics: characteristics
         )
 
@@ -440,28 +440,28 @@ final class GATTTests: XCTestCase {
     func testDescriptors() async throws {
         
         let descriptors = [
-            GATTClientCharacteristicConfiguration().descriptor,
+            .init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write]),
             //GATTUserDescription(userDescription: "Characteristic").descriptor,
-            GATTAttribute.Descriptor(uuid: BluetoothUUID(),
+            GATTAttribute<Data>.Descriptor(uuid: BluetoothUUID(),
                                      value: Data("UInt128 Descriptor".utf8),
                                      permissions: [.read, .write]),
-            GATTAttribute.Descriptor(uuid: .savantSystems,
+            GATTAttribute<Data>.Descriptor(uuid: .savantSystems,
                                          value: Data("Savant".utf8),
                                          permissions: [.read]),
-            GATTAttribute.Descriptor(uuid: .savantSystems2,
+            GATTAttribute<Data>.Descriptor(uuid: .savantSystems2,
                                          value: Data("Savant2".utf8),
                                          permissions: [.write])
         ]
         
-        let characteristic = GATTAttribute.Characteristic(uuid: BluetoothUUID(),
+        let characteristic = GATTAttribute<Data>.Characteristic(uuid: BluetoothUUID(),
                                                  value: Data(),
                                                  permissions: [.read],
                                                  properties: [.read],
                                                  descriptors: descriptors)
         
-        let service = GATTAttribute.Service(
+        let service = GATTAttribute<Data>.Service(
             uuid: BluetoothUUID(),
-            primary: true,
+            isPrimary: true,
             characteristics: [characteristic]
         )
         
@@ -540,7 +540,7 @@ extension GATTTests {
         let peripheral = TestPeripheral(
             hostController: serverHostController,
             options: serverOptions,
-            socket: TestL2CAPSocket.self
+            socket: TestL2CAPServer.self
         )
         peripheral.log = { print("Peripheral:", $0) }
         try await server(peripheral)
@@ -578,10 +578,10 @@ extension GATTTests {
         // decode and compare
         for (testPDU, testData) in testPDUs {
             
-            guard let decodedPDU = type(of: testPDU).init(data: Data(testData))
+            guard let decodedPDU = type(of: testPDU).init(data: testData)
                 else { XCTFail("Could not decode \(type(of: testPDU))"); return }
             
-            XCTAssertEqual(decodedPDU.data, Data(testData), file: file, line: line)
+            XCTAssertEqual(Data(decodedPDU), Data(testData), file: file, line: line)
         }
     }
     

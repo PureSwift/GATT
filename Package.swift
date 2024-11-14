@@ -91,7 +91,8 @@ var package = Package(
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS, .linux])
                 )
-            ]
+            ],
+            swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]
 )
