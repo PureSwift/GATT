@@ -9,10 +9,8 @@
 import Bluetooth
 
 /// Bluetooth LE Peer (Central, Peripheral)
-public protocol Peer: Hashable, CustomStringConvertible, Sendable {
-    
-    associatedtype ID: Hashable, CustomStringConvertible
-    
+public protocol Peer: Hashable, CustomStringConvertible, Sendable, Identifiable {
+        
     /// Unique identifier of the peer.
     var id: ID { get }
 }
@@ -28,7 +26,7 @@ public extension Peer {
     }
     
     var description: String {
-        return id.description
+        return "\(id)"
     }
 }
 
@@ -46,8 +44,6 @@ public struct Central: Peer {
     }
 }
 
-extension Central: Identifiable { }
-
 // MARK: - Peripheral
 
 /// Peripheral Peer
@@ -61,5 +57,3 @@ public struct Peripheral: Peer {
         self.id = id
     }
 }
-
-extension Peripheral: Identifiable { }
