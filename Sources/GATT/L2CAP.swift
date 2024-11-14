@@ -6,18 +6,17 @@
 //
 
 #if canImport(BluetoothHCI)
-import Foundation
 import Bluetooth
 import BluetoothHCI
 
-internal extension L2CAPSocket {
+internal extension L2CAPConnection {
     
     /// Creates a client socket for an L2CAP connection.
     static func lowEnergyClient(
         address localAddress: BluetoothAddress,
         destination: HCILEAdvertisingReport.Report
-    ) async throws -> Self {
-        try await lowEnergyClient(
+    ) throws -> Self {
+        try lowEnergyClient(
             address: localAddress,
             destination: destination.address,
             isRandom: destination.addressType == .random

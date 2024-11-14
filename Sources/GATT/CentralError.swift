@@ -5,7 +5,9 @@
 //  Created by Alsey Coleman Miller on 7/14/18.
 //
 
+#if canImport(Foundation)
 import Foundation
+#endif
 import Bluetooth
 
 /// Errors for GATT Central Manager

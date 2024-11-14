@@ -7,6 +7,9 @@
 //
 
 @_exported import Bluetooth
+#if canImport(BluetoothGAP)
+import BluetoothGAP
+#endif
 
 /// GATT Advertisement Data.
 public protocol AdvertisementData: Hashable, Sendable {
@@ -34,7 +37,6 @@ public protocol AdvertisementData: Hashable, Sendable {
 }
 
 #if canImport(BluetoothGAP)
-import BluetoothGAP
 
 // MARK: - LowEnergyAdvertisingData
 

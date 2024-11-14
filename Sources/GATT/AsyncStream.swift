@@ -56,7 +56,7 @@ public extension AsyncCentralScan {
 
 public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
 
-    public typealias Element = Data
+    public typealias Element = Central.Data
     
     let stream: AsyncIndefiniteStream<Element>
     
