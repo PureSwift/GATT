@@ -5,34 +5,41 @@
 //  Created by Alsey Coleman Miller on 7/17/18.
 //
 
+#if canImport(Foundation)
+import Foundation
+#endif
 #if canImport(BluetoothGATT)
 import Bluetooth
 import BluetoothGATT
 
-internal actor GATTServerConnection <Socket: L2CAPConnection> {
+internal final class GATTServerConnection <Socket: L2CAPConnection>: @unchecked Sendable {
     
     typealias Data = Socket.Data
     
+    typealias Error = Socket.Error
+    
     // MARK: - Properties
     
-    let central: Central
+    public let central: Central
         
-    let server: GATTServer<Socket>
+    private let server: GATTServer<Socket>
     
-    var maximumUpdateValueLength: Int {
+    public var maximumUpdateValueLength: Int {
         // ATT_MTU-3
         Int(server.maximumTransmissionUnit.rawValue) - 3
     }
     
+    private let lock = NSLock()
+    
     // MARK: - Initialization
     
-    init(
+    internal init(
         central: Central,
         socket: Socket,
         maximumTransmissionUnit: ATTMaximumTransmissionUnit,
         maximumPreparedWrites: Int,
         database: GATTDatabase<Socket.Data>,
-        delegate: GATTServer<Socket>.Callback,
+        callback: GATTServer<Socket>.Callback,
         log: (@Sendable (String) -> ())?
     ) {
         self.central = central
@@ -43,21 +50,28 @@ internal actor GATTServerConnection <Socket: L2CAPConnection> {
             database: database,
             log: log
         )
+        self.server.callback = callback
     }
     
     // MARK: - Methods
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
-    func write(_ value: Data, forCharacteristic handle: UInt16) {
+    public func write(_ value: Data, forCharacteristic handle: UInt16) {
+        lock.lock()
+        defer { lock.unlock() }
         server.writeValue(value, forCharacteristic: handle)
     }
     
-    func run() throws(ATTConnectionError<Socket.Error, Socket.Data>) {
+    public func run() throws(ATTConnectionError<Socket.Error, Socket.Data>) {
+        lock.lock()
+        defer { lock.unlock() }
         try self.server.run()
     }
     
-    subscript(handle: UInt16) -> Data {
-        server.database[handle: handle].value
+    public subscript(handle: UInt16) -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return server.database[handle: handle].value
     }
 }
 

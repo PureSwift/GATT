@@ -15,7 +15,7 @@ import GATT
 @preconcurrency import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
+public final class DarwinPeripheral: @unchecked Sendable {
         
     // MARK: - Properties
     
