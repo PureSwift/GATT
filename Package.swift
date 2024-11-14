@@ -29,10 +29,6 @@ var package = Package(
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
             branch: "master"
-        ),
-        .package(
-            url: "https://github.com/apple/swift-async-algorithms",
-            branch: "main"
         )
     ],
     targets: [
@@ -57,10 +53,6 @@ var package = Package(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS, .linux])
-                ),
-                .product(
-                    name: "AsyncAlgorithms",
-                    package: "swift-async-algorithms"
                 )
             ]
         ),
