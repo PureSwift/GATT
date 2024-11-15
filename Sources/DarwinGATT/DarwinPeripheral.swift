@@ -22,7 +22,7 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
     // MARK: - Properties
     
     /// Logging
-    public var log: ((String) -> ())?
+    public var log: (@Sendable (String) -> ())?
     
     public let options: Options
             

@@ -11,7 +11,7 @@ import Foundation
 import Bluetooth
 import BluetoothHCI
 
-final class TestHostController: BluetoothHostControllerInterface {
+final class TestHostController: BluetoothHostControllerInterface, @unchecked Sendable {
         
     typealias Data = Foundation.Data
     
