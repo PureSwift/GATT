@@ -15,8 +15,10 @@ import GATT
 @preconcurrency import CoreBluetooth
 import CoreLocation
 
-public final class DarwinPeripheral: @unchecked Sendable {
-        
+public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
+    
+    public typealias Error = Swift.Error
+    
     // MARK: - Properties
     
     /// Logging
@@ -25,32 +27,18 @@ public final class DarwinPeripheral: @unchecked Sendable {
     public let options: Options
             
     public var state: DarwinBluetoothState {
-        get async {
-            return await withUnsafeContinuation { [unowned self] continuation in
-                self.queue.async { [unowned self] in
-                    let state = unsafeBitCast(self.peripheralManager.state, to: DarwinBluetoothState.self)
-                    continuation.resume(returning: state)
-                }
-            }
-        }
+        unsafeBitCast(self.peripheralManager.state, to: DarwinBluetoothState.self)
     }
     
     public var isAdvertising: Bool {
-        get async {
-            return await withUnsafeContinuation { [unowned self] continuation in
-                self.queue.async { [unowned self] in
-                    let isAdvertising = self.peripheralManager.isAdvertising
-                    continuation.resume(returning: isAdvertising)
-                }
-            }
-        }
+        self.peripheralManager.isAdvertising
     }
     
-    public var willRead: ((GATTReadRequest<Central, Data>) async -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)?
     
-    public var willWrite: ((GATTWriteRequest<Central, Data>) async -> ATTError?)?
+    public var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
     
-    public var didWrite: ((GATTWriteConfirmation<Central, Data>) async -> ())?
+    public var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())?
     
     public var stateChanged: ((DarwinBluetoothState) -> ())?
     
@@ -60,10 +48,20 @@ public final class DarwinPeripheral: @unchecked Sendable {
     
     private var delegate: Delegate!
     
-    private let queue = DispatchQueue(label: "org.pureswift.DarwinGATT.DarwinPeripheral", attributes: [])
+    private let queue: DispatchQueue = .main
     
-    private var continuation = Continuation()
-        
+    private var _continuation: Any?
+    
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    private var continuation: Continuation {
+        get {
+            _continuation as! Continuation
+        }
+        set {
+            _continuation = newValue
+        }
+    }
+    
     // MARK: - Initialization
     
     public init(
@@ -78,15 +76,19 @@ public final class DarwinPeripheral: @unchecked Sendable {
         )
         self.delegate = delegate
         self.peripheralManager = peripheralManager
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+            self.continuation = Continuation()
+        }
     }
     
     // MARK: - Methods
     
-    public func start() async throws {
+    public func start() {
         let options = AdvertisingOptions()
-        try await start(options: options)
+        self.peripheralManager.startAdvertising(options.options)
     }
     
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func start(options: AdvertisingOptions) async throws {
         return try await withCheckedThrowingContinuation { [unowned self] continuation in
             self.queue.async { [unowned self] in
@@ -96,15 +98,19 @@ public final class DarwinPeripheral: @unchecked Sendable {
         }
     }
     
-    public func stop() async {
-        return await withCheckedContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                peripheralManager.stopAdvertising()
-                continuation.resume()
-            }
-        }
+    public func stop() {
+        peripheralManager.stopAdvertising()
     }
     
+    public func add(service: GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {
+        // add service
+        let serviceObject = service.toCoreBluetooth()
+        peripheralManager.add(serviceObject)
+        let handle = database.add(service: service, serviceObject)
+        return handle
+    }
+    
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func add(service: GATTAttribute<Data>.Service) async throws -> (UInt16, [UInt16]) {
         let serviceObject = service.toCoreBluetooth()
         // add service
@@ -123,99 +129,72 @@ public final class DarwinPeripheral: @unchecked Sendable {
         }
     }
     
-    public func remove(service handle: UInt16) async {
-        await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                // remove from daemon
-                let serviceObject = database.service(for: handle)
-                peripheralManager.remove(serviceObject)
-                // remove from cache
-                database.remove(service: handle)
-                continuation.resume()
-            }
-        }
+    public func remove(service handle: UInt16) {
+        let serviceObject = database.service(for: handle)
+        peripheralManager.remove(serviceObject)
+        // remove from cache
+        database.remove(service: handle)
     }
     
-    public func removeAllServices() async {
-        await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                // remove from daemon
-                peripheralManager.removeAllServices()
-                // clear cache
-                database.removeAll()
-                continuation.resume()
-            }
-        }
+    public func removeAllServices() {
+        // remove from daemon
+        peripheralManager.removeAllServices()
+        // clear cache
+        database.removeAll()
     }
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
-    public func write(_ newValue: Data, forCharacteristic handle: UInt16) async {
-        await withUnsafeContinuation { [unowned self] (continuation: UnsafeContinuation<(), Never>) in
-            self.queue.async { [unowned self] in
-                // update GATT DB
-                database[characteristic: handle] = newValue
-                continuation.resume()
-            }
-        }
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16) {
+        // update GATT DB
+        database[characteristic: handle] = newValue
         // send notifications
-        await notify(newValue, forCharacteristic: handle)
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+            Task {
+                // attempt to write notifications
+                var didNotify = updateValue(newValue, forCharacteristic: handle)
+                while didNotify == false {
+                    await waitPeripheralReadyUpdateSubcribers()
+                    didNotify = updateValue(newValue, forCharacteristic: handle)
+                }
+            }
+        } else {
+            updateValue(newValue, forCharacteristic: handle)
+        }
     }
     
-    public func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) async throws {
-        await write(newValue, forCharacteristic: handle) // per-connection database not supported on Darwin
+    public func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) {
+        write(newValue, forCharacteristic: handle) // per-connection database not supported on Darwin
+    }
+    
+    public func value(for characteristicHandle: UInt16, central: Central) -> Data {
+        self[characteristic: characteristicHandle]
     }
     
     /// Read the value of the characteristic with specified handle.
     public subscript(characteristic handle: UInt16) -> Data {
-        get async {
-            return await withUnsafeContinuation { [unowned self] continuation in
-                self.queue.async { [unowned self] in
-                    let value = self.database[characteristic: handle]
-                    continuation.resume(returning: value)
-                }
-            }
-        }
+        self.database[characteristic: handle]
     }
     
     public subscript(characteristic handle: UInt16, central: Central) -> Data {
-        get async throws {
-            await self[characteristic: handle] // per-connection database not supported on Darwin
-        }
+        self[characteristic: handle] // per-connection database not supported on Darwin
     }
     
     /// Return the handles of the characteristics matching the specified UUID.
-    public func characteristics(for uuid: BluetoothUUID) async -> [UInt16] {
-        return await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                let handles = database.characteristics(for: uuid)
-                continuation.resume(returning: handles)
-            }
-        }
+    public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
+        database.characteristics(for: uuid)
     }
     
-    public func setDesiredConnectionLatency(_ latency: CBPeripheralManagerConnectionLatency, for central: Central) async {
-        return await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                if let central = central.central {
-                    self.peripheralManager.setDesiredConnectionLatency(latency, for: central)
-                }
-                continuation.resume()
-            }
+    public func setDesiredConnectionLatency(_ latency: CBPeripheralManagerConnectionLatency, for central: Central) {
+        guard let central = central.central else {
+            assertionFailure()
+            return
         }
+        self.peripheralManager.setDesiredConnectionLatency(latency, for: central)
     }
     
     // MARK: - Private Methods
     
-    private func notify(_ value: Data, forCharacteristic handle: UInt16) async {
-        
-        // attempt to write notifications
-        var didNotify = await updateValue(value, forCharacteristic: handle)
-        while didNotify == false {
-            await waitPeripheralReadyUpdateSubcribers()
-            didNotify = await updateValue(value, forCharacteristic: handle)
-        }
-    }
-    
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     private func waitPeripheralReadyUpdateSubcribers() async {
         await withCheckedContinuation { [unowned self] continuation in
             self.queue.async { [unowned self] in
@@ -224,29 +203,25 @@ public final class DarwinPeripheral: @unchecked Sendable {
         }
     }
     
-    private func updateValue(_ value: Data, forCharacteristic handle: UInt16, centrals: [Central] = []) async -> Bool {
-        return await withUnsafeContinuation { [unowned self] continuation in
-            self.queue.async { [unowned self] in
-                let characteristicObject = database.characteristic(for: handle)
-                // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
-                let didNotify = peripheralManager.updateValue(
-                    value,
-                    for: characteristicObject,
-                    onSubscribedCentrals: centrals.isEmpty ? nil : centrals.compactMap { $0.central }
-                )
-                
-                // The underlying transmit queue is full
-                if didNotify == false {
-                    // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
-                    // when more space in the transmit queue becomes available.
-                    //log("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
-                } else {
-                    //log("Did send notification for \((characteristic as CBCharacteristic).uuid)")
-                }
-                
-                continuation.resume(returning: didNotify)
-            }
+    @discardableResult
+    private func updateValue(_ value: Data, forCharacteristic handle: UInt16, centrals: [Central] = []) -> Bool {
+        let characteristicObject = database.characteristic(for: handle)
+        // sends an updated characteristic value to one or more subscribed centrals, via a notification or indication.
+        let didNotify = peripheralManager.updateValue(
+            value,
+            for: characteristicObject,
+            onSubscribedCentrals: centrals.isEmpty ? nil : centrals.compactMap { $0.central }
+        )
+        
+        // The underlying transmit queue is full
+        if didNotify == false {
+            // send later in `peripheralManagerIsReady(toUpdateSubscribers:)` method is invoked
+            // when more space in the transmit queue becomes available.
+            //log("Did queue notification for \((characteristic as CBCharacteristic).uuid)")
+        } else {
+            //log("Did send notification for \((characteristic as CBCharacteristic).uuid)")
         }
+        return didNotify
     }
 }
 
@@ -369,7 +344,7 @@ public extension DarwinPeripheral.AdvertisingOptions {
         if serviceUUIDs.isEmpty == false {
             options[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID($0) } as NSArray
         }
-        if let beacon = beacon {
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *), let beacon = beacon {
             let beaconRegion = CLBeaconRegion(
                 uuid: beacon.uuid,
                 major: beacon.major,
@@ -389,6 +364,7 @@ public extension DarwinPeripheral.AdvertisingOptions {
 
 internal extension DarwinPeripheral {
     
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     struct Continuation {
         
         var startAdvertising: CheckedContinuation<(), Error>?
@@ -435,24 +411,37 @@ internal extension DarwinPeripheral {
         public func peripheralManagerDidStartAdvertising(_ peripheralManager: CBPeripheralManager, error: Error?) {
             if let error = error {
                 log("Could not advertise (\(error))")
-                self.peripheral.continuation.startAdvertising?.resume(throwing: error)
+                if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                    self.peripheral.continuation.startAdvertising?.resume(throwing: error)
+                }
+                
             } else {
                 log("Did start advertising")
-                self.peripheral.continuation.startAdvertising?.resume()
+                if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                    self.peripheral.continuation.startAdvertising?.resume()
+                }
             }
-            self.peripheral.continuation.startAdvertising = nil
+            if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                self.peripheral.continuation.startAdvertising = nil
+            }
         }
         
         @objc(peripheralManager:didAddService:error:)
         public func peripheralManager(_ peripheralManager: CBPeripheralManager, didAdd service: CBService, error: Error?) {
             if let error = error {
                 log("Could not add service \(service.uuid) (\(error))")
-                self.peripheral.continuation.addService?.resume(throwing: error)
+                if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                    self.peripheral.continuation.addService?.resume(throwing: error)
+                }
             } else {
                 log("Added service \(service.uuid)")
-                self.peripheral.continuation.addService?.resume()
+                if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                    self.peripheral.continuation.addService?.resume()
+                }
             }
-            self.peripheral.continuation.addService = nil
+            if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                self.peripheral.continuation.addService = nil
+            }
         }
         
         @objc(peripheralManager:didReceiveReadRequest:)
@@ -477,20 +466,14 @@ internal extension DarwinPeripheral {
                 peripheralManager.respond(to: request, withResult: .invalidOffset)
                 return
             }
-            
-            Task {
-                if let error = await self.peripheral.willRead?(readRequest) {
-                    peripheral.queue.async {
-                        peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-                    }
-                    return
-                }
-                peripheral.queue.async {
-                    let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
-                    request.value = requestedValue
-                    peripheralManager.respond(to: request, withResult: .success)
-                }
+            if let error = self.peripheral.willRead?(readRequest) {
+                peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                return
             }
+            
+            let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
+            request.value = requestedValue
+            peripheralManager.respond(to: request, withResult: .success)
         }
         
         @objc(peripheralManager:didReceiveWriteRequests:)
@@ -520,13 +503,13 @@ internal extension DarwinPeripheral {
                 )
             }
             
-            let task = Task {
+            let process: () -> (CBATTError.Code) = { [unowned self] in
                 
                 // validate write requests
                 for writeRequest in writeRequests {
                     
                     // check if write is possible
-                    if let error = await self.peripheral.willWrite?(writeRequest) {
+                    if let error = self.peripheral.willWrite?(writeRequest) {
                         guard let code = CBATTError.Code(rawValue: Int(error.rawValue)) else {
                             assertionFailure("Invalid CBATTError: \(error.rawValue)")
                             return CBATTError.Code.unlikelyError
@@ -547,19 +530,14 @@ internal extension DarwinPeripheral {
                         value: request.newValue
                     )
                     // did write callback
-                    await self.peripheral.didWrite?(confirmation)
+                    self.peripheral.didWrite?(confirmation)
                 }
                 
                 return CBATTError.Code.success
             }
             
-            let queue = self.peripheral.queue
-            Task {
-                let result = await task.value
-                queue.async {
-                    peripheralManager.respond(to: firstRequest, withResult: result)
-                }
-            }
+            let result = process()
+            peripheralManager.respond(to: firstRequest, withResult: result)
         }
         
         @objc(peripheralManager:central:didSubscribeToCharacteristic:)
@@ -575,8 +553,10 @@ internal extension DarwinPeripheral {
         @objc
         public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
             log("Ready to send notifications")
-            self.peripheral.continuation.canNotify?.resume()
-            self.peripheral.continuation.canNotify = nil
+            if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                self.peripheral.continuation.canNotify?.resume()
+                self.peripheral.continuation.canNotify = nil
+            }
         }
     }
 }
