@@ -1,4 +1,4 @@
-// swift-tools-version:5.6
+// swift-tools-version:6.0
 import PackageDescription
 import class Foundation.ProcessInfo
 
@@ -8,12 +8,6 @@ let libraryType: PackageDescription.Product.Library.LibraryType? = dynamicLibrar
 
 var package = Package(
     name: "GATT",
-    platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .watchOS(.v6),
-        .tvOS(.v13),
-    ],
     products: [
         .library(
             name: "GATT",
@@ -22,13 +16,14 @@ var package = Package(
         ),
         .library(
             name: "DarwinGATT",
+            type: libraryType,
             targets: ["DarwinGATT"]
         )
     ],
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            .upToNextMajor(from: "6.0.0")
+            branch: "master"
         )
     ],
     targets: [
@@ -53,7 +48,7 @@ var package = Package(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS, .linux])
-                ),
+                )
             ]
         ),
         .target(
@@ -65,7 +60,8 @@ var package = Package(
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS])
                 )
-            ]
+            ],
+            swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(
             name: "GATTTests",
@@ -90,7 +86,8 @@ var package = Package(
                     package: "Bluetooth",
                     condition: .when(platforms: [.macOS, .linux])
                 )
-            ]
+            ],
+            swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]
 )

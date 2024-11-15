@@ -6,17 +6,25 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(Foundation)
 import Foundation
+#endif
 import Bluetooth
 
 /// The data for a scan result.
-public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equatable, Hashable {
+public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equatable, Hashable, Sendable {
+    
+    #if hasFeature(Embedded)
+    public typealias Timestamp = UInt64
+    #else
+    public typealias Timestamp = Foundation.Date
+    #endif
     
     /// The discovered peripheral.
     public let peripheral: Peripheral
     
     /// Timestamp for when device was scanned.
-    public let date: Date
+    public let date: Timestamp
     
     /// The current received signal strength indicator (RSSI) of the peripheral, in decibels.
     public let rssi: Double
@@ -27,12 +35,13 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equ
     /// A Boolean value that indicates whether the advertising event type is connectable.
     public let isConnectable: Bool
     
-    public init(peripheral: Peripheral,
-                date: Date = Date(),
-                rssi: Double,
-                advertisementData: Advertisement,
-                isConnectable: Bool) {
-        
+    public init(
+        peripheral: Peripheral,
+        date: Timestamp,
+        rssi: Double,
+        advertisementData: Advertisement,
+        isConnectable: Bool
+    ) {
         self.peripheral = peripheral
         self.date = date
         self.rssi = rssi
@@ -43,9 +52,11 @@ public struct ScanData <Peripheral: Peer, Advertisement: AdvertisementData>: Equ
 
 // MARK: - Codable
 
+#if !hasFeature(Embedded)
 extension ScanData: Encodable where Peripheral: Encodable, Advertisement: Encodable { }
 
 extension ScanData: Decodable where Peripheral: Decodable, Advertisement: Decodable { }
+#endif
 
 // MARK: - Identifiable
 

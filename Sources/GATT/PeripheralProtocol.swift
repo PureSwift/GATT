@@ -7,62 +7,67 @@
 //
 
 #if canImport(BluetoothGATT)
-import Foundation
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 
 /// GATT Peripheral Manager
 ///
 /// Implementation varies by operating system.
-public protocol PeripheralManager: AnyObject {
+public protocol PeripheralManager {
     
     /// Central Peer
     ///
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
     associatedtype Central: Peer
     
+    associatedtype Data: DataContainer
+    
+    associatedtype Error: Swift.Error
+    
+    var log: (@Sendable (String) -> ())? { get set }
+    
     /// Start advertising the peripheral and listening for incoming connections.
-    func start() async throws
+    func start() throws(Error)
     
     /// Stop the peripheral.
-    func stop() async
+    func stop()
     
     /// A Boolean value that indicates whether the peripheral is advertising data.
-    var isAdvertising: Bool { get async }
+    var isAdvertising: Bool { get }
     
     /// Attempts to add the specified service to the GATT database.
     ///
     /// - Returns: Handle for service declaration and handles for characteristic value handles.
-    func add(service: BluetoothGATT.GATTAttribute.Service) async throws -> (UInt16, [UInt16])
+    func add(service: BluetoothGATT.GATTAttribute<Data>.Service) throws(Error) -> (UInt16, [UInt16])
     
     /// Removes the service with the specified handle.
-    func remove(service: UInt16) async
+    func remove(service: UInt16)
     
     /// Clears the local GATT database.
-    func removeAllServices() async
+    func removeAllServices()
     
     /// Callback to handle GATT read requests.
-    var willRead: ((GATTReadRequest<Central>) async -> ATTError?)? { get set }
+    var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)? { get set }
     
     /// Callback to handle GATT write requests.
-    var willWrite: ((GATTWriteRequest<Central>) async -> ATTError?)? { get set }
+    var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)? { get set }
     
     /// Callback to handle post-write actions for GATT write requests.
-    var didWrite: ((GATTWriteConfirmation<Central>) async -> ())? { get set }
+    var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())? { get set }
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
-    func write(_ newValue: Data, forCharacteristic handle: UInt16) async
+    func write(_ newValue: Data, forCharacteristic handle: UInt16)
     
     /// Modify the value of a characteristic, optionally emiting notifications if configured on the specified connection.
     ///
     /// Throws error if central is unknown or disconnected.
-    func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) async throws
+    func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) throws(Error)
     
     /// Read the value of the characteristic with specified handle.
-    subscript(characteristic handle: UInt16) -> Data { get async }
+    subscript(characteristic handle: UInt16) -> Data { get }
     
     /// Read the value of the characteristic with specified handle for the specified connection.
-    subscript(characteristic handle: UInt16, central: Central) -> Data { get async throws }
+    func value(for characteristicHandle: UInt16, central: Central) throws(Error) -> Data
 }
 
 // MARK: - Supporting Types
@@ -70,6 +75,8 @@ public protocol PeripheralManager: AnyObject {
 public protocol GATTRequest {
     
     associatedtype Central: Peer
+    
+    associatedtype Data: DataContainer
     
     var central: Central { get }
     
@@ -82,7 +89,7 @@ public protocol GATTRequest {
     var value: Data { get }
 }
 
-public struct GATTReadRequest <Central: Peer> : GATTRequest {
+public struct GATTReadRequest <Central: Peer, Data: DataContainer> : GATTRequest, Equatable, Hashable, Sendable {
     
     public let central: Central
     
@@ -112,7 +119,7 @@ public struct GATTReadRequest <Central: Peer> : GATTRequest {
     }
 }
 
-public struct GATTWriteRequest <Central: Peer> : GATTRequest {
+public struct GATTWriteRequest <Central: Peer, Data: DataContainer> : GATTRequest, Equatable, Hashable, Sendable {
     
     public let central: Central
     
@@ -142,7 +149,7 @@ public struct GATTWriteRequest <Central: Peer> : GATTRequest {
     }
 }
 
-public struct GATTWriteConfirmation <Central: Peer> : GATTRequest {
+public struct GATTWriteConfirmation <Central: Peer, Data: DataContainer> : GATTRequest, Equatable, Hashable, Sendable {
     
     public let central: Central
     

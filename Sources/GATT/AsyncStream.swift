@@ -5,9 +5,11 @@
 //  Created by Alsey Coleman Miller on 4/17/22.
 //
 
+#if !hasFeature(Embedded)
 import Foundation
 import Bluetooth
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
 
     public typealias Element = ScanData<Central.Peripheral, Central.Advertisement>
@@ -16,7 +18,7 @@ public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
     
     public init(
         bufferSize: Int = 100,
-        _ build: @escaping ((Element) -> ()) async throws -> ()
+        _ build: @escaping @Sendable ((Element) -> ()) async throws -> ()
     ) {
         self.stream = .init(bufferSize: bufferSize, build)
     }
@@ -42,6 +44,7 @@ public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension AsyncCentralScan {
     
     func first() async throws -> Element? {
@@ -53,15 +56,16 @@ public extension AsyncCentralScan {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
 
-    public typealias Element = Data
+    public typealias Element = Central.Data
     
     let stream: AsyncIndefiniteStream<Element>
     
     public init(
         bufferSize: Int = 100,
-        _ build: @escaping ((Element) -> ()) async throws -> ()
+        _ build: @escaping @Sendable ((Element) -> ()) async throws -> ()
     ) {
         self.stream = .init(bufferSize: bufferSize, build)
     }
@@ -86,3 +90,4 @@ public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence
         return stream.isExecuting
     }
 }
+#endif

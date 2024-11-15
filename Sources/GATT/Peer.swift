@@ -6,10 +6,12 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+import Bluetooth
+
 /// Bluetooth LE Peer (Central, Peripheral)
-public protocol Peer: Hashable, CustomStringConvertible {
+public protocol Peer: Hashable, CustomStringConvertible, Sendable where ID: Hashable {
     
-    associatedtype ID: Hashable, CustomStringConvertible
+    associatedtype ID: Hashable
     
     /// Unique identifier of the peer.
     var id: ID { get }
@@ -26,7 +28,7 @@ public extension Peer {
     }
     
     var description: String {
-        return id.description
+        return "\(id)"
     }
 }
 
@@ -35,7 +37,7 @@ public extension Peer {
 /// Central Peer
 ///
 /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-public struct Central: Peer {
+public struct Central: Peer, Identifiable, Sendable {
     
     public let id: BluetoothAddress
     
@@ -43,15 +45,13 @@ public struct Central: Peer {
         self.id = id
     }
 }
-
-extension Central: Identifiable { }
 
 // MARK: - Peripheral
 
 /// Peripheral Peer
 ///
 /// Represents a remote peripheral device that has been discovered.
-public struct Peripheral: Peer {
+public struct Peripheral: Peer, Identifiable, Sendable {
     
     public let id: BluetoothAddress
     
@@ -59,5 +59,3 @@ public struct Peripheral: Peer {
         self.id = id
     }
 }
-
-extension Peripheral: Identifiable { }

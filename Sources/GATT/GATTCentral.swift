@@ -5,14 +5,20 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
+#if canImport(Foundation)
 import Foundation
+#endif
+#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPSocket>: CentralManager {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPConnection>: CentralManager, @unchecked Sendable where Socket: Sendable {
+    
+    public typealias Peripheral = GATT.Peripheral
+    
+    public typealias Data = Socket.Data
     
     public typealias Options = GATTCentralOptions
     
@@ -21,8 +27,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public typealias Advertisement = LowEnergyAdvertisingData
     
     public typealias AttributeID = UInt16
-        
-    public var log: ((String) -> ())?
+    
+    public var log: (@Sendable (String) -> ())?
     
     public let hostController: HostController
     
@@ -31,11 +37,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     /// Currently scanned devices, or restored devices.
     public var peripherals: [Peripheral: Bool] {
         get async {
-            let peripherals = await storage.scanData.keys
-            let connections = await storage.connections.keys
-            var result = [Peripheral: Bool]()
-            result.reserveCapacity(peripherals.count)
-            return peripherals.reduce(into: result, { $0[$1] = connections.contains($1) })
+            await storage.peripherals
         }
     }
     
@@ -96,23 +98,10 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         // load cache device address
         let localAddress = try await storage.readAddress(hostController)
         // open socket
-        let socket = try await Socket.lowEnergyClient(
+        let socket = try Socket.lowEnergyClient(
             address: localAddress,
             destination: report
         )
-        Task.detached { [weak self] in
-            for await event in socket.event {
-                switch event {
-                case let .error(error):
-                    self?.log(peripheral, error.localizedDescription)
-                case .close:
-                    self?.log(peripheral, "Did disconnect.")
-                default:
-                    break
-                }
-            }
-            await self?.storage.removeConnection(peripheral)
-        }
         let connection = await GATTClientConnection(
             peripheral: peripheral,
             socket: socket,
@@ -123,18 +112,30 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
         )
         // store connection
         await self.storage.didConnect(connection, socket)
+        Task.detached { [weak self, weak connection] in
+            do {
+                while let connection {
+                    try await Task.sleep(nanoseconds: 10_000)
+                    try await connection.run()
+                }
+            }
+            catch {
+                self?.log(peripheral, error.localizedDescription)
+            }
+            await self?.storage.removeConnection(peripheral)
+        }
     }
     
     public func disconnect(_ peripheral: Peripheral) async {
         if let (_, socket) = await storage.connections[peripheral] {
-            await socket.close()
+            socket.close()
         }
         await storage.removeConnection(peripheral)
     }
     
     public func disconnectAll() async {
         for (_, socket) in await storage.connections.values {
-            await socket.close()
+            socket.close()
         }
         await storage.removeAllConnections()
     }
@@ -250,7 +251,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
 
 // MARK: - Supporting Types
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTCentral {
     
     actor Storage {
@@ -260,6 +261,16 @@ internal extension GATTCentral {
         var scanData = [Peripheral: (ScanData<Peripheral, Advertisement>, HCILEAdvertisingReport.Report)]()
         
         var connections = [Peripheral: (connection: GATTClientConnection<Socket>, socket: Socket)](minimumCapacity: 2)
+        
+        var peripherals: [Peripheral: Bool] {
+            get async {
+                let peripherals = scanData.keys
+                let connections = connections.keys
+                var result = [Peripheral: Bool]()
+                result.reserveCapacity(peripherals.count)
+                return peripherals.reduce(into: result, { $0[$1] = connections.contains($1) })
+            }
+        }
         
         func found(_ report: HCILEAdvertisingReport.Report) -> ScanData<Peripheral, Advertisement> {
             let peripheral = Peripheral(id: report.address)

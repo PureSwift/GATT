@@ -6,13 +6,13 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-import Foundation
+#if !hasFeature(Embedded)
 import Bluetooth
 
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system and framework.
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public protocol CentralManager: AnyObject {
     
     /// Central Peripheral Type
@@ -24,8 +24,10 @@ public protocol CentralManager: AnyObject {
     /// Central Attribute ID (Handle)
     associatedtype AttributeID: Hashable
     
+    associatedtype Data: DataContainer
+    
     /// Logging
-    var log: ((String) -> ())? { get set }
+    var log: (@Sendable (String) -> ())? { get set }
     
     /// Currently scanned devices, or restored devices.
     var peripherals: [Peripheral: Bool] { get async }
@@ -96,3 +98,5 @@ public protocol CentralManager: AnyObject {
     // Read RSSI
     func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
+
+#endif
