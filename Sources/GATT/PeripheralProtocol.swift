@@ -24,6 +24,8 @@ public protocol PeripheralManager {
     
     associatedtype Error: Swift.Error
     
+    var log: (@Sendable (String) -> ())? { get set }
+    
     /// Start advertising the peripheral and listening for incoming connections.
     func start() throws(Error)
     
