@@ -8,7 +8,7 @@
 import Bluetooth
 
 /// GATT Central Attribute protocol
-public protocol GATTCentralAttribute: Identifiable {
+public protocol GATTCentralAttribute {
     
     associatedtype Peripheral: Peer
     
@@ -47,6 +47,8 @@ public struct Service <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, H
     }
 }
 
+extension Service: Identifiable { }
+
 public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttribute, Hashable, Sendable where ID: Sendable {
     
     public typealias Properties = CharacteristicProperties
@@ -72,6 +74,8 @@ public struct Characteristic <Peripheral: Peer, ID: Hashable> : GATTCentralAttri
     }
 }
 
+extension Characteristic: Identifiable { }
+
 public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute, Hashable, Sendable where ID: Sendable {
     
     public let id: ID
@@ -89,3 +93,5 @@ public struct Descriptor <Peripheral: Peer, ID: Hashable>: GATTCentralAttribute,
         self.peripheral = peripheral
     }
 }
+
+extension Descriptor: Identifiable { }

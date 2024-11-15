@@ -458,7 +458,7 @@ public final class DarwinCentral: CentralManager, ObservableObject, @unchecked S
 
 // MARK: - Supporting Types
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension DarwinCentral {
     
     typealias Advertisement = DarwinAdvertisementData
@@ -522,7 +522,7 @@ public extension DarwinCentral {
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 private extension DarwinCentral {
     
     struct Cache {
@@ -554,6 +554,7 @@ private extension DarwinCentral {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 fileprivate extension DarwinCentral.PeripheralContinuationContext {
     
     func didDisconnect(_ error: Swift.Error? = nil) {
@@ -572,6 +573,7 @@ fileprivate extension DarwinCentral.PeripheralContinuationContext {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     final class QueuedOperation: @unchecked Sendable {
@@ -595,6 +597,7 @@ internal extension DarwinCentral {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     enum Operation {
@@ -614,6 +617,7 @@ internal extension DarwinCentral {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral.Operation {
     
     func resume(throwing error: Swift.Error) {
@@ -652,6 +656,7 @@ internal extension DarwinCentral.Operation {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal protocol DarwinCentralOperation {
     
     associatedtype Success: Sendable
@@ -661,6 +666,7 @@ internal protocol DarwinCentralOperation {
     var operation: DarwinCentral.Operation { get }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentralOperation {
     
     func resume(throwing error: Swift.Error) {
@@ -672,6 +678,7 @@ internal extension DarwinCentralOperation {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral.Operation {
     
     struct Connect: DarwinCentralOperation {
@@ -767,7 +774,7 @@ internal extension DarwinCentral.Operation {
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
     /// Executes a queued operation and informs whether a continuation is pending.
@@ -1102,6 +1109,7 @@ internal extension DarwinCentral {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 private extension DarwinCentral {
     
     func validateState<T>(
@@ -1174,9 +1182,10 @@ private extension DarwinCentral {
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension DarwinCentral {
     
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     @objc(GATTAsyncCentralManagerRestorableDelegate)
     class RestorableDelegate: Delegate {
         
@@ -1706,7 +1715,7 @@ internal extension DarwinCentral {
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Service where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(
@@ -1722,7 +1731,7 @@ internal extension Service where ID == ObjectIdentifier, Peripheral == DarwinCen
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Characteristic where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(
@@ -1738,7 +1747,7 @@ internal extension Characteristic where ID == ObjectIdentifier, Peripheral == Da
     }
 }
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension Descriptor where ID == ObjectIdentifier, Peripheral == DarwinCentral.Peripheral {
     
     init(

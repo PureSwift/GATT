@@ -13,7 +13,7 @@ import Foundation
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public final class GATTCentral <HostController: BluetoothHostControllerInterface, Socket: L2CAPConnection>: CentralManager, @unchecked Sendable where Socket: Sendable {
     
     public typealias Peripheral = GATT.Peripheral
@@ -251,7 +251,7 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
 
 // MARK: - Supporting Types
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTCentral {
     
     actor Storage {

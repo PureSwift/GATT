@@ -115,6 +115,9 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     // MARK: - Methods
     
     public func start() {
+        guard #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) else {
+            fatalError("Requires Swift concurrency runtime")
+        }
         // ignore errors
         Task {
             do { try await start(options: .init()) }
@@ -124,6 +127,34 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         }
     }
     
+    public func start(address: BluetoothAddress, isRandom: Bool) throws(Error) {
+        // create server socket
+        let socket: Socket
+        do {
+            socket = try Socket.lowEnergyServer(
+                address: address,
+                isRandom: isRandom,
+                backlog: self.options.socketBacklog
+            )
+        }
+        catch {
+            throw .connection(.socket(error))
+        }
+        
+        // start listening for connections
+        let thread = Thread { [weak self] in
+            self?.log?("Started GATT Server")
+            // listen for
+            while let self = self, self.storage.isAdvertising, let socket = self.storage.socket {
+                self.accept(socket)
+            }
+        }
+        self.storage.socket = socket
+        self.storage.thread = thread
+        thread.start()
+    }
+    
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func start(options: GATTPeripheralAdvertisingOptions) async throws {
         assert(isAdvertising == false)
         
@@ -152,24 +183,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         do { try await hostController.enableLowEnergyAdvertising() }
         catch HCIError.commandDisallowed { /* ignore */ }
         
-        // create server socket
-        let socket = try Socket.lowEnergyServer(
+        // start listening thread
+        try start(
             address: address,
-            isRandom: options.randomAddress != nil,
-            backlog: self.options.socketBacklog
+            isRandom: options.randomAddress != nil
         )
-        
-        // start listening for connections
-        let thread = Thread { [weak self] in
-            self?.log?("Started GATT Server")
-            // listen for
-            while let self = self, self.storage.isAdvertising, let socket = self.storage.socket {
-                self.accept(socket)
-            }
-        }
-        self.storage.socket = socket
-        self.storage.thread = thread
-        thread.start()
     }
     
     public func stop() {
@@ -362,10 +380,12 @@ internal extension GATTPeripheral {
     ) {
         // try advertising again
         let hostController = self.hostController
-        Task {
-            do { try await hostController.enableLowEnergyAdvertising() }
-            catch HCIError.commandDisallowed { /* ignore */ }
-            catch { log?("Could not enable advertising. \(error)") }
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+            Task {
+                do { try await hostController.enableLowEnergyAdvertising() }
+                catch HCIError.commandDisallowed { /* ignore */ }
+                catch { log?("Could not enable advertising. \(error)") }
+            }
         }
         // remove connection cache
         storage.removeConnection(central)

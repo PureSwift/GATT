@@ -11,6 +11,7 @@ import Bluetooth
 import GATT
 
 #if DEBUG
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal struct PeripheralContinuation<T, E> where T: Sendable, E: Error {
     
     private let function: String
@@ -48,6 +49,7 @@ internal struct PeripheralContinuation<T, E> where T: Sendable, E: Error {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension PeripheralContinuation where T == Void {
     
     func resume() {
@@ -55,6 +57,7 @@ extension PeripheralContinuation where T == Void {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal func withContinuation<T>(
     for peripheral: DarwinCentral.Peripheral,
     function: String = #function,
@@ -65,6 +68,7 @@ internal func withContinuation<T>(
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal func withThrowingContinuation<T>(
     for peripheral: DarwinCentral.Peripheral,
     function: String = #function,
@@ -75,8 +79,10 @@ internal func withThrowingContinuation<T>(
     }
 }
 #else
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal typealias PeripheralContinuation<T, E> = CheckedContinuation<T, E> where E: Error
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 @inline(__always)
 internal func withContinuation<T>(
     for peripheral: DarwinCentral.Peripheral,
@@ -86,6 +92,7 @@ internal func withContinuation<T>(
     return await withCheckedContinuation(function: function, body)
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 @inline(__always)
 internal func withThrowingContinuation<T>(
     for peripheral: DarwinCentral.Peripheral,

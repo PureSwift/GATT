@@ -9,7 +9,7 @@
 import Bluetooth
 import BluetoothGATT
 
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal actor GATTClientConnection <Socket: L2CAPConnection> where Socket: Sendable {
     
     typealias Data = Socket.Data
@@ -224,6 +224,7 @@ internal actor GATTClientConnection <Socket: L2CAPConnection> where Socket: Send
 
 // MARK: - Supporting Types
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTClientConnection {
     
     struct Cache {
@@ -234,6 +235,7 @@ internal extension GATTClientConnection {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTClientConnection.Cache {
     
     func service(for identifier: UInt16) -> Service? {
@@ -299,6 +301,7 @@ internal extension GATTClientConnection.Cache {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 internal extension GATTClientConnection.Cache {
     
     struct Service {

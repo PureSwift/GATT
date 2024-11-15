@@ -8,12 +8,6 @@ let libraryType: PackageDescription.Product.Library.LibraryType? = dynamicLibrar
 
 var package = Package(
     name: "GATT",
-    platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .watchOS(.v6),
-        .tvOS(.v13),
-    ],
     products: [
         .library(
             name: "GATT",
@@ -22,6 +16,7 @@ var package = Package(
         ),
         .library(
             name: "DarwinGATT",
+            type: libraryType,
             targets: ["DarwinGATT"]
         )
     ],

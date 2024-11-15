@@ -12,7 +12,7 @@ import Bluetooth
 /// GATT Central Manager
 ///
 /// Implementation varies by operating system and framework.
-@available(macOS 10.5, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public protocol CentralManager: AnyObject {
     
     /// Central Peripheral Type
