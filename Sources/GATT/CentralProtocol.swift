@@ -27,7 +27,7 @@ public protocol CentralManager: AnyObject {
     associatedtype Data: DataContainer
     
     /// Logging
-    var log: ((String) -> ())? { get set }
+    var log: (@Sendable (String) -> ())? { get set }
     
     /// Currently scanned devices, or restored devices.
     var peripherals: [Peripheral: Bool] { get async }

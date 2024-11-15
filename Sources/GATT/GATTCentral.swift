@@ -27,8 +27,8 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public typealias Advertisement = LowEnergyAdvertisingData
     
     public typealias AttributeID = UInt16
-        
-    public var log: ((String) -> ())?
+    
+    public var log: (@Sendable (String) -> ())?
     
     public let hostController: HostController
     

@@ -17,7 +17,7 @@ public final class DarwinCentral: CentralManager, ObservableObject, @unchecked S
     
     // MARK: - Properties
     
-    public var log: ((String) -> ())?
+    public var log: (@Sendable (String) -> ())?
     
     public let options: Options
     
