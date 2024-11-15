@@ -203,7 +203,7 @@ final class GATTTests: XCTestCase {
             clientOptions: GATTCentralOptions(
                 maximumTransmissionUnit: clientMTU
             ), server: { peripheral in
-                _ = try await peripheral.add(service: service)
+                _ = peripheral.add(service: service)
             }, client: { (central, peripheral) in
                 let services = try await central.discoverServices(for: peripheral)
                 let clientMTU = try await central.maximumTransmissionUnit(for: peripheral)
@@ -258,11 +258,11 @@ final class GATTTests: XCTestCase {
         
         try await connect(
             server: { peripheral in
-                let (serviceAttributeHandle, characteristicValueHandles) = try await peripheral.add(service: service)
+                let (serviceAttributeHandle, characteristicValueHandles) = peripheral.add(service: service)
                 serviceAttribute = serviceAttributeHandle
                 XCTAssertEqual(serviceAttribute, 1)
                 characteristicValueHandle = characteristicValueHandles[0]
-                peripheralDatabaseValue = { await peripheral[characteristic: characteristicValueHandle] }
+                peripheralDatabaseValue = { peripheral[characteristic: characteristicValueHandle] }
                 let currentValue = await peripheralDatabaseValue()
                 XCTAssertEqual(currentValue, characteristics[0].value)
                 peripheral.willWrite = {
@@ -334,12 +334,12 @@ final class GATTTests: XCTestCase {
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
-                let (serviceAttribute, characteristicValueHandles) = try await peripheral.add(service: service)
+                let (serviceAttribute, characteristicValueHandles) = peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
                 let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
-                    await peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
+                    peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
                 }
             },
             client: { (central, peripheral) in
@@ -399,12 +399,12 @@ final class GATTTests: XCTestCase {
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .max),
             server: { peripheral in
-                let (serviceAttribute, characteristicValueHandles) = try await peripheral.add(service: service)
+                let (serviceAttribute, characteristicValueHandles) = peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
                 let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
-                    await peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
+                    peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
                 }
             },
             client: { (central, peripheral) in
@@ -469,7 +469,7 @@ final class GATTTests: XCTestCase {
             serverOptions: .init(maximumTransmissionUnit: .default, maximumPreparedWrites: 1000),
             clientOptions: .init(maximumTransmissionUnit: .default),
             server: { peripheral in
-                let (serviceAttribute, _) = try await peripheral.add(service: service)
+                let (serviceAttribute, _) = peripheral.add(service: service)
                 XCTAssertEqual(serviceAttribute, 1)
             },
             client: { (central, peripheral) in
@@ -545,8 +545,8 @@ extension GATTTests {
         peripheral.log = { print("Peripheral:", $0) }
         try await server(peripheral)
         
-        try await peripheral.start()
-        defer { Task { await peripheral.stop() } }
+        peripheral.start()
+        defer { peripheral.stop() }
         
         // central
         let central = TestCentral(
@@ -566,7 +566,7 @@ extension GATTTests {
         try await client(central, device.peripheral)
         // cleanup
         await central.disconnectAll()
-        await peripheral.removeAllServices()
+        peripheral.removeAllServices()
     }
     
     func test(
