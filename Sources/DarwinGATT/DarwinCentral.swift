@@ -476,7 +476,7 @@ public extension DarwinCentral {
     /// Central Peer
     ///
     /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-    struct Peripheral: Peer {
+    struct Peripheral: Peer, Sendable, Identifiable, Equatable, Hashable {
         
         public let id: UUID
         

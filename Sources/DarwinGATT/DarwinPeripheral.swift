@@ -232,7 +232,7 @@ public extension DarwinPeripheral {
     /// Peripheral Peer
     ///
     /// Represents a remote peripheral device that has been discovered.
-    struct Central: Peer {
+    struct Central: Peer, Identifiable, Equatable, Hashable {
         
         public let id: UUID
         
