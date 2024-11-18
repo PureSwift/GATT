@@ -9,13 +9,15 @@
 import Bluetooth
 
 /// Bluetooth LE Peer (Central, Peripheral)
-public protocol Peer: Hashable, CustomStringConvertible, Sendable where ID: Hashable {
+public protocol Peer: Hashable, Sendable where ID: Hashable {
     
     associatedtype ID: Hashable
     
     /// Unique identifier of the peer.
     var id: ID { get }
 }
+
+// MARK: Hashable
 
 public extension Peer {
     
@@ -26,9 +28,14 @@ public extension Peer {
     func hash(into hasher: inout Hasher) {
         id.hash(into: &hasher)
     }
+}
+
+// MARK: CustomStringConvertible
+
+extension Peer where Self: CustomStringConvertible, ID: CustomStringConvertible {
     
-    var description: String {
-        return "\(id)"
+    public var description: String {
+        return id.description
     }
 }
 
@@ -37,7 +44,7 @@ public extension Peer {
 /// Central Peer
 ///
 /// Represents a remote central device that has connected to an app implementing the peripheral role on a local device.
-public struct Central: Peer, Identifiable, Sendable {
+public struct Central: Peer, Identifiable, Sendable, CustomStringConvertible {
     
     public let id: BluetoothAddress
     
@@ -51,7 +58,7 @@ public struct Central: Peer, Identifiable, Sendable {
 /// Peripheral Peer
 ///
 /// Represents a remote peripheral device that has been discovered.
-public struct Peripheral: Peer, Identifiable, Sendable {
+public struct Peripheral: Peer, Identifiable, Sendable, CustomStringConvertible {
     
     public let id: BluetoothAddress
     
