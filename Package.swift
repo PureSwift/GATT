@@ -8,6 +8,12 @@ let libraryType: PackageDescription.Product.Library.LibraryType? = dynamicLibrar
 
 var package = Package(
     name: "GATT",
+    platforms: [
+        .macOS(.v10_15),
+        .iOS(.v13),
+        .watchOS(.v6),
+        .tvOS(.v13),
+    ],
     products: [
         .library(
             name: "GATT",
@@ -23,7 +29,7 @@ var package = Package(
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            branch: "master"
+            from: "7.1.0"
         )
     ],
     targets: [
