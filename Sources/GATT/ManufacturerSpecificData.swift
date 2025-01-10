@@ -11,7 +11,7 @@
 public typealias ManufacturerSpecificData = GAPManufacturerSpecificData
 #else
 /// GATT Manufacturer Specific Data
-public struct ManufacturerSpecificData<Data: DataConvertible>: Equatable, Hashable, Sendable {
+public struct ManufacturerSpecificData <Data: DataContainer> : Equatable, Hashable, Sendable {
     
     internal let data: Data // Optimize for CoreBluetooth / iOS
     
@@ -51,9 +51,10 @@ public extension ManufacturerSpecificData {
     init(companyIdentifier: CompanyIdentifier,
          additionalData: Data = Data()) {
         
-        var data = Data(capacity: 2 + additionalData.count)
-        withUnsafeBytes(of: companyIdentifier.rawValue.littleEndian) { data.append(contentsOf: $0) }
-        data.append(additionalData)
+        var data = Data()
+        data.reserveCapacity(2 + additionalData.count)
+        data += companyIdentifier.rawValue.littleEndian
+        data += additionalData
         self.data = data
     }
 }
