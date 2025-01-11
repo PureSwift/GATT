@@ -10,7 +10,7 @@ import Foundation
 import Bluetooth
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence {
+public struct AsyncCentralScan <Central: CentralManager>: AsyncSequence, Sendable {
 
     public typealias Element = ScanData<Central.Peripheral, Central.Advertisement>
     
@@ -57,7 +57,7 @@ public extension AsyncCentralScan {
 }
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence {
+public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence, Sendable {
 
     public typealias Element = Central.Data
     
