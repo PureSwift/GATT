@@ -180,7 +180,7 @@ internal actor GATTClientConnection <Socket: L2CAPConnection> where Socket: Send
         
         // Gatt Descriptors
         let descriptors: [GATTClient<Socket>.Descriptor]
-        if gattCharacteristic.descriptors.values.contains(where: { $0.attribute.uuid == .clientCharacteristicConfiguration }) {
+        if gattCharacteristic.descriptors.values.contains(where: { $0.attribute.uuid == BluetoothUUID.Descriptor.clientCharacteristicConfiguration }) {
             descriptors = Array(gattCharacteristic.descriptors.values.map { $0.attribute })
         } else {
             // fetch descriptors

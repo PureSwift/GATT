@@ -52,27 +52,27 @@ extension DarwinDescriptor {
     init?(_ descriptor: CBDescriptor) {
         let uuid = BluetoothUUID(descriptor.uuid)
         switch uuid {
-        case .characteristicUserDescription:
+        case BluetoothUUID.Descriptor.characteristicUserDescription:
             guard let userDescription = descriptor.value as? NSString
                 else { return nil }
             self = .userDescription(userDescription)
-        case .characteristicFormat:
+        case BluetoothUUID.Descriptor.characteristicPresentationFormat:
             guard let data = descriptor.value as? NSData
                 else { return nil }
             self = .format(data)
-        case .characteristicExtendedProperties:
+        case BluetoothUUID.Descriptor.characteristicExtendedProperties:
             guard let data = descriptor.value as? NSNumber
                 else { return nil }
             self = .extendedProperties(data)
-        case .characteristicAggregateFormat:
+        case BluetoothUUID.Descriptor.characteristicAggregateFormat:
             guard let data = descriptor.value as? NSData
                 else { return nil }
             self = .aggregateFormat(data)
-        case .clientCharacteristicConfiguration:
+        case BluetoothUUID.Descriptor.clientCharacteristicConfiguration:
             guard let data = descriptor.value as? NSNumber
                 else { return nil }
             self = .clientConfiguration(data)
-        case .serverCharacteristicConfiguration:
+        case BluetoothUUID.Descriptor.serverCharacteristicConfiguration:
             guard let data = descriptor.value as? NSNumber
                 else { return nil }
             self = .serverConfiguration(data)
@@ -84,12 +84,12 @@ extension DarwinDescriptor {
     
     var uuid: BluetoothUUID {
         switch self {
-        case .format: return .characteristicFormat
-        case .userDescription: return .characteristicUserDescription
-        case .extendedProperties: return .characteristicExtendedProperties
-        case .aggregateFormat: return .characteristicAggregateFormat
-        case .clientConfiguration: return .clientCharacteristicConfiguration
-        case .serverConfiguration: return .serverCharacteristicConfiguration
+        case .format: return BluetoothUUID.Descriptor.characteristicPresentationFormat
+        case .userDescription: return BluetoothUUID.Descriptor.characteristicUserDescription
+        case .extendedProperties: return BluetoothUUID.Descriptor.characteristicExtendedProperties
+        case .aggregateFormat: return BluetoothUUID.Descriptor.characteristicAggregateFormat
+        case .clientConfiguration: return BluetoothUUID.Descriptor.clientCharacteristicConfiguration
+        case .serverConfiguration: return BluetoothUUID.Descriptor.serverCharacteristicConfiguration
         }
     }
     
@@ -130,7 +130,7 @@ internal extension CBMutableDescriptor {
     /// Only the characteristic user description descriptor and the characteristic format descriptor
     /// are supported for descriptors for use in local Peripherals.
     static var supportedUUID: Set<BluetoothUUID> {
-        return [.characteristicUserDescription, .characteristicFormat]
+        return [BluetoothUUID.Descriptor.characteristicUserDescription, BluetoothUUID.Descriptor.characteristicPresentationFormat]
     }
     
     convenience init?(_ descriptor: DarwinDescriptor) {
@@ -141,11 +141,11 @@ internal extension CBMutableDescriptor {
     convenience init?(uuid: BluetoothUUID, data: Data) {
         let descriptor: DarwinDescriptor
         switch uuid {
-        case .characteristicUserDescription:
+        case BluetoothUUID.Descriptor.characteristicUserDescription:
             guard let userDescription = String(data: data, encoding: .utf8)
                 else { return nil }
             descriptor = .userDescription(userDescription as NSString)
-        case .characteristicFormat:
+        case BluetoothUUID.Descriptor.characteristicPresentationFormat:
             descriptor = .format(data as NSData)
         default:
             assert(Self.supportedUUID.contains(uuid) == false)
