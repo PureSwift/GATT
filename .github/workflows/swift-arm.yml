@@ -1,0 +1,60 @@
+name: Swift ARM
+on: [push]
+jobs:
+
+    linux-arm-raspios-build:
+      name: Linux (Raspios)
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          arch: ["armv6", "armv7"]
+          swift: ["6.1.2"]
+          config: ["debug" , "release"]
+          linux: ["raspios"]
+          release: ["bookworm"]
+      container: swift:${{ matrix.swift }}
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+        - name: Install dependencies
+          run: apt update -y; apt install wget -y
+        - name: Install SDK
+          run: |
+            wget https://github.com/xtremekforever/swift-armv7/releases/download/${{ matrix.swift }}/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}-sdk.tar.gz
+            tar -xvf swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}-sdk.tar.gz
+            mv swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }} /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}
+        - name: Swift Version
+          run: swift --version
+        - name: Build
+          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
+
+    linux-arm-debian-build:
+      name: Linux (Debian)
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          arch: ["armv7"]
+          swift: ["6.1.2"]
+          config: ["debug" , "release"]
+          linux: ["debian"]
+          release: ["bookworm", "bullseye"]
+      container: swift:${{ matrix.swift }}
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+        - name: Install dependencies
+          run: apt update -y; apt install wget -y
+        - name: Install SDK
+          run: |
+            wget https://github.com/xtremekforever/swift-armv7/releases/download/${{ matrix.swift }}/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}-sdk.tar.gz
+            tar -xvf swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}-sdk.tar.gz
+            mv swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }} /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}
+        - name: Swift Version
+          run: swift --version
+        - name: Build
+          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: "swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}-coremodel-${{ matrix.config }}"
+            path: .build/armv7-unknown-linux-gnueabihf/${{ matrix.config }}/libGATT.so
