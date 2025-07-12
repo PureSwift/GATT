@@ -29,7 +29,7 @@ var package = Package(
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            from: "7.2.0"
+            branch: "feature/skip"
         )
     ],
     targets: [
