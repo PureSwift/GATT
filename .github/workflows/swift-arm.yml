@@ -26,7 +26,7 @@ jobs:
         - name: Swift Version
           run: swift --version
         - name: Build
-          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
+          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --traits BluetoothGATT --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
 
     linux-arm-debian-build:
       name: Linux (Debian)
@@ -52,7 +52,7 @@ jobs:
         - name: Swift Version
           run: swift --version
         - name: Build
-          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
+          run: SWIFT_BUILD_DYNAMIC_LIBRARY=1 swift build -c ${{ matrix.config }} --traits BluetoothGATT --destination /opt/swift-${{ matrix.swift }}-RELEASE-${{ matrix.linux }}-${{ matrix.release }}-${{ matrix.arch }}/${{ matrix.linux }}-${{ matrix.release }}.json
         - name: Upload artifacts
           uses: actions/upload-artifact@v4
           with:

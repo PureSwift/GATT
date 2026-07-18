@@ -5,7 +5,9 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if canImport(BluetoothGATT)
+// GATTClient is an actor and relies on Swift Concurrency,
+// which Embedded Swift does not yet support.
+#if BluetoothGATT && !hasFeature(Embedded)
 import Bluetooth
 import BluetoothGATT
 

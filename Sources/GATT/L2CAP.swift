@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 4/18/22.
 //
 
-#if canImport(BluetoothHCI)
+#if BluetoothGATT
 import Bluetooth
 import BluetoothHCI
 

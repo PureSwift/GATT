@@ -6,7 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-#if canImport(BluetoothGATT)
+#if BluetoothGATT
 import Foundation
 import XCTest
 import Bluetooth
@@ -545,7 +545,7 @@ extension GATTTests {
         peripheral.log = { print("Peripheral:", $0) }
         try await server(peripheral)
         
-        peripheral.start()
+        try peripheral.start()
         defer { peripheral.stop() }
         
         // central
