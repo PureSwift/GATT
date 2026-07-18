@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 7/18/18.
 //
 
-#if canImport(BluetoothGATT) && !hasFeature(Embedded)
+#if canImport(BluetoothGATT)
 import Bluetooth
 import BluetoothGATT
 

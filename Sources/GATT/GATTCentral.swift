@@ -8,7 +8,7 @@
 #if canImport(Foundation)
 import Foundation
 #endif
-#if canImport(BluetoothGATT) && canImport(BluetoothHCI) && !hasFeature(Embedded)
+#if canImport(BluetoothGATT) && canImport(BluetoothHCI)
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI
