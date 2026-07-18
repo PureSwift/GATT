@@ -4,7 +4,7 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macos-15
+    runs-on: macos-26
     strategy:
       matrix:
         config: ["debug", "release"]
@@ -21,7 +21,7 @@ jobs:
 
   coverage:
     name: Code Coverage
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       contents: read
       code-quality: write # required by actions/upload-code-coverage
@@ -75,7 +75,7 @@ jobs:
         fail-fast: false
         matrix:
           arch: ["aarch64", "x86_64"]
-      runs-on: macos-15
+      runs-on: macos-26
       timeout-minutes: 30
       steps:
         - uses: actions/checkout@v4
