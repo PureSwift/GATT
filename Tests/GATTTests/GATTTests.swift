@@ -6,7 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-#if GATTServer && canImport(BluetoothGATT)
+#if canImport(BluetoothGATT)
 import Foundation
 import XCTest
 import Bluetooth

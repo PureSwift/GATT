@@ -26,6 +26,7 @@ jobs:
     - name: Build
       run: >-
         SWIFTPM_BLUETOOTH_METADATA=0
+        SWIFTPM_ENABLE_PLUGINS=0
         SWIFTPM_ENABLE_MACROS=0
         swift build
         --target GATT

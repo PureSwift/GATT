@@ -27,10 +27,10 @@ var package = Package(
         )
     ],
     traits: [
-        .default(enabledTraits: ["GATTServer"]),
+        .default(enabledTraits: ["BluetoothGATT"]),
         .trait(
-            name: "GATTServer",
-            description: "Enable the pure Swift GATT server (peripheral) implementation (GATTPeripheral)."
+            name: "BluetoothGATT",
+            description: "Import the BluetoothGATT module, enabling the pure Swift GATT server (GATTPeripheral) and using BluetoothGATT types instead of the lightweight shims for platforms like iOS and Android."
         )
     ],
     dependencies: [
@@ -49,7 +49,8 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(traits: ["BluetoothGATT"])
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -58,7 +59,8 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(traits: ["BluetoothGATT"])
                 )
             ]
         ),
@@ -69,7 +71,7 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .iOS])
+                    condition: .when(platforms: [.macOS, .iOS], traits: ["BluetoothGATT"])
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
@@ -84,7 +86,8 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(traits: ["BluetoothGATT"])
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -93,7 +96,8 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth"
+                    package: "Bluetooth",
+                    condition: .when(traits: ["BluetoothGATT"])
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
