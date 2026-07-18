@@ -14,7 +14,13 @@ import Foundation
 @_exported import BluetoothHCI
 
 /// GATT Peripheral Manager
-public final class GATTPeripheral <HostController: BluetoothHostControllerInterface, Socket: L2CAPServer>: PeripheralManager, @unchecked Sendable where Socket.Error == Socket.Connection.Error {
+///
+/// The host controller is only used for configuring advertising via the async
+/// `start()` and `start(options:)` APIs, which require a `BluetoothHostControllerInterface`.
+/// Platform Bluetooth stacks that manage advertising themselves (e.g. BTStack, NimBLE)
+/// can use any host controller type and start the server with `start(address:isRandom:)`,
+/// driving I/O by polling `run()` from the platform's run loop.
+public final class GATTPeripheral <HostController, Socket: L2CAPServer>: PeripheralManager, @unchecked Sendable where Socket.Error == Socket.Connection.Error {
     
     /// Central Peer
     public typealias Central = GATT.Central
@@ -93,7 +99,7 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         }
     }
         
-    private let lock = NSLock()
+    private let lock = Lock()
     
     // MARK: - Initialization
     
@@ -114,19 +120,11 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     
     // MARK: - Methods
     
-    public func start() {
-        guard #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) else {
-            fatalError("Requires Swift concurrency runtime")
-        }
-        // ignore errors
-        Task {
-            do { try await start(options: .init()) }
-            catch {
-                assertionFailure("Unable to start GATT server: \(error)")
-            }
-        }
+    public func start() throws(Error) {
+        // Advertising must be configured by the platform's Bluetooth stack.
+        try start(address: .zero, isRandom: false)
     }
-    
+
     public func start(address: BluetoothAddress, isRandom: Bool) throws(Error) {
         // create server socket
         let socket: Socket
@@ -140,56 +138,50 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
         catch {
             throw .connection(.socket(error))
         }
-        
+        self.storage.socket = socket
+        #if canImport(Foundation) && !os(WASI)
         // start listening for connections
         let thread = Thread { [weak self] in
             self?.log?("Started GATT Server")
             // listen for
             while let self = self, self.storage.isAdvertising, let socket = self.storage.socket {
-                self.accept(socket)
+                self.acceptThread(socket)
             }
         }
-        self.storage.socket = socket
         self.storage.thread = thread
         thread.start()
+        #else
+        // I/O is driven by calling `run()` from the platform's run loop.
+        self.log?("Started GATT Server")
+        #endif
     }
-    
-    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-    public func start(options: GATTPeripheralAdvertisingOptions) async throws {
-        assert(isAdvertising == false)
-        
-        // use public or random address
-        let address: BluetoothAddress
-        if let randomAddress = options.randomAddress {
-            address = randomAddress
-            try await hostController.lowEnergySetRandomAddress(randomAddress)
-        } else {
-            address = try await hostController.readDeviceAddress()
+
+    /// Process a pending connection and read and write from connected centrals, without blocking.
+    ///
+    /// Call this repeatedly from the platform's run loop on platforms without threading
+    /// (e.g. Embedded Swift with BTStack or NimBLE); on other platforms I/O is
+    /// serviced automatically by background threads.
+    public func run() {
+        // accept a pending connection
+        if let socket = storage.socket, socket.status.accept {
+            do {
+                try accept(socket)
+            }
+            catch {
+                log?("Error accepting new connection: \(error)")
+            }
         }
-        
-        // set advertising data and scan response
-        if options.advertisingData != nil || options.scanResponse != nil {
-            do { try await hostController.enableLowEnergyAdvertising(false) }
-            catch HCIError.commandDisallowed { /* ignore */ }
+        // read and write for each connection
+        for (central, connection) in storage.connections {
+            do {
+                try connection.run()
+            }
+            catch {
+                didDisconnect(central, log: log)
+            }
         }
-        if let advertisingData = options.advertisingData {
-            try await hostController.setLowEnergyAdvertisingData(advertisingData)
-        }
-        if let scanResponse = options.scanResponse {
-            try await hostController.setLowEnergyScanResponse(scanResponse)
-        }
-        
-        // enable advertising
-        do { try await hostController.enableLowEnergyAdvertising() }
-        catch HCIError.commandDisallowed { /* ignore */ }
-        
-        // start listening thread
-        try start(
-            address: address,
-            isRandom: options.randomAddress != nil
-        )
     }
-    
+
     public func stop() {
         storage.stop()
         log?("Stopped GATT Server")
@@ -240,6 +232,72 @@ public final class GATTPeripheral <HostController: BluetoothHostControllerInterf
     }
 }
 
+#if !hasFeature(Embedded)
+public extension GATTPeripheral where HostController: BluetoothHostControllerInterface {
+
+    /// Configure advertising with the host controller and start the GATT server.
+    func start() throws(Error) {
+        guard #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) else {
+            fatalError("Requires Swift concurrency runtime")
+        }
+        // ignore errors
+        Task {
+            do { try await start(options: .init()) }
+            catch {
+                assertionFailure("Unable to start GATT server: \(error)")
+            }
+        }
+    }
+
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    func start(options: GATTPeripheralAdvertisingOptions) async throws {
+        assert(isAdvertising == false)
+
+        // use public or random address
+        let address: BluetoothAddress
+        if let randomAddress = options.randomAddress {
+            address = randomAddress
+            try await hostController.lowEnergySetRandomAddress(randomAddress)
+        } else {
+            address = try await hostController.readDeviceAddress()
+        }
+
+        // set advertising data and scan response
+        if options.advertisingData != nil || options.scanResponse != nil {
+            do { try await hostController.enableLowEnergyAdvertising(false) }
+            catch HCIError.commandDisallowed { /* ignore */ }
+        }
+        if let advertisingData = options.advertisingData {
+            try await hostController.setLowEnergyAdvertisingData(advertisingData)
+        }
+        if let scanResponse = options.scanResponse {
+            try await hostController.setLowEnergyScanResponse(scanResponse)
+        }
+
+        // enable advertising
+        do { try await hostController.enableLowEnergyAdvertising() }
+        catch HCIError.commandDisallowed { /* ignore */ }
+
+        // re-enable advertising when a central disconnects
+        let hostController = self.hostController
+        let log = self.log
+        self.storage.reAdvertise = {
+            Task {
+                do { try await hostController.enableLowEnergyAdvertising() }
+                catch HCIError.commandDisallowed { /* ignore */ }
+                catch { log?("Could not enable advertising. \(error)") }
+            }
+        }
+
+        // start listening thread
+        try start(
+            address: address,
+            isRandom: options.randomAddress != nil
+        )
+    }
+}
+#endif
+
 internal extension GATTPeripheral {
     
     func log(_ central: Central, _ message: String) {
@@ -263,6 +321,19 @@ internal extension GATTPeripheral {
     
     func callback(for central: Central) -> GATTServer<Socket.Connection>.Callback {
         var callback = GATTServer<Socket.Connection>.Callback()
+        #if hasFeature(Embedded)
+        // Weak references are unavailable in Embedded Swift;
+        // the peripheral is expected to outlive its connections.
+        callback.willRead = {
+            self.willRead(central: central, uuid: $0, handle: $1, value: $2, offset: $3)
+        }
+        callback.willWrite = {
+            self.willWrite(central: central, uuid: $0, handle: $1, value: $2, newValue: $3)
+        }
+        callback.didWrite = { (uuid, handle, value) in
+            self.didWrite(central: central, uuid: uuid, handle: handle, value: value)
+        }
+        #else
         callback.willRead = { [weak self] in
             self?.willRead(central: central, uuid: $0, handle: $1, value: $2, offset: $3)
         }
@@ -272,6 +343,7 @@ internal extension GATTPeripheral {
         callback.didWrite = { [weak self] (uuid, handle, value) in
             self?.didWrite(central: central, uuid: uuid, handle: handle, value: value)
         }
+        #endif
         return callback
     }
     
@@ -324,7 +396,33 @@ internal extension GATTPeripheral {
         didWrite?(confirmation)
     }
     
+    /// Accept a pending connection, without blocking.
+    @discardableResult
     func accept(
+        _ socket: Socket
+    ) throws(Socket.Error) -> GATTServerConnection<Socket.Connection> {
+        let log = self.log
+        let newSocket = try socket.accept()
+        log?("[\(newSocket.address)]: New connection")
+        let central = Central(id: socket.address)
+        let connection = GATTServerConnection(
+            central: central,
+            socket: newSocket,
+            maximumTransmissionUnit: options.maximumTransmissionUnit,
+            maximumPreparedWrites: options.maximumPreparedWrites,
+            database: storage.database,
+            callback: callback(for: central),
+            log: {
+                log?("[\(central)]: " + $0)
+            }
+        )
+        storage.newConnection(connection)
+        return connection
+    }
+
+    #if canImport(Foundation) && !os(WASI)
+    /// Wait for a pending connection and service its I/O on a background thread.
+    func acceptThread(
         _ socket: Socket
     ) {
         let log = self.log
@@ -339,21 +437,8 @@ internal extension GATTPeripheral {
                     return
                 }
             }
-            let newSocket = try socket.accept()
-            log?("[\(newSocket.address)]: New connection")
-            let central = Central(id: socket.address)
-            let connection = GATTServerConnection(
-                central: central,
-                socket: newSocket,
-                maximumTransmissionUnit: options.maximumTransmissionUnit,
-                maximumPreparedWrites: options.maximumPreparedWrites,
-                database: storage.database,
-                callback: callback(for: central),
-                log: {
-                    log?("[\(central)]: " + $0)
-                }
-            )
-            storage.newConnection(connection)
+            let connection = try accept(socket)
+            let central = connection.central
             Thread.detachNewThread { [weak connection, weak self] in
                 do {
                     while let connection, self != nil {
@@ -373,20 +458,14 @@ internal extension GATTPeripheral {
             Thread.sleep(forTimeInterval: 1.0)
         }
     }
-    
+    #endif
+
     func didDisconnect(
         _ central: Central,
         log: (@Sendable (String) -> ())?
     ) {
         // try advertising again
-        let hostController = self.hostController
-        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
-            Task {
-                do { try await hostController.enableLowEnergyAdvertising() }
-                catch HCIError.commandDisallowed { /* ignore */ }
-                catch { log?("Could not enable advertising. \(error)") }
-            }
-        }
+        storage.reAdvertise?()
         // remove connection cache
         storage.removeConnection(central)
         // log
@@ -460,22 +539,29 @@ internal extension GATTPeripheral {
         var log: (@Sendable (String) -> ())?
         
         var socket: Socket?
-        
+
+        /// Invoked after a central disconnects, to re-enable advertising.
+        var reAdvertise: (@Sendable () -> ())?
+
+        #if canImport(Foundation) && !os(WASI)
         var thread: Thread?
-        
+        #endif
+
         var connections = [Central: GATTServerConnection<Socket.Connection>](minimumCapacity: 2)
-                
+
         fileprivate init() { }
-        
+
         var isAdvertising: Bool {
             socket != nil
         }
-        
+
         mutating func stop() {
             assert(socket != nil)
             socket = nil
+            #if canImport(Foundation) && !os(WASI)
             thread?.cancel()
             thread = nil
+            #endif
         }
         
         mutating func add(service: GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {

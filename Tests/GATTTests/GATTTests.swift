@@ -545,7 +545,7 @@ extension GATTTests {
         peripheral.log = { print("Peripheral:", $0) }
         try await server(peripheral)
         
-        peripheral.start()
+        try peripheral.start()
         defer { peripheral.stop() }
         
         // central

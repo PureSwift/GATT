@@ -29,7 +29,7 @@ internal final class GATTServerConnection <Socket: L2CAPConnection>: @unchecked 
         Int(server.maximumTransmissionUnit.rawValue) - 3
     }
     
-    private let lock = NSLock()
+    private let lock = Lock()
     
     // MARK: - Initialization
     

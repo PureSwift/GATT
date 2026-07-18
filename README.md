@@ -25,7 +25,7 @@ GATT requires **Swift 6.2** and uses [package traits](https://github.com/swiftla
 | ---- | ---- | ---- |
 | `BluetoothGATT` | Enabled | Imports the `BluetoothGATT` module, enabling the pure Swift GATT server (`GATTPeripheral`, `PeripheralManager`) and making the central use the `BluetoothGATT` types (`GATTCharacteristicProperties`, `ATTAttributePermissions`, `ATTMaximumTransmissionUnit`) instead of the lightweight shims. |
 
-The `BluetoothGATT` trait is enabled by default on every platform, so the pure Swift GATT stack is no longer tied to a specific platform. Disable it for central-only clients built on a platform Bluetooth stack (for example CoreBluetooth on iOS or the Android Bluetooth API), where the lightweight shim types are used instead and the GATT server role is unavailable:
+The `BluetoothGATT` trait is enabled by default on every platform, so the pure Swift GATT stack is no longer tied to a specific platform. On platforms without threading (Embedded Swift targets like Pi Pico W, ESP32 or nRF52840 running BTStack, NimBLE or Zephyr), `GATTPeripheral` is driven by calling its non-blocking `run()` method from the platform's run loop instead of background threads. Disable the trait for central-only clients built on a platform Bluetooth stack (for example CoreBluetooth on iOS or the Android Bluetooth API), where the lightweight shim types are used instead and the GATT server role is unavailable:
 
 ```swift
 .package(
