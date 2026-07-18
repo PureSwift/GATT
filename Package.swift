@@ -1,4 +1,4 @@
-// swift-tools-version:6.0
+// swift-tools-version:6.2
 import PackageDescription
 import class Foundation.ProcessInfo
 
@@ -26,10 +26,17 @@ var package = Package(
             targets: ["DarwinGATT"]
         )
     ],
+    traits: [
+        .default(enabledTraits: ["GATTServer"]),
+        .trait(
+            name: "GATTServer",
+            description: "Enable the pure Swift GATT server (peripheral) and central implementation and its dependencies (BluetoothGATT, BluetoothHCI)."
+        )
+    ],
     dependencies: [
         .package(
             url: "https://github.com/PureSwift/Bluetooth.git",
-            from: "7.2.0"
+            from: "7.5.0"
         )
     ],
     targets: [
@@ -43,7 +50,7 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .iOS, .linux])
+                    condition: .when(traits: ["GATTServer"])
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -53,7 +60,7 @@ var package = Package(
                 .product(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .iOS, .linux])
+                    condition: .when(traits: ["GATTServer"])
                 )
             ]
         ),
@@ -80,7 +87,7 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .iOS, .linux])
+                    condition: .when(traits: ["GATTServer"])
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -90,7 +97,7 @@ var package = Package(
                 .product(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .iOS, .linux])
+                    condition: .when(traits: ["GATTServer"])
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
