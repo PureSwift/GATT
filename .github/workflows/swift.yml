@@ -74,7 +74,6 @@ jobs:
       strategy:
         fail-fast: false
         matrix:
-          swift: ['6.2']
           arch: ["aarch64", "x86_64"]
       runs-on: macos-15
       timeout-minutes: 30
@@ -83,5 +82,5 @@ jobs:
         - name: "Build Swift Package for Android"
           run: |
               brew install skiptools/skip/skip || (brew update && brew install skiptools/skip/skip)
-              skip android sdk install --version ${{ matrix.swift }}
+              skip android sdk install --version 6.3.2
               ANDROID_NDK_ROOT="" skip android build --arch ${{ matrix.arch }}
