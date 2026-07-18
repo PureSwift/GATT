@@ -30,7 +30,7 @@ var package = Package(
         .default(enabledTraits: ["GATTServer"]),
         .trait(
             name: "GATTServer",
-            description: "Enable the pure Swift GATT server (peripheral) and central implementation and its dependencies (BluetoothGATT, BluetoothHCI)."
+            description: "Enable the pure Swift GATT server (peripheral) implementation (GATTPeripheral)."
         )
     ],
     dependencies: [
@@ -49,8 +49,7 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth",
-                    condition: .when(traits: ["GATTServer"])
+                    package: "Bluetooth"
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -59,8 +58,7 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth",
-                    condition: .when(traits: ["GATTServer"])
+                    package: "Bluetooth"
                 )
             ]
         ),
@@ -86,8 +84,7 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothGATT",
-                    package: "Bluetooth",
-                    condition: .when(traits: ["GATTServer"])
+                    package: "Bluetooth"
                 ),
                 .product(
                     name: "BluetoothGAP",
@@ -96,8 +93,7 @@ var package = Package(
                 ),
                 .product(
                     name: "BluetoothHCI",
-                    package: "Bluetooth",
-                    condition: .when(traits: ["GATTServer"])
+                    package: "Bluetooth"
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
