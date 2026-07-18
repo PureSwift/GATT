@@ -1,19 +1,68 @@
-name: Swift WASM
+name: Swift WebAssembly
 on: [push]
 jobs:
-  build-wasm:
-    name: Build for WASM
+  wasm:
+    name: WebAssembly
     runs-on: ubuntu-latest
+    container: swift:6.3.2
     strategy:
+      fail-fast: false
       matrix:
-        swift: ["6.3.2"]
-        config: ["debug", "release"]
-    container: swift:${{ matrix.swift }}
+        config: [debug, release]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Swift Version
-        run: swift --version
-      - uses: swiftwasm/setup-swiftwasm@v2
-      - name: Build
-        run: swift build -c ${{ matrix.config }} --swift-sdk wasm32-unknown-wasi
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Swift Version
+      run: swift --version
+    - name: Install dependencies
+      run: apt-get update -y && apt-get install -y curl
+    - name: Install WASM SDK
+      run: |
+        set -eux
+        url="https://download.swift.org/swift-6.3.2-release/wasm-sdk/swift-6.3.2-RELEASE/swift-6.3.2-RELEASE_wasm.artifactbundle.tar.gz"
+        curl -fsSL "$url" -o wasm.artifactbundle.tar.gz
+        swift sdk install wasm.artifactbundle.tar.gz
+        swift sdk list
+    - name: Build
+      run: >-
+        SWIFTPM_BLUETOOTH_METADATA=0
+        SWIFTPM_ENABLE_PLUGINS=0
+        SWIFTPM_ENABLE_MACROS=0
+        swift build
+        --target GATT
+        -c ${{ matrix.config }}
+        --swift-sdk swift-6.3.2-RELEASE_wasm
+        --disable-default-traits
+
+  embedded:
+    name: Embedded WebAssembly
+    runs-on: ubuntu-latest
+    container: swift:6.3.2
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [debug, release]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Swift Version
+      run: swift --version
+    - name: Install dependencies
+      run: apt-get update -y && apt-get install -y curl
+    - name: Install Embedded WASM SDK
+      run: |
+        set -eux
+        # The embedded SDK identifier ships inside the same artifact bundle as the regular WASM SDK.
+        url="https://download.swift.org/swift-6.3.2-release/wasm-sdk/swift-6.3.2-RELEASE/swift-6.3.2-RELEASE_wasm.artifactbundle.tar.gz"
+        curl -fsSL "$url" -o wasm.artifactbundle.tar.gz
+        swift sdk install wasm.artifactbundle.tar.gz
+        swift sdk list
+    - name: Build
+      run: >-
+        SWIFTPM_BLUETOOTH_METADATA=0
+        SWIFTPM_ENABLE_MACROS=0
+        swift build
+        --target GATT
+        -c ${{ matrix.config }}
+        --swift-sdk swift-6.3.2-RELEASE_wasm-embedded
+        --disable-default-traits
