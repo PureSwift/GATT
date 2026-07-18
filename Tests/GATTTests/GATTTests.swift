@@ -183,7 +183,7 @@ final class GATTTests: XCTestCase {
         let characteristics = [
             GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
-                value: batteryLevel.data,
+                value: Data(batteryLevel),
                 permissions: [.read],
                 properties: [.read, .notify],
                 descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])])
@@ -237,7 +237,7 @@ final class GATTTests: XCTestCase {
         let characteristics = [
             GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
-                value: batteryLevel.data,
+                value: Data(batteryLevel),
                 permissions: [.read, .write],
                 properties: [.read, .write],
                 descriptors: []
@@ -267,13 +267,13 @@ final class GATTTests: XCTestCase {
                 XCTAssertEqual(currentValue, characteristics[0].value)
                 peripheral.willWrite = {
                     XCTAssertEqual($0.uuid, BluetoothUUID.Characteristic.batteryLevel)
-                    XCTAssertEqual($0.value, batteryLevel.data)
-                    XCTAssertEqual($0.newValue, newValue.data)
+                    XCTAssertEqual($0.value, Data(batteryLevel))
+                    XCTAssertEqual($0.newValue, Data(newValue))
                     return nil
                 }
                 peripheral.didWrite = {
                     XCTAssertEqual($0.uuid, BluetoothUUID.Characteristic.batteryLevel)
-                    XCTAssertEqual($0.value, newValue.data)
+                    XCTAssertEqual($0.value, Data(newValue))
                 }
             },
             client: { (central, peripheral) in
@@ -297,12 +297,12 @@ final class GATTTests: XCTestCase {
                     else { XCTFail(); return }
                 XCTAssertEqual(characteristicValue, batteryLevel)
                 // write value
-                try await central.writeValue(newValue.data, for: foundCharacteristic, withResponse: true)
+                try await central.writeValue(Data(newValue), for: foundCharacteristic, withResponse: true)
                 // validate
                 let currentValue = await peripheralDatabaseValue()
-                XCTAssertEqual(currentValue, newValue.data)
+                XCTAssertEqual(currentValue, Data(newValue))
                 XCTAssertNotEqual(currentValue, characteristics[0].value)
-                XCTAssertNotEqual(currentValue, characteristicValue.data)
+                XCTAssertNotEqual(currentValue, Data(characteristicValue))
             }
         )
     }
@@ -315,7 +315,7 @@ final class GATTTests: XCTestCase {
         let characteristics = [
             GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
-                value: batteryLevel.data,
+                value: Data(batteryLevel),
                 permissions: [.read],
                 properties: [.read, .notify],
                 descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])]
@@ -339,7 +339,7 @@ final class GATTTests: XCTestCase {
                 let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
-                    peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
+                    peripheral.write(Data(newValue), forCharacteristic: characteristicValueHandle)
                 }
             },
             client: { (central, peripheral) in
@@ -380,7 +380,7 @@ final class GATTTests: XCTestCase {
         let characteristics = [
             GATTAttribute<Data>.Characteristic(
                 uuid: type(of: batteryLevel).uuid,
-                value: batteryLevel.data,
+                value: Data(batteryLevel),
                 permissions: [.read],
                 properties: [.read, .indicate],
                 descriptors: [.init(GATTClientCharacteristicConfiguration(), permissions: [.read, .write])]
@@ -404,7 +404,7 @@ final class GATTTests: XCTestCase {
                 let characteristicValueHandle = characteristicValueHandles[0]
                 Task {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
-                    peripheral.write(newValue.data, forCharacteristic: characteristicValueHandle)
+                    peripheral.write(Data(newValue), forCharacteristic: characteristicValueHandle)
                 }
             },
             client: { (central, peripheral) in
