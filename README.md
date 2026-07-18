@@ -17,6 +17,24 @@ GATT is available as a Swift Package Manager package. To use it, add the followi
 
 and to your target, add `GATT` to your dependencies. You can then `import GATT` to get access to GATT functionality.
 
+### Package Traits
+
+GATT requires **Swift 6.2** and uses [package traits](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0450-swiftpm-package-traits.md) to gate the pure Swift GATT stack:
+
+| Trait | Default | Description |
+| ---- | ---- | ---- |
+| `GATTServer` | Enabled | Enables the pure Swift GATT peripheral (`GATTPeripheral`) and central (`GATTCentral`) implementation and its dependencies (`BluetoothGATT`, `BluetoothHCI`). |
+
+The `GATTServer` trait is enabled by default on every platform, so the pure Swift GATT stack is no longer tied to a specific platform. Disable it (for example, when you only need `DarwinGATT`/CoreBluetooth, or for size-constrained builds) by opting out of default traits for the dependency:
+
+```swift
+.package(
+    url: "https://github.com/PureSwift/GATT.git",
+    branch: "master",
+    traits: []
+),
+```
+
 ## Platforms
 
 | Platform | Roles | Backend | Library |
@@ -108,7 +126,7 @@ License
 
 **GATT** is released under the MIT license. See LICENSE for details.
 
-[swift-badge]: https://img.shields.io/badge/swift-6.0-F05138.svg "Swift 6.0"
+[swift-badge]: https://img.shields.io/badge/swift-6.2-F05138.svg "Swift 6.2"
 [swift-url]: https://swift.org
 [platform-badge]: https://img.shields.io/badge/platform-macOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux%20%7C%20Android-lightgrey.svg
 [platform-url]: https://swift.org
