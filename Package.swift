@@ -43,17 +43,17 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .iOS, .linux])
                 ),
                 .product(
                     name: "BluetoothGAP",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux, .android])
+                    condition: .when(platforms: [.macOS, .iOS, .linux, .android])
                 ),
                 .product(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .iOS, .linux])
                 )
             ]
         ),
@@ -64,7 +64,7 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS])
+                    condition: .when(platforms: [.macOS, .iOS])
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
@@ -80,17 +80,17 @@ var package = Package(
                 .product(
                     name: "BluetoothGATT",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .iOS, .linux])
                 ),
                 .product(
                     name: "BluetoothGAP",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .iOS, .linux])
                 ),
                 .product(
                     name: "BluetoothHCI",
                     package: "Bluetooth",
-                    condition: .when(platforms: [.macOS, .linux])
+                    condition: .when(platforms: [.macOS, .iOS, .linux])
                 )
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
