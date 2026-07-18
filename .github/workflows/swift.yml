@@ -54,7 +54,7 @@ jobs:
     name: Linux
     strategy:
       matrix:
-        container: ["swift:6.2"]
+        container: ["swift:6.3.2"]
         config: ["debug", "release"]
         options: ["", "SWIFT_BUILD_DYNAMIC_LIBRARY=1"]
     runs-on: ubuntu-latest
