@@ -8,6 +8,7 @@ jobs:
       matrix:
         swift: ["6.3.2"]
         config: ["debug", "release"]
+        traits: ["--traits BluetoothGATT", ""]
     steps:
       - uses: compnerd/gha-setup-swift@main
         with:
@@ -18,4 +19,4 @@ jobs:
       - name: Swift Version
         run: swift --version
       - name: Build
-        run: swift build -c ${{ matrix.config }}
+        run: swift build -c ${{ matrix.config }} ${{ matrix.traits }}

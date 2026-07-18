@@ -8,7 +8,7 @@
 #if canImport(Foundation)
 import Foundation
 #endif
-#if canImport(BluetoothGATT)
+#if BluetoothGATT
 import Bluetooth
 import BluetoothGATT
 

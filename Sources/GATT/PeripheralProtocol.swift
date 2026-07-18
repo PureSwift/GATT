@@ -6,7 +6,7 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
-#if canImport(BluetoothGATT)
+#if BluetoothGATT
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 

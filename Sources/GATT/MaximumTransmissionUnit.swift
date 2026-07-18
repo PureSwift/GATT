@@ -6,7 +6,7 @@
 //
 
 @_exported import Bluetooth
-#if canImport(BluetoothGATT)
+#if BluetoothGATT
 @_exported import BluetoothGATT
 public typealias MaximumTransmissionUnit = ATTMaximumTransmissionUnit
 #else

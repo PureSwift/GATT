@@ -27,7 +27,6 @@ var package = Package(
         )
     ],
     traits: [
-        .default(enabledTraits: ["BluetoothGATT"]),
         .trait(
             name: "BluetoothGATT",
             description: "Import the BluetoothGATT module, enabling the pure Swift GATT server (GATTPeripheral) and using BluetoothGATT types instead of the lightweight shims for platforms like iOS and Android."

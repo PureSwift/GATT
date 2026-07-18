@@ -10,7 +10,7 @@ import Foundation
 #endif
 // GATTClient is an actor and relies on Swift Concurrency,
 // which Embedded Swift does not yet support.
-#if canImport(BluetoothGATT) && canImport(BluetoothHCI) && !hasFeature(Embedded)
+#if BluetoothGATT && !hasFeature(Embedded)
 @_exported import Bluetooth
 @_exported import BluetoothGATT
 @_exported import BluetoothHCI

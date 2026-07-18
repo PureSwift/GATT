@@ -35,6 +35,11 @@ SOURCE_PREFIX="${COVERAGE_SOURCE_PREFIX:-$PWD/Sources/}"
 OUTPUT="${COVERAGE_OUTPUT:-.build/coverage/coverage.lcov}"
 COBERTURA_OUTPUT="${COBERTURA_OUTPUT:-.build/coverage/coverage.xml}"
 
+# Extra flags forwarded to every `swift build`/`swift test` invocation (e.g.
+# "--traits BluetoothGATT" to measure coverage of the pure Swift GATT stack).
+# shellcheck disable=SC2206
+SWIFT_FLAGS=(${SWIFT_BUILD_FLAGS:-})
+
 # Resolve the correct llvm-cov (xcrun on Apple platforms, plain llvm-cov elsewhere).
 if command -v xcrun >/dev/null 2>&1; then
     LLVM_COV="xcrun llvm-cov"
@@ -45,11 +50,11 @@ fi
 # 1. Run the tests with coverage instrumentation.
 if [ "${SKIP_TEST:-0}" != "1" ]; then
     echo "==> Running tests with code coverage"
-    swift test --enable-code-coverage
+    swift test --enable-code-coverage ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"}
 fi
 
 # 2. Locate the coverage artifacts SwiftPM produced.
-CODECOV_JSON="$(swift test --enable-code-coverage --show-codecov-path)"
+CODECOV_JSON="$(swift test --enable-code-coverage --show-codecov-path ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"})"
 COV_DIR="$(dirname "$CODECOV_JSON")"
 PROFDATA="$COV_DIR/default.profdata"
 
@@ -60,7 +65,7 @@ fi
 
 # 3. Locate the instrumented test binary (differs by platform: on macOS it lives
 #    inside the .xctest bundle, on Linux the .xctest file is the binary itself).
-BIN_PATH="$(swift build --show-bin-path)"
+BIN_PATH="$(swift build --show-bin-path ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"})"
 TEST_BINARY=""
 for candidate in \
     "$BIN_PATH"/*PackageTests.xctest/Contents/MacOS/*PackageTests \

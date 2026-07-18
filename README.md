@@ -23,15 +23,17 @@ GATT requires **Swift 6.2** and uses [package traits](https://github.com/swiftla
 
 | Trait | Default | Description |
 | ---- | ---- | ---- |
-| `BluetoothGATT` | Enabled | Imports the `BluetoothGATT` module, enabling the pure Swift GATT server (`GATTPeripheral`, `PeripheralManager`) and making the central use the `BluetoothGATT` types (`GATTCharacteristicProperties`, `ATTAttributePermissions`, `ATTMaximumTransmissionUnit`) instead of the lightweight shims. |
+| `BluetoothGATT` | Disabled | Imports the `BluetoothGATT` module, enabling the pure Swift GATT server (`GATTPeripheral`, `PeripheralManager`) and making the central use the `BluetoothGATT` types (`GATTCharacteristicProperties`, `ATTAttributePermissions`, `ATTMaximumTransmissionUnit`) instead of the lightweight shims. |
 
-The `BluetoothGATT` trait is enabled by default on every platform, so the pure Swift GATT stack is no longer tied to a specific platform. On platforms without threading (Embedded Swift targets like Pi Pico W, ESP32 or nRF52840 running BTStack, NimBLE or Zephyr), `GATTPeripheral` is driven by calling its non-blocking `run()` method from the platform's run loop instead of background threads. Disable the trait for central-only clients built on a platform Bluetooth stack (for example CoreBluetooth on iOS or the Android Bluetooth API), where the lightweight shim types are used instead and the GATT server role is unavailable:
+By default the `BluetoothGATT` trait is disabled, so GATT builds against the lightweight shim types. This suits central-only clients built on a platform Bluetooth stack (for example CoreBluetooth on iOS or the Android Bluetooth API), where the platform provides the GATT server and the shims keep the dependency footprint small.
+
+Enable the trait when you need a GATT server (peripheral). This applies to both the pure Swift `GATTPeripheral` and the CoreBluetooth-backed `DarwinPeripheral`; the shim build provides the central role only. On platforms without threading (Embedded Swift targets like Pi Pico W, ESP32 or nRF52840 running BTStack, NimBLE or Zephyr), `GATTPeripheral` is driven by calling its non-blocking `run()` method from the platform's run loop instead of background threads.
 
 ```swift
 .package(
     url: "https://github.com/PureSwift/GATT.git",
     branch: "master",
-    traits: []
+    traits: ["BluetoothGATT"]
 ),
 ```
 

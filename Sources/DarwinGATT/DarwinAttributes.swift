@@ -7,7 +7,7 @@
 //
 
 // watchOS and tvOS only support Central mode
-#if (os(macOS) || os(iOS)) && canImport(BluetoothGATT)
+#if (os(macOS) || os(iOS)) && BluetoothGATT
 import Foundation
 import Bluetooth
 import BluetoothGATT

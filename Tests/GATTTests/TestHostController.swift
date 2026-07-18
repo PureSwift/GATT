@@ -6,7 +6,7 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
-#if canImport(BluetoothHCI)
+#if BluetoothGATT
 import Foundation
 import Bluetooth
 import BluetoothHCI
