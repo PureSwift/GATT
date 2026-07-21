@@ -94,6 +94,26 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
         }
     }
 
+    /// Callback invoked when a central acknowledges (confirms) an indication for the
+    /// specified characteristic handle.
+    ///
+    /// - Warning: Never invoked. `Bluetooth.GATTServer`, the ATT server implementation
+    ///   backing this type, already receives ATT indication confirmations
+    ///   (`ATTHandleValueConfirmation`) from `send(_:response:)`, but only logs them —
+    ///   it does not forward them through its public `Callback` struct, which exposes
+    ///   only `willRead`, `willWrite`, and `didWrite`. Surfacing confirmations here
+    ///   requires adding a corresponding hook (e.g. `didConfirm`) to `GATTServer.Callback`
+    ///   upstream in the `PureSwift/Bluetooth` package; until then this property is kept
+    ///   only to satisfy `PeripheralManager` conformance.
+    public var didConfirm: ((Central, UInt16) -> ())? {
+        get {
+            storage.didConfirm
+        }
+        set {
+            storage.didConfirm = newValue
+        }
+    }
+
     public var connections: Set<Central> {
         Set(storage.connections.values.lazy.map { $0.central })
     }
@@ -578,6 +598,8 @@ internal extension GATTPeripheral {
         var didConnect: ((Central) -> ())?
 
         var didDisconnect: ((Central) -> ())?
+
+        var didConfirm: ((Central, UInt16) -> ())?
 
         var log: (@Sendable (String) -> ())?
         
