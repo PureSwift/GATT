@@ -6,6 +6,15 @@
 //  Copyright © 2018 PureSwift. All rights reserved.
 //
 
+#if canImport(Foundation)
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+#elseif canImport(FoundationEmbedded)
+import FoundationEmbedded
+#endif
 @_exported import Bluetooth
 #if canImport(BluetoothGAP)
 import BluetoothGAP
