@@ -28,6 +28,10 @@ internal final class GATTServerConnection <Socket: L2CAPConnection>: @unchecked 
         // ATT_MTU-3
         Int(server.maximumTransmissionUnit.rawValue) - 3
     }
+
+    public var maximumTransmissionUnit: ATTMaximumTransmissionUnit {
+        server.maximumTransmissionUnit
+    }
     
     private let lock = Lock()
     
