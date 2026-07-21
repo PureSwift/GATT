@@ -44,6 +44,27 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
 
     public var didDisconnect: ((Central) -> ())?
 
+    /// Callback invoked when a central acknowledges (confirms) an indication for the
+    /// specified characteristic handle.
+    ///
+    /// - Note: CoreBluetooth does not report ATT-level indication confirmations
+    ///   directly; `CBPeripheralManagerDelegate` has no `didConfirm`-style method.
+    ///   The only related signal is `peripheralManagerIsReady(toUpdateSubscribers:)`,
+    ///   which fires when the shared transmit queue (used for both notifications and
+    ///   indications, across all subscribed centrals) has space again after a prior
+    ///   `updateValue(_:for:onSubscribedCentrals:)` call returned `false`. Because
+    ///   CoreBluetooth will not accept another update for a central while an
+    ///   indication to that central is unconfirmed, this callback is invoked as a
+    ///   best-effort proxy: only for calls to `write(_:forCharacteristic:for:)` (a
+    ///   single, explicit central) that initially failed to enqueue and only
+    ///   succeeded after waiting for `peripheralManagerIsReady`. This is a heuristic,
+    ///   not a verified per-characteristic confirmation — the queue can also free up
+    ///   for reasons unrelated to that specific central or characteristic (e.g. a
+    ///   plain notification draining, or another central's indication being
+    ///   confirmed), and it is never invoked for the broadcast `write(_:forCharacteristic:)`
+    ///   since no single central can be attributed there.
+    public var didConfirm: ((Central, UInt16) -> ())?
+
     public var stateChanged: ((DarwinBluetoothState) -> ())?
 
     public var connections: Set<Central> {
@@ -173,7 +194,27 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
     }
     
     public func write(_ newValue: Data, forCharacteristic handle: UInt16, for central: Central) {
-        write(newValue, forCharacteristic: handle) // per-connection database not supported on Darwin
+        // update GATT DB (shared; per-connection database not supported on Darwin)
+        database[characteristic: handle] = newValue
+        // send notification/indication to only the specified central
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+            Task {
+                var didNotify = updateValue(newValue, forCharacteristic: handle, centrals: [central])
+                var didWaitForTransmitQueue = false
+                while didNotify == false {
+                    didWaitForTransmitQueue = true
+                    await waitPeripheralReadyUpdateSubcribers()
+                    didNotify = updateValue(newValue, forCharacteristic: handle, centrals: [central])
+                }
+                // Best-effort indication confirmation heuristic.
+                // See the `didConfirm` documentation for its limitations.
+                if didWaitForTransmitQueue {
+                    didConfirm?(central, handle)
+                }
+            }
+        } else {
+            updateValue(newValue, forCharacteristic: handle, centrals: [central])
+        }
     }
     
     public func value(for characteristicHandle: UInt16, central: Central) -> Data {
