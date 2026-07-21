@@ -48,7 +48,10 @@ public protocol PeripheralManager {
     func removeAllServices()
     
     /// Callback to handle GATT read requests.
-    var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)? { get set }
+    ///
+    /// Return `.success` with the data to serve as the response, overriding the value
+    /// stored in the GATT database, or `.failure` to reject the request with the given error.
+    var willRead: ((GATTReadRequest<Central, Data>) -> Result<Data, ATTError>)? { get set }
     
     /// Callback to handle GATT write requests.
     var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)? { get set }
