@@ -54,7 +54,13 @@ public protocol PeripheralManager {
     
     /// Callback to handle post-write actions for GATT write requests.
     var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())? { get set }
-    
+
+    /// Callback to handle when a central connects.
+    var didConnect: ((Central) -> ())? { get set }
+
+    /// Callback to handle when a central disconnects.
+    var didDisconnect: ((Central) -> ())? { get set }
+
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     func write(_ newValue: Data, forCharacteristic handle: UInt16)
     
