@@ -75,7 +75,25 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
             storage.didWrite = newValue
         }
     }
-    
+
+    public var didConnect: ((Central) -> ())? {
+        get {
+            storage.didConnect
+        }
+        set {
+            storage.didConnect = newValue
+        }
+    }
+
+    public var didDisconnect: ((Central) -> ())? {
+        get {
+            storage.didDisconnect
+        }
+        set {
+            storage.didDisconnect = newValue
+        }
+    }
+
     public var connections: Set<Central> {
         Set(storage.connections.values.lazy.map { $0.central })
     }
@@ -417,6 +435,8 @@ internal extension GATTPeripheral {
             }
         )
         storage.newConnection(connection)
+        // notify delegate
+        didConnect?(central)
         return connection
     }
 
@@ -470,6 +490,8 @@ internal extension GATTPeripheral {
         storage.removeConnection(central)
         // log
         log?("[\(central)]: " + "Did disconnect.")
+        // notify delegate
+        didDisconnect?(central)
     }
 }
 
@@ -535,7 +557,11 @@ internal extension GATTPeripheral {
         var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
         
         var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())?
-        
+
+        var didConnect: ((Central) -> ())?
+
+        var didDisconnect: ((Central) -> ())?
+
         var log: (@Sendable (String) -> ())?
         
         var socket: Socket?
