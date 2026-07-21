@@ -34,7 +34,7 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
         self.peripheralManager.isAdvertising
     }
     
-    public var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)?
+    public var willRead: ((GATTReadRequest<Central, Data>) -> Result<Data, ATTError>)?
     
     public var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
     
@@ -466,12 +466,18 @@ internal extension DarwinPeripheral {
                 peripheralManager.respond(to: request, withResult: .invalidOffset)
                 return
             }
-            if let error = self.peripheral.willRead?(readRequest) {
-                peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
-                return
+            var responseValue = value
+            if let result = self.peripheral.willRead?(readRequest) {
+                switch result {
+                case let .success(newValue):
+                    responseValue = newValue
+                case let .failure(error):
+                    peripheralManager.respond(to: request, withResult: CBATTError.Code(rawValue: Int(error.rawValue))!)
+                    return
+                }
             }
-            
-            let requestedValue = request.offset == 0 ? value : Data(value.suffix(request.offset))
+
+            let requestedValue = request.offset == 0 ? responseValue : Data(responseValue.suffix(request.offset))
             request.value = requestedValue
             peripheralManager.respond(to: request, withResult: .success)
         }
