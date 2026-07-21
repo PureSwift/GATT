@@ -96,15 +96,6 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
 
     /// Callback invoked when a central acknowledges (confirms) an indication for the
     /// specified characteristic handle.
-    ///
-    /// - Warning: Never invoked. `Bluetooth.GATTServer`, the ATT server implementation
-    ///   backing this type, already receives ATT indication confirmations
-    ///   (`ATTHandleValueConfirmation`) from `send(_:response:)`, but only logs them —
-    ///   it does not forward them through its public `Callback` struct, which exposes
-    ///   only `willRead`, `willWrite`, and `didWrite`. Surfacing confirmations here
-    ///   requires adding a corresponding hook (e.g. `didConfirm`) to `GATTServer.Callback`
-    ///   upstream in the `PureSwift/Bluetooth` package; until then this property is kept
-    ///   only to satisfy `PeripheralManager` conformance.
     public var didConfirm: ((Central, UInt16) -> ())? {
         get {
             storage.didConfirm
@@ -378,6 +369,9 @@ internal extension GATTPeripheral {
         callback.didWrite = { (uuid, handle, value) in
             self.didWrite(central: central, uuid: uuid, handle: handle, value: value)
         }
+        callback.didConfirm = { (uuid, handle) in
+            self.didConfirm(central: central, uuid: uuid, handle: handle)
+        }
         #else
         callback.willRead = { [weak self] in
             self?.willRead(central: central, uuid: $0, handle: $1, value: $2, offset: $3)
@@ -387,6 +381,9 @@ internal extension GATTPeripheral {
         }
         callback.didWrite = { [weak self] (uuid, handle, value) in
             self?.didWrite(central: central, uuid: uuid, handle: handle, value: value)
+        }
+        callback.didConfirm = { [weak self] (uuid, handle) in
+            self?.didConfirm(central: central, uuid: uuid, handle: handle)
         }
         #endif
         return callback
@@ -449,6 +446,10 @@ internal extension GATTPeripheral {
         write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
         // notify delegate
         didWrite?(confirmation)
+    }
+
+    func didConfirm(central: Central, uuid: BluetoothUUID, handle: UInt16) {
+        didConfirm?(central, handle)
     }
     
     /// Accept a pending connection, without blocking.
