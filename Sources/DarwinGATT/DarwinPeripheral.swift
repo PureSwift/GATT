@@ -112,16 +112,16 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
         peripheralManager.stopAdvertising()
     }
     
-    public func add(service: GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {
+    public func add(service: GATTAttribute<Data>.Service) -> GATTAddedService {
         // add service
         let serviceObject = service.toCoreBluetooth()
         peripheralManager.add(serviceObject)
         let handle = database.add(service: service, serviceObject)
         return handle
     }
-    
+
     @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-    public func add(service: GATTAttribute<Data>.Service) async throws -> (UInt16, [UInt16]) {
+    public func add(service: GATTAttribute<Data>.Service) async throws -> GATTAddedService {
         let serviceObject = service.toCoreBluetooth()
         // add service
         try await withCheckedThrowingContinuation { [unowned self] (continuation: CheckedContinuation<(), Error>) in
@@ -637,11 +637,11 @@ private extension DarwinPeripheral {
             return lastHandle
         }
         
-        mutating func add(service: GATTAttribute<Data>.Service, _ coreService: CBMutableService) -> (UInt16, [UInt16]) {
-            
+        mutating func add(service: GATTAttribute<Data>.Service, _ coreService: CBMutableService) -> GATTAddedService {
+
             let serviceHandle = newHandle()
-            var characteristicHandles = [UInt16]()
-            characteristicHandles.reserveCapacity((coreService.characteristics ?? []).count)
+            var addedCharacteristics = [GATTAddedService.AddedCharacteristic]()
+            addedCharacteristics.reserveCapacity((coreService.characteristics ?? []).count)
             services[coreService] = Service(handle: serviceHandle)
             for (index, characteristic) in ((coreService.characteristics ?? []) as! [CBMutableCharacteristic]).enumerated()  {
                 let data = service.characteristics[index].value
@@ -651,9 +651,13 @@ private extension DarwinPeripheral {
                     serviceHandle: serviceHandle,
                     value: data
                 )
-                characteristicHandles.append(characteristicHandle)
+                // Only descriptors CoreBluetooth actually accepted (see `toCoreBluetooth()`) are assigned handles here.
+                let descriptorHandles = (characteristic.descriptors as? [CBMutableDescriptor] ?? []).map { _ in newHandle() }
+                addedCharacteristics.append(
+                    GATTAddedService.AddedCharacteristic(handle: characteristicHandle, descriptors: descriptorHandles)
+                )
             }
-            return (serviceHandle, characteristicHandles)
+            return GATTAddedService(handle: serviceHandle, characteristics: addedCharacteristics)
         }
         
         mutating func remove(service handle: UInt16) {
