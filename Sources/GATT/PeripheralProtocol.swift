@@ -68,6 +68,11 @@ public protocol PeripheralManager {
     
     /// Read the value of the characteristic with specified handle for the specified connection.
     func value(for characteristicHandle: UInt16, central: Central) throws(Error) -> Data
+
+    /// The negotiated ATT MTU for the specified connected central.
+    ///
+    /// Throws error if central is unknown or disconnected.
+    func maximumTransmissionUnit(for central: Central) throws(Error) -> MaximumTransmissionUnit
 }
 
 // MARK: - Supporting Types
