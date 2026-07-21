@@ -222,7 +222,14 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
         }
         return connection[characteristicHandle]
     }
-    
+
+    public func maximumTransmissionUnit(for central: Central) throws(Error) -> MaximumTransmissionUnit {
+        guard let connection = storage.connections[central] else {
+            throw .disconnected(central)
+        }
+        return connection.maximumTransmissionUnit
+    }
+
     /// Return the handles of the characteristics matching the specified UUID.
     public func characteristics(for uuid: BluetoothUUID) -> [UInt16] {
         return storage.database
