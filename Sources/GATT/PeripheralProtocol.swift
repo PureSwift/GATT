@@ -59,11 +59,21 @@ public protocol PeripheralManager {
     /// Callback to handle post-write actions for GATT write requests.
     var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())? { get set }
 
-    /// Callback to handle when a central connects.
+/// Callback to handle when a central connects.
     var didConnect: ((Central) -> ())? { get set }
 
     /// Callback to handle when a central disconnects.
     var didDisconnect: ((Central) -> ())? { get set }
+
+    /// Callback invoked when a central acknowledges (confirms) an indication for the
+    /// specified characteristic handle.
+    ///
+    /// Indications differ from notifications in that the central sends an ATT
+    /// confirmation once it receives the value, letting the peripheral know delivery
+    /// succeeded. Not every backend is able to observe that confirmation with
+    /// central / characteristic granularity; see the documentation on each
+    /// conforming type for what, if anything, triggers this callback.
+    var didConfirm: ((Central, UInt16) -> ())? { get set }
 
     /// Modify the value of a characteristic, optionally emiting notifications if configured on active connections.
     func write(_ newValue: Data, forCharacteristic handle: UInt16)
