@@ -49,7 +49,7 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
         }
     }
     
-    public var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)? {
+    public var willRead: ((GATTReadRequest<Central, Data>) -> Result<Data, ATTError>)? {
         get {
             storage.willRead
         }
@@ -365,7 +365,17 @@ internal extension GATTPeripheral {
             value: value,
             offset: offset
         )
-        return willRead?(request)
+        guard let result = willRead?(request) else {
+            return nil
+        }
+        switch result {
+        case let .success(newValue):
+            // override the stored value so it is served as the response
+            write(newValue, forCharacteristic: handle)
+            return nil
+        case let .failure(error):
+            return error
+        }
     }
     
     func willWrite(central: Central, uuid: BluetoothUUID, handle: UInt16, value: Data, newValue: Data) -> ATTError? {
@@ -530,7 +540,7 @@ internal extension GATTPeripheral {
         
         var database = GATTDatabase<Data>()
         
-        var willRead: ((GATTReadRequest<Central, Data>) -> ATTError?)?
+        var willRead: ((GATTReadRequest<Central, Data>) -> Result<Data, ATTError>)?
         
         var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
         
