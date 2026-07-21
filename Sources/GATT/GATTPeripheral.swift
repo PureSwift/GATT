@@ -94,6 +94,17 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
         }
     }
 
+    /// Callback invoked when a central acknowledges (confirms) an indication for the
+    /// specified characteristic handle.
+    public var didConfirm: ((Central, UInt16) -> ())? {
+        get {
+            storage.didConfirm
+        }
+        set {
+            storage.didConfirm = newValue
+        }
+    }
+
     public var connections: Set<Central> {
         Set(storage.connections.values.lazy.map { $0.central })
     }
@@ -358,6 +369,9 @@ internal extension GATTPeripheral {
         callback.didWrite = { (uuid, handle, value) in
             self.didWrite(central: central, uuid: uuid, handle: handle, value: value)
         }
+        callback.didConfirm = { (uuid, handle) in
+            self.didConfirm(central: central, uuid: uuid, handle: handle)
+        }
         #else
         callback.willRead = { [weak self] in
             self?.willRead(central: central, uuid: $0, handle: $1, value: $2, offset: $3)
@@ -367,6 +381,9 @@ internal extension GATTPeripheral {
         }
         callback.didWrite = { [weak self] (uuid, handle, value) in
             self?.didWrite(central: central, uuid: uuid, handle: handle, value: value)
+        }
+        callback.didConfirm = { [weak self] (uuid, handle) in
+            self?.didConfirm(central: central, uuid: uuid, handle: handle)
         }
         #endif
         return callback
@@ -429,6 +446,10 @@ internal extension GATTPeripheral {
         write(confirmation.value, forCharacteristic: confirmation.handle, ignore: confirmation.central)
         // notify delegate
         didWrite?(confirmation)
+    }
+
+    func didConfirm(central: Central, uuid: BluetoothUUID, handle: UInt16) {
+        didConfirm?(central, handle)
     }
     
     /// Accept a pending connection, without blocking.
@@ -578,6 +599,8 @@ internal extension GATTPeripheral {
         var didConnect: ((Central) -> ())?
 
         var didDisconnect: ((Central) -> ())?
+
+        var didConfirm: ((Central, UInt16) -> ())?
 
         var log: (@Sendable (String) -> ())?
         
