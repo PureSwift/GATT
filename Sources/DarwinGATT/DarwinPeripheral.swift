@@ -39,9 +39,19 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
     public var willWrite: ((GATTWriteRequest<Central, Data>) -> ATTError?)?
     
     public var didWrite: ((GATTWriteConfirmation<Central, Data>) -> ())?
-    
+
+    public var didConnect: ((Central) -> ())?
+
+    public var didDisconnect: ((Central) -> ())?
+
     public var stateChanged: ((DarwinBluetoothState) -> ())?
-    
+
+    public var connections: Set<Central> {
+        _connections
+    }
+
+    private var _connections = Set<Central>()
+
     private var database = Database()
     
     private var peripheralManager: CBPeripheralManager!
@@ -193,7 +203,20 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
     }
     
     // MARK: - Private Methods
-    
+
+    /// Track a central as connected, notifying the delegate the first time it is observed.
+    fileprivate func addConnection(_ central: Central) {
+        guard _connections.contains(central) == false else { return }
+        _connections.insert(central)
+        didConnect?(central)
+    }
+
+    /// Track a central as disconnected, notifying the delegate.
+    fileprivate func removeConnection(_ central: Central) {
+        guard _connections.remove(central) != nil else { return }
+        didDisconnect?(central)
+    }
+
     @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     private func waitPeripheralReadyUpdateSubcribers() async {
         await withCheckedContinuation { [unowned self] continuation in
@@ -448,8 +471,9 @@ internal extension DarwinPeripheral {
         public func peripheralManager(_ peripheralManager: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
             
             log("Did receive read request for \(request.characteristic.uuid)")
-            
+
             let peer = Central(request.central)
+            self.peripheral.addConnection(peer)
             let characteristic = self.peripheral.database[characteristic: request.characteristic]
             let uuid = BluetoothUUID(request.characteristic.uuid)
             let value = characteristic.value
@@ -489,6 +513,7 @@ internal extension DarwinPeripheral {
             
             let writeRequests: [GATTWriteRequest<Central, Data>] = requests.map { request in
                 let peer = Central(request.central)
+                self.peripheral.addConnection(peer)
                 let characteristic = self.peripheral.database[characteristic: request.characteristic]
                 let value = characteristic.value
                 let uuid = BluetoothUUID(request.characteristic.uuid)
@@ -543,11 +568,16 @@ internal extension DarwinPeripheral {
         @objc(peripheralManager:central:didSubscribeToCharacteristic:)
         public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
             log("Central \(central.id) did subscribe to \(characteristic.uuid)")
+            // CoreBluetooth has no explicit "central connected" delegate method for the peripheral role,
+            // so the first subscription is used to infer that a central is connected.
+            self.peripheral.addConnection(Central(central))
         }
-        
+
         @objc
         public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
             log("Central \(central.id) did unsubscribe from \(characteristic.uuid)")
+            // Likewise, there is no explicit disconnect callback; unsubscribing is treated as disconnection.
+            self.peripheral.removeConnection(Central(central))
         }
         
         @objc
