@@ -37,8 +37,9 @@ public protocol PeripheralManager {
     
     /// Attempts to add the specified service to the GATT database.
     ///
-    /// - Returns: Handle for service declaration and handles for characteristic value handles.
-    func add(service: BluetoothGATT.GATTAttribute<Data>.Service) throws(Error) -> (UInt16, [UInt16])
+    /// - Returns: The handle assigned to the service declaration, along with the handles assigned
+    ///   to each of its characteristics (and their descriptors), mirroring the structure of `service`.
+    func add(service: BluetoothGATT.GATTAttribute<Data>.Service) throws(Error) -> GATTAddedService
     
     /// Removes the service with the specified handle.
     func remove(service: UInt16)
@@ -71,6 +72,39 @@ public protocol PeripheralManager {
 }
 
 // MARK: - Supporting Types
+
+/// The handles assigned when adding a service to a peripheral's GATT database.
+public struct GATTAddedService: Equatable, Hashable, Sendable {
+
+    /// The handle assigned to the service declaration.
+    public let handle: UInt16
+
+    /// The characteristics added for this service, in the same order as the input service.
+    public let characteristics: [AddedCharacteristic]
+
+    public init(handle: UInt16, characteristics: [AddedCharacteristic]) {
+        self.handle = handle
+        self.characteristics = characteristics
+    }
+}
+
+public extension GATTAddedService {
+
+    /// The handles assigned when adding a characteristic to a peripheral's GATT database.
+    struct AddedCharacteristic: Equatable, Hashable, Sendable {
+
+        /// The handle assigned to the characteristic value.
+        public let handle: UInt16
+
+        /// The handles assigned to the characteristic's descriptors, in the same order as the input descriptors.
+        public let descriptors: [UInt16]
+
+        public init(handle: UInt16, descriptors: [UInt16]) {
+            self.handle = handle
+            self.descriptors = descriptors
+        }
+    }
+}
 
 public protocol GATTRequest {
     
