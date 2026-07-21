@@ -187,7 +187,7 @@ public final class GATTPeripheral <HostController, Socket: L2CAPServer>: Periphe
         log?("Stopped GATT Server")
     }
     
-    public func add(service: BluetoothGATT.GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {
+    public func add(service: BluetoothGATT.GATTAttribute<Data>.Service) -> GATTAddedService {
         return storage.add(service: service)
     }
     
@@ -564,7 +564,7 @@ internal extension GATTPeripheral {
             #endif
         }
         
-        mutating func add(service: GATTAttribute<Data>.Service) -> (UInt16, [UInt16]) {
+        mutating func add(service: GATTAttribute<Data>.Service) -> GATTAddedService {
             var includedServicesHandles = [UInt16]()
             var characteristicDeclarationHandles = [UInt16]()
             var characteristicValueHandles = [UInt16]()
@@ -576,7 +576,10 @@ internal extension GATTPeripheral {
                 characteristicValueHandles: &characteristicValueHandles,
                 descriptorHandles: &descriptorHandles
             )
-            return (serviceHandle, characteristicValueHandles)
+            let characteristics = zip(characteristicValueHandles, descriptorHandles).map { characteristicValueHandle, descriptorHandles in
+                GATTAddedService.AddedCharacteristic(handle: characteristicValueHandle, descriptors: descriptorHandles)
+            }
+            return GATTAddedService(handle: serviceHandle, characteristics: characteristics)
         }
         
         mutating func remove(service handle: UInt16) {
