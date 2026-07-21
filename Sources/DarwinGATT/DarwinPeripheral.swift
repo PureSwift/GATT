@@ -179,7 +179,17 @@ public final class DarwinPeripheral: PeripheralManager, @unchecked Sendable {
     public func value(for characteristicHandle: UInt16, central: Central) -> Data {
         self[characteristic: characteristicHandle]
     }
-    
+
+    public func maximumTransmissionUnit(for central: Central) throws(Error) -> MaximumTransmissionUnit {
+        guard let cbCentral = central.central else {
+            throw DarwinPeripheralError.unknownCentral
+        }
+        guard let mtu = MaximumTransmissionUnit(rawValue: UInt16(cbCentral.maximumUpdateValueLength + 3)) else {
+            throw DarwinPeripheralError.unknownCentral
+        }
+        return mtu
+    }
+
     /// Read the value of the characteristic with specified handle.
     public subscript(characteristic handle: UInt16) -> Data {
         self.database[characteristic: handle]
