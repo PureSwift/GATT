@@ -28,7 +28,7 @@ public enum CentralError: Error {
 
 // MARK: - CustomNSError
 
-#if canImport(Darwin)
+#if canImport(Darwin) && !hasFeature(Embedded)
 extension CentralError: CustomNSError {
     
     public enum UserInfoKey: String {
