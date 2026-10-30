@@ -5,8 +5,10 @@
 //  Created by Alsey Coleman Miller on 4/17/22.
 //
 
-#if !hasFeature(Embedded)
-import Foundation
+#if hasFeature(Embedded)
+// Embedded Swift does not import the concurrency module implicitly.
+import _Concurrency
+#endif
 import Bluetooth
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
@@ -90,4 +92,3 @@ public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence
         return stream.isExecuting
     }
 }
-#endif
