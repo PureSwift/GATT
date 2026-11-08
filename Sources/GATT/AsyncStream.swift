@@ -5,6 +5,8 @@
 //  Created by Alsey Coleman Miller on 4/17/22.
 //
 
+#if !EMBEDDED_NO_CONCURRENCY
+
 #if hasFeature(Embedded)
 // Embedded Swift does not import the concurrency module implicitly.
 import _Concurrency
@@ -92,3 +94,5 @@ public struct AsyncCentralNotifications <Central: CentralManager>: AsyncSequence
         return stream.isExecuting
     }
 }
+
+#endif
