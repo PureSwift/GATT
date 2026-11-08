@@ -37,7 +37,7 @@ jobs:
   embedded:
     name: Embedded WebAssembly
     runs-on: ubuntu-latest
-    container: swift:6.3.2
+    container: swift:6.4.2
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
       run: |
         set -eux
         # The embedded SDK identifier ships inside the same artifact bundle as the regular WASM SDK.
-        url="https://download.swift.org/swift-6.3.2-release/wasm-sdk/swift-6.3.2-RELEASE/swift-6.3.2-RELEASE_wasm.artifactbundle.tar.gz"
+        url="https://download.swift.org/swift-6.4.2-release/wasm-sdk/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE_wasm.artifactbundle.tar.gz"
         curl -fsSL "$url" -o wasm.artifactbundle.tar.gz
         swift sdk install wasm.artifactbundle.tar.gz
         swift sdk list
@@ -65,5 +65,5 @@ jobs:
         swift build
         --target GATT
         -c ${{ matrix.config }}
-        --swift-sdk swift-6.3.2-RELEASE_wasm-embedded
+        --swift-sdk swift-6.4.2-RELEASE_wasm-embedded
         ${{ matrix.traits }}
