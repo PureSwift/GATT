@@ -6,6 +6,8 @@
 //  Copyright © 2016 PureSwift. All rights reserved.
 //
 
+#if !EMBEDDED_NO_CONCURRENCY
+
 #if hasFeature(Embedded)
 // Embedded Swift does not import the concurrency module implicitly.
 import _Concurrency
@@ -101,3 +103,5 @@ public protocol CentralManager: AnyObject {
     // Read RSSI
     func rssi(for peripheral: Peripheral) async throws -> RSSI
 }
+
+#endif
