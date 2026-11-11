@@ -7,9 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Add aarch64-none-none-elf, which has no _Concurrency module, once
-        # GATT requires a Bluetooth release with EMBEDDED_NO_CONCURRENCY.
-        triple: ["x86_64-unknown-none-elf", "armv7-none-none-eabi"]
+        triple: ["x86_64-unknown-none-elf", "armv7-none-none-eabi", "aarch64-none-none-elf"]
     container: swift:6.4.2
     steps:
       - name: Checkout
