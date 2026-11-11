@@ -25,9 +25,7 @@ compile() {
     shift 2
     echo "Compiling $MODULE for $TRIPLE"
     # shellcheck disable=SC2086
-    # Bluetooth 8.2.0 imports _Concurrency in this file with no guard. It's
-    # empty under EMBEDDED_NO_CONCURRENCY from the next Bluetooth release on.
-    find "$@" -name '*.swift' ! -name AsyncIndefiniteStream.swift | sort | xargs swiftc \
+    find "$@" -name '*.swift' | sort | xargs swiftc \
         -target "$TRIPLE" \
         -enable-experimental-feature Embedded \
         -wmo -parse-as-library -Osize -swift-version 6 \
