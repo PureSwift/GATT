@@ -13,10 +13,19 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        curl -fsSL -o "$RUNNER_TEMP/swiftly.pkg" https://download.swift.org/swiftly/darwin/swiftly.pkg
-        installer -pkg "$RUNNER_TEMP/swiftly.pkg" -target CurrentUserHomeDirectory
-        "$HOME/.swiftly/bin/swiftly" init --assume-yes --skip-install --no-modify-profile --quiet-shell-followup
+        if [ -f "$HOME/.swiftly/env.sh" ]; then
+          # Already set up, for example by Skip's installer: reuse it, since a
+          # second `swiftly init` fails.
+          echo "Using the existing swiftly installation"
+        else
+          curl -fsSL -o "$RUNNER_TEMP/swiftly.pkg" https://download.swift.org/swiftly/darwin/swiftly.pkg
+          installer -pkg "$RUNNER_TEMP/swiftly.pkg" -target CurrentUserHomeDirectory
+          "$HOME/.swiftly/bin/swiftly" init --assume-yes --skip-install --no-modify-profile --quiet-shell-followup
+        fi
         . "$HOME/.swiftly/env.sh"
+        if ! command -v swiftly >/dev/null 2>&1; then
+          export PATH="$HOME/.swiftly/bin:$PATH"
+        fi
         swiftly install --use --assume-yes "${{ inputs.version }}"
         echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV"
         echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
