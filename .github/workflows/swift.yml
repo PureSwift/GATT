@@ -13,6 +13,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Install Swift 6.4.2
+      uses: ./.github/actions/install-swift
+      with:
+        version: "6.4.2"
     - name: Swift Version
       run: swift --version
     - name: Build
@@ -29,6 +33,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Install Swift 6.4.2
+      uses: ./.github/actions/install-swift
+      with:
+        version: "6.4.2"
     - name: Swift Version
       run: swift --version
     - name: Export coverage and enforce threshold
@@ -58,7 +66,7 @@ jobs:
     name: Linux
     strategy:
       matrix:
-        container: ["swift:6.3.2"]
+        container: ["swift:6.4.2"]
         config: ["debug", "release"]
         options: ["", "SWIFT_BUILD_DYNAMIC_LIBRARY=1"]
         traits: ["--traits BluetoothGATT", ""]
@@ -84,8 +92,13 @@ jobs:
       timeout-minutes: 30
       steps:
         - uses: actions/checkout@v4
+        # The Android SDK's version must match the host compiler's.
+        - name: Install Swift 6.4.2
+          uses: ./.github/actions/install-swift
+          with:
+            version: "6.4.2"
         - name: "Build Swift Package for Android"
           run: |
               brew install skiptools/skip/skip || (brew update && brew install skiptools/skip/skip)
-              skip android sdk install --version 6.3.2
+              skip android sdk install --version 6.4.2
               ANDROID_NDK_ROOT="" skip android build --arch ${{ matrix.arch }}
