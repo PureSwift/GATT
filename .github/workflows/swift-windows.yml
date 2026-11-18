@@ -6,7 +6,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        swift: ["6.3.2"]
+        swift: ["6.4.2"]
         config: ["debug", "release"]
         traits: ["--traits BluetoothGATT", ""]
     steps:
