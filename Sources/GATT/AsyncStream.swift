@@ -284,7 +284,9 @@ struct AsyncCentralStream<Element: Sendable, Failure: Error>: Sendable {
 
         let storage: Storage
 
-        func next() async throws(Failure) -> Element? {
+        // Runs on the caller's executor: the stream is single-threaded, so the
+        // iterator must stay with the code that yields to it.
+        nonisolated(nonsending) func next() async throws(Failure) -> Element? {
             try await storage.next()
         }
     }
@@ -353,7 +355,7 @@ struct AsyncCentralStream<Element: Sendable, Failure: Error>: Sendable {
             onTermination()
         }
 
-        func next() async throws(Failure) -> Element? {
+        nonisolated(nonsending) func next() async throws(Failure) -> Element? {
             if buffer.isEmpty == false {
                 return buffer.removeFirst()
             }
