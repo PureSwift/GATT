@@ -67,3 +67,14 @@ jobs:
         -c ${{ matrix.config }}
         --swift-sdk swift-6.4.2-RELEASE_wasm-embedded
         ${{ matrix.traits }}
+    - name: Build Embedded central example
+      # A CentralManager conformer with a concrete Failure. Embedded Swift only
+      # compiles generic code where it's used, so building GATT alone can't
+      # show that the protocol and its streams specialize.
+      working-directory: Examples/EmbeddedCentral
+      run: >-
+        SWIFTPM_BLUETOOTH_METADATA=0
+        SWIFTPM_ENABLE_MACROS=0
+        swift build
+        -c ${{ matrix.config }}
+        --swift-sdk swift-6.4.2-RELEASE_wasm-embedded
