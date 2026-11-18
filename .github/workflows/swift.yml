@@ -20,9 +20,9 @@ jobs:
     - name: Swift Version
       run: swift --version
     - name: Build
-      run: ${{ matrix.options }} swift build -c ${{ matrix.config }} ${{ matrix.traits }}
+      run: ${{ matrix.options }} swift build -c ${{ matrix.config }} ${{ matrix.traits }} ${{ matrix.options != '' && '--build-system native' || '' }}
     - name: Test
-      run: ${{ matrix.options }} swift test -c ${{ matrix.config }} ${{ matrix.traits }}
+      run: ${{ matrix.options }} swift test -c ${{ matrix.config }} ${{ matrix.traits }} ${{ matrix.options != '' && '--build-system native' || '' }}
 
   coverage:
     name: Code Coverage
@@ -78,9 +78,9 @@ jobs:
     - name: Swift Version
       run: swift --version
     - name: Build
-      run: ${{ matrix.options }} swift build -c ${{ matrix.config }} ${{ matrix.traits }}
+      run: ${{ matrix.options }} swift build -c ${{ matrix.config }} ${{ matrix.traits }} ${{ matrix.options != '' && '--build-system native' || '' }}
     - name: Test
-      run: ${{ matrix.options }} swift test -c ${{ matrix.config }} ${{ matrix.traits }}
+      run: ${{ matrix.options }} swift test -c ${{ matrix.config }} ${{ matrix.traits }} ${{ matrix.options != '' && '--build-system native' || '' }}
 
   android:
       name: Android
@@ -92,6 +92,10 @@ jobs:
       timeout-minutes: 30
       steps:
         - uses: actions/checkout@v4
+        # Skip's installer sets up swiftly itself, so it goes first; the
+        # install-swift action then reuses that swiftly.
+        - name: Install Skip
+          run: brew install skiptools/skip/skip || (brew update && brew install skiptools/skip/skip)
         # The Android SDK's version must match the host compiler's.
         - name: Install Swift 6.4.2
           uses: ./.github/actions/install-swift
@@ -99,6 +103,5 @@ jobs:
             version: "6.4.2"
         - name: "Build Swift Package for Android"
           run: |
-              brew install skiptools/skip/skip || (brew update && brew install skiptools/skip/skip)
               skip android sdk install --version 6.4.2
               ANDROID_NDK_ROOT="" skip android build --arch ${{ matrix.arch }}
