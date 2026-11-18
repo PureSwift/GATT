@@ -40,8 +40,14 @@ COBERTURA_OUTPUT="${COBERTURA_OUTPUT:-.build/coverage/coverage.xml}"
 # shellcheck disable=SC2206
 SWIFT_FLAGS=(${SWIFT_BUILD_FLAGS:-})
 
-# Resolve the correct llvm-cov (xcrun on Apple platforms, plain llvm-cov elsewhere).
-if command -v xcrun >/dev/null 2>&1; then
+# Resolve the llvm-cov that matches the compiler: the one in the toolchain that
+# `swift` runs, since a profile from a newer compiler can't be read by an older
+# llvm-cov (such as Xcode's, when `swift` is a swiftly toolchain). Fall back to
+# xcrun on Apple platforms, then to llvm-cov on PATH.
+RESOURCE_DIR="$(swift -print-target-info 2>/dev/null | sed -n 's/.*"runtimeResourcePath": *"\([^"]*\)".*/\1/p' | head -n 1)"
+if [ -n "$RESOURCE_DIR" ] && [ -x "$RESOURCE_DIR/../../bin/llvm-cov" ]; then
+    LLVM_COV="$RESOURCE_DIR/../../bin/llvm-cov"
+elif command -v xcrun >/dev/null 2>&1; then
     LLVM_COV="xcrun llvm-cov"
 else
     LLVM_COV="llvm-cov"
