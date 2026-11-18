@@ -23,7 +23,10 @@ public final class GATTCentral <HostController: BluetoothHostControllerInterface
     public typealias Data = Socket.Data
     
     public typealias Options = GATTCentralOptions
-    
+
+    /// `notify(for:)` doesn't throw, so the failure type is stated rather than inferred.
+    public typealias Failure = any Error
+
     // MARK: - Properties
     
     public typealias Advertisement = LowEnergyAdvertisingData

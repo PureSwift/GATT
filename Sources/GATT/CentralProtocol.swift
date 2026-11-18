@@ -30,7 +30,18 @@ public protocol CentralManager: AnyObject {
     associatedtype AttributeID: Hashable
     
     associatedtype Data: DataContainer
-    
+
+    /// The error the central's operations throw.
+    ///
+    /// A conformer whose methods use untyped `throws` gets `any Error` without
+    /// naming it. Embedded Swift has no `any Error`, so a conformer built for it
+    /// names a concrete error type.
+    ///
+    /// A conformer that implements some requirements without `throws` declares
+    /// `typealias Failure = any Error`: otherwise Swift can't tell whether it
+    /// meant `Never` or `any Error`.
+    associatedtype Failure: Error
+
     /// Logging
     var log: (@Sendable (String) -> ())? { get set }
     
@@ -38,13 +49,13 @@ public protocol CentralManager: AnyObject {
     var peripherals: [Peripheral: Bool] { get async }
     
     /// Scans for peripherals that are advertising services.
-    func scan(filterDuplicates: Bool) async throws -> AsyncCentralScan<Self>
+    func scan(filterDuplicates: Bool) async throws(Failure) -> AsyncCentralScan<Self>
     
     /// Disconnected peripheral callback
     //var didDisconnect: AsyncStream<Peripheral> { get }
     
     /// Connect to the specified device
-    func connect(to peripheral: Peripheral) async throws
+    func connect(to peripheral: Peripheral) async throws(Failure)
     
     /// Disconnect the specified device.
     func disconnect(_ peripheral: Peripheral) async
@@ -56,52 +67,52 @@ public protocol CentralManager: AnyObject {
     func discoverServices(
         _ services: Set<BluetoothUUID>,
         for peripheral: Peripheral
-    ) async throws -> [Service<Peripheral, AttributeID>]
+    ) async throws(Failure) -> [Service<Peripheral, AttributeID>]
     
     /// Discover Characteristics for service
     func discoverCharacteristics(
         _ characteristics: Set<BluetoothUUID>,
         for service: Service<Peripheral, AttributeID>
-    ) async throws -> [Characteristic<Peripheral, AttributeID>]
+    ) async throws(Failure) -> [Characteristic<Peripheral, AttributeID>]
     
     /// Read Characteristic Value
     func readValue(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws -> Data
+    ) async throws(Failure) -> Data
     
     /// Write Characteristic Value
     func writeValue(
         _ data: Data,
         for characteristic: Characteristic<Peripheral, AttributeID>,
         withResponse: Bool
-    ) async throws
+    ) async throws(Failure)
     
     /// Discover descriptors
     func discoverDescriptors(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws -> [Descriptor<Peripheral, AttributeID>]
+    ) async throws(Failure) -> [Descriptor<Peripheral, AttributeID>]
     
     /// Read descriptor
     func readValue(
         for descriptor: Descriptor<Peripheral, AttributeID>
-    ) async throws -> Data
+    ) async throws(Failure) -> Data
     
     /// Write descriptor
     func writeValue(
         _ data: Data,
         for descriptor: Descriptor<Peripheral, AttributeID>
-    ) async throws
+    ) async throws(Failure)
     
     /// Start Notifications
     func notify(
         for characteristic: Characteristic<Peripheral, AttributeID>
-    ) async throws -> AsyncCentralNotifications<Self>
+    ) async throws(Failure) -> AsyncCentralNotifications<Self>
     
     /// Read MTU
-    func maximumTransmissionUnit(for peripheral: Peripheral) async throws -> MaximumTransmissionUnit
+    func maximumTransmissionUnit(for peripheral: Peripheral) async throws(Failure) -> MaximumTransmissionUnit
     
     // Read RSSI
-    func rssi(for peripheral: Peripheral) async throws -> RSSI
+    func rssi(for peripheral: Peripheral) async throws(Failure) -> RSSI
 }
 
 #endif

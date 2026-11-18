@@ -4,7 +4,7 @@ jobs:
   wasm:
     name: WebAssembly
     runs-on: ubuntu-latest
-    container: swift:6.3.2
+    container: swift:6.4.2
     strategy:
       fail-fast: false
       matrix:
@@ -20,7 +20,7 @@ jobs:
     - name: Install WASM SDK
       run: |
         set -eux
-        url="https://download.swift.org/swift-6.3.2-release/wasm-sdk/swift-6.3.2-RELEASE/swift-6.3.2-RELEASE_wasm.artifactbundle.tar.gz"
+        url="https://download.swift.org/swift-6.4.2-release/wasm-sdk/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE_wasm.artifactbundle.tar.gz"
         curl -fsSL "$url" -o wasm.artifactbundle.tar.gz
         swift sdk install wasm.artifactbundle.tar.gz
         swift sdk list
@@ -31,7 +31,7 @@ jobs:
         swift build
         --target GATT
         -c ${{ matrix.config }}
-        --swift-sdk swift-6.3.2-RELEASE_wasm
+        --swift-sdk swift-6.4.2-RELEASE_wasm
         ${{ matrix.traits }}
 
   embedded:
@@ -67,3 +67,14 @@ jobs:
         -c ${{ matrix.config }}
         --swift-sdk swift-6.4.2-RELEASE_wasm-embedded
         ${{ matrix.traits }}
+    - name: Build Embedded central example
+      # A CentralManager conformer with a concrete Failure. Embedded Swift only
+      # compiles generic code where it's used, so building GATT alone can't
+      # show that the protocol and its streams specialize.
+      working-directory: Examples/EmbeddedCentral
+      run: >-
+        SWIFTPM_BLUETOOTH_METADATA=0
+        SWIFTPM_ENABLE_MACROS=0
+        swift build
+        -c ${{ matrix.config }}
+        --swift-sdk swift-6.4.2-RELEASE_wasm-embedded
